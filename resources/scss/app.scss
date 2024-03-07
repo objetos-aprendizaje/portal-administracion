@@ -1,0 +1,898 @@
+
+body {
+    @apply font-roboto-regular
+}
+
+h1 {
+    @apply text-4xl font-roboto-bold
+}
+
+h2 {
+    @apply text-2xl font-roboto-bold text-primary mb-4
+}
+
+h3 {
+    @apply text-xl font-roboto-bold text-primary mb-4
+}
+
+h4 {
+    @apply text-lg font-roboto-bold text-primary mb-4
+}
+
+a {
+    @apply text-primary
+}
+
+
+
+/******************************* DATATABLES ********************/
+.poa-datatables.dataTables_wrapper .dataTables_filter input {
+    @apply text-gray-300 rounded-lg px-4 focus:outline-none w-80
+}
+
+.input-with-button {
+    input {
+        @apply rounded-lg border-gray-200 border-2 pl-2 h-10 pr-12 outline-[#C7C7C7]
+    }
+
+    button {
+        @apply absolute bg-gray-300 h-8 w-8 p-1.5 top-0 bottom-0 m-auto mr-2 rounded-lg
+    }
+
+    svg {
+        @apply fill-white
+    }
+    @apply relative flex justify-end
+
+}
+
+/************************ BUTTONS ****************/
+.btn.btn-primary {
+    @apply bg-primary text-white hover:bg-secondary min-w-[200px] h-[44px]
+}
+
+.btn.btn-secondary {
+    @apply bg-[#D9D9D9] text-black hover:bg-[#EAEAEA] min-w-[200px] h-[44px]
+}
+
+.btn.btn-primary.icon {
+    svg {
+        @apply stroke-2
+    }
+    @apply w-[130px] min-w-[130px]
+}
+
+.btn {
+    svg {
+        @apply w-[18px] h-[18px] fill-transparent
+    }
+    @apply px-4 py-2 rounded-full cursor-pointer inline-flex items-center space-x-2 justify-center font-roboto-regular gap-[10px] select-none
+}
+
+.btn-icon {
+    svg {
+        @apply text-white
+    }
+    @apply bg-gray-300 h-8 w-8 p-1.5 top-0 bottom-0 m-auto rounded-lg;
+}
+
+.btn.btn-danger {
+    @apply bg-danger text-white
+}
+
+
+.btn.btn-danger:hover {
+    @apply bg-red-400
+}
+
+.btn.btn-rectangular {
+    svg {
+        @apply h-[14px] w-[14px]
+    }
+    @apply bg-[#D9D9D9] text-white px-[20px] py-[10px] rounded-md font-roboto-regular text-[14px] h-[30px]
+}
+
+.btn.btn-icon {
+    svg {
+        @apply mr-0
+    }
+    @apply bg-gray-300 h-8 w-8 p-1.5 top-0 bottom-0 m-auto rounded-lg;
+}
+
+
+.input-image {
+    input {
+        @apply hidden
+    }
+}
+
+.btn-block {
+    @apply flex justify-center mt-8 gap-[20px]
+}
+/**************** MODALES ****************/
+
+
+/**************** BOTONES TABLA ****************/
+.table-control-header {
+    .control-search {
+        @apply flex-1
+    }
+    @apply flex items-center justify-between gap-4 mb-4
+}
+
+/**************** SELECTOR DE IMAGEN ****************/
+.poa-input-image {
+    img {
+        @apply w-40 h-40 mb-2
+    }
+
+    .select-file-container {
+        @apply mt-[30px]
+    }
+
+    .dimensions {
+        @apply text-[14px] text-[#697386]
+    }
+
+
+}
+
+/**************** SELECTOR DROPDOWN ****************/
+.dropdown {
+
+    button {
+        @apply inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 items-center
+    }
+
+    button svg {
+        @apply w-4 h-4
+    }
+
+    .menu-container {
+        @apply absolute right-0 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-[999]
+    }
+
+    .item {
+        @apply text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200
+    }
+
+    @apply relative inline-block text-left select-none
+
+}
+
+.dropdown-button {
+    svg {
+        @apply w-4 h-4
+    }
+    @apply inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-1 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 items-center select-none
+}
+
+.dropdown-menu-container {
+    @apply right-0 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-[999] relative inline-block text-left select-none
+}
+
+.dropdown-item {
+    @apply text-gray-700 block px-4 py-2 text-sm hover:bg-gray-200
+}
+
+/**************** SELECTOR DE ARCHIVOS ****************/
+.poa-input-file {
+    .btn-input-file {
+        svg {
+            @apply w-[14px]
+        }
+    }
+
+    .file-name {
+        @apply truncate flex-grow min-w-0
+    }
+
+    @apply flex gap-2 items-center  border p-2 rounded h-[46px]
+
+}
+
+
+/************************ TABULATOR ****************/
+
+.table-container .tabulator .tabulator-header .tabulator-col {
+    @apply bg-white text-primary
+}
+
+.table-container .tabulator .tabulator-header .tabulator-col {
+    @apply border-r-0 hover:bg-white
+}
+
+.table-container .tabulator .tabulator-header .tabulator-col.tabulator-sortable.tabulator-col-sorter-element:hover {
+    @apply bg-white hover:bg-white
+}
+
+.table-container .tabulator .tabulator-header {
+    @apply border-b-2 border-gray-300 border-t-2
+}
+
+.table-container .tabulator .tabulator-header {
+    @apply font-roboto-bold
+}
+
+.table-container .tabulator .tabulator-footer {
+    @apply bg-primary text-white
+}
+
+.table-container .tabulator .tabulator-footer .tabulator-paginator {
+    @apply text-white
+}
+.table-container .tabulator .tabulator-footer .tabulator-page-size {
+    @apply text-black
+}
+
+.table-container .tabulator .tabulator-header .tabulator-col.tabulator-sortable.tabulator-col-sorter-element {
+    @apply hover:bg-secondary
+}
+
+.table-container .tabulator-row.tabulator-selectable {
+    @apply hover:bg-gray-200
+
+}
+
+.table-container [type='search'] {
+    @apply text-black
+}
+
+.table-container .tabulator-row.tabulator-row-even, .table-container .tabulator-row.tabulator-row-odd {
+    @apply border-b-2 border-gray-300 bg-white
+}
+
+.table-container .tabulator-row .tabulator-cell {
+    @apply border-r-0 text-base
+}
+
+.table-container .tabulator-col {
+    @apply pt-2 pb-2
+}
+
+.table-container .tabulator-footer {
+    @apply hidden
+}
+
+.table-container .tabulator {
+    @apply border-0
+}
+
+.table-container .tabulator-row .tabulator-cell {
+    @apply pt-2 pb-2
+}
+
+.table-container .checkbox-cell {
+    input {
+        @apply w-5 h-5 cursor-pointer
+    }
+    @apply text-center
+}
+
+.table-container .label-status {
+    @apply py-1 px-2 rounded-lg text-primary font-roboto-bold overflow-hidden whitespace-nowrap text-ellipsis w-full h-full
+}
+
+.table-container .action-btn{
+    svg {
+        @apply text-[#507AB9]
+    }
+    @apply p-0
+}
+
+.table-container .tabulator-col-title {
+    @apply text-base
+}
+
+.table-container .tabulator-placeholder-contents  {
+    .no-records-message {
+        svg {
+            @apply w-4 h-4
+        }
+        @apply bg-white text-black text-base w-full h-full flex justify-center items-center gap-4
+    }
+
+    @apply bg-white border-b-2 border-gray-300
+
+}
+
+.table-container .tabulator .tabulator-alert .tabulator-alert-msg.tabulator-alert-state-msg {
+    @apply border-none bg-primary text-white font-roboto-regular border-0 px-[30px] py-[25px]
+}
+
+/******************************* LIST ********************/
+.email-list {
+    .email-element {
+        @apply flex py-2 px-4 border-b hover:bg-gray-300
+    }
+
+    .email-element .email {
+        @apply flex-grow py-2 px-4
+    }
+
+    .email-element .email-buttons {
+        @apply w-auto py-2 px-4
+    }
+}
+
+/******************************* ALERTS ********************/
+.alert.alert-danger {
+    @apply  border-danger
+}
+.alert.alert-danger svg {
+    @apply fill-danger
+}
+.alert.alert-info {
+    @apply border-primary
+}
+.alert.alert-info svg {
+    @apply text-primary
+}
+
+.alert {
+    h3 {
+        @apply text-black
+    }
+
+    @apply flex border rounded-md p-4 gap-2 border-l-8
+}
+
+/******************************* TABLES ********************/
+.table {
+    @apply min-w-full bg-white rounded-lg shadow-md;
+}
+
+.table thead tr {
+    @apply text-left border-b-2 border-gray-300 bg-primary text-white;
+}
+
+.table thead tr th {
+    @apply px-4 py-3;
+}
+
+.table tbody td {
+    @apply px-4 py-3 truncate;
+}
+
+.table tbody tr {
+    @apply hover:bg-gray-300 border-b border-gray-200;
+}
+
+.poa-datatables table.dataTable {
+    @apply border-collapse
+}
+
+.pagination {
+    .pagination-btn {
+        svg {
+            @apply fill-[#1F1F20]
+        }
+        @apply w-6
+    }
+
+    .counter {
+        input {
+            @apply h-6 text-base leading-[400] text-gray-200
+        }
+    }
+
+    .pages-show-input {
+        @apply border-gray-200 text-center rounded-sm border p-1 outline-[#C7C7C7] h-6 w-[41px];
+    }
+
+    .select-number-pages {
+        @apply h-6 px-2 py-0
+    }
+
+    @apply flex items-center justify-between mt-6 md:flex-row flex-col-reverse gap-y-4 md:gap-y-0
+
+}
+
+/******************************* TOASTS ********************/
+.toast svg{
+    @apply fill-transparent w-8
+}
+
+.poa-container {
+    @apply p-8 bg-white rounded-3xl
+}
+
+.checkbox {
+    .checkbox-switch {
+        @apply w-11 h-6 min-w-[35px] relative top-0 bg-gray-200 rounded-full dark:bg-gray-700 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600
+    }
+    .checkbox-name {
+        @apply ml-3
+    }
+}
+
+.poa-input {
+    @apply relative m-0 w-full min-w-0 flex-auto rounded border border-solid border-[#D9D9D9] bg-transparent bg-clip-padding px-4 py-[0.25rem] text-sm font-roboto-regular leading-[1.6] text-neutral-700 outline-none transition duration-200 ease-in-out focus:z-[3] focus:border-primary focus:text-neutral-700 focus:outline-none dark:border-neutral-600 dark:text-neutral-200 dark:placeholder:text-neutral-200 dark:focus:border-primary
+}
+
+.element-disabled {
+    @apply opacity-50
+}
+
+button.element-disabled {
+    @apply cursor-not-allowed
+}
+
+.poa-input-color {
+    @apply relative m-0 w-full min-w-0 flex-auto rounded border border-solid border-[#D9D9D9] bg-transparent bg-clip-padding px-4 py-[0.25rem] text-sm font-roboto-regular leading-[1.6] text-neutral-700 outline-none transition duration-200 ease-in-out focus:z-[3] focus:border-primary focus:text-neutral-700 focus:outline-none dark:border-neutral-600 dark:text-neutral-200 dark:placeholder:text-neutral-200 dark:focus:border-primary
+}
+
+.poa-select {
+    @apply py-2 px-4 block border-gray-200 rounded-md text-sm focus:border-inherit focus:ring focus:ring-inherit focus:outline-none dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 checked:bg-primary checked:focus:border-primary border border-solid invalid:text-black/30;
+}
+
+
+/******************************* ANIDACIÓN DE CATEGORÍAS ********************/
+.anidation-div {
+    .element-checkbox {
+        @apply w-[22px] h-[22px]
+    }
+    p {
+        @apply ml-7 block text-xs italic align-baseline mb-1
+    }
+    .element-label {
+        @apply ml-2
+    }
+
+    svg {
+        @apply w-4 cursor-pointer fill-[#CCCCCC] ml-5
+    }
+
+    @apply pl-4 py-1 border-l border-gray-300 text-base;
+
+  }
+
+  .anidation-div.first {
+    @apply border-0
+  }
+
+/******************************* LOADER ********************/
+
+.fullscreen-loader {
+    @apply hidden fixed top-0 left-0 w-full h-full bg-black bg-opacity-30 justify-center items-center flex-col gap-3 z-[9999]
+}
+
+.spinner {
+    background: radial-gradient(farthest-side,var(--primary-color) 94%,#0000) top/8px 8px no-repeat, /* Ajusta el tamaño del gradiente radial */
+           conic-gradient(#0000 30%,var(--primary-color));
+    -webkit-mask: radial-gradient(farthest-side,#0000 calc(100% - 5px),#000 0); /* Ajusta la máscara para hacer el borde más fino */
+    animation: spinner-c7wet2 1s infinite linear;
+
+    @apply w-16 h-16 rounded-full
+}
+
+@keyframes spinner-c7wet2 {
+    100% {
+        transform: rotate(1turn);
+    }
+}
+
+
+  .ts-wrapper {
+    @apply mb-0
+  }
+
+/******************************* NOTIFICATIONS ***************/
+.notifications {
+    .bell svg {
+        @apply w-7 h-7 fill-[#C7C7C7] cursor-pointer hover:fill-[#9a9595]
+    }
+    .bell {
+        @apply relative
+    }
+    .notification-dot {
+        @apply absolute bg-red-500 rounded-full w-1.5 h-1.5 top-0.5 right-0.5
+    }
+    @apply w-12 h-12 flex justify-center items-center rounded-full bg-[#EEEEEE] relative
+}
+
+.notification-box::-webkit-scrollbar {
+    width: 6px;
+}
+
+.notification-box::-webkit-scrollbar-track {
+    background: white;
+    border-radius: 10px;
+}
+
+.notification-box::-webkit-scrollbar-thumb {
+    background: #7A7A7A;
+    border-radius: 10px;
+}
+
+.notification-box::-webkit-scrollbar-thumb:hover {
+    background: #7A7A7A;
+}
+
+/******************************* FORMS ********************/
+.poa-form{
+    & .field.no-visible {
+        @apply hidden
+    }
+
+    & .field {
+        @apply flex sm:flex-row flex-col mb-4 gap-2;
+    }
+
+
+    & .field .label-container label {
+        @apply w-auto break-words text-sm font-roboto-regular;
+    }
+
+    & .field .label-container {
+        @apply sm:w-3/12 w-auto
+    }
+
+    & .field .content-container.little {
+        @apply max-w-2xl
+    }
+
+    & .field .label-center {
+        @apply flex items-center
+    }
+
+    & .field .content-container {
+
+        .error-border {
+            @apply border-red-500 focus:border-red-500  focus:ring-red-500 focus:ring-0
+        }
+
+        .error-label {
+            @apply text-[#DB371F]
+        }
+
+        @apply sm:w-9/12 w-auto
+    }
+
+    & .field textarea {
+        @apply h-auto resize-y
+    }
+
+    & .field .content-container {
+        .error-label {
+            @apply text-red-500 text-[14px]
+        }
+    }
+}
+
+.table-container {
+    @apply w-full overflow-x-auto
+}
+
+/******************************* MENU ********************/
+.menu.menu-collapsed span{
+    @apply hidden
+}
+
+.menu.menu-non-collapsed {
+    @apply w-[260px]
+}
+
+.menu {
+    .main-menu > li{
+        @apply p-4
+    }
+    .main-menu > a {
+        @apply p-4 hover:bg-[#EAEDF2]
+    }
+    .main-menu > a:hover svg {
+        @apply text-primary
+    }
+    li {
+        @apply flex items-center gap-8 cursor-pointer relative hover:bg-[#EAEDF2]
+    }
+
+    li:hover svg {
+        @apply text-primary
+    }
+
+    svg {
+        @apply w-7 text-[#C7C7C7]
+    }
+
+    .menu-element-selected {
+        @apply bg-[#EAEDF2] border-solid border-l-4 border-primary
+    }
+
+    .menu-element-selected svg {
+        @apply text-primary
+    }
+
+    li span {
+        @apply text-black
+    }
+
+    .sub-menu {
+        @apply  absolute top-0 z-50 right-[-260px] text-black w-[260px] bg-white
+    }
+
+    .sub-menu ul li {
+        @apply hover:text-primary hover:font-roboto-bold
+    }
+
+    .sub-menu ul li.disabled {
+        @apply bg-gray-400 hover:bg-gray-400 hover:text-inherit hover:font-roboto-regular cursor-not-allowed
+    }
+
+    .sub-menu .disabled a {
+        @apply cursor-not-allowed hover:text-inherit
+    }
+
+    .sub-menu a {
+        @apply text-black p-2 block w-full hover:text-primary
+    }
+
+    @apply select-none
+}
+
+/******************************* ANALYTICS ********************/
+.data-card {
+    .data-card-title {
+        @apply text-primary font-roboto-bold mb-[4px]
+    }
+    .data-card-total {
+        @apply text-primary font-roboto-bold text-[24px]
+    }
+    @apply h-[110px] bg-[#EAEDF2] w-[260px] rounded-2xl p-[24px]
+
+}
+.options-div {
+    button {
+        @apply w-[18px] h-[18px]
+
+    }
+    svg {
+        @apply w-[18px] h-[18px] text-white
+    }
+
+    @apply absolute z-50 w-auto bg-primary p-[12px] gap-[10px] rounded-full after:content-[''] after:absolute after:border-solid after:border-transparent after:border-t-primary after:border-l-[10px] after:border-r-[10px] after:border-t-[10px] after:-bottom-[10px] after:left-1/2 after:-translate-x-1/2
+}
+
+
+
+/******************************* COLORIS ********************/
+.coloris {
+    @apply w-[30px] opacity-0 rounded-full
+}
+
+.coloris-button .clr-field button {
+    @apply rounded-full
+}
+
+.coloris-button .clr-field input {
+    @apply h-[30px]
+}
+
+.clr-field button {
+    @apply rounded-full
+}
+
+.coloris-input {
+    .clr-field {
+        @apply w-full
+    }
+    .clr-field button {
+        @apply h-[25px] w-[25px] right-2 rounded-full
+    }
+}
+
+.color-definition {
+    @apply flex items-center gap-[11px] mb-[10px]
+}
+
+
+
+.modal {
+    @apply hidden fixed inset-0 z-50 p-[40px] overflow-auto  opacity-0 transition-opacity duration-300 ease-in-out bg-[#00000051];
+}
+
+.modal-header {
+    @apply flex justify-between mb-4
+}
+
+.modal-close-modal-btn {
+    svg {
+        @apply fill-white w-5 h-5
+    }
+    @apply bg-primary w-7 h-7 rounded-full flex items-center justify-center p-0
+}
+
+.modal.open {
+    @apply block;
+}
+
+.modal-body {
+    @apply rounded-[20px] p-[40px] bg-white ml-auto mr-auto
+}
+
+body.modal-open {
+    @apply overflow-hidden
+}
+
+
+.title-filter {
+    span {
+        @apply text-[20px] font-roboto-bold text-primary
+    }
+
+    svg {
+        @apply h-[24px] w-[24px] flex
+    }
+
+    @apply gap-4
+}
+
+.filter {
+    svg {
+        @apply h-[9px] w-[9px] cursor-pointer
+    }
+
+    @apply flex bg-gray-300 items-center p-[10px] gap-[10px] text-white rounded-[6px] text-[14px]
+}
+
+.btn-filter {
+    @apply text-primary
+}
+
+.select-file-container {
+    span {
+        @apply text-[14px]
+    }
+    @apply flex items-center gap-[20px]
+}
+
+/******************************* ACCORDION ********************/
+.accordion {
+    h3 {
+        @apply mb-0;
+    }
+    .accordion-item {
+        .accordion-header {
+            svg {
+                @apply h-[20px] w-[20px]
+            }
+            @apply flex cursor-pointer items-center justify-between
+        }
+
+        .accordion-body {
+            @apply mt-[30px] text-black
+        }
+
+        @apply flex flex-col rounded-lg bg-white p-[30px] text-primary  border-gray-100 border
+    }
+
+    @apply m-2 space-y-2
+}
+
+/******************************* COMPOSICIÓN CURSO ********************/
+.composition {
+    .border-full {
+        @apply border-primary focus:border-primary focus:shadow-none rounded-none
+    }
+    .border-bottom-rounded {
+        @apply rounded-b-[8px]
+    }
+    .border-full, .border-bottom-rounded {
+        @apply box-border
+    }
+    select {
+        @apply p-2 focus:ring-0 focus:outline-none
+    }
+    input {
+        @apply p-2 border-primary focus:outline-none focus:shadow-none rounded-none
+    }
+    textarea {
+        @apply border-t-0 border-x border-b border-primary p-2 rounded-b-[8px] focus:ring-0 focus:border-primary focus:outline-none focus:shadow-none rounded-t-none
+    }
+    .btn-remove {
+        svg {
+            @apply w-[16] h-[18px]
+        }
+        @apply bg-primary p-[8px] text-white rounded-t-[8px] flex justify-center items-center gap-[10px] select-none text-[14px] hover:bg-secondary
+    }
+}
+
+/******************************* CHOICESJS ********************/
+
+.choices {
+    .choices__inner {
+        @apply bg-inherit h-[32px] min-h-[32px]
+    }
+
+    .choices__list--dropdown .choices__item--selectable.is-highlighted, .choices__list[aria-expanded] .choices__item--selectable.is-highlighted {
+        @apply bg-[#E7ECF3]
+    }
+
+    .choices__list--dropdown, .choices__list[aria-expanded] {
+        @apply rounded
+    }
+
+    .choices__inner {
+        @apply rounded
+    }
+
+    .is-open .choices__inner {
+        @apply rounded
+    }
+
+    .choices__list--dropdown .choices__item, .choices__list[aria-expanded] .choices__item {
+        @apply text-[#697386]
+    }
+
+    .choices__inner {
+        @apply pt-[1px] pb-0
+    }
+
+    .choices__placeholder {
+        @apply opacity-100
+    }
+
+    .choices__list--dropdown .choices__item, .choices__list[aria-expanded] .choices__item {
+        @apply p-[5px]
+    }
+
+    .is-focused .choices__inner, .is-open .choices__inner {
+        @apply border border-primary
+    }
+
+    @apply mb-0
+
+}
+
+.choices.is-focused .choices__inner, .is-open .choices__inner {
+    @apply border border-primary
+}
+
+.choices[data-type*=select-one] .choices__input {
+    padding: 5px !important;
+}
+
+.choices {
+    margin-bottom: 0 !important;
+}
+
+.choices[data-type*=select-one] .choices__inner {
+    @apply pb-0
+}
+
+.choices.is-open {
+    .choices__inner {
+        @apply rounded
+    }
+
+    .choices__list--dropdown, .choices .choices__list[aria-expanded] {
+        @apply mt-[5px]
+    }
+}
+
+
+.accordion-collapsed {
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.5s ease;
+}
+
+.accordion-uncollapsed {
+    max-height: 96rem; /* Ajusta este valor según sea necesario */
+    transition: all 0.5s ease;
+}
+
+.flatpickr-input {
+    @apply h-[36px]
+}
+
+.link-icon {
+    svg {
+        @apply w-[18px] h-[18px]
+    }
+    @apply flex items-center gap-[10px]
+}
+
+.link-label {
+    @apply text-[14px]
+}

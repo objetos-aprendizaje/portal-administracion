@@ -1,0 +1,403 @@
+import {
+    controlsPagination,
+    tabulatorBaseConfig,
+    updatePaginationInfo,
+    formatDate,
+    controlsSearch,
+    updateArrayRecords,
+} from "../tabulator_handler";
+import { heroicon } from "../heroicons";
+import { TabulatorFull as Tabulator } from "tabulator-tables";
+import { hideModal, showModal, showModalConfirmation } from "../modal_handler";
+import TomSelect from "tom-select";
+import {
+    showFormErrors,
+    resetFormErrors,
+    getMultipleTomSelectInstance,
+    toggleFormFields,
+    apiFetch,
+} from "../app.js";
+import { showToast } from "../toast.js";
+
+const endPointTable = "/notifications/email/get_list_email_notifications";
+
+let emailNotificationsTable = null;
+
+let tomSelectRoles;
+let tomSelectUsers;
+let selectedEmailNotifications = [];
+document.addEventListener("DOMContentLoaded", function () {
+    initHandlers();
+    initializeEmailNotificationsTable();
+    controlTypeDestination();
+    controlsSearch(
+        emailNotificationsTable,
+        endPointTable,
+        "notification-email-table"
+    );
+    controlsPagination(emailNotificationsTable, "notification-email-table");
+
+    initTomSelectUsers();
+});
+
+function initHandlers() {
+    document
+        .getElementById("add-notification-email-btn")
+        .addEventListener("click", function () {
+            newEmailNotification();
+        });
+
+    tomSelectRoles = getMultipleTomSelectInstance("#roles");
+
+    document
+        .getElementById("delete-notification-email-btn")
+        .addEventListener("click", () => {
+            if (selectedEmailNotifications.length) {
+                showModalConfirmation(
+                    "Eliminar notificaciones por email",
+                    "¿Está seguro que desea eliminar las notificaciones seleccionadas?",
+                    "delete_educational_program_types"
+                ).then((resultado) => {
+                    if (resultado) {
+                        deleteEmailNotifications();
+                    }
+                });
+            } else {
+                showToast(
+                    "Debe seleccionar al menos una notificación",
+                    "error"
+                );
+            }
+        });
+
+    document
+        .getElementById("notification-email-form")
+        .addEventListener("submit", submitFormEmailNotificationModal);
+}
+
+function initTomSelectUsers() {
+    tomSelectUsers = new TomSelect("#users", {
+        plugins: {
+            remove_button: {
+                title: "Eliminar",
+            },
+        },
+        search: true,
+        create: false,
+        load: function (query, callback) {
+            const params = {
+                url:
+                    "/users/list_users/search_users/" +
+                    encodeURIComponent(query),
+                method: "GET",
+            };
+
+            apiFetch(params)
+                .then((data) => {
+                    if (json.length) {
+                        const response = json.map((entry) => {
+                            return {
+                                value: entry.uid,
+                                text: `${entry.first_name} ${entry.last_name} (${entry.email})`,
+                            };
+                        });
+                        callback(response);
+                    } else {
+                        callback();
+                    }
+                })
+                .catch(() => {
+                    callback();
+                });
+        },
+        onItemAdd: function () {
+            this.control_input.value = "";
+        },
+    });
+}
+
+async function loadEmailNotificationModal(uid) {
+    const params = {
+        url: `/notifications/email/get_email_notification/${uid}`,
+        method: "GET",
+    };
+
+    apiFetch(params).then((data) => {
+        fillFormEmailNotificationModal(data);
+        showModal("notification-email-modal", "Notificación por email");
+    });
+}
+
+function fillFormEmailNotificationModal(email_notification) {
+    resetModal("notification-email-form");
+    switchSelectorDestination(email_notification.type);
+
+    if (email_notification.roles) {
+        email_notification.roles.forEach((rol) => {
+            tomSelectRoles.addItem(rol.uid);
+        });
+    }
+
+    if (email_notification.users) {
+        email_notification.users.forEach((user) => {
+            tomSelectUsers.addOption({
+                value: user.uid,
+                text: user.first_name,
+            });
+            tomSelectUsers.addItem(user.uid);
+        });
+    }
+
+    document.getElementById("type").value = email_notification.type;
+    document.getElementById("subject").value = email_notification.subject;
+    document.getElementById("body").value = email_notification.body;
+    document.getElementById("notification_email_uid").value =
+        email_notification.uid;
+    document.getElementById("send_date").value = email_notification.send_date;
+
+    if (email_notification.sent) switchBtnsModal("view");
+    else switchBtnsModal("add");
+}
+
+/**
+ * Alterna la visibilidad de dos grupos de botones en una modal.
+ *
+ * Esta función se encarga de controlar qué grupo de botones se muestra en una modal de notificaciones de correo electrónico.
+ * Dependiendo de la acción proporcionada ('view' o 'add'), se ocultará un grupo de botones y se mostrará el otro.
+ *
+ */
+function switchBtnsModal(action) {
+    const btnsAdd = document.getElementById(
+        "email-notification-modal-add-btns"
+    );
+    const btnsView = document.getElementById(
+        "email-notification-modal-view-btns"
+    );
+
+    if (action === "view") {
+        btnsAdd.style.display = "none";
+        btnsView.style.display = "flex";
+
+        toggleFormFields("notification-email-form", true);
+    } else if (action === "add") {
+        btnsView.style.display = "none";
+        btnsAdd.style.display = "flex";
+        toggleFormFields("notification-email-form", false);
+    }
+}
+
+function newEmailNotification() {
+    switchBtnsModal("add");
+    resetModal();
+    showModal("notification-email-modal", "Nueva notificación por email");
+}
+
+async function deleteEmailNotifications() {
+    const params = {
+        url: "/notifications/email/delete_email_notifications",
+        method: "DELETE",
+        body: {
+            uids: selectedEmailNotifications.map((type) => type.uid),
+        },
+        stringify: true,
+        toast: true
+    };
+
+    apiFetch(params).then(() => {
+        emailNotificationsTable.replaceData(endPointTable);
+    });
+}
+
+function initializeEmailNotificationsTable() {
+    const columns = [
+        {
+            title: '<div class="checkbox-cell"><input type="checkbox" id="select-all-checkbox"/></div>',
+            headerClick: function (e) {
+                const selectAllCheckbox = e.target;
+                if (selectAllCheckbox.type === "checkbox") {
+                    // Asegúrate de que el clic fue en el checkbox
+                    emailNotificationsTable.getRows().forEach((row) => {
+                        const cell = row.getCell("select");
+                        const checkbox = cell
+                            .getElement()
+                            .querySelector('input[type="checkbox"]');
+
+                        if (checkbox) {
+                            checkbox.checked = selectAllCheckbox.checked;
+                            selectedEmailNotifications = updateArrayRecords(
+                                checkbox,
+                                row.getData(),
+                                selectedEmailNotifications
+                            );
+                        }
+                    });
+                }
+            },
+            field: "select",
+            formatter: function (cell, formatterParams, onRendered) {
+                const uid = cell.getRow().getData().uid;
+
+                const sent = cell.getRow().getData().sent;
+
+                if (!sent) return `<input type="checkbox" data-uid="${uid}"/>`;
+            },
+            width: 60,
+            cssClass: "checkbox-cell",
+            cellClick: function (e, cell) {
+                // Lógica cuando se hace clic en la celda
+                const checkbox = e.target;
+                const rowData = cell.getRow().getData();
+
+                selectedEmailNotifications = updateArrayRecords(
+                    checkbox,
+                    rowData,
+                    selectedEmailNotifications
+                );
+            },
+            headerSort: false,
+            //widthGrow: 1,
+        },
+        {
+            title: "Estado",
+            field: "sent",
+            formatter: function (cell, formatterParams, onRendered) {
+                const sent = cell.getRow().getData().sent;
+                const status = sent ? "Enviado" : "No enviado";
+                const color = sent ? "#EBF3F4" : "#F4EBF0";
+                return `
+                    <div class="label-status" style="background-color: ${color}">${status}</div>
+                `;
+            },
+            widthGrow: 1,
+        },
+        { title: "Asunto", field: "subject", widthGrow: 2 },
+        { title: "Cuerpo", field: "body", widthGrow: 6 },
+        {
+            title: "Fecha de envío",
+            field: "send_date",
+            widthGrow: 2,
+            formatter: function (cell, formatterParams, onRendered) {
+                const isoDate = cell.getValue();
+                if (!isoDate) return "";
+                return formatDate(isoDate);
+            },
+        },
+        {
+            title: "",
+            field: "actions",
+            formatter: function (cell, formatterParams, onRendered) {
+                return `
+                    <button type="button" class='btn action-btn'>${heroicon(
+                        "pencil-square",
+                        "outline"
+                    )}</button>
+                `;
+            },
+            cellClick: function (e, cell) {
+                e.preventDefault();
+                const emailNotificationClicked = cell.getRow().getData();
+                loadEmailNotificationModal(emailNotificationClicked.uid);
+            },
+            cssClass: "text-center",
+            headerSort: false,
+            width: 60,
+            resizable: false,
+        },
+    ];
+
+    emailNotificationsTable = new Tabulator("#notification-email-table", {
+        ajaxURL: endPointTable,
+        ...tabulatorBaseConfig,
+        ajaxResponse: function (url, params, response) {
+            updatePaginationInfo(
+                emailNotificationsTable,
+                response,
+                "notification-email-table"
+            );
+
+            return {
+                last_page: response.last_page,
+                data: response.data,
+            };
+        },
+        columns: columns,
+    });
+}
+
+function resetModal() {
+    const form = document.getElementById("notification-email-form");
+    form.reset();
+    tomSelectRoles.clear();
+    tomSelectUsers.clear();
+    document.getElementById("notification_email_uid").value = "";
+
+    resetFormErrors();
+}
+
+/**
+ * controlTypeDestination - Función para controlar la visibilidad de los campos de destino
+ * basados en el tipo de destino seleccionado ("ROLES" o "USERS").
+ *
+ * Escucha los cambios en el selector con el ID "selector-type-destination" y muestra
+ * u oculta los campos relevantes de destino en función de la opción seleccionada.
+ *
+ * Los campos de destino se encuentran en divs con los IDs "destination-roles" y "destination-users",
+ * y son inicialmente ocultados mediante la clase "no-visible".
+ */
+function controlTypeDestination() {
+    const selector = document.getElementById("type");
+    const destinationRoles = document.getElementById("destination-roles");
+    const destinationUsers = document.getElementById("destination-users");
+
+    selector.addEventListener("change", function () {
+        const selectedValue = this.value;
+
+        destinationRoles.classList.add("no-visible");
+        destinationUsers.classList.add("no-visible");
+
+        if (selectedValue === "ROLES") {
+            destinationRoles.classList.remove("no-visible");
+        } else if (selectedValue === "USERS") {
+            destinationUsers.classList.remove("no-visible");
+        }
+    });
+}
+
+function switchSelectorDestination(type) {
+    const destinationRoles = document.getElementById("destination-roles");
+    const destinationUsers = document.getElementById("destination-users");
+    destinationRoles.classList.add("no-visible");
+    destinationUsers.classList.add("no-visible");
+
+    if (type === "ROLES") {
+        destinationRoles.classList.remove("no-visible");
+    } else if (type === "USERS") {
+        destinationUsers.classList.remove("no-visible");
+    }
+}
+
+function submitFormEmailNotificationModal() {
+    const formData = new FormData(this);
+
+    const roles = tomSelectRoles.items;
+    formData.append("tags", JSON.stringify(roles));
+
+    resetFormErrors("notification-email-form");
+
+    const params = {
+        url: "/notifications/email/save_email_notification",
+        method: "POST",
+        body: formData,
+        loader: true
+    };
+
+    apiFetch(params)
+        .then(() => {
+            resetModal();
+            emailNotificationsTable.replaceData(endPointTable);
+            hideModal("notification-email-modal");
+        })
+        .catch((data) => {
+            showFormErrors(data.errors);
+        });
+}
