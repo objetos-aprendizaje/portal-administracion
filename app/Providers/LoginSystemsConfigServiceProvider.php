@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\GeneralOptionsModel;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class LoginSystemsConfigServiceProvider extends ServiceProvider
 {
@@ -21,6 +22,7 @@ class LoginSystemsConfigServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if(!count(DB::getConnections())) return;
 
         if (!Cache::has('parameters_login_systems')) {
             $parameters_login_systems = GeneralOptionsModel::whereIn('option_name', [
