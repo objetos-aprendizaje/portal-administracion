@@ -6,6 +6,7 @@ use App\Models\GeneralOptionsModel;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
 class MailConfigServiceProvider extends ServiceProvider
 {
@@ -22,6 +23,11 @@ class MailConfigServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (!Schema::hasTable('general_options')) {
+            return;
+        }
+
+
         if (!Cache::has('parameters_email_service')) {
             $parameters_email_service = GeneralOptionsModel::whereIn('option_name', [
                 'smtp_server',
