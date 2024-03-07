@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\GeneralOptionsModel;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
@@ -23,6 +24,7 @@ class MailConfigServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if(!count(DB::getConnections())) return;
         if (!Schema::hasTable('general_options')) {
             return;
         }
