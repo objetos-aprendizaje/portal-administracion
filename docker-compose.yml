@@ -1,0 +1,47 @@
+version: '3'
+services:
+    laravel.test:
+        build:
+            context: ./
+            dockerfile: docker/8.2/Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP}'
+        image: sail-8.2/app
+        environment:
+            WWWUSER: '${WWWUSER}'
+            LARAVEL_SAIL: 1
+            XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
+            XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
+            IGNITION_LOCAL_SITES_PATH: '${PWD}'
+        volumes:
+            #- '.:/var/www/html'
+            - '/var/www/vhost/admin.portalobjetosaprendizaje.devmainjobs.com/docker_volumes/images:/var/www/html/public/images'
+        ports:
+            - '${APP_PORT:-80}:80'
+            - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
+        # networks:
+        #     - sail
+    # Add other services if applicable
+    kafka:
+        image: 'bitnami/kafka:latest'
+        ports:
+            - '9092:9092'
+        environment:
+            - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+        depends_on:
+            - zookeeper
+    zookeeper:
+        image: docker.io/bitnami/zookeeper:3.9
+        ports:
+            - "2181:2181"
+        volumes:
+            - "zookeeper_data:/bitnami"
+        environment:
+            - ALLOW_ANONYMOUS_LOGIN=yes
+# networks:
+#     sail:
+#         driver: bridge
+
+volumes:
+  zookeeper_data:
+    driver: local

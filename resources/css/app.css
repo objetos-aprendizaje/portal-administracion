@@ -1,0 +1,36 @@
+@font-face {
+    font-family: "roboto-regular";
+    src:
+        url("../fonts/Roboto-Regular/Roboto-Regular.ttf") format("truetype"),
+        url("../fonts/Roboto-Regular/Roboto-Regular.woff") format("woff"),
+        url("../fonts/Roboto-Regular/Roboto-Regular.woff2") format("woff2"),
+        url("../fonts/Roboto-Regular/Roboto-Regular.eot") format("embedded-opentype"),
+        url("../fonts/Roboto-Regular/Roboto-Regular.otf") format("opentype"),
+        url("../fonts/Roboto-Regular/Roboto-Regular.svg") format("svg");
+}
+
+@font-face {
+    font-family: "roboto-medium";
+    src:
+        url("../fonts/Roboto-Medium/Roboto-Medium.ttf") format("truetype"),
+        url("../fonts/Roboto-Medium/Roboto-Medium.woff") format("woff"),
+        url("../fonts/Roboto-Medium/Roboto-Medium.woff2") format("woff2"),
+        url("../fonts/Roboto-Medium/Roboto-Medium.eot") format("embedded-opentype"),
+        url("../fonts/Roboto-Medium/Roboto-Medium.otf") format("opentype"),
+        url("../fonts/Roboto-Medium/Roboto-Medium.svg") format("svg");
+}
+
+@font-face {
+    font-family: "roboto-bold";
+    src:
+        url("../fonts/Roboto-Bold/Roboto-Bold.ttf") format("truetype"),
+        url("../fonts/Roboto-Bold/Roboto-Bold.woff") format("woff"),
+        url("../fonts/Roboto-Bold/Roboto-Bold.woff2") format("woff2"),
+        url("../fonts/Roboto-Bold/Roboto-Bold.eot") format("embedded-opentype"),
+        url("../fonts/Roboto-Bold/Roboto-Bold.otf") format("opentype"),
+        url("../fonts/Roboto-Bold/Roboto-Bold.svg") format("svg");
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

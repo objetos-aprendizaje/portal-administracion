@@ -1,0 +1,46 @@
+@extends('layouts.app')
+
+@section('content')
+    <div class="poa-container mb-8">
+        <h2>Envío de sugerencias y mejoras</h2>
+
+        <p class="mb-2">Define una lista de emails donde se enviarán las sugerencias y mejoras que rellenen los usuarios
+            desde el front.
+        </p>
+
+        <div class="flex justify-between mb-2 items-center">
+            <div class="mb-4 flex gap-4 flex-1">
+                <div class="w-1/2">
+                    <input type="email" placeholder="Introduce un email" class="poa-input w-full h-full" id="email-input">
+                </div>
+                <div>
+                    <button class="btn btn-primary" id="add-email-btn">Añadir {{ e_heroicon('plus', 'outline') }}</button>
+                </div>
+            </div>
+            <div class="flex gap-1">
+                <div>
+                    <button type="button" class="btn-icon" id="btn-delete-emails">
+                        {{ e_heroicon('trash', 'outline') }}
+                    </button>
+                </div>
+                <div>
+                    <button type="button" class="btn-icon" id="btn-update-table">
+                        {{ e_heroicon('arrow-path', 'outline') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div id="list-emails">
+
+            </div>
+        </div>
+
+        @include('partials.table-pagination', ['table' => 'list-emails'])
+
+
+    </div>
+
+    @include('partials.modal-confirmation')
+@endsection
