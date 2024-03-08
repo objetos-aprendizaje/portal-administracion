@@ -3,7 +3,8 @@
     <section class="md:flex hidden">
 
         <div class="w-1/2">
-            <img id="image-background" src="{{ asset('data/images/background_login.png') }}" class="object-cover w-full h-screen">
+            <img id="image-background" src="{{ asset('data/images/background_login.png') }}"
+                class="object-cover w-full h-screen">
         </div>
 
         <div class="w-1/2 justify-center flex items-center">
@@ -63,26 +64,33 @@
                         </div>
 
                         <div class="flex justify-center gap-[32px]">
-                            @if (Cache::get('parameters_login_systems')['facebook_login_active'])
-                                <a href="/auth/facebook">
-                                    <img class="w-[60px] h-[60px]" src="data/images/login_icons/facebook.png" />
-                                </a>
+                            @php
+                                $parameters_login_systems = Cache::get('parameters_login_systems');
+                            @endphp
+
+                            @if ($parameters_login_systems)
+                                @if ($parameters_login_systems['facebook_login_active'])
+                                    <a href="/auth/facebook">
+                                        <img class="w-[60px] h-[60px]" src="data/images/login_icons/facebook.png" />
+                                    </a>
+                                @endif
+
+                                @if ($parameters_login_systems['twitter_login_active'])
+                                    <a href="/auth/twitter"><img class="w-[60px] h-[60px]"
+                                            src="data/images/login_icons/twitter_icon.png" /></a>
+                                @endif
+
+                                @if ($parameters_login_systems['linkedin_login_active'])
+                                    <a href="/auth/linkedin"><img class="w-[60px] h-[60px]"
+                                            src="data/images/login_icons/linkedin_icon.png" /></a>
+                                @endif
+
+                                @if ($parameters_login_systems['google_login_active'])
+                                    <a href="/auth/google"><img class="w-[60px] h-[60px]"
+                                            src="data/images/login_icons/google_icon.png" /></a>
+                                @endif
                             @endif
 
-                            @if (Cache::get('parameters_login_systems')['twitter_login_active'])
-                                <a href="/auth/twitter"><img class="w-[60px] h-[60px]"
-                                        src="data/images/login_icons/twitter_icon.png" /></a>
-                            @endif
-
-                            @if (Cache::get('parameters_login_systems')['linkedin_login_active'])
-                                <a href="/auth/linkedin"><img class="w-[60px] h-[60px]"
-                                        src="data/images/login_icons/linkedin_icon.png" /></a>
-                            @endif
-
-                            @if (Cache::get('parameters_login_systems')['google_login_active'])
-                                <a href="/auth/google"><img class="w-[60px] h-[60px]"
-                                        src="data/images/login_icons/google_icon.png" /></a>
-                            @endif
                         </div>
 
                     </form>
@@ -148,26 +156,33 @@
         </div>
 
         <div class="flex justify-center gap-[32px] flex-wrap">
-            @if (Cache::get('parameters_login_systems')['facebook_login_active'])
-                <a href="/auth/facebook">
-                    <img class="max-w-[60px] max-h-[60px]" src="data/images/login_icons/facebook.png" />
-                </a>
+            @php
+                $parameters_login_systems = Cache::get('parameters_login_systems');
+            @endphp
+
+            @if ($parameters_login_systems)
+                @if ($parameters_login_systems['facebook_login_active'])
+                    <a href="/auth/facebook">
+                        <img class="max-w-[60px] max-h-[60px]" src="data/images/login_icons/facebook.png" />
+                    </a>
+                @endif
+
+                @if ($parameters_login_systems['twitter_login_active'])
+                    <a href="/auth/twitter"><img class="max-w-[60px] max-h-[60px]"
+                            src="data/images/login_icons/twitter_icon.png" /></a>
+                @endif
+
+                @if ($parameters_login_systems['linkedin_login_active'])
+                    <a href="/auth/linkedin"><img class="max-w-[60px] max-h-[60px]"
+                            src="data/images/login_icons/linkedin_icon.png" /></a>
+                @endif
+
+                @if ($parameters_login_systems['google_login_active'])
+                    <a href="/auth/google"><img class="max-w-[60px] max-h-[60px]"
+                            src="data/images/login_icons/google_icon.png" /></a>
+                @endif
             @endif
 
-            @if (Cache::get('parameters_login_systems')['twitter_login_active'])
-                <a href="/auth/twitter"><img class="max-w-[60px] max-h-[60px]"
-                        src="data/images/login_icons/twitter_icon.png" /></a>
-            @endif
-
-            @if (Cache::get('parameters_login_systems')['linkedin_login_active'])
-                <a href="/auth/linkedin"><img class="max-w-[60px] max-h-[60px]"
-                        src="data/images/login_icons/linkedin_icon.png" /></a>
-            @endif
-
-            @if (Cache::get('parameters_login_systems')['google_login_active'])
-                <a href="/auth/google"><img class="max-w-[60px] max-h-[60px]"
-                        src="data/images/login_icons/google_icon.png" /></a>
-            @endif
         </div>
 
     </section>
