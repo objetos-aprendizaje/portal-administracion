@@ -44,7 +44,7 @@ class RecoverPasswordController extends BaseController
         $user = UsersModel::where('email', $email)->first();
 
         if ($user) {
-            $minutes_expiration_token = env('MINUTES_EXPIRATION_TOKEN', 60);
+            $minutes_expiration_token = env('PWRES_TOKEN_EXPIRATION_MIN', 60);
             $expiration_date = date("Y-m-d H:i:s", strtotime("+$minutes_expiration_token minutes"));
 
             // invalidamos todos los tokens que estén en vigor para este usuario
