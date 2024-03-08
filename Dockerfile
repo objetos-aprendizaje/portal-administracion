@@ -17,6 +17,7 @@ RUN apt-get update && apt install --fix-missing -y \
 #	&& docker-php-ext-enable pdo \
 
 COPY ./ /var/www/html/
+COPY ./15-run-migrations.sh /etc/cont-init.d/15-run-migrations.sh
 
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 

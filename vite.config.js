@@ -61,6 +61,7 @@ export default defineConfig({
                 "resources/js/administration_module/api_keys.js",
                 "resources/js/administration_module/header_pages.js",
                 "resources/js/my_profile.js",
+                "resources/js/notifications_module/notifications_types.js",
             ],
             refresh: true,
         }),
