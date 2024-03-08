@@ -47,3 +47,6 @@ RUN chown -R www-data:www-data /var/www/html
 
 # Habilitar htaccess
 RUN a2enmod rewrite
+
+RUN printf "#!/bin/sh\n/bin/sh /etc/cont-init.d/*.sh && /usr/local/bin/docker-php-entrypoint apache2-foreground" > /startup.sh && chmod +x /startup.sh /etc/cont-init.d/*.sh
+ENTRYPOINT ["/startup.sh"]
