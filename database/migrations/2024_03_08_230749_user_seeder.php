@@ -1,22 +1,15 @@
 <?php
 
-namespace Database\Seeders;
-
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
-class UsersTableSeeder extends Seeder
-{
+return new class extends Migration {
     /**
-     * Run the database seeds.
+     * Run the migrations.
      */
-    public function run(): void
-    {
-        $user = DB::table('users')->where('email', 'admin@admin.com')->first();
-
-        if($user) return;
-
+    public function up(): void {
         $user_uid = generate_uuid();
         DB::table('users')->insert([
             'uid' => $user_uid,
@@ -34,4 +27,11 @@ class UsersTableSeeder extends Seeder
             'user_role_uid' => $admin_rol->uid,
         ]);
     }
-}
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void {
+        DB::table('users')->where('email', 'admin@admin.com')->delete();
+    }
+};
