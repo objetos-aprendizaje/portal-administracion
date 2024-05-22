@@ -23,8 +23,7 @@ document.addEventListener("DOMContentLoaded", function () {
     initHandlers();
 
     initializeCourseTypesTable();
-    controlsSearch(courseTypesTable, endPointTable, "course-types-table");
-    controlsPagination(courseTypesTable, "course-types-table");
+
 });
 
 function initHandlers() {
@@ -151,6 +150,9 @@ function initializeCourseTypesTable() {
         },
         columns: columns,
     });
+
+    controlsSearch(courseTypesTable, endPointTable, "course-types-table");
+    controlsPagination(courseTypesTable, "course-types-table");
 }
 
 async function loadCourseTypeModal(uid) {

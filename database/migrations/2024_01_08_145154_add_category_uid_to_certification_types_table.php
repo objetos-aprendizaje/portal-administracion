@@ -19,7 +19,7 @@ class AddCategoryUidToCertificationTypesTable extends Migration
             $table->foreign('category_uid')
                   ->references('uid')
                   ->on('categories')
-                  ->onDelete('set null');
+                  ->onDelete('cascade');
         });
     }
 

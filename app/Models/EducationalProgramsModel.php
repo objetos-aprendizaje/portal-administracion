@@ -14,7 +14,13 @@ class EducationalProgramsModel extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'name', 'description', 'educational_program_type_uid', 'call_uid'
+        'name', 'description', 'educational_program_type_uid', 'call_uid', 'inscription_start_date', 'inscription_finish_date', 'image_path', 'is_modular'
+    ];
+
+    public $incrementing = false;
+
+    protected $casts = [
+        'uid' => 'string',
     ];
 
     public function educationalProgramType()

@@ -3,6 +3,8 @@ import {
     updateInputFile,
     accordionControls,
     apiFetch,
+    showFormErrors,
+    resetFormErrors
 } from "../app.js";
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -215,7 +217,11 @@ function submitCarrouselDefaultForm() {
         toast: true,
     };
 
-    apiFetch(params);
+    resetFormErrors("carrousel-default-config-form");
+
+    apiFetch(params).catch((data) => {
+        showFormErrors(data.errors);
+    });;
 }
 
 function deleteFont(fontKey) {

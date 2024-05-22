@@ -42,7 +42,7 @@
             </div>
 
             <div class="flex justify-center mt-8">
-                <button id="filter-general-notifications-btn" type="button" class="btn btn-primary">
+                <button id="filter-btn" type="button" class="btn btn-primary">
                     Filtrar {{ e_heroicon('adjustments-horizontal', 'outline') }}</button>
             </div>
 

@@ -7,6 +7,8 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
 use App\Models\SuggestionSubmissionEmailsModel;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Logs\LogsController;
 
 class SuggestionsImprovementsController extends BaseController
 {
@@ -31,29 +33,34 @@ class SuggestionsImprovementsController extends BaseController
         );
     }
 
-    public function saveEmail(Request $request) {
+    public function saveEmail(Request $request)
+    {
 
         // Comprobamos si el email ya existe
         $email = $request->input('email');
 
 
-        if(!filter_var($email, FILTER_VALIDATE_EMAIL)) return response()->json(['message' => 'El email es inválido'], 406);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) return response()->json(['message' => 'El email es inválido'], 406);
 
         $exist_email = SuggestionSubmissionEmailsModel::where('email', $email)->first();
 
-        if($exist_email) return response()->json(['message' => 'El email ya existe'], 406);
+        if ($exist_email) return response()->json(['message' => 'El email ya existe'], 406);
 
         $email_envio_sugerencias = new SuggestionSubmissionEmailsModel();
         $uid = generate_uuid();
         $email_envio_sugerencias->uid = $uid;
         $email_envio_sugerencias->email = $email;
 
-        $email_envio_sugerencias->save();
+        DB::transaction(function () use ($email_envio_sugerencias) {
+            $email_envio_sugerencias->save();
+            LogsController::createLog('Añadido de email de sugerencias', 'Sugerencias y mejoras', auth()->user()->uid);
+        });
 
         return response()->json(['message' => 'Email añadido correctamente', 'uid_email_inserted' => $uid]);
     }
 
-    public function getEmails(Request $request) {
+    public function getEmails(Request $request)
+    {
 
         $size = $request->get('size', 1);
         $search = $request->get('search');
@@ -61,12 +68,12 @@ class SuggestionsImprovementsController extends BaseController
 
         $query = SuggestionSubmissionEmailsModel::query();
 
-        if($search) {
+        if ($search) {
             $query->where('email', 'LIKE', "%{$search}%");
         }
 
-        if(isset($sort) && !empty($sort)) {
-            foreach($sort as $order) {
+        if (isset($sort) && !empty($sort)) {
+            foreach ($sort as $order) {
                 $query->orderBy($order['field'], $order['dir']);
             }
         }
@@ -74,18 +81,20 @@ class SuggestionsImprovementsController extends BaseController
         $data = $query->paginate($size);
 
         return response()->json($data);
-
     }
 
     /**
      * Recibe un array de uids de emails y los elimina de la base de datos.
      */
-    public function deleteEmails(Request $request) {
+    public function deleteEmails(Request $request)
+    {
         $uids_emails = $request->input('uidsEmails');
 
-        SuggestionSubmissionEmailsModel::destroy($uids_emails);
+        DB::transaction(function () use ($uids_emails) {
+            SuggestionSubmissionEmailsModel::destroy($uids_emails);
+            LogsController::createLog('Eliminar email de sugerencias', 'Sugerencias y mejoras', auth()->user()->uid);
+        });
 
         return response()->json(['message' => 'Emails eliminados correctamente']);
     }
-
 }

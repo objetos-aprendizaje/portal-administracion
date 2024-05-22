@@ -7,8 +7,12 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
 use App\Models\GeneralOptionsModel;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Logs\LogsController;
 
-class ManagementPermissionsController extends BaseController {
+
+class ManagementPermissionsController extends BaseController
+{
     use AuthorizesRequests, ValidatesRequests;
 
     public function index()
@@ -24,7 +28,6 @@ class ManagementPermissionsController extends BaseController {
                 ],
             ]
         );
-
     }
 
     public function saveManagersPermissionsForm(Request $request)
@@ -36,9 +39,13 @@ class ManagementPermissionsController extends BaseController {
             'managers_can_manage_calls' => $request->input('managers_can_manage_calls'),
         ];
 
-        foreach ($updateData as $key => $value) {
-            GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
-        }
+        DB::transaction(function () use ($updateData) {
+            foreach ($updateData as $key => $value) {
+                GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
+            }
+
+            LogsController::createLog('Actualización permisos a gestores', 'Permisos a gestores', auth()->user()->uid);
+        });
 
         // Procesar los datos y responder (puedes devolver JSON)
         return response()->json(['message' => 'Permisos guardados correctamente']);

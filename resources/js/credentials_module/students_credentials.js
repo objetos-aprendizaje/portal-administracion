@@ -15,8 +15,7 @@ let endPointCoursesStudentTable = "/credentials/students/get_courses_student";
 
 document.addEventListener("DOMContentLoaded", () => {
     initializeStudentsCredentialsTable();
-    controlsPagination(studentsTable, "students-table");
-    controlsSearch(studentsTable, endPointStudentsTable, "students-table");
+
 });
 
 function initializeStudentsCredentialsTable() {
@@ -65,6 +64,9 @@ function initializeStudentsCredentialsTable() {
         },
         columns: columns,
     });
+
+    controlsPagination(studentsTable, "students-table");
+    controlsSearch(studentsTable, endPointStudentsTable, "students-table");
 }
 
 function loadListCoursesStudentTable(studentUid) {

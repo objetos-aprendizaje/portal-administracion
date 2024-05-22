@@ -118,6 +118,9 @@ function initializeApiKeysTable() {
         },
         columns: columns,
     });
+
+    controlsSearch(apiKeyTable, endPointTable, "api-keys-table");
+    controlsPagination(apiKeyTable, "api-keys-table");
 }
 
 async function loadApiKeyModal(apiKeyUid) {

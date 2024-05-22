@@ -7,7 +7,7 @@ import {
     getLiveSearchTomSelectInstance,
     apiFetch,
     getFilterHtml,
-    getOptionsSelectedTomSelectInstance
+    getOptionsSelectedTomSelectInstance,
 } from "../app.js";
 import {
     controlsPagination,
@@ -16,6 +16,7 @@ import {
     tabulatorBaseConfig,
     controlsSearch,
     formatDateTime,
+    getPaginationControls
 } from "../tabulator_handler";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
 import { showToast } from "../toast.js";
@@ -33,6 +34,9 @@ let selectedGeneralNotifications = [];
 let tomSelectRoles;
 let tomSelectUsers;
 
+let tomSelectRolesFilter;
+let tomSelectUsersFilter;
+
 let tomSelectNotificationTypesFilter;
 
 let filters = [];
@@ -40,12 +44,7 @@ let filters = [];
 document.addEventListener("DOMContentLoaded", function () {
     initHandlers();
     initializeGeneralNotificationsTable();
-    controlsPagination(generalNotificationsTable, "notification-general-table");
-    controlsSearch(
-        generalNotificationsTable,
-        endPointGeneralNotificationsTable,
-        "notification-general-table"
-    );
+
 
     controlTypeDestination();
 
@@ -53,9 +52,21 @@ document.addEventListener("DOMContentLoaded", function () {
     tomSelectNotificationTypesFilter = getMultipleTomSelectInstance(
         "#notification_types"
     );
+    tomSelectRolesFilter = getMultipleTomSelectInstance("#roles-filter");
 
     tomSelectUsers = getLiveSearchTomSelectInstance(
         "#users",
+        "/users/list_users/search_users/",
+        function (entry) {
+            return {
+                value: entry.uid,
+                text: `${entry.first_name} ${entry.last_name}`,
+            };
+        }
+    );
+
+    tomSelectUsersFilter = getLiveSearchTomSelectInstance(
+        "#users-filter",
         "/users/list_users/search_users/",
         function (entry) {
             return {
@@ -74,20 +85,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 value: rol.uid,
                 text: rol.name,
             });
-        });
-    });
-
-    apiFetch({
-        url: "/notifications/general/get_general_notification_types",
-        method: "GET",
-    }).then((data) => {
-        data.forEach((type) => {
-            tomSelectNotificationTypesFilter.addOption({
-                value: type.uid,
-                text: type.name,
+            tomSelectRolesFilter.addOption({
+                value: rol.uid,
+                text: rol.name,
             });
         });
     });
+
+
+
 });
 
 function initHandlers() {
@@ -142,7 +148,6 @@ function initHandlers() {
 
 function openFiltersModal() {
     showModal("filter-general-notifications-modal");
-
 }
 
 function showFilters() {
@@ -216,10 +221,55 @@ function collectFilters() {
         const notificationTypes = tomSelectNotificationTypesFilter.getValue();
 
         const selectedNotificationTypesLabel =
-            getOptionsSelectedTomSelectInstance(tomSelectNotificationTypesFilter);
+            getOptionsSelectedTomSelectInstance(
+                tomSelectNotificationTypesFilter
+            );
 
         if (notificationTypes.length)
-            addFilter("Tipos de notificación", notificationTypes, selectedNotificationTypesLabel, "notification_types", "notification_types", "notifications");
+            addFilter(
+                "Tipos de notificación",
+                notificationTypes,
+                selectedNotificationTypesLabel,
+                "notification_types",
+                "notification_types",
+                "notifications"
+            );
+    }
+
+    if (tomSelectRolesFilter) {
+        const rolesFilter = tomSelectRolesFilter.getValue();
+
+        const selectedRolesFilterLabel =
+            getOptionsSelectedTomSelectInstance(
+                tomSelectRolesFilter
+            );
+
+        if (rolesFilter.length)
+            addFilter(
+                "Roles",
+                rolesFilter,
+                selectedRolesFilterLabel,
+                "roles-filter",
+                "roles"
+            );
+    }
+
+    if (tomSelectUsersFilter) {
+        const usersFilter = tomSelectUsersFilter.getValue();
+
+        const selectedUsersFilterLabel =
+            getOptionsSelectedTomSelectInstance(
+                tomSelectUsersFilter
+            );
+
+        if (usersFilter.length)
+            addFilter(
+                "usuarios",
+                usersFilter,
+                selectedUsersFilterLabel,
+                "users-filter",
+                "users"
+            );
     }
 
     return selectedFilters;
@@ -234,18 +284,28 @@ function collectFilters() {
 function controlDeleteFilters(deleteBtn) {
     const filterKey = deleteBtn.getAttribute("data-filter-key");
 
-    let removedFilters = filters.filter((filter) => filter.filterKey === filterKey);
+    let removedFilters = filters.filter(
+        (filter) => filter.filterKey === filterKey
+    );
 
     removedFilters.forEach((removedFilter) => {
-       document.getElementById(removedFilter.filterKey).value = "";
+        document.getElementById(removedFilter.filterKey).value = "";
 
-        if(removedFilter.filterKey === "notification_types") {
+        if (removedFilter.filterKey === "notification_types") {
             tomSelectNotificationTypesFilter.clear();
+        }
+        if (removedFilter.filterKey === "roles-filter"){
+            tomSelectRolesFilter.clear();
+        }
+        if (removedFilter.filterKey === "users-filter"){
+            tomSelectUsersFilter.clear();
         }
     });
 
     filters = filters.filter((filter) => filter.filterKey !== filterKey);
     document.getElementById(filterKey).value = "";
+
+    document.getElementById('type-filter').value = "";
 
     showFilters();
     initializeGeneralNotificationsTable();
@@ -278,6 +338,23 @@ function controlTypeDestination() {
             destinationUsers.classList.remove("no-visible");
         }
     });
+
+    const selectorFilter = document.getElementById("type-filter");
+    const destinationRolesFilter = document.getElementById("destination-roles-filter");
+    const destinationUsersFilter = document.getElementById("destination-users-filter");
+
+    selectorFilter.addEventListener("change", function () {
+        const selectedValueFilter = this.value;
+
+        destinationRolesFilter.classList.add("no-visible");
+        destinationUsersFilter.classList.add("no-visible");
+
+        if (selectedValueFilter === "ROLES") {
+            destinationRolesFilter.classList.remove("no-visible");
+        } else if (selectedValueFilter === "USERS") {
+            destinationUsersFilter.classList.remove("no-visible");
+        }
+    });
 }
 
 function switchSelectorDestination(type) {
@@ -290,6 +367,17 @@ function switchSelectorDestination(type) {
         destinationRoles.classList.remove("no-visible");
     } else if (type === "USERS") {
         destinationUsers.classList.remove("no-visible");
+    }
+
+    const destinationRolesFilter = document.getElementById("destination-roles-filter");
+    const destinationUsersFilter = document.getElementById("destination-users-filter");
+    destinationRolesFilter.classList.add("no-visible");
+    destinationUsersFilter.classList.add("no-visible");
+
+    if (type === "ROLES") {
+        destinationRolesFilter.classList.remove("no-visible");
+    } else if (type === "USERS") {
+        destinationUsersFilter.classList.remove("no-visible");
     }
 }
 
@@ -309,7 +397,7 @@ function initializeListUserViewsGeneralNotificationsTable(uid) {
         { title: "Nombre", field: "first_name", widthGrow: 3 },
         { title: "Apellidos", field: "last_name", widthGrow: 4 },
         { title: "Email", field: "email", widthGrow: 3 },
-        { title: "Tipo", field: "general_notification_type", widthGrow: 3 },
+        { title: "Tipo", field: "notification_type", widthGrow: 3 },
         {
             title: "Fecha",
             field: "view_date",
@@ -390,7 +478,7 @@ function initializeGeneralNotificationsTable() {
         { title: "Titulo", field: "title", widthGrow: 2 },
         {
             title: "Tipo",
-            field: "general_notification_type_name",
+            field: "notification_type_name",
             widthGrow: 2,
         },
         { title: "Descripción", field: "description", widthGrow: 2 },
@@ -478,9 +566,15 @@ function initializeGeneralNotificationsTable() {
         },
     ];
 
+    const { ...tabulatorBaseConfigOverrided } = tabulatorBaseConfig;
+
+    const actualTableConfiguration = getPaginationControls("notification-general-table");
+    tabulatorBaseConfigOverrided.paginationSize =
+        actualTableConfiguration.paginationSize;
+
     generalNotificationsTable = new Tabulator("#notification-general-table", {
         ajaxURL: endPointGeneralNotificationsTable,
-        ...tabulatorBaseConfig,
+        ...tabulatorBaseConfigOverrided,
         ajaxParams: {
             filters: {
                 ...filters,
@@ -500,6 +594,13 @@ function initializeGeneralNotificationsTable() {
         },
         columns: columns,
     });
+
+    controlsPagination(generalNotificationsTable, "notification-general-table");
+    controlsSearch(
+        generalNotificationsTable,
+        endPointGeneralNotificationsTable,
+        "notification-general-table"
+    );
 }
 
 async function loadUserViewsGeneralNotification(uid) {
@@ -558,7 +659,8 @@ function fillFormGeneralNotificationModal(general_notification) {
         general_notification.description;
     document.getElementById("notification_general_uid").value =
         general_notification.uid;
-
+    document.getElementById("notification_type_uid").value =
+        general_notification.notification_type_uid;
     document.getElementById("start_date").value =
         general_notification.start_date;
     document.getElementById("end_date").value = general_notification.end_date;

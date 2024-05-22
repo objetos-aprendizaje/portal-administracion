@@ -10,6 +10,8 @@ use App\Models\EducationalProgramTypesModel;
 use App\Models\RedirectionQueriesEducationalProgramTypesModel;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Logs\LogsController;
 
 class RedirectionQueriesEducationalProgramTypesController extends BaseController
 {
@@ -127,7 +129,10 @@ class RedirectionQueriesEducationalProgramTypesController extends BaseController
             'educational_program_type_uid', 'type', 'contact'
         ]));
 
-        $redirection_query->save();
+        DB::transaction(function () use ($redirection_query) {
+            $redirection_query->save();
+            LogsController::createLog('Añadir redirección de consulta', 'Redirección de consultas', auth()->user()->uid);
+        });
 
         return response()->json(['message' => 'Redirección guardada correctamente']);
     }
@@ -140,9 +145,11 @@ class RedirectionQueriesEducationalProgramTypesController extends BaseController
     {
         $uids_redirection_queries = $request->input('uids');
 
-       // dd($uids_redirection_queries);
 
-        RedirectionQueriesEducationalProgramTypesModel::destroy($uids_redirection_queries);
+        DB::transaction(function () use ($uids_redirection_queries) {
+            RedirectionQueriesEducationalProgramTypesModel::destroy($uids_redirection_queries);
+            LogsController::createLog('Eliminar redirección de consulta', 'Redirección de consultas', auth()->user()->uid);
+        });
 
         return response()->json(['message' => 'Redirección eliminada correctamente']);
     }

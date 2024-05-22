@@ -8,6 +8,10 @@ import {
     getMultipleTomSelectInstance,
     instanceFlatpickr,
     apiFetch,
+    getFlatpickrDateRangeSql,
+    getFlatpickrDateRange,
+    getFilterHtml,
+    getOptionsSelectedTomSelectInstance,
 } from "../app.js";
 import {
     controlsPagination,
@@ -16,6 +20,7 @@ import {
     updatePaginationInfo,
     controlsSearch,
     formatDateTime,
+    getPaginationControls,
 } from "../tabulator_handler";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
 import { showToast } from "../toast.js";
@@ -29,6 +34,7 @@ let selectedUsers = [];
 let dateUsersFilterFlatpickr;
 let tomSelectRolesFilter;
 
+let filters = [];
 document.addEventListener("DOMContentLoaded", async function () {
     initHandlers();
 
@@ -36,8 +42,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     initializeUsersTable();
 
     initializeTomSelect();
-    controlsSearch(usersTable, endPointTable, "users-table");
-    controlsPagination(usersTable, "users-table");
+
     updateInputImage();
 });
 
@@ -74,6 +79,12 @@ function initHandlers() {
             showToast("Debe seleccionar al menos una convocatoria", "error");
         }
     });
+
+    document
+        .getElementById("filter-btn")
+        .addEventListener("click", function () {
+            controlSaveHandlerFilters();
+        });
 }
 
 /**
@@ -239,9 +250,19 @@ async function initializeUsersTable() {
             },
         ];
 
+        const { ...tabulatorBaseConfigOverrided } = tabulatorBaseConfig;
+        const actualTableConfiguration = getPaginationControls("users-table");
+        tabulatorBaseConfigOverrided.paginationSize =
+            actualTableConfiguration.paginationSize;
+
         usersTable = new Tabulator("#users-table", {
             ajaxURL: endPointTable,
-            ...tabulatorBaseConfig,
+            ...tabulatorBaseConfigOverrided,
+            ajaxParams: {
+                filters: {
+                    ...filters,
+                },
+            },
             ajaxResponse: function (url, params, response) {
                 updatePaginationInfo(usersTable, response, "users-table");
 
@@ -254,6 +275,9 @@ async function initializeUsersTable() {
             },
             columns: columns,
         });
+
+        controlsSearch(usersTable, endPointTable, "users-table");
+        controlsPagination(usersTable, "users-table");
 
         usersTable.on("dataLoaded", function () {
             resolve();
@@ -317,7 +341,7 @@ function submitFormUserModal() {
         body: formData,
         toast: true,
         loader: true,
-        url: "/users/list_users/save_user"
+        url: "/users/list_users/save_user",
     };
 
     resetFormErrors("user-form");
@@ -346,4 +370,121 @@ function resetModal() {
     document.getElementById("user_uid").value = "";
     document.getElementById("image-name").innerText =
         "Ningún archivo seleccionado";
+}
+
+/**
+ * Recoge todos los filtros aplicados en el modal de filtros.
+ * Obtiene los valores de los elementos de entrada y los añade al array
+ * de filtros seleccionados.
+ */
+function collectFilters() {
+    let selectedFilters = [];
+    /**
+     *
+     * @param {*} name nombre del filtro
+     * @param {*} value Valor correspondiente a la opción seleccionada
+     * @param {*} option Opción seleccionada
+     * @param {*} filterKey Id correspondiente al filtro y al campo input al que corresponde
+     * @param {*} database_field Nombre del campo de la BD correspondiente al filtro
+     *
+     * Añade filtros al array
+     */
+    function addFilter(name, value, option, filterKey, database_field = "") {
+        if (value && value !== "") {
+            selectedFilters.push({
+                name,
+                value,
+                option,
+                filterKey,
+                database_field,
+            });
+        }
+    }
+
+    if (dateUsersFilterFlatpickr.selectedDates.length) {
+        addFilter(
+            "Fecha de creación",
+            getFlatpickrDateRangeSql(dateUsersFilterFlatpickr),
+            getFlatpickrDateRange(dateUsersFilterFlatpickr),
+            "filter_creation_date",
+            "creation_date"
+        );
+    }
+
+    const rolesFilterSelected = tomSelectRolesFilter.getValue();
+    if (rolesFilterSelected.length) {
+        const selectedRolesLabel =
+            getOptionsSelectedTomSelectInstance(tomSelectRolesFilter);
+
+        addFilter(
+            "Roles",
+            rolesFilterSelected,
+            selectedRolesLabel,
+            "roles",
+            "roles"
+        );
+    }
+
+    return selectedFilters;
+}
+
+/**
+ * Maneja el evento de clic en el botón para aplicar los filtros.
+ * Recoge los filtros del modal, los muestra en la interfaz y vuelve a inicializar
+ * la tabla de cursos con los nuevos filtros aplicados.
+ */
+function controlSaveHandlerFilters() {
+    filters = collectFilters();
+
+    showFilters();
+    hideModal("filter-users-modal");
+
+    if (usersTable) usersTable.destroy();
+    initializeUsersTable();
+}
+
+function showFilters() {
+    let html = "";
+
+    filters.forEach((filter) => {
+        html += getFilterHtml(filter.filterKey, filter.name, filter.option);
+    });
+
+    document.getElementById("filters").innerHTML = html;
+
+    // Agregamos los listeners de eliminación a los filtros
+    document.querySelectorAll(".delete-filter-btn").forEach((deleteFilter) => {
+        deleteFilter.addEventListener("click", (event) => {
+            controlDeleteFilters(event.currentTarget);
+        });
+    });
+}
+
+/**
+ * Maneja el evento de clic para eliminar un filtro específico.
+ * Cuando se hace clic en un botón con la clase 'delete-filter-btn',
+ * este elimina el filtro correspondiente del array 'filters' y actualiza
+ * la visualización y la tabla de cursos.
+ */
+function controlDeleteFilters(deleteBtn) {
+    const filterKey = deleteBtn.getAttribute("data-filter-key");
+
+    let removedFilters = filters.filter(
+        (filter) => filter.filterKey === filterKey
+    );
+
+    removedFilters.forEach((removedFilter) => {
+        document.getElementById(removedFilter.filterKey).value = "";
+        if (removedFilter.filterKey === "roles") {
+            tomSelectRolesFilter.clear();
+        } else if (removedFilter.filterKey === "filter_creation_date") {
+            dateUsersFilterFlatpickr.clear();
+        }
+    });
+
+    filters = filters.filter((filter) => filter.filterKey !== filterKey);
+    document.getElementById(filterKey).value = "";
+
+    showFilters();
+    initializeUsersTable();
 }

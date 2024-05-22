@@ -1,5 +1,30 @@
-import { setCookie, getCookie } from './cookie_handler.js';
+import { setCookie, getCookie } from "./cookie_handler.js";
 
+document.addEventListener("DOMContentLoaded", function () {
+    setupMainMenuHoverBehavior();
+    handleSubmenuPositioning();
+
+    // Botón para contraer o desplegar menú
+    var toggleButton = document.getElementById("collapse-expand-menu-btn");
+    toggleButton.addEventListener("click", function () {
+        toggleMenu();
+    });
+
+    // Sacamos de caché el estado del menú
+    const menuStatusCookie = getCookie("menuStatus");
+    setMenuStatus(menuStatusCookie);
+
+    const menuStatusCookieShowHide = getCookie('menuStatusShowHide');
+    setMenuStatusShowHide(menuStatusCookieShowHide);
+
+
+    //boton para ocultar o desocultar el menú
+    var showHideButton = document.getElementById("toggle-menu-btn");
+    showHideButton.addEventListener("click", function () {
+        showHideMenu();
+    });
+
+});
 
 /**
  * Maneja el posicionamiento de los submenús en función de su disponibilidad en la pantalla.
@@ -13,24 +38,30 @@ function handleSubmenuPositioning() {
         menuItem.addEventListener("mouseover", function () {
             // Calcula la altura de la opción de menú actual
             var menuOptionHeight = menuItem.offsetHeight;
+
             // Encuentra el submenú asociado al elemento de menú
             var submenu = this.querySelector(".sub-menu");
 
             if (submenu) {
                 // Calcula la altura del submenú
                 var submenuHeight = submenu.offsetHeight;
-                // Calcula la posición en la que se desplegaría el submenú
+                // Calcula la altura del elemento del menú
+                var menuOptionHeight = this.offsetHeight;
+                // Calcula la posición en la que se desplegaría el submenú hacia abajo
                 var position =
                     this.getBoundingClientRect().bottom + submenuHeight;
+                // Calcula la posición en la que se desplegaría el submenú hacia arriba
+                var positionTop =
+                    this.getBoundingClientRect().top - submenuHeight;
 
-                // Verifica si el submenú se desborda de la pantalla
-                if (position > window.innerHeight) {
-                    // Ajusta el posicionamiento hacia arriba en función de las alturas
-                    submenu.style.top = `-${
-                        submenuHeight - menuOptionHeight
-                    }px`;
+                if (positionTop < 0) {
+                    // Si el submenú se desborda por la parte superior, despliégalo hacia abajo
+                    submenu.style.top = `${menuOptionHeight - menuOptionHeight}px`;
+                } else if (position > window.innerHeight) {
+                    // Si el submenú se desborda por la parte inferior, despliégalo hacia arriba
+                    submenu.style.top = `-${submenuHeight - menuOptionHeight}px`;
                 } else {
-                    // Mantén el submenú desplegado hacia abajo
+                    // Si el submenú no se desborda, despliégalo hacia abajo
                     submenu.style.top = "0px";
                 }
             }
@@ -68,52 +99,79 @@ function setupMainMenuHoverBehavior() {
     });
 }
 
-function toggleMenuCollapse() {
+/**
+ * Contrae o despliega el menú principal en función del estado actual
+ */
+function toggleMenu() {
     const menu = document.querySelector(".menu");
 
-    // Comprobar si la clase 'menu-collapsed' ya está aplicada
-    const isCollapsed = menu.classList.contains("menu-collapsed");
-
-    if (isCollapsed) {
-        // Si está colapsado, cambia a no colapsado
-        menu.classList.remove("menu-collapsed");
-        menu.classList.add("menu-non-collapsed");
-
-        document.getElementById("arrow-left").classList.remove("hidden");
-        document.getElementById("arrow-right").classList.add("hidden");
-        setCookie('menuExpanded', 1);
-    } else {
-        // Si no está colapsado, cambia a colapsado
-        menu.classList.remove("menu-non-collapsed");
-        menu.classList.add("menu-collapsed");
-
-        document.getElementById("arrow-left").classList.add("hidden");
-        document.getElementById("arrow-right").classList.remove("hidden");
-        setCookie('menuExpanded', 0);
+    if (menu.classList.contains("menu-collapsed")) {
+        setMenuStatus("menu-non-collapsed");
+    } else if (menu.classList.contains("menu-non-collapsed")) {
+        setMenuStatus("menu-collapsed");
     }
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-    setupMainMenuHoverBehavior();
-    handleSubmenuPositioning();
+/**
+ * Oculta o muestra el menú principal en función del estado actual
+ */
+function showHideMenu() {
+    const menu = document.querySelector(".menu");
 
-    // Botón para contraer o desplegar menú
-    var toggleButton = document.getElementById("collapse-expand-menu-btn");
-    toggleButton.addEventListener("click", function () {
-        toggleMenuCollapse();
-    });
+    if (menu.classList.contains("menu-show")) {
+        setMenuStatusShowHide("menu-hide");
+    }
 
-    // Mostrar u ocultar menú
-    var toggleMenuButton = document.getElementById("toggle-menu-btn");
-    var mainMenu = document.getElementById("main-menu");
-
-    toggleMenuButton.addEventListener("click", function () {
-        mainMenu.classList.toggle("hidden");
-    });
-
-    // Si el menú lo tenía desplegado
-    const menuExpandedCookie = getCookie('menuExpanded');
-    if(menuExpandedCookie == 1) toggleMenuCollapse();
+    else if (menu.classList.contains("menu-hide")) {
+        setMenuStatusShowHide("menu-show");
+    }
+}
 
 
-});
+/**
+ * Establece el estado del menú principal y lo guarda en cookie
+ */
+function setMenuStatus(status) {
+    const menu = document.querySelector(".menu");
+    const arrowLeft = document.getElementById("arrow-left");
+    const arrowRight = document.getElementById("arrow-right");
+
+    if (status == "menu-collapsed") {
+        menu.classList.add("menu-collapsed");
+        menu.classList.remove("menu-non-collapsed");
+        arrowLeft.classList.remove("hidden");
+        arrowRight.classList.add("hidden");
+    } else {
+        menu.classList.add("menu-non-collapsed");
+        menu.classList.remove("menu-collapsed");
+        arrowLeft.classList.add("hidden");
+        arrowRight.classList.remove("hidden");
+    }
+    document.getElementById(
+        "main-content"
+    ).style.marginLeft = `${menu.offsetWidth}px`;
+
+    setCookie("menuStatus", status);
+}
+
+/**
+ * Establece el estado del menú principal y lo guarda en cookie
+*/
+function setMenuStatusShowHide(status) {
+
+    const menu = document.querySelector(".menu");
+
+
+    if (status == "menu-hide") {
+        menu.classList.add("menu-hide");
+        menu.classList.remove("menu-show");
+        document.getElementById("main-content").style.marginLeft = `0px`;
+    }else{
+        menu.classList.add("menu-show");
+        menu.classList.remove("menu-hide");
+        document.getElementById("main-content").style.marginLeft = `${menu.offsetWidth}px`;
+    }
+
+    setCookie('menuStatusShowHide', status);
+
+}

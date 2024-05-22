@@ -46,6 +46,16 @@
                     </div>
                 </div>
 
+                <div class="field mt-2">
+                    <div class="label-container">
+                        <label for="contact_information">Información de contacto</label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <textarea placeholder="Información de contacto..." rows="5" class="poa-input" id="contact_information"
+                            name="contact_information"></textarea>
+                    </div>
+                </div>
+
                 <div id="call-field">
                     <div class="field mt-2">
                         <div class="label-container label-center">
@@ -76,7 +86,8 @@
                                 class="poa-select w-full">
                                 <option value="" selected>Ninguno</option>
                                 @foreach ($educational_programs as $educational_program)
-                                    <option value="{{ $educational_program['uid'] }}">{{ $educational_program['name'] }}
+                                    <option data-is_modular="{{ $educational_program['is_modular'] }}"
+                                        value="{{ $educational_program['uid'] }}">{{ $educational_program['name'] }}
                                     </option>
                                 @endforeach
                             </select>
@@ -143,30 +154,60 @@
                     </div>
 
                     <div class="content-container mt-1">
-                        <input class="poa-input" placeholder="Universidad de Murcia" type="text" id="center"
-                            name="center" />
+                        <select id="center_uid" name="center_uid" class="poa-select w-full">
+                            <option value="" selected>Selecciona centro</option>
+                            @foreach ($centers as $center)
+                                <option value="{{ $center['uid'] }}">
+                                    {{ $center['name'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <section id="inscription-dates">
+                    <div class="field mt-2">
+                        <div class="label-container label-center">
+                            <label for="inscription_start_date">Fecha de inicio de inscripción <span
+                                    class="text-danger">*</span></label>
+                        </div>
+                        <div class="content-container mt-1">
+                            <input type="datetime-local" class="poa-input" id="inscription_start_date"
+                                name="inscription_start_date" />
+                        </div>
+                    </div>
+
+                    <div class="field mt-2">
+                        <div class="label-container label-center">
+                            <label for="inscription_finish_date">Fecha de fin de inscripción <span
+                                    class="text-danger">*</span></label>
+                        </div>
+                        <div class="content-container mt-1">
+                            <input type="datetime-local" class="poa-input" id="inscription_finish_date"
+                                name="inscription_finish_date" />
+                        </div>
+                    </div>
+
+                </section>
+
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="enrolling_start_date">Fecha de inicio de matriculación <span
+                                class="text-danger">*</span></label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <input type="datetime-local" class="poa-input" id="enrolling_start_date"
+                            name="enrolling_start_date" />
                     </div>
                 </div>
 
                 <div class="field mt-2">
                     <div class="label-container label-center">
-                        <label for="inscription_start_date">Fecha de inicio de inscripción <span
+                        <label for="enrolling_finish_date">Fecha de fin de matriculación <span
                                 class="text-danger">*</span></label>
                     </div>
                     <div class="content-container mt-1">
-                        <input type="datetime-local" class="poa-input" id="inscription_start_date"
-                            name="inscription_start_date" />
-                    </div>
-                </div>
-
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="inscription_finish_date">Fecha de fin de inscripción <span
-                                class="text-danger">*</span></label>
-                    </div>
-                    <div class="content-container mt-1">
-                        <input type="datetime-local" class="poa-input" id="inscription_finish_date"
-                            name="inscription_finish_date" />
+                        <input type="datetime-local" class="poa-input" id="enrolling_finish_date"
+                            name="enrolling_finish_date" />
                     </div>
                 </div>
 
@@ -199,7 +240,7 @@
                     <div class="content-container mt-1">
 
                         <div class="poa-input-image">
-                            <img id="image_path_preview" src="/data/images/default_images/no_image_attached.svg" />
+                            <img id="image_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}" />
 
                             <span class="dimensions">*Dimensiones: Alto: 50px x Ancho: 300px. Formato: PNG, JPG. Tam.
                                 Máx.: 1MB</span>
@@ -220,6 +261,22 @@
                         </div>
                     </div>
 
+                </div>
+
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="calification_type">Tipo de calificación <span class="text-danger">*</span></label>
+                    </div>
+
+                    <div class="content-container mt-1">
+                        <div class="select-container">
+                            <select id="calification_type" name="calification_type" class="poa-select w-full">
+                                <option value="" selected>Selecciona tipo de calificación</option>
+                                <option value="NUMERICAL">Numérica</option>
+                                <option value="TEXTUAL">Textual</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="field mt-2" data-id="presentation_video_url">
@@ -308,6 +365,17 @@
 
                 <div class="field mt-2">
                     <div class="label-container label-center">
+                        <label for="contact_emails">Emails de contacto</label>
+                    </div>
+
+                    <div class="content-container mt-1">
+                        <input id="contact_emails" autocomplete="off" name="contact_emails"
+                            placeholder="Introduce emails de contacto" />
+                    </div>
+                </div>
+
+                <div class="field mt-2">
+                    <div class="label-container label-center">
                         <label for="lms_url">URL LMS</label>
                     </div>
                     <div class="content-container mt-1">
@@ -318,19 +386,32 @@
 
                 <div class="field mt-2">
                     <div class="label-container label-center">
-                        <label for="teachers">Docentes</label>
+                        <label for="teachers-no-coordinators">Docentes coordinadores</label>
                     </div>
-
                     <div class="content-container mt-1" id="teachers-container">
-                        <select id="select-teacher" class="mb-4" name="teacher[]" multiple
-                            placeholder="Selecciona un docente..." autocomplete="off">
+                        <select id="teachers-coordinators" class="mb-4" name="teacher_coordinators[]" multiple
+                            placeholder="Selecciona un docente coordinador..." autocomplete="off">
                             @foreach ($teachers as $teacher)
                                 <option value="{{ $teacher['uid'] }}">
                                     {{ $teacher['first_name'] }} {{ $teacher['last_name'] }}</option>
                             @endforeach
                         </select>
                     </div>
+                </div>
 
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="teachers-no-coordinators">Docentes no coordinadores</label>
+                    </div>
+                    <div class="content-container mt-1" id="teachers-container">
+                        <select id="teachers-no-coordinators" class="mb-4" name="teacher_no_coordinators[]" multiple
+                            placeholder="Selecciona un docente no coordinador..." autocomplete="off">
+                            @foreach ($teachers as $teacher)
+                                <option value="{{ $teacher['uid'] }}">
+                                    {{ $teacher['first_name'] }} {{ $teacher['last_name'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
 
                 <div class="field mt-2">
@@ -355,8 +436,8 @@
                         <label for="cost">Coste (€)</label>
                     </div>
                     <div class="content-container mt-1">
-                        <input type="number" placeholder="100€" class="poa-input" id="cost" name="cost"
-                            value="0" />
+                        <input type="number" placeholder="100€" step="any" class="poa-input" id="cost"
+                            name="cost" value="0" />
                     </div>
 
                 </div>
@@ -433,7 +514,7 @@
                             <div class="content-container mt-1">
                                 <div class="poa-input-image">
                                     <img id="featured_big_carrousel_image_path_preview"
-                                        src="/data/images/default_images/no_image_attached.svg" />
+                                        src="{{ env('NO_IMAGE_SELECTED_PATH') }}" />
 
                                     <div class="select-file-container">
                                         <input accept="image/*" type="file" id="featured_big_carrousel_image_path"
@@ -455,24 +536,26 @@
 
                 </section>
 
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="featured_small_carrousel">Destacar en el carrousel pequeño</label>
-                    </div>
+                <section id="carrousel-small">
+                    <div class="field mt-2">
+                        <div class="label-container label-center">
+                            <label for="featured_small_carrousel">Destacar en el carrousel pequeño</label>
+                        </div>
 
-                    <div class="content-container mt-1">
-                        <div class="checkbox">
-                            <label for="featured_small_carrousel"
-                                class="inline-flex relative items-center cursor-pointer">
-                                <input type="checkbox" id="featured_small_carrousel" name="featured_small_carrousel"
-                                    class="sr-only peer">
-                                <div
-                                    class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
-                                </div>
-                            </label>
+                        <div class="content-container mt-1">
+                            <div class="checkbox">
+                                <label for="featured_small_carrousel"
+                                    class="inline-flex relative items-center cursor-pointer">
+                                    <input type="checkbox" id="featured_small_carrousel"
+                                        name="featured_small_carrousel" class="sr-only peer">
+                                    <div
+                                        class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
+                                    </div>
+                                </label>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </section>
 
                 <h2 class="my-[40px]">Editar bloques y elementos</h2>
 
@@ -501,7 +584,8 @@
 
                                 <textarea class="block-description border-full " placeholder="Descripción del bloque"></textarea>
 
-                                <div class="border-primary border-x rounded-b border-b competences-section max-h-[]" data-order=""></div>
+                                <div class="border-primary border-x rounded-b border-b competences-section max-h-[]"
+                                    data-order=""></div>
 
                             </div>
                             <div class="sub-blocks ml-4"></div>
@@ -548,8 +632,7 @@
                     </template>
 
                     <template id="sub-element-template">
-                        <div class="composition sub-element p-4 border rounded mt-2" data-uid=""
-                            data-order="">
+                        <div class="composition sub-element p-4 border rounded mt-2" data-uid="" data-order="">
                             <div class="flex flex-col">
                                 <button type="button" class="removeSubElement btn-remove">Eliminar Sub-Elemento
                                     {{ e_heroicon('trash', 'outline') }}</button>

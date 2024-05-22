@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\CoursesUsersModel;
+use App\Http\Controllers\Logs\LogsController;
+use App\Rules\NifNie;
 
 
 class ListUsersController extends BaseController
@@ -67,6 +69,7 @@ class ListUsersController extends BaseController
         $size = $request->get('size', 1);
         $search = $request->get('search');
         $sort = $request->get('sort');
+        $filters = $request->get('filters');
 
         $query = UsersModel::query()->with('roles');
 
@@ -82,6 +85,20 @@ class ListUsersController extends BaseController
         if (isset($sort) && !empty($sort)) {
             foreach ($sort as $order) {
                 $query->orderBy($order['field'], $order['dir']);
+            }
+        }
+
+        if ($filters) {
+            foreach ($filters as $filter) {
+                if ($filter['database_field'] == 'creation_date') {
+                    if (count($filter['value']) == 2) {
+                        $query->whereBetween('created_at', [$filter['value'][0], $filter['value'][1]]);
+                    }
+                } else if ($filter['database_field'] == "roles") {
+                    $query->whereHas('roles', function ($query) use ($filter) {
+                        $query->whereIn('user_roles.uid', $filter['value']);
+                    });
+                }
             }
         }
 
@@ -125,7 +142,7 @@ class ListUsersController extends BaseController
         $rules = [
             'first_name' => 'required|string',
             'last_name' => 'required|string',
-            'nif' => 'required|string',
+            'nif' => ['required', new NifNie],
             'email' => 'required|email|unique:users,email',
             'curriculum' => 'nullable|string',
             'roles' => ['required', function ($attribute, $value, $fail) {
@@ -200,6 +217,9 @@ class ListUsersController extends BaseController
 
             $user_bd->roles()->sync($roles_to_sync);
 
+            $messageLog = $isNew ? 'Usuario añadido' : 'Usuario actualizado';
+            LogsController::createLog($messageLog, 'Usuarios', auth()->user()->uid);
+
             return response()->json(['message' => $isNew ? 'Se ha creado el usuario correctamente' : 'Se ha actualizado el usuario correctamente'], 200);
         }, 5);
     }
@@ -230,7 +250,10 @@ class ListUsersController extends BaseController
 
         $users_uids = $request->input('usersUids');
 
-        UsersModel::whereIn('uid', $users_uids)->delete();
+        return DB::transaction(function () use ($users_uids) {
+            UsersModel::whereIn('uid', $users_uids)->delete();
+            LogsController::createLog("Eliminación de usuarios", 'Usuarios', auth()->user()->uid);
+        });
 
         return response()->json(['message' => 'Se han eliminado los usuarios correctamente'], 200);
     }
@@ -252,6 +275,29 @@ class ListUsersController extends BaseController
         }
 
         $users = $users_query->limit(5)->get()->toArray();
+
+        return response()->json($users, 200);
+    }
+
+    public function searchUsersNoEnrolled($course,$search)
+    {
+
+        $users_query = UsersModel::query()->with('roles')
+            ->whereHas('roles', function ($query) {
+                $query->whereIn('code', ['STUDENT']);
+            })
+            ->where(function ($query) use ($search) {
+                $query->where('first_name', 'LIKE', "%{$search}%")
+                    ->orWhere('last_name', 'LIKE', "%{$search}%")
+                    ->orWhere('email', 'LIKE', "%{$search}%")
+                    ->orWhere('nif', 'LIKE', "%{$search}%");
+            })
+            ->whereDoesntHave('coursesStudents', function ($query) use ($course){
+                $query->where('course_uid', $course);
+            });
+
+        $users = $users_query->limit(5)->get()->toArray();
+
 
         return response()->json($users, 200);
     }

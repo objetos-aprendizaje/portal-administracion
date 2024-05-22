@@ -70,6 +70,7 @@ class Kernel extends HttpKernel
     protected $routeMiddleware = [
         'combined.auth' => \App\Http\Middleware\CombinedAuthMiddleware::class,
         'role' => \App\Http\Middleware\CheckRole::class,
+        'api_auth' => \App\Http\Middleware\CheckApiKey::class,
     ];
 
 }

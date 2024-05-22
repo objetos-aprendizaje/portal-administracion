@@ -10,6 +10,7 @@ use App\Models\EducationalProgramTypesModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Logs\LogsController;
 
 
 class EducationalProgramsController extends BaseController
@@ -70,53 +71,111 @@ class EducationalProgramsController extends BaseController
      */
     public function saveEducationalProgram(Request $request)
     {
+
+        $errors = $this->validateEducationalProgram($request);
+
+        if ($errors->any()) {
+            return response()->json(['errors' => $errors], 400);
+        }
+
+        $educational_program_uid = $request->input("educational_program_uid");
+
+        if ($educational_program_uid) {
+            $educational_program = EducationalProgramsModel::find($educational_program_uid);
+            $isNew = false;
+        } else {
+            $educational_program = new EducationalProgramsModel();
+            $educational_program_uid = generate_uuid();
+            $educational_program->uid = $educational_program_uid;
+            $isNew = true;
+        }
+
+        DB::transaction(function () use ($request, &$isNew, $educational_program) {
+            $this->handleImageUpload($request, $educational_program);
+            $this->fillEducationalProgram($request, $educational_program);
+            $this->handleCourses($request, $educational_program);
+            $this->logAction($isNew);
+        });
+
+        return response()->json(['message' => $isNew ? 'Programa formativo añadido correctamente' : 'Programa formativo actualizado correctamente']);
+    }
+
+    private function handleImageUpload($request, $educational_program)
+    {
+        if ($request->file('image_path')) {
+            $file = $request->file('image_path');
+            $path = 'images/educational-programs-images';
+
+            $destinationPath = public_path($path);
+
+            $filename = add_timestamp_name_file($file);
+
+            $file->move($destinationPath, $filename);
+
+            $educational_program->image_path = $path . "/" . $filename;
+        }
+    }
+
+    private function fillEducationalProgram($request, $educational_program)
+    {
+        $educational_program->fill($request->only([
+            'name', 'description', 'educational_program_type_uid', 'call_uid', 'inscription_start_date', 'inscription_finish_date', 'is_modular',
+        ]));
+
+        $educational_program->save();
+    }
+
+    private function handleCourses($request, $educational_program)
+    {
+        $courses = $request->input('courses');
+
+        if ($courses) {
+            CoursesModel::whereIn('uid', $courses)->update(['educational_program_uid' => $educational_program->uid]);
+            CoursesModel::whereNotIn('uid', $courses)->where('educational_program_uid', $educational_program->uid)->update(['educational_program_uid' => null]);
+        } else {
+            CoursesModel::where('educational_program_uid', $educational_program->uid)->update(['educational_program_uid' => null]);
+        }
+    }
+
+    private function logAction($isNew)
+    {
+        $logMessage = $isNew ? 'Programa formativo añadido' : 'Programa formativo actualizado';
+        LogsController::createLog($logMessage, 'Programas educativos', auth()->user()->uid);
+    }
+
+    private function validateEducationalProgram($request)
+    {
         $messages = [
             'name.required' => 'El nombre es obligatorio',
             'name.max' => 'El nombre no puede tener más de 255 caracteres',
             'educational_program_type_uid.required' => 'El tipo de programa educativo es obligatorio',
+            'inscription_start_date.required' => 'La fecha de inicio de inscripción es obligatoria',
+            'inscription_finish_date.required' => 'La fecha de fin de inscripción es obligatoria',
+            'inscription_start_date.after_or_equal' => 'La fecha de inicio de inscripción no puede ser anterior a la fecha y hora actual.',
+            'inscription_finish_date.after_or_equal' => 'La fecha de fin de inscripción no puede ser anterior a la fecha de inicio de inscripción.',
+            'is_modular.required' => 'El campo es modular es obligatorio',
         ];
 
-        $validator = Validator::make($request->all(), [
+        $rules = [
             'name' => 'required|max:255',
             'educational_program_type_uid' => 'required',
-        ], $messages);
+            'inscription_start_date' => 'required|date',
+            'inscription_finish_date' => 'required|date|after_or_equal:today',
+            'is_modular' => 'required'
+        ];
 
+        $educational_program_uid = $request->input("educational_program_uid");
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        if (!$educational_program_uid) {
+            $rules['inscription_start_date'] = 'after_or_equal:now';
+            $rules['inscription_finish_date'] = 'after_or_equal:inscription_start_date';
         }
 
-        $isNew = false;
+        $validator = Validator::make($request->all(), $rules, $messages);
 
-        DB::transaction(function () use ($request, &$isNew) {
-            $educational_program_uid = $request->input("educational_program_uid");
+        $errorsValidator = $validator->errors();
 
-            if ($educational_program_uid) {
-                $educational_program = EducationalProgramsModel::find($educational_program_uid);
-            } else {
-                $educational_program = new EducationalProgramsModel();
-                $educational_program_uid = generate_uuid();
-                $educational_program->uid = $educational_program_uid;
-                $isNew = true;
-            }
-
-            $educational_program->fill($request->only([
-                'name', 'description', 'educational_program_type_uid', 'call_uid',
-            ]));
-
-            $educational_program->save();
-
-            $courses = $request->input('courses');
-
-            if ($courses) {
-                CoursesModel::whereIn('uid', $courses)->update(['educational_program_uid' => $educational_program_uid]);
-                CoursesModel::whereNotIn('uid', $courses)->where('educational_program_uid', $educational_program_uid)->update(['educational_program_uid' => null]);
-            } else {
-                CoursesModel::where('educational_program_uid', $educational_program_uid)->update(['educational_program_uid' => null]);
-            }
-        });
-
-        return response()->json(['message' => $isNew ? 'Programa formativo añadido correctamente' : 'Programa formativo actualizado correctamente']);
+        return $errorsValidator;
     }
 
     /**
@@ -128,7 +187,12 @@ class EducationalProgramsController extends BaseController
     public function deleteEducationalPrograms(Request $request)
     {
         $uids = $request->input('uids');
-        EducationalProgramsModel::destroy($uids);
+
+        DB::transaction(function () use ($uids) {
+            EducationalProgramsModel::destroy($uids);
+            LogsController::createLog("Eliminación de programas educativos", 'Programas educativos', auth()->user()->uid);
+        });
+
         return response()->json(['message' => 'Programas formativos eliminados correctamente']);
     }
 

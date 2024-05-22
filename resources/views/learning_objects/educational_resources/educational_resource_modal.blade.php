@@ -28,11 +28,11 @@
                 </div>
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="title">Nombre</label>
+                        <label for="title">Título <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input placeholder="Cronograma curso de inglés" class="poa-input" type="text" id="name"
-                            name="name" />
+                        <input placeholder="Cronograma curso de inglés" class="poa-input" type="text" id="title"
+                            name="title" />
                     </div>
                 </div>
 
@@ -52,9 +52,10 @@
                     <div class="content-container">
 
                         <div class="poa-input-image">
-                            <img id="image_path_preview" src="/data/images/default_images/no_image_attached.svg" />
+                            <img id="image_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}" />
 
-                            <span class="dimensions">*Dimensiones: Alto: 50px x Ancho: 300px. Formato: PNG, JPG. Tam. Máx.: 1MB</span>
+                            <span class="dimensions">*Dimensiones: Alto: 50px x Ancho: 300px. Formato: PNG, JPG. Tam.
+                                Máx.: 1MB</span>
 
                             <div class="select-file-container">
                                 <input accept="image/*" type="file" id="resource_image_input_file"
@@ -77,7 +78,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="resource_way">Forma de recurso</label>
+                        <label for="resource_way">Forma de recurso <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
                         <select id="resource_way" name="resource_way" class="poa-select w-full">
@@ -126,7 +127,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="educational_resource_type_uid">Tipo</label>
+                        <label for="educational_resource_type_uid">Tipo <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
                         <select id="educational_resource_type_uid" name="educational_resource_type_uid"
@@ -181,7 +182,7 @@
 
                 <div class="field mt-2">
                     <div class="label-container label-center">
-                        <label for="teachers">Categorías</label>
+                        <label for="select-categories">Categorías</label>
                     </div>
 
                     <div class="content-container mt-1">

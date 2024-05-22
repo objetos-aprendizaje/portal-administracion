@@ -9,9 +9,11 @@ use App\Models\GeneralNotificationsModel;
 use App\Models\DestinationsGeneralNotificationsRolesModel;
 use App\Models\DestinationsGeneralNotificationsUsersModel;
 use App\Models\GeneralNotificationTypesModel;
+use App\Models\NotificationsTypesModel;
 use App\Models\UserGeneralNotificationsModel;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Logs\LogsController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,10 +25,7 @@ class GeneralNotificationsController extends BaseController
 
     public function index()
     {
-
-        $notifications = GeneralNotificationsModel::get()->toArray();
-
-        $general_notification_types = GeneralNotificationTypesModel::get();
+        $notification_types = NotificationsTypesModel::get();
 
         return view(
             'notifications.general.index',
@@ -36,11 +35,10 @@ class GeneralNotificationsController extends BaseController
                 "resources" => [
                     "resources/js/notifications_module/general_notifications.js"
                 ],
-                "notifications" => $notifications,
                 "tabulator" => true,
                 "tomselect" => true,
                 "flatpickr" => true,
-                "general_notification_types" => $general_notification_types
+                "notification_types" => $notification_types
             ]
         );
     }
@@ -54,10 +52,11 @@ class GeneralNotificationsController extends BaseController
         $filters = $request->get('filters');
 
         $query = GeneralNotificationsModel::query()
-        ->with('roles')
-        ->with('generalNotificationType')
-        ->join('general_notification_types', 'general_notifications.general_notification_type_uid', '=', 'general_notification_types.uid', 'left')
-        ->select('general_notifications.*', 'general_notification_types.name as general_notification_type_name');
+            ->with('roles')
+            ->with('users')
+            ->with('generalNotificationType')
+            ->join('notifications_types', 'general_notifications.notification_type_uid', '=', 'notifications_types.uid', 'left')
+            ->select('general_notifications.*', 'notifications_types.name as notification_type_name');
 
         if ($search) {
             $query->where(function ($query) use ($search) {
@@ -74,16 +73,24 @@ class GeneralNotificationsController extends BaseController
         if ($filters) {
             foreach ($filters as $filter) {
                 if ($filter['database_field'] == "notification_types") {
-                    $query->whereIn('general_notifications.general_notification_type_uid', $filter['value']);
-                }
-                else if($filter['database_field'] == "start_date") {
+                    $query->whereIn('general_notifications.notification_type_uid', $filter['value']);
+                } else if ($filter['database_field'] == "start_date") {
                     $query->where($filter['database_field'], '>=', $filter['value']);
-                }
-                else if($filter['database_field'] == "end_date") {
+                } else if ($filter['database_field'] == "end_date") {
                     $query->where($filter['database_field'], '<=', $filter['value']);
+                } else if ($filter['database_field'] == "roles") {
+                    $query->whereHas('roles', function ($query) use ($filter) {
+                        $query->whereIn('user_roles.uid', $filter['value']);
+                    });
+                } else if ($filter['database_field'] == "users") {
+                    $query->whereHas('users', function ($query) use ($filter) {
+                        $query->whereIn('users.uid', $filter['value']);
+                    });
                 }
             }
         }
+
+
 
         $data = $query->paginate($size);
 
@@ -104,6 +111,57 @@ class GeneralNotificationsController extends BaseController
         }
 
         return response()->json($general_notification, 200);
+    }
+
+    public function saveGeneralNotification(Request $request)
+    {
+
+        $errorsMessages = $this->validateGeneralNotification($request);
+
+        if (!empty($errorsMessages)) {
+            return response()->json(['errors' => $errorsMessages], 422);
+        }
+
+        $isNew = true;
+        $notification_general_uid = $request->get('notification_general_uid');
+
+        if ($notification_general_uid) {
+            $notification_general = GeneralNotificationsModel::find($notification_general_uid);
+            $isNew = false;
+        } else {
+            $notification_general_uid = generate_uuid();
+            $notification_general = new GeneralNotificationsModel();
+            $notification_general->uid = $notification_general_uid;
+            $isNew = true;
+        }
+
+        $notification_general->fill($request->only([
+            'title', 'description', 'start_date', 'end_date', 'type', 'notification_type_uid'
+        ]));
+
+        DB::transaction(function () use ($request, $notification_general, $isNew) {
+            $notification_general->save();
+
+            /**
+             * Si la notificación está dirigida a grupos de usuarios basados en roles,
+             * se registran las relaciones correspondientes en la tabla de roles y se eliminan
+             * las posibles relaciones previas en la tabla de usuarios. En caso contrario,
+             * se eliminan las relaciones en la tabla de roles y se registran las relaciones
+             * correspondientes en la tabla de usuarios.
+             */
+            $type = $request->get('type');
+            if ($type === 'ROLES') {
+                $this->handleRoles($request, $notification_general, $isNew);
+            } elseif ($type === 'USERS') {
+                $this->handleUsers($request, $notification_general, $isNew);
+            }
+
+            $this->createLog($isNew);
+        }, 5);
+
+        return response()->json([
+            'message' => ($isNew) ? 'Notificación general añadida correctamente' : 'Notificación general actualizada correctamente',
+        ], 200);
     }
 
     /**
@@ -179,9 +237,8 @@ class GeneralNotificationsController extends BaseController
         return response()->json($general_notification, 200);
     }
 
-    public function saveGeneralNotification(Request $request)
+    private function validateGeneralNotification($request)
     {
-
         $messages = [
             'title.required' => 'El campo titulo es obligatorio.',
             'title.min' => 'El titulo no puede tener menos de 3 caracteres.',
@@ -191,11 +248,12 @@ class GeneralNotificationsController extends BaseController
             'description.min' => 'La descripción no puede tener menos de 3 caracteres.',
             'description.max' => 'La descripción no puede tener más de 255 caracteres.',
             'start_date.required' => 'El campo fecha de inicio es obligatorio.',
+            'start_date.after_or_equal' => 'La fecha de inicio no puede ser anterior a la fecha actual.',
             'end_date.required' => 'El campo fecha de fin es obligatorio.',
             'notification_general_uid.exists' => 'El tipo de curso no exite.',
             'roles.min' => 'Debes seleccionar al menos un rol',
             'roles.required' => 'Debes seleccionar al menos un rol',
-            'general_notification_type_uid.required' => 'Debes seleccionar un tipo de notificación',
+            'notification_type_uid.required' => 'Debes seleccionar un tipo de notificación',
             'type.required' => 'Debes indicar a quién va dirigida la notificación',
         ];
 
@@ -204,12 +262,18 @@ class GeneralNotificationsController extends BaseController
                 'required', 'min:3', 'max:255',
             ],
             'description' => 'required|min:3|max:255',
-            'start_date' => 'required',
-            'end_date' => 'required',
             'notification_general_uid' => 'nullable|exists:general_notifications,uid',
+            'end_date' => 'required',
             'type' => 'required',
-            'general_notification_type_uid' => 'required'
+            'notification_type_uid' => 'required'
         ];
+
+        $notification_general_uid = $request->get('notification_general_uid');
+
+        // Si estamos creando la notificación, validamos que la fecha de inicio sea posterior a la fecha actual
+        if (!$notification_general_uid) {
+            $validator_rules['start_date'] = 'required|date|after_or_equal:today';
+        }
 
         $validator = Validator::make($request->all(), $validator_rules, $messages);
 
@@ -223,91 +287,66 @@ class GeneralNotificationsController extends BaseController
             return $input->type === 'USERS';
         });
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        $errorsMessages = $validator->errors()->messages();
+
+        return $errorsMessages;
+    }
+
+    function handleRoles($request, $notification_general, $isNew)
+    {
+        $roles_input = $request->get('roles');
+        if ($isNew) {
+            foreach ($roles_input as $rol) {
+                DestinationsGeneralNotificationsRolesModel::create([
+                    "uid" => generate_uuid(),
+                    "rol_uid" => $rol,
+                    "general_notification_uid" => $notification_general->uid
+                ]);
+            }
+        } else {
+            $roles = [];
+            foreach ($roles_input as $rol) {
+                $roles[] = [
+                    'uid' => generate_uuid(),
+                    'rol_uid' => $rol
+                ];
+            }
+            $notification_general->roles()->sync($roles);
+            $notification_general->users()->detach();
         }
+    }
 
-        $isNew = true;
+    function handleUsers($request, $notification_general, $isNew)
+    {
+        $users_input = $request->get('users');
 
-        DB::transaction(function () use ($request) {
-            $notification_general_uid = $request->get('notification_general_uid');
+        if ($isNew) {
+            foreach ($users_input as $user) {
+                DestinationsGeneralNotificationsUsersModel::create([
+                    "uid" => generate_uuid(),
+                    "user_uid" => $user,
+                    "general_notification_uid" => $notification_general->uid
+                ]);
+            }
+        } else {
+            $users = [];
 
-            if ($notification_general_uid) {
-                $notification_general = GeneralNotificationsModel::find($notification_general_uid);
-                $isNew = false;
-            } else {
-                $notification_general_uid = generate_uuid();
-                $notification_general = new GeneralNotificationsModel();
-                $notification_general->uid = $notification_general_uid;
-                $isNew = true;
+            foreach ($request->get('users') as $user) {
+                $users[] = [
+                    'uid' => generate_uuid(),
+                    'user_uid' => $user
+                ];
             }
 
-            $notification_general->fill($request->only([
-                'title', 'description', 'start_date', 'end_date', 'type', 'general_notification_type_uid'
-            ]));
+            $notification_general->users()->sync($users);
+            $notification_general->roles()->detach();
+        }
+    }
 
-            $notification_general->save();
-
-            /**
-             * Si la notificación está dirigida a grupos de usuarios basados en roles,
-             * se registran las relaciones correspondientes en la tabla de roles y se eliminan
-             * las posibles relaciones previas en la tabla de usuarios. En caso contrario,
-             * se eliminan las relaciones en la tabla de roles y se registran las relaciones
-             * correspondientes en la tabla de usuarios.
-             */
-            $type = $request->get('type');
-
-            if ($type === 'ROLES') {
-                $roles_input = $request->get('roles');
-                if ($isNew) {
-                    foreach ($roles_input as $rol) {
-                        DestinationsGeneralNotificationsRolesModel::create([
-                            "uid" => generate_uuid(),
-                            "rol_uid" => $rol,
-                            "general_notification_uid" => $notification_general_uid
-                        ]);
-                    }
-                } else {
-                    $roles = [];
-                    foreach ($roles_input as $rol) {
-                        $roles[] = [
-                            'uid' => generate_uuid(),
-                            'rol_uid' => $rol
-                        ];
-                    }
-                    $notification_general->roles()->sync($roles);
-                    $notification_general->users()->detach();
-                }
-            } elseif ($type === 'USERS') {
-                $users_input = $request->get('users');
-
-                if ($isNew) {
-                    foreach ($users_input as $user) {
-                        DestinationsGeneralNotificationsUsersModel::create([
-                            "uid" => generate_uuid(),
-                            "user_uid" => $user,
-                            "general_notification_uid" => $notification_general_uid
-                        ]);
-                    }
-                } else {
-                    $users = [];
-
-                    foreach ($request->get('users') as $user) {
-                        $users[] = [
-                            'uid' => generate_uuid(),
-                            'user_uid' => $user
-                        ];
-                    }
-
-                    $notification_general->users()->sync($users);
-                    $notification_general->roles()->detach();
-                }
-            }
-        }, 5);
-
-        return response()->json([
-            'message' => ($isNew) ? 'Notificación general añadida correctamente' : 'Notificación general actualizada correctamente',
-        ], 200);
+    function createLog($isNew)
+    {
+        $messageLog = $isNew ? 'Notificación general añadida' : 'Notificación general actualizada';
+        LogsController::createLog($messageLog, 'Notificaciones generales', auth()->user()->uid);
     }
 
     public function deleteGeneralNotifications(Request $request)
@@ -315,7 +354,10 @@ class GeneralNotificationsController extends BaseController
 
         $uids = $request->input('uids');
 
-        GeneralNotificationsModel::destroy($uids);
+        DB::transaction(function () use ($uids) {
+            GeneralNotificationsModel::destroy($uids);
+            LogsController::createLog('Eliminar notificaciones generales', 'Notificaciones generales', auth()->user()->uid);
+        });
 
         $general_notifications = GeneralNotificationsModel::get()->toArray();
 
@@ -323,9 +365,10 @@ class GeneralNotificationsController extends BaseController
     }
 
 
-    public function getGeneralNotificationTypes() {
+    public function getGeneralNotificationTypes()
+    {
 
-        $general_notification_types = GeneralNotificationTypesModel::get();
+        $general_notification_types = NotificationsTypesModel::get();
 
         return response()->json($general_notification_types, 200);
     }

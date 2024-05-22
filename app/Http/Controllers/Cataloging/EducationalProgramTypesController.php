@@ -2,12 +2,18 @@
 
 namespace App\Http\Controllers\Cataloging;
 
+use App\Exceptions\OperationFailedException;
+use App\Models\CallsEducationalProgramTypesModel;
+use App\Models\CoursesModel;
+use App\Models\EducationalProgramsModel;
 use App\Models\EducationalProgramTypesModel;
+use App\Models\RedirectionQueriesEducationalProgramTypesModel;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Validator;
-
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Logs\LogsController;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -87,8 +93,6 @@ class EducationalProgramTypesController extends BaseController
     public function saveEducationalProgramType(Request $request)
     {
 
-        //dd($request->all());
-
         $messages = [
             'name.required' => 'El campo nombre es obligatorio.',
             'name.min' => 'El nombre no puede tener menos de 3 caracteres.',
@@ -130,7 +134,12 @@ class EducationalProgramTypesController extends BaseController
             'teachers_can_emit_credentials' => $request->get('teachers_can_emit_credentials') ? 1 : 0,
         ]);
 
-        $educational_program_type->save();
+        DB::transaction(function () use ($educational_program_type, $isNew) {
+            $educational_program_type->save();
+
+            $messageLog = $isNew ? 'Añadir tipo de programa educativo' : 'Actualizar tipo de programa educativo';
+            LogsController::createLog($messageLog, 'Tipos de programas educativos', auth()->user()->uid);
+        });
 
         // Obtenemos todas los tipos
         $educational_program_types = EducationalProgramTypesModel::get()->toArray();
@@ -146,10 +155,25 @@ class EducationalProgramTypesController extends BaseController
 
         $uids = $request->input('uids');
 
-        EducationalProgramTypesModel::destroy($uids);
+        $this->checkExistence(EducationalProgramsModel::class, $uids, 'No se pueden eliminar los tipos de programa educativo porque están siendo utilizados en programas educativos');
+        $this->checkExistence(CoursesModel::class, $uids, 'No se pueden eliminar los tipos de programa educativo porque están siendo utilizados en cursos');
+        $this->checkExistence(RedirectionQueriesEducationalProgramTypesModel::class, $uids, 'No se pueden eliminar los tipos de programa educativo porque están siendo utilizados en redirecciones de consulta');
+        $this->checkExistence(CallsEducationalProgramTypesModel::class, $uids, 'No se pueden eliminar los tipos de programa educativo porque están siendo utilizados en convocatorias');
+
+        DB::transaction(function () use ($uids) {
+            EducationalProgramTypesModel::destroy($uids);
+            LogsController::createLog('Eliminar tipos de programas educativos', 'Tipos de programas educativos', auth()->user()->uid);
+        });
 
         $educational_program_types = EducationalProgramTypesModel::get()->toArray();
 
         return response()->json(['message' => 'Tipos de programa educativo eliminados correctamente', 'educational_program_types' => $educational_program_types], 200);
+    }
+
+    private function checkExistence($model, $uids, $errorMessage)
+    {
+        $exists = $model::whereIn('educational_program_type_uid', $uids)->exists();
+
+        if ($exists) throw new OperationFailedException($errorMessage, 406);
     }
 }

@@ -2,7 +2,7 @@
 @section('content')
     <div class="poa-container">
 
-        <h2>Listado de Competencias</h2>
+        <h2>Listado de Competencias y resultados de aprendizaje</h2>
 
         <div class="table-control-header">
 
@@ -26,11 +26,16 @@
         </div>
 
         <div id="list-competences">
-            {!! renderCompetences($competences_anidated) !!}
+            @include('cataloging.competences_learnings_results.competences', [
+                'competences' => $competences_anidated,
+                'first_loop' => true,
+            ])
         </div>
 
     </div>
 
-    @include('cataloging.competences.competence_modal')
+    @include('cataloging.competences_learnings_results.competence_modal')
+    @include('cataloging.competences_learnings_results.learning_result_modal')
+
     @include('partials.modal-confirmation')
 @endsection

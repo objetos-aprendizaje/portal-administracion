@@ -47,17 +47,8 @@ return new class extends Migration
         $table->foreign('category_uid')->references('uid')->on('categories');
     });
 
-    Schema::table('categories', function (Blueprint $table) {
-        $table->foreign('parent_category_uid')->references('uid')->on('course_categories');
-    });
-
     Schema::table('course_edition_relationships', function (Blueprint $table) {
         $table->foreign('course_uid')->references('uid')->on('courses');
-    });
-
-    Schema::table('educational_resource_categories', function (Blueprint $table) {
-        $table->foreign('educational_resource_uid')->references('uid')->on('educational_resources')->name('educational_resource_category_fk');
-        $table->foreign('category_uid')->references('uid')->on('categories');
     });
 
     Schema::table('course_contact_emails', function (Blueprint $table) {

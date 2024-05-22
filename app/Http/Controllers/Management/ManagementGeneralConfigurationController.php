@@ -9,6 +9,8 @@ use App\Models\UsersModel;
 use App\Models\AutomaticResourceAprovalUsersModel;
 use App\Models\GeneralOptionsModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Logs\LogsController;
 
 class ManagementGeneralConfigurationController extends BaseController
 {
@@ -50,9 +52,13 @@ class ManagementGeneralConfigurationController extends BaseController
             'necessary_approval_editions' => $request->input('necessary_approval_editions'),
         ];
 
-        foreach ($updateData as $key => $value) {
-            GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
-        }
+        return DB::transaction(function () use ($updateData) {
+            foreach ($updateData as $key => $value) {
+                GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
+            }
+
+            LogsController::createLog('Guardar opciones generales', 'Configuración general de gestión', auth()->user()->uid);
+        });
 
         return response()->json(['message' => 'Datos guardados correctamente']);
     }
@@ -64,15 +70,19 @@ class ManagementGeneralConfigurationController extends BaseController
         // Primero eliminamos los UIDs que no están en la lista enviada
         AutomaticResourceAprovalUsersModel::whereNotIn('user_uid', $uidUsers)->delete();
 
-        // Luego insertamos o actualizamos los que sí están
-        foreach ($uidUsers as $uidUser) {
-            AutomaticResourceAprovalUsersModel::updateOrInsert(
-                ['user_uid' => $uidUser],
-                ['uid' => generate_uuid()]
-            );
-        }
+        return DB::transaction(function () use ($uidUsers) {
+
+            // Luego insertamos o actualizamos los que sí están
+            foreach ($uidUsers as $uidUser) {
+                AutomaticResourceAprovalUsersModel::updateOrInsert(
+                    ['user_uid' => $uidUser],
+                    ['uid' => generate_uuid()]
+                );
+            }
+
+            LogsController::createLog('Guardar profesores con aprobación automática', 'Configuración general de gestión', auth()->user()->uid);
+        });
 
         return response()->json(['message' => 'Profesores guardados correctamente']);
     }
-
 }

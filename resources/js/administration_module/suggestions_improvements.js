@@ -14,7 +14,6 @@ let selectedEmails = [];
 document.addEventListener("DOMContentLoaded", async function () {
     initHandlers();
     initializeEmailsSuggestionsTable();
-    controlsPagination(table, "list-emails");
 
 });
 
@@ -95,6 +94,8 @@ async function initializeEmailsSuggestionsTable() {
         },
         columns: columns,
     });
+
+    controlsPagination(table, "list-emails");
 }
 
 async function deleteBulkEmails() {

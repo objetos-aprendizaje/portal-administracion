@@ -26,7 +26,7 @@ function submitFormPayments() {
         loader: true,
     };
 
-    resetFormErrors();
+    resetFormErrors("payments-form");
 
     apiFetch(params).catch((data) => {
         showFormErrors(data.errors);

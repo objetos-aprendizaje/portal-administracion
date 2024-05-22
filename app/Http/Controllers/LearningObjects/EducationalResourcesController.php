@@ -12,6 +12,7 @@ use App\Models\EducationalResourceTypesModel;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Logs\LogsController;
 
 
 class EducationalResourcesController extends BaseController
@@ -42,15 +43,18 @@ class EducationalResourcesController extends BaseController
     {
         $size = $request->get('size', 10);
         $search = $request->get('search');
-        $query = EducationalResourcesModel::with(["status", "type"])
+        $query = EducationalResourcesModel::with(["status", "type", "categories"])
             ->join('educational_resource_statuses as status', 'educational_resources.status_uid', '=', 'status.uid')
             ->join("educational_resource_types as type", "educational_resources.educational_resource_type_uid", "=", "type.uid");
 
         $sort = $request->get('sort');
+        $filters = $request->get('filters');
 
         if ($search) {
-            $query->where('name', 'LIKE', "%{$search}%");
+            $query->where('title', 'LIKE', "%{$search}%");
         }
+
+        if ($filters) $this->applyFilters($filters, $query);
 
         if (isset($sort) && !empty($sort)) {
             foreach ($sort as $order) {
@@ -62,8 +66,20 @@ class EducationalResourcesController extends BaseController
 
         $data = $query->paginate($size);
 
-
         return response()->json($data, 200);
+    }
+
+    private function applyFilters($filters, &$query)
+    {
+        foreach ($filters as $filter) {
+            if ($filter['database_field'] == "categories") {
+                $query->whereHas('categories', function ($query) use ($filter) {
+                    $query->whereIn('categories.uid', $filter['value']);
+                });
+            } else {
+                $query->where($filter['database_field'], $filter['value']);
+            }
+        }
     }
 
     /**
@@ -85,12 +101,56 @@ class EducationalResourcesController extends BaseController
         return response()->json($resource, 200);
     }
 
-
     public function saveResource(Request $request)
     {
 
+        $errorsValidators = $this->validateResource($request);
+
+        if (!empty($errorsValidators)) {
+            return response()->json(['errors' => $errorsValidators], 422);
+        }
+
+        $uid_resource = $request->educational_resource_uid;
+        $isNew = !$uid_resource;
+
+        if ($isNew) {
+            $resource = new EducationalResourcesModel();
+            $resource->uid = generate_uuid();
+            $resource->creator_user_uid = auth()->user()->uid;
+        } else {
+            $resource = EducationalResourcesModel::where('uid', $uid_resource)->with('categories')->first();
+        }
+
+        // Comprobamos el nuevo estado que le corresponde al curso.
+        $action = $request->input('action');
+
+        if ($isNew) {
+            $new_resource_status = $this->getNewResourceStatus($action);
+            $resource->status_uid = $new_resource_status->uid;
+        } else {
+            $actual_status_course = $resource->status['code'];
+            $new_resource_status = $this->getExistingResourceStatus($actual_status_course, $action);
+            $resource->status_uid = $new_resource_status->uid;
+        }
+
+        return DB::transaction(function () use ($request, $resource, $isNew) {
+            $this->handleResourceImage($request, $resource);
+            $this->fillResourceDetails($request, $resource);
+            $this->handleResourceWay($request, $resource);
+            $resource->save();
+            $this->handleTags($request, $resource);
+            $this->handleMetadata($request, $resource);
+            $this->handleCategories($request, $resource);
+            $this->createLog($isNew);
+
+            return response()->json(['message' => 'Recurso añadido correctamente']);
+        }, 5);
+    }
+
+    private function validateResource($request)
+    {
         $messages = [
-            'name.required' => 'El nombre del recurso es obligatorio',
+            'title.required' => 'El título del recurso es obligatorio',
             'educational_resource_type_uid.required' => 'El tipo de recurso es obligatorio',
             'resource_way' => 'La forma del recurso es obligatoria',
             'resource_input_file.required' => 'Debes adjuntar un fichero',
@@ -101,14 +161,13 @@ class EducationalResourcesController extends BaseController
         $resource_way = $request->resource_way;
 
         $rules = [
-            'name' => 'required|string',
+            'title' => 'required|string',
             'educational_resource_type_uid' => 'required|string',
             'resource_way' => 'required|string',
         ];
 
         $uid_resource = $request->educational_resource_uid;
 
-        $isNew = !$uid_resource;
         // En función del tipo de recurso, establecemos como obligatorio adjuntar un archivo o URL
         if (!$uid_resource && $resource_way == 'FILE') {
             $rules['resource_input_file'] = 'required';
@@ -143,137 +202,138 @@ class EducationalResourcesController extends BaseController
             $errorsValidators = array_merge($errorsValidators, $validator->errors()->toArray());
         }
 
-        if (!empty($errorsValidators)) {
-            return response()->json(['errors' => $errorsValidators], 422);
-        }
+        return $errorsValidators;
+    }
 
-        if ($isNew) {
-            $resource = new EducationalResourcesModel();
-            $resource->uid = generate_uuid();
-            $resource->creator_user_uid = auth()->user()->uid;
-        } else {
-            $resource = EducationalResourcesModel::where('uid', $uid_resource)->with('categories')->first();
-        }
 
-        // Comprobamos el nuevo estado que le corresponde al curso.
-        $action = $request->input('action');
+    function getExistingResourceStatus($actual_status_course, $action)
+    {
+        if (!in_array($actual_status_course, ['INTRODUCTION', 'UNDER_CORRECTION_APPROVAL'])) abort(403);
 
         $pending_approval = EducationalResourceStatusesModel::where('code', 'PENDING_APPROVAL')->first();
         $introduction = EducationalResourceStatusesModel::where('code', 'INTRODUCTION')->first();
 
-        if (!$isNew) {
-            $actual_status_course = $resource->status['code'];
-            if(!in_array($actual_status_course, ['INTRODUCTION', 'UNDER_CORRECTION_APPROVAL'])) abort(403);
-
-            switch ($actual_status_course) {
-                case 'UNDER_CORRECTION_APPROVAL':
-                    $new_resource_status = $pending_approval;
-                    break;
-                case 'INTRODUCTION':
-                    $new_resource_status = $action == "submit" ? $pending_approval : null;
-                    break;
-                default:
-                    $new_resource_status = $introduction;
-                    break;
-            }
-
+        if ($actual_status_course == 'UNDER_CORRECTION_APPROVAL') {
+            return $pending_approval;
+        } else if ($actual_status_course == 'INTRODUCTION' && $action == "submit") {
+            return $pending_approval;
         } else {
-            $new_resource_status = $action == "submit" ? $pending_approval : $introduction;
+            return $introduction;
         }
+    }
 
-        if($new_resource_status) $resource->status_uid = $new_resource_status->uid;
+    function getNewResourceStatus($action)
+    {
 
-        return DB::transaction(function () use ($request, $resource) {
-            //Fichero de imagen
-            $resource_image_input_file = $request->file('resource_image_input_file');
-            if ($resource_image_input_file) {
-                $resource->image_path = saveFile($resource_image_input_file, "attachments/resources", null, true);
-            }
+        if ($action == "submit") {
+            $pending_approval = EducationalResourceStatusesModel::where('code', 'PENDING_APPROVAL')->first();
+            return $pending_approval;
+        } else {
+            $introduction = EducationalResourceStatusesModel::where('code', 'INTRODUCTION')->first();
+            return $introduction;
+        }
+    }
 
-            $resource->fill($request->only([
-                "name", "description", "educational_resource_type_uid", "license_type", "resource_way"
-            ]));
+    function handleResourceImage($request, $resource)
+    {
+        $resource_image_input_file = $request->file('resource_image_input_file');
+        if ($resource_image_input_file) {
+            $resource->image_path = saveFile($resource_image_input_file, "images/resources-images", null, true);
+        }
+    }
 
-            // Si es FILE, ponemos a null el campo de URL. Si es URL, ponemos a null el campo FILE
-            if ($request->resource_way == 'FILE') {
-                $resource_input_file = $request->file('resource_input_file');
+    function fillResourceDetails($request, $resource)
+    {
+        $resource->fill($request->only([
+            "title", "description", "educational_resource_type_uid", "license_type", "resource_way"
+        ]));
+    }
 
-                if ($resource_input_file) $resource->resource_path = saveFile($resource_input_file, "attachments/resources", null, true);
+    function handleResourceWay($request, $resource)
+    {
+        if ($request->resource_way == 'FILE') {
+            $resource_input_file = $request->file('resource_input_file');
 
-                $resource->resource_url = null;
-            } elseif ($request->resource_way == 'URL') {
-                $resource->resource_url = $request->resource_url;
-                $resource->resource_path = null;
-            }
+            if ($resource_input_file) $resource->resource_path = saveFile($resource_input_file, "attachments/resources", null, true);
 
-            $resource->save();
+            $resource->resource_url = null;
+        } elseif ($request->resource_way == 'URL') {
+            $resource->resource_url = $request->resource_url;
+            $resource->resource_path = null;
+        }
+    }
 
-            // Obtener los tags desde el frontend y decodificar el JSON a un array
-            $tags = $request->input('tags');
-            $tags = json_decode($tags, true);
+    function handleTags($request, $resource)
+    {
+        $tags = $request->input('tags');
+        $tags = json_decode($tags, true);
 
-            // Verificar si hay tags
-            if (!empty($tags)) {
-                // Obtener los tags actuales del curso desde la BD
-                $current_tags = EducationalResourcesTagsModel::where('educational_resource_uid', $resource->uid)->pluck('tag')->toArray();
+        if (!empty($tags)) {
+            $current_tags = EducationalResourcesTagsModel::where('educational_resource_uid', $resource->uid)->pluck('tag')->toArray();
 
-                // Identificar qué tags son nuevos y cuáles deben ser eliminados
-                $tags_to_add = array_diff($tags, $current_tags);
-                $tags_to_delete = array_diff($current_tags, $tags);
+            $tags_to_add = array_diff($tags, $current_tags);
+            $tags_to_delete = array_diff($current_tags, $tags);
 
-                // Eliminar los tags que ya no son necesarios
-                EducationalResourcesTagsModel::where('educational_resource_uid', $resource->uid)->whereIn('tag', $tags_to_delete)->delete();
+            EducationalResourcesTagsModel::where('educational_resource_uid', $resource->uid)->whereIn('tag', $tags_to_delete)->delete();
 
-                // Preparar el array para la inserción masiva de nuevos tags
-                $insertData = [];
-                foreach ($tags_to_add as $tag) {
-                    $insertData[] = [
-                        'uid' => generate_uuid(),
-                        'educational_resource_uid' => $resource->uid,
-                        'tag' => $tag
-                    ];
-                }
-
-                // Insertar todos los nuevos tags en una única operación de BD
-                EducationalResourcesTagsModel::insert($insertData);
-            } else {
-                // Si no hay tags, eliminar todos los tags asociados a este curso
-                EducationalResourcesTagsModel::where('educational_resource_uid', $resource->uid)->delete();
-            }
-
-            // metadata
-            $metadata = $request->input('metadata');
-            $metadata = json_decode($metadata, true);
-            $resource->updateMetadata($metadata);
-
-            // Categorías
-            $categories = $request->input('categories');
-            $categories = json_decode($categories, true);
-
-            $categories_bd = CategoriesModel::whereIn('uid', $categories)->get()->pluck('uid');
-
-            EducationalResourceCategoriesModel::where('educational_resource_uid', $resource->uid)->delete();
-
-            $categories_to_sync = [];
-            foreach ($categories_bd as $category_uid) {
-                $categories_to_sync[] = [
+            $insertData = [];
+            foreach ($tags_to_add as $tag) {
+                $insertData[] = [
                     'uid' => generate_uuid(),
                     'educational_resource_uid' => $resource->uid,
-                    'category_uid' => $category_uid
+                    'tag' => $tag
                 ];
             }
 
-            $resource->categories()->sync($categories_to_sync);
+            EducationalResourcesTagsModel::insert($insertData);
+        } else {
+            EducationalResourcesTagsModel::where('educational_resource_uid', $resource->uid)->delete();
+        }
+    }
 
-            return response()->json(['message' => 'Recurso añadido correctamente']);
-        }, 5);
+    function handleMetadata($request, $resource)
+    {
+        $metadata = $request->input('metadata');
+        $metadata = json_decode($metadata, true);
+        $resource->updateMetadata($metadata);
+    }
+
+    function handleCategories($request, $resource)
+    {
+        $categories = $request->input('categories');
+        $categories = json_decode($categories, true);
+
+        $categories_bd = CategoriesModel::whereIn('uid', $categories)->get()->pluck('uid');
+
+        EducationalResourceCategoriesModel::where('educational_resource_uid', $resource->uid)->delete();
+
+        $categories_to_sync = [];
+        foreach ($categories_bd as $category_uid) {
+            $categories_to_sync[] = [
+                'uid' => generate_uuid(),
+                'educational_resource_uid' => $resource->uid,
+                'category_uid' => $category_uid
+            ];
+        }
+
+        $resource->categories()->sync($categories_to_sync);
+    }
+
+    function createLog($isNew)
+    {
+        $logMessage = $isNew ? 'Recurso educativo añadido' : 'Recurso educativo actualizado';
+        LogsController::createLog($logMessage, 'Recursos educativos', auth()->user()->uid);
     }
 
     public function deleteResources()
     {
         $resources_uids = request()->input('resourcesUids');
 
-        EducationalResourcesModel::whereIn('uid', $resources_uids)->delete();
+        DB::transaction(function () use ($resources_uids) {
+            EducationalResourcesModel::whereIn('uid', $resources_uids)->delete();
+            LogsController::createLog("Eliminación de recursos educativos", 'Recursos educativos', auth()->user()->uid);
+        });
+
         return response()->json(['message' => 'Recursos eliminados correctamente']);
     }
 
@@ -322,16 +382,20 @@ class EducationalResourcesController extends BaseController
             ];
         }
 
-        // Guardamos en la base de datos los cambios
-        foreach ($updated_resources_data as $data) {
-            EducationalResourcesModel::updateOrInsert(
-                ['uid' => $data['uid']],
-                [
-                    'status_uid' => $data['resource_status_uid'],
-                    'status_reason' => $data['reason']
-                ]
-            );
-        }
+        DB::transaction(function () use ($updated_resources_data) {
+            // Guardamos en la base de datos los cambios
+            foreach ($updated_resources_data as $data) {
+                EducationalResourcesModel::updateOrInsert(
+                    ['uid' => $data['uid']],
+                    [
+                        'status_uid' => $data['resource_status_uid'],
+                        'status_reason' => $data['reason']
+                    ]
+                );
+            }
+
+            LogsController::createLog("Cambio de estado de recursos educativos", 'Recursos educativos', auth()->user()->uid);
+        });
 
         return response()->json(['message' => 'Se han actualizado los estados de los recursos correctamente'], 200);
     }

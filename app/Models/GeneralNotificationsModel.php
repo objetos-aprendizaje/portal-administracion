@@ -14,8 +14,14 @@ class GeneralNotificationsModel extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'title', 'description', 'start_date', 'end_date', 'type', 'general_notification_type_uid'
+        'title', 'description', 'start_date', 'end_date', 'type', 'notification_type_uid'
     ];
+
+    protected $casts = [
+        'uid' => 'string',
+    ];
+
+    public $incrementing = false;
 
 
     public function roles()
@@ -44,7 +50,7 @@ class GeneralNotificationsModel extends Model
 
     public function generalNotificationType()
     {
-        return $this->belongsTo(GeneralNotificationTypesModel::class, 'general_notification_type_uid', 'uid');
+        return $this->belongsTo(NotificationsTypesModel::class, 'notification_type_uid', 'uid');
     }
 
 }

@@ -8,6 +8,8 @@
 
     <style>
         :root {
+            --color-hover: #507ab9;
+
             --primary-color: {{ env('COLOR_PRIMARY') }};
             --secondary-color: {{ env('COLOR_SECONDARY') }};
         }
@@ -28,13 +30,12 @@
 
     @vite(['resources/css/app.css', 'resources/scss/app.scss', 'resources/css/toastify.css', 'resources/js/cookie_handler.js', 'resources/js/app.js', 'resources/js/menu.js', 'resources/js/modal_handler.js', 'resources/js/loading_handler.js', 'resources/js/notifications_handler.js', 'resources/js/refresh_csrf_token.js'])
 
-    @if (isset($js_variables) && is_array($js_variables))
-        @foreach ($js_variables as $key => $value)
-            <script>
-                let {{ $key }} = @json($value);
-            </script>
-        @endforeach
-
+    @if (isset($variables_js))
+        <script>
+            @foreach ($variables_js as $name => $value)
+                window['{{ $name }}'] = @json($value);
+            @endforeach
+        </script>
     @endif
 
     @if (isset($tabulator) && $tabulator)
@@ -64,6 +65,10 @@
         @vite(['node_modules/choices.js/public/assets/styles/choices.min.css', 'node_modules/choices.js/public/assets/scripts/choices.min.js'])
     @endif
 
+    @if (isset($treeselect) && $treeselect)
+        @vite(['node_modules/treeselectjs/dist/treeselectjs.css'])
+    @endif
+
 </head>
 
 <body>
@@ -74,10 +79,10 @@
     </div>
 
     @include('partials.header')
-
-    <div class="flex">
+    <div>
         @include('partials.menu')
-        <div class="bg-[#EEEEEE] p-8 flex-1">
+
+        <div class="bg-[#EEEEEE] p-8" id="main-content">
             @yield('content')
         </div>
     </div>

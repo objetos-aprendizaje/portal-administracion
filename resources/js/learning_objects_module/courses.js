@@ -13,6 +13,7 @@ import {
     updateArrayRecords,
     handleHeaderClick,
     formatDateTime,
+    getPaginationControls,
 } from "../tabulator_handler.js";
 import {
     getCsrfToken,
@@ -34,12 +35,14 @@ import {
     getLiveSearchTomSelectInstance,
     getOptionsSelectedTomSelectInstance,
     checkParamInUrl,
-    wipeParamsInUrl
+    wipeParamsInUrl,
+    getMultipleFreeEmailsTomSelectInstance,
+    getMultipleFreeTomSelectInstance,
 } from "../app.js";
 import { heroicon } from "../heroicons.js";
-import TomSelect from "tom-select";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
 import { showToast } from "../toast.js";
+import Treeselect from "treeselectjs";
 
 let selectedCourses = [];
 let selectedCourseStudents = [];
@@ -47,32 +50,49 @@ let coursesTable;
 let courseStudensTable;
 
 const endPointTable = "/learning_objects/courses/get_courses";
-const endPointStudentTable = "/learning_objects/courses/get_course_students/";
+const endPointStudentTable = "/learning_objects/courses/get_course_students";
 const coursesTableId = "courses-table";
 
 let tomSelectTags;
-let tomSelectTeachers;
+
+let tomSelectNoCoordinatorsTeachers;
+let tomSelectCoordinatorsTeachers;
+
 let tomSelectCategories;
+let tomSelectContactEmails;
 
 let tomSelectCategoriesFilter;
-let tomSelectTeachersFilter;
+
+let tomSelectNoCoordinatorsTeachersFilter;
+let tomSelectCoordinatorsTeachersFilter;
+
 let tomSelectCreatorsFilter;
+let tomSelectCourseStatusesFilter;
+let tomSelectCallsFilter;
+let tomSelectEducationalProgramsFilter;
+let tomSelectCourseTypesFilter;
 
 let flatpickrInscriptionDate;
 let flatpickrRealizationDate;
 
 let filters = [];
 let competences = [];
+
+let selectedCompetencesFilter = [];
+let competencesTreeSelect;
+
+let selectedCourseUid = null;
+
+let tomSelectUsersToEnroll;
+
 document.addEventListener("DOMContentLoaded", async function () {
     initHandlers();
     initializeCoursesTable();
-    controlsSearch(coursesTable, endPointTable, "courses-table");
-    controlsPagination(coursesTable, "courses-table");
     controlsHandlerModalCourse();
     initializeTomSelect();
     updateInputImage();
-    controlSaveHandlerFilters();
     initializeFlatpickrDates();
+    initializeTreeSelect();
     controlChecksCarrousels();
     dropdownButtonToogle();
     controlCriteriaArea();
@@ -80,12 +100,41 @@ document.addEventListener("DOMContentLoaded", async function () {
     updateInputValuesSelects();
 
     getAllCompetences();
+    syncTomSelectsTeachers();
 
     // Si recibimos un uid en la URL, cargamos el curso
     const courseUid = checkParamInUrl("uid");
     wipeParamsInUrl();
     if (courseUid) loadCourseModal(courseUid);
 });
+
+function initializeTreeSelect() {
+    const optionsCompetencesTreeSelect = convertCompetencesToOptions(
+        window.competences
+    );
+
+    competencesTreeSelect = new Treeselect({
+        parentHtmlContainer: document.getElementById("treeselect-competences"),
+        options: optionsCompetencesTreeSelect,
+        showTags: false,
+        tagsCountText: "competencias seleccionadas",
+        searchable: false,
+        iconElements: {},
+        placeholder: "Seleccione competencias",
+        value: [],
+        inputCallback: function (competences) {
+            selectedCompetencesFilter = competences;
+        },
+    });
+}
+
+function convertCompetencesToOptions(competences) {
+    return competences.map((competence) => ({
+        name: competence.name,
+        value: competence.uid,
+        children: convertCompetencesToOptions(competence.subcompetences),
+    }));
+}
 
 function getAllCompetences() {
     const params = {
@@ -133,17 +182,6 @@ function initHandlers() {
         });
 
     document
-        .getElementById("filtrar-btn")
-        .addEventListener("click", function () {
-            filters = collectFilters();
-
-            showFilters();
-            hideModal("filter-courses-modal");
-
-            initializeCoursesTable();
-        });
-
-    document
         .getElementById("filter-courses-btn")
         .addEventListener("click", function () {
             showModal("filter-courses-modal");
@@ -168,6 +206,82 @@ function initHandlers() {
     document
         .querySelector(".document-list")
         .addEventListener("click", removeDocument);
+
+    document
+        .getElementById("delete-all-filters")
+        .addEventListener("click", function () {
+            resetFilters();
+        });
+
+    document
+        .getElementById("filter-btn")
+        .addEventListener("click", function () {
+            controlSaveHandlerFilters();
+        });
+
+    // Cuando se selecciona programa, no son necesarias las fechas de inscripción
+    document
+        .getElementById("educational_program_uid")
+        .addEventListener("change", function () {
+            controlInscriptionDates(this.value ? false : true);
+        });
+
+    document
+        .getElementById("educational_program_uid")
+        .addEventListener("change", function () {
+            var selectedOption = this.querySelector("option:checked");
+            const value = this.value;
+
+            if (!value) showCarrousels(true);
+            else {
+                var isModular =
+                    selectedOption.getAttribute("data-is_modular") === "1";
+                showCarrousels(isModular);
+            }
+        });
+    document
+        .getElementById("enroll-students-btn")
+        .addEventListener("click", function () {
+            showModal("enroll-course-modal");
+            tomSelectUsersToEnroll = getLiveSearchTomSelectInstance(
+                "#enroll_students",
+                "/users/list_users/search_users_no_enrolled/"+selectedCourseUid+"/",
+                function (entry) {
+                    return {
+                        value: entry.uid,
+                        text: `${entry.first_name} ${entry.last_name}`,
+                    };
+                }
+            );
+        });
+
+    document
+        .getElementById("enroll-btn")
+        .addEventListener("click", function () {
+            enrollStudentsToCourse();
+        });
+
+    document
+        .getElementById("enroll-students-csv-btn")
+        .addEventListener("click", function () {
+            showModal("enroll-course-csv-modal");
+        });
+
+    document
+        .getElementById("enroll-course-csv-btn")
+        .addEventListener("click", function () {
+            enrollStudentsCsv();
+        });
+}
+
+function showCarrousels(showCarrousels) {
+    if (!showCarrousels) {
+        document.getElementById("carrousel-big").style.display = "none";
+        document.getElementById("carrousel-small").style.display = "none";
+    } else {
+        document.getElementById("carrousel-big").style.display = "block";
+        document.getElementById("carrousel-small").style.display = "block";
+    }
 }
 
 function addDocument() {
@@ -391,10 +505,53 @@ function controlDeleteFilters(deleteBtn) {
     const filterKey = deleteBtn.getAttribute("data-filter-key");
 
     filters = filters.filter((filter) => filter.filterKey !== filterKey);
-    document.getElementById(filterKey).value = "";
+
+    if (filterKey == "calls") tomSelectCallsFilter.clear();
+    else if (filterKey == "course_statuses")
+        tomSelectCourseStatusesFilter.clear();
+    else if (filterKey == "educational_programs")
+        tomSelectEducationalProgramsFilter.clear();
+    else if (filterKey == "course_types") tomSelectCourseTypesFilter.clear();
+    else if (filterKey == "creators") tomSelectCreatorsFilter.clear();
+    else if (filterKey == "filter_inscription_date")
+        flatpickrInscriptionDate.clear();
+    else if (filterKey == "filter_realization_date")
+        flatpickrRealizationDate.clear();
+    else if (filterKey == "filter_competences") {
+        selectedCompetencesFilter = [];
+        competencesTreeSelect.updateValue([]);
+    } else if (filterKey == "coordinators_teachers")
+        tomSelectCoordinatorsTeachersFilter.clear();
+    else if (filterKey == "no_coordinators_teachers")
+        tomSelectNoCoordinatorsTeachersFilter.clear();
+    else document.getElementById(filterKey).value = "";
 
     showFilters();
     initializeCoursesTable();
+}
+
+function resetFilters() {
+    filters = [];
+    showFilters();
+    initializeCoursesTable();
+
+    tomSelectCallsFilter.clear();
+    tomSelectCourseStatusesFilter.clear();
+    tomSelectCourseTypesFilter.clear();
+    tomSelectCreatorsFilter.clear();
+    flatpickrInscriptionDate.clear();
+    flatpickrRealizationDate.clear();
+    tomSelectNoCoordinatorsTeachersFilter.clear();
+    tomSelectCoordinatorsTeachersFilter.clear();
+    competencesTreeSelect.updateValue([]);
+
+    document.getElementById("filter_min_ects_workload").value = "";
+    document.getElementById("filter_max_ects_workload").value = "";
+    document.getElementById("filter_min_cost").value = "";
+    document.getElementById("filter_max_cost").value = "";
+    document.getElementById("filter_min_required_students").value = "";
+    document.getElementById("filter_max_required_students").value = "";
+    document.getElementById("filter_center").value = "";
 }
 
 /**
@@ -412,41 +569,55 @@ function initializeFlatpickrDates() {
  * la tabla de cursos con los nuevos filtros aplicados.
  */
 function controlSaveHandlerFilters() {
-    document
-        .getElementById("filtrar-btn")
-        .addEventListener("click", function () {
-            filters = collectFilters();
+    filters = collectFilters();
 
-            showFilters();
-            hideModal("filter-courses-modal");
+    showFilters();
+    hideModal("filter-courses-modal");
 
-            initializeCoursesTable();
-        });
+    initializeCoursesTable();
 }
 
 /**
  * Muestra los filtros aplicados en la interfaz de usuario.
  * Recorre el array de 'filters' y genera el HTML para cada filtro,
- * permitiendo su visualización y posterior eliminación.
+ * permitiendo su visualización y posterior eliminación. Además muestra u oculta
+ * el botón de eliminación de filtros
  */
 function showFilters() {
-    let html = "";
+    // Eliminamos todos los filtros
+    var currentFilters = document.querySelectorAll(".filter");
+
+    // Recorre cada elemento y lo elimina
+    currentFilters.forEach(function (filter) {
+        filter.remove();
+    });
 
     filters.forEach((filter) => {
-        html += `
-            <div class="filter" id="${filter.filterKey}">
-                <div>${filter.name}: ${filter.option}</div>
-                <button data-filter-key="${
-                    filter.filterKey
-                }" class="delete-filter-btn">${heroicon(
+        // Crea un nuevo div
+        var newDiv = document.createElement("div");
+
+        // Agrega la clase 'filter' al div
+        newDiv.classList.add("filter");
+
+        // Establece el HTML del nuevo div
+        newDiv.innerHTML = `
+            <div>${filter.name}: ${filter.option}</div>
+            <button data-filter-key="${
+                filter.filterKey
+            }" class="delete-filter-btn">${heroicon(
             "x-mark",
             "outline"
         )}</button>
-            </div>
         `;
+
+        // Agrega el nuevo div al div existente
+        document.getElementById("filters").prepend(newDiv);
     });
 
-    document.getElementById("filters").innerHTML = html;
+    const deleteAllFiltersBtn = document.getElementById("delete-all-filters");
+
+    if (filters.length == 0) deleteAllFiltersBtn.classList.add("hidden");
+    else deleteAllFiltersBtn.classList.remove("hidden");
 
     // Agregamos los listeners de eliminación a los filtros
     document.querySelectorAll(".delete-filter-btn").forEach((deleteFilter) => {
@@ -462,8 +633,6 @@ function showFilters() {
  * de filtros seleccionados.
  */
 function collectFilters() {
-    let selectElement, selectedOption;
-
     let selectedFilters = [];
     /**
      *
@@ -487,47 +656,6 @@ function collectFilters() {
             });
         }
     }
-    selectElement = document.getElementById("filter_course_status_uid");
-    selectedOption = selectElement.options[selectElement.selectedIndex];
-    addFilter(
-        "Estado del curso",
-        selectElement.value,
-        selectedOption.text,
-        "filter_course_status_uid",
-        "status.uid"
-    );
-
-    selectElement = document.getElementById("filter_call_uid");
-    selectedOption = selectElement.options[selectElement.selectedIndex];
-    addFilter(
-        "Convocatoria",
-        selectElement.value,
-        selectedOption.text,
-        "filter_call_uid",
-        "call_uid"
-    );
-
-    selectElement = document.getElementById(
-        "filter_educational_program_type_uid"
-    );
-    selectedOption = selectElement.options[selectElement.selectedIndex];
-    addFilter(
-        "Tipo de programa educativo",
-        selectElement.value,
-        selectedOption.text,
-        "filter_educational_program_type_uid",
-        "educational_program_type_uid"
-    );
-
-    selectElement = document.getElementById("filter_course_type_uid");
-    selectedOption = selectElement.options[selectElement.selectedIndex];
-    addFilter(
-        "Tipo de curso",
-        selectElement.value,
-        selectedOption.text,
-        "filter_course_type_uid",
-        "course_type_uid"
-    );
 
     if (flatpickrInscriptionDate.selectedDates.length)
         addFilter(
@@ -547,17 +675,18 @@ function collectFilters() {
             "realization_date"
         );
 
-    selectElement = document.getElementById(
+    let selectElementValidateStudents = document.getElementById(
         "filter_validate_student_registrations"
     );
-    selectedOption = selectElement.options[selectElement.selectedIndex];
-    addFilter(
-        "Validar registro de estudiantes",
-        selectElement.value,
-        selectedOption.text,
-        "filter_validate_student_registrations",
-        "validate_student_registrations"
-    );
+    if (selectElementValidateStudents.value) {
+        addFilter(
+            "Validar registro de estudiantes",
+            selectElementValidateStudents.value,
+            selectElementValidateStudents.value == "1" ? "Sí" : "No",
+            "filter_validate_student_registrations",
+            "validate_student_registrations"
+        );
+    }
 
     const filter_min_ects_workload = document.getElementById(
         "filter_min_ects_workload"
@@ -568,7 +697,8 @@ function collectFilters() {
             "Mínimo ECTS",
             filter_min_ects_workload,
             filter_min_ects_workload,
-            "filter_min_ects_workload"
+            "filter_min_ects_workload",
+            "min_ects_workload"
         );
     }
 
@@ -581,7 +711,8 @@ function collectFilters() {
             "Máximo ECTS",
             filter_max_ects_workload,
             filter_max_ects_workload,
-            "filter_max_ects_workload"
+            "filter_max_ects_workload",
+            "max_ects_workload"
         );
     }
 
@@ -591,7 +722,8 @@ function collectFilters() {
             "Coste mínimo",
             filter_min_cost,
             filter_min_cost,
-            "filter_min_cost"
+            "filter_min_cost",
+            "min_cost"
         );
 
     const filter_max_cost = document.getElementById("filter_max_cost").value;
@@ -600,7 +732,8 @@ function collectFilters() {
             "Coste máximo",
             filter_max_cost,
             filter_max_cost,
-            "filter_max_cost"
+            "filter_max_cost",
+            "max_cost"
         );
 
     // Collect values from TomSelects
@@ -621,20 +754,41 @@ function collectFilters() {
             );
     }
 
-    if (tomSelectTeachersFilter) {
-        const teachers = tomSelectTeachersFilter.getValue();
+    if (tomSelectCoordinatorsTeachersFilter) {
+        const teachersCoordinators =
+            tomSelectCoordinatorsTeachersFilter.getValue();
 
-        const selectedTeachersLabel = getOptionsSelectedTomSelectInstance(
-            tomSelectTeachersFilter
-        );
+        const selectedCoordinatorsTeachersLabel =
+            getOptionsSelectedTomSelectInstance(
+                tomSelectCoordinatorsTeachersFilter
+            );
 
-        if (teachers.length)
+        if (teachersCoordinators.length)
             addFilter(
-                "Docentes",
-                tomSelectTeachersFilter.getValue(),
-                selectedTeachersLabel,
-                "Teachers",
-                "teachers"
+                "Docentes coordinadores",
+                tomSelectCoordinatorsTeachersFilter.getValue(),
+                selectedCoordinatorsTeachersLabel,
+                "coordinators_teachers",
+                "coordinators_teachers"
+            );
+    }
+
+    if (tomSelectNoCoordinatorsTeachersFilter) {
+        const teachersNoCoordinators =
+            tomSelectNoCoordinatorsTeachersFilter.getValue();
+
+        const selectedNoCoordinatorsTeachersLabel =
+            getOptionsSelectedTomSelectInstance(
+                tomSelectNoCoordinatorsTeachersFilter
+            );
+
+        if (teachersNoCoordinators.length)
+            addFilter(
+                "Docentes no coordinadores",
+                tomSelectNoCoordinatorsTeachersFilter.getValue(),
+                selectedNoCoordinatorsTeachersLabel,
+                "no_coordinators_teachers",
+                "no_coordinators_teachers"
             );
     }
 
@@ -656,6 +810,79 @@ function collectFilters() {
         }
     }
 
+    if (tomSelectCourseStatusesFilter) {
+        const courseStatuses = tomSelectCourseStatusesFilter.getValue();
+
+        const selectedCourseStatusesLabel = getOptionsSelectedTomSelectInstance(
+            tomSelectCourseStatusesFilter
+        );
+
+        if (courseStatuses.length) {
+            addFilter(
+                "Estados",
+                tomSelectCourseStatusesFilter.getValue(),
+                selectedCourseStatusesLabel,
+                "course_statuses",
+                "course_statuses"
+            );
+        }
+    }
+
+    if (tomSelectCallsFilter) {
+        const calls = tomSelectCallsFilter.getValue();
+
+        const selectedCallsLabel =
+            getOptionsSelectedTomSelectInstance(tomSelectCallsFilter);
+
+        if (calls.length) {
+            addFilter(
+                "Convocatorias",
+                tomSelectCallsFilter.getValue(),
+                selectedCallsLabel,
+                "calls",
+                "calls"
+            );
+        }
+    }
+
+    if (tomSelectEducationalProgramsFilter) {
+        const educationalPrograms =
+            tomSelectEducationalProgramsFilter.getValue();
+
+        const selectedEducationalProgramsLabel =
+            getOptionsSelectedTomSelectInstance(
+                tomSelectEducationalProgramsFilter
+            );
+
+        if (educationalPrograms.length) {
+            addFilter(
+                "Programas educativos",
+                tomSelectEducationalProgramsFilter.getValue(),
+                selectedEducationalProgramsLabel,
+                "educational_programs",
+                "educational_programs"
+            );
+        }
+    }
+
+    if (tomSelectCourseTypesFilter) {
+        const courseTypes = tomSelectCourseTypesFilter.getValue();
+
+        const selectedCourseTypesLabel = getOptionsSelectedTomSelectInstance(
+            tomSelectCourseTypesFilter
+        );
+
+        if (courseTypes.length) {
+            addFilter(
+                "Tipos de curso",
+                tomSelectCourseTypesFilter.getValue(),
+                selectedCourseTypesLabel,
+                "course_types",
+                "course_types"
+            );
+        }
+    }
+
     const filter_min_required_students = document.getElementById(
         "filter_min_required_students"
     ).value;
@@ -665,7 +892,8 @@ function collectFilters() {
             "Mínimo estudiantes requeridos",
             filter_min_required_students,
             filter_min_required_students,
-            "filter_min_required_students"
+            "filter_min_required_students",
+            "min_required_students"
         );
     }
 
@@ -678,20 +906,34 @@ function collectFilters() {
             "Máximo estudiantes requeridos",
             filter_max_required_students,
             filter_max_required_students,
-            "filter_max_required_students"
+            "filter_max_required_students",
+            "max_required_students"
         );
     }
 
-    const filter_center = document.getElementById("filter_center").value;
+    let selectElementCenter = document.getElementById("filter_center");
+    if (selectElementCenter.value) {
+        let selectedOptionText =
+            selectElementCenter.options[selectElementCenter.selectedIndex].text;
 
-    if (filter_center)
         addFilter(
             "Centro",
-            filter_center,
-            filter_center,
+            selectElementCenter.value,
+            selectedOptionText,
             "filter_center",
-            "center"
+            "center_uid"
         );
+    }
+
+    if (selectedCompetencesFilter.length) {
+        addFilter(
+            "Competencias seleccionadas",
+            selectedCompetencesFilter,
+            selectedCompetencesFilter.length,
+            "filter_competences",
+            "competences"
+        );
+    }
 
     return selectedFilters;
 }
@@ -702,37 +944,43 @@ function collectFilters() {
  * Configura varios aspectos como la creación de opciones y la eliminación.
  */
 function initializeTomSelect() {
-    tomSelectTags = new TomSelect("#tags", {
-        persist: false,
-        createOnBlur: true,
-        create: true,
-        plugins: {
-            remove_button: {
-                title: "Eliminar",
-            },
-        },
-        render: {
-            no_results: function (data, escape) {
-                return "";
-            },
-            option_create: function (data, escape) {
-                return (
-                    '<div class="create">Añadir <strong>' +
-                    escape(data.input) +
-                    "</strong>&hellip;</div>"
-                );
-            },
-        },
-    });
+    tomSelectTags = getMultipleFreeTomSelectInstance("#tags");
 
-    tomSelectTeachers = getMultipleTomSelectInstance("#select-teacher");
+    tomSelectContactEmails =
+        getMultipleFreeEmailsTomSelectInstance("#contact_emails");
+
+    tomSelectNoCoordinatorsTeachers = getMultipleTomSelectInstance(
+        "#teachers-no-coordinators"
+    );
+    tomSelectCoordinatorsTeachers = getMultipleTomSelectInstance(
+        "#teachers-coordinators"
+    );
 
     tomSelectCategories = getMultipleTomSelectInstance("#select-categories");
 
     tomSelectCategoriesFilter =
         getMultipleTomSelectInstance("#filter_categories");
 
-    tomSelectTeachersFilter = getMultipleTomSelectInstance("#filter_teachers");
+    tomSelectCoordinatorsTeachersFilter = getMultipleTomSelectInstance(
+        "#filter_coordinators_teachers"
+    );
+    tomSelectNoCoordinatorsTeachersFilter = getMultipleTomSelectInstance(
+        "#filter_no_coordinators_teachers"
+    );
+
+    tomSelectCourseStatusesFilter = getMultipleTomSelectInstance(
+        "#filter_courses_statuses"
+    );
+
+    tomSelectCallsFilter = getMultipleTomSelectInstance("#filter_calls");
+
+    tomSelectEducationalProgramsFilter = getMultipleTomSelectInstance(
+        "#filter_educational_program_types"
+    );
+
+    tomSelectCourseTypesFilter = getMultipleTomSelectInstance(
+        "#filter_course_types"
+    );
 
     tomSelectCreatorsFilter = getLiveSearchTomSelectInstance(
         "#filter_creators",
@@ -744,6 +992,7 @@ function initializeTomSelect() {
             };
         }
     );
+
 }
 
 /**
@@ -796,6 +1045,7 @@ function controlsHandlerModalCourse() {
 function initializeCoursesTable() {
     if (coursesTable) coursesTable.destroy();
 
+
     const columns = [
         {
             title: '<div class="checkbox-cell"><input type="checkbox" id="select-all-checkbox"/></div>',
@@ -828,18 +1078,19 @@ function initializeCoursesTable() {
             headerSort: false,
             width: 60,
         },
-        { title: "Nombre", field: "title", widthGrow: 3 },
+        { title: "Título", field: "title", resizable: true,
+            width: 600,
+        },
         {
             title: "Estado",
-            field: "status.name",
+            field: "status_name",
             formatter: function (cell, formatterParams, onRendered) {
                 const color = getStatusCourseColor(
-                    cell.getRow().getData().status.code
+                    cell.getRow().getData().status_code
                 );
-
                 return `
                 <div class="label-status" style="background-color:${color}">${
-                    cell.getRow().getData().status.name
+                    cell.getRow().getData().status_name
                 }</div>
                 `;
             },
@@ -866,7 +1117,276 @@ function initializeCoursesTable() {
             widthGrow: 3,
         },
         {
-            title: "",
+            title: "Convocatoria",
+            field: "calls_name",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                return data;
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "Programa educativo",
+            field: "educational_programs_name",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                return data;
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "Tipo de programa educativo",
+            field: "educational_program_types_name",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                return data;
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "Tipo de curso",
+            field: "course_types_name",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                return data;
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "Mínimo de estudiantes requeridos",
+            field: "min_required_students",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                return data;
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "Centro",
+            field: "centers_name",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                return data;
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "Fecha de inicio de inscripción",
+            field: "inscription_start_date",
+            formatter: function (cell, formatterParams, onRendered) {
+                const isoDate = cell.getValue();
+                if (!isoDate) return "";
+                return formatDateTime(isoDate);
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "Fecha de fin de inscripción",
+            field: "inscription_finish_date",
+            formatter: function (cell, formatterParams, onRendered) {
+                const isoDate = cell.getValue();
+                if (!isoDate) return "";
+                return formatDateTime(isoDate);
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "Fecha de inicio de matriculación",
+            field: "enrolling_start_date",
+            formatter: function (cell, formatterParams, onRendered) {
+                const isoDate = cell.getValue();
+                if (!isoDate) return "";
+                return formatDateTime(isoDate);
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "Fecha de fin de matriculación",
+            field: "enrolling_finish_date",
+            formatter: function (cell, formatterParams, onRendered) {
+                const isoDate = cell.getValue();
+                if (!isoDate) return "";
+                return formatDateTime(isoDate);
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "Tipo de calificación",
+            field: "calification_type",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                if (data == "NUMERICAL"){
+                    return "Numérica";
+                }else{
+                    return "Textual";
+                }
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "Video de presentación",
+            field: "presentation_video_url",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                if (data) {
+                    return "<a href='"+data+"' target='_blank'>Enlace</a>";
+                }
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "Validar registros de estudiantes",
+            field: "validate_student_registrations",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                return data;
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "Validar registros de estudiantes",
+            field: "ects_workload",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                return data;
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "Etiquetas",
+            field: "tags",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                const tagsArray = [];
+                data.forEach(item => {
+                    tagsArray.push(item.tag);
+                });
+                return tagsArray.join(", ");
+            },
+            widthGrow: 3,
+            visible:false,
+            headerSort: false
+        },
+        {
+            title: "Emails de contacto",
+            field: "contact_emails",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                const emailsArray = [];
+                data.forEach(item => {
+                    emailsArray.push(item.email);
+                });
+                return emailsArray.join(", ");
+            },
+            widthGrow: 3,
+            visible:false,
+            headerSort: false
+        },
+        {
+            title: "URL de LSM",
+            field: "lsm_url",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                if (data) {
+                    return "<a href='"+data+"' target='_blank'>Enlace</a>";
+                }
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "Docentes coordinadores",
+            field: "teachers_coordinate",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                const fullNames = data.map(professor => `${professor.first_name} ${professor.last_name}`);
+                const concatenatedNames = fullNames.join(", ");
+                return concatenatedNames;
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "Docentes no coordinadores",
+            field: "teachers_no_coordinate",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                const fullNames = data.map(professor => `${professor.first_name} ${professor.last_name}`);
+                const concatenatedNames = fullNames.join(", ");
+                return concatenatedNames;
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+
+        {
+            title: "Categorias",
+            field: "categories",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                const categoriesArray = [];
+                data.forEach(item => {
+                    categoriesArray.push(item.name);
+                });
+                return categoriesArray.join(", ");
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "Coste",
+            field: "cost",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                return data+" €";
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "Destacar en el carrousel grande",
+            field: "featured_big_carousel",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                if (data == 0){
+                    return "No"
+                }else{
+                    return "Si"
+                }
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "Destacar en el carrousel pequeño",
+            field: "featured_small_carousel",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                if (data == 0){
+                    return "No"
+                }else{
+                    return "Si"
+                }
+            },
+            widthGrow: 3,
+            visible:false,
+        },
+        {
+            title: "<span class='cursor-pointer'>COL</span>",
             field: "actions",
             formatter: function (cell, formatterParams, onRendered) {
                 return `<button type="button" class='btn action-btn'>${heroicon(
@@ -879,6 +1399,9 @@ function initializeCoursesTable() {
 
                 const courseClicked = cell.getRow().getData();
                 loadCourseModal(courseClicked.uid);
+            },
+            headerClick:function(e, column){
+                controlColumnsSecectorModal();
             },
             cssClass: "text-center",
             headerSort: false,
@@ -969,10 +1492,15 @@ function initializeCoursesTable() {
         },
     ];
 
-    const { ajaxConfig, ...tabulatorBaseConfigOverrided } = tabulatorBaseConfig;
+    const { ...tabulatorBaseConfigOverrided } = tabulatorBaseConfig;
+
+    const actualTableConfiguration = getPaginationControls("courses-table");
+    tabulatorBaseConfigOverrided.paginationSize =
+        actualTableConfiguration.paginationSize;
 
     coursesTable = new Tabulator("#courses-table", {
         ...tabulatorBaseConfigOverrided,
+        layout: "fitDataStretch",
         ajaxURL: endPointTable,
         ajaxConfig: {
             method: "POST",
@@ -986,7 +1514,6 @@ function initializeCoursesTable() {
             },
         },
         ajaxResponse: function (url, params, response) {
-            controlsPagination(coursesTable, coursesTableId);
             updatePaginationInfo(coursesTable, response, coursesTableId);
 
             document.getElementById("select-all-checkbox").checked = false;
@@ -1000,6 +1527,9 @@ function initializeCoursesTable() {
         },
         columns: columns,
     });
+
+    controlsPagination(coursesTable, "courses-table");
+    controlsSearch(coursesTable, endPointTable, "courses-table");
 }
 
 /**
@@ -1012,7 +1542,7 @@ function updateSelectedCourses(checkbox, rowData) {
             selectedCourses.push({
                 uid: rowData.uid,
                 name: rowData.title,
-                status: rowData.status.code,
+                status: rowData.status_code,
             });
         }
     } else {
@@ -1035,7 +1565,7 @@ function duplicateCourse(courseUid) {
     };
 
     apiFetch(params).then(() => {
-        coursesTable.replaceData(endPointTable);
+        reloadTableCourses();
     });
 }
 
@@ -1049,8 +1579,12 @@ function newEditionCourse(courseUid) {
     };
 
     apiFetch(params).then(() => {
-        coursesTable.replaceData(endPointTable);
+        reloadTableCourses();
     });
+}
+
+function reloadTableCourses() {
+    coursesTable.replaceData(endPointTable);
 }
 
 /**
@@ -1099,11 +1633,18 @@ function fillFormCourseModal(course) {
     document.getElementById("course_uid").value = course.uid;
     document.getElementById("title").value = course.title;
     document.getElementById("description").value = course.description;
+    document.getElementById("contact_information").value = course.contact_information;
 
-    document.getElementById("inscription_start_date").value =
-        course.inscription_start_date.substring(0, 16);
-    document.getElementById("inscription_finish_date").value =
-        course.inscription_finish_date.substring(0, 16);
+    if (course.inscription_start_date) {
+        document.getElementById("inscription_start_date").value =
+            course.inscription_start_date.substring(0, 16);
+    }
+
+    if (course.inscription_finish_date) {
+        document.getElementById("inscription_finish_date").value =
+            course.inscription_finish_date.substring(0, 16);
+    }
+
     document.getElementById("realization_start_date").value =
         course.realization_start_date.substring(0, 16);
     document.getElementById("realization_finish_date").value =
@@ -1116,16 +1657,21 @@ function fillFormCourseModal(course) {
         showCallField(operationByCalls);
     }
 
-    if (course.educational_program_uid)
-        document.getElementById("educational_program_uid").value =
-            course.educational_program_uid;
+    // Si el curso tiene un programa educativo, deshabilita las fechas de inscripción
+    if (course.educational_program_uid) {
+        controlInscriptionDates(false);
+    }
+    document.getElementById("educational_program_uid").value =
+        course.educational_program_uid;
 
     document.getElementById("educational_program_type_uid").value =
         course.educational_program_type_uid;
     document.getElementById("course_type_uid").value = course.course_type_uid;
-    document.getElementById("center").value = course.center;
+    document.getElementById("center_uid").value = course.center_uid;
     document.getElementById("presentation_video_url").value =
         course.presentation_video_url;
+    document.getElementById("calification_type").value =
+        course.calification_type;
     document.getElementById("objectives").value = course.objectives;
     document.getElementById("validate_student_registrations").value =
         course.validate_student_registrations;
@@ -1141,13 +1687,6 @@ function fillFormCourseModal(course) {
 
     showBigCarrouselInfo(course.featured_big_carrousel);
 
-    document.getElementById("featured_big_carrousel_title").value =
-        course.featured_big_carrousel_title;
-    document.getElementById("featured_big_carrousel_description").value =
-        course.featured_big_carrousel_description;
-    document.getElementById("featured_small_carrousel").checked =
-        course.featured_small_carrousel;
-
     const validateStudentsRegistrations = course.validate_student_registrations
         ? true
         : false;
@@ -1162,11 +1701,19 @@ function fillFormCourseModal(course) {
 
     if (course.teachers) {
         course.teachers.forEach((teacher) => {
-            tomSelectTeachers.addOption({
-                value: teacher.uid,
-                text: teacher.name,
-            });
-            tomSelectTeachers.addItem(teacher.uid);
+            if (teacher.pivot.type == "NO_COORDINATOR") {
+                tomSelectNoCoordinatorsTeachers.addOption({
+                    value: teacher.uid,
+                    text: teacher.name,
+                });
+                tomSelectNoCoordinatorsTeachers.addItem(teacher.uid);
+            } else if (teacher.pivot.type == "COORDINATOR") {
+                tomSelectCoordinatorsTeachers.addOption({
+                    value: teacher.uid,
+                    text: teacher.name,
+                });
+                tomSelectCoordinatorsTeachers.addItem(teacher.uid);
+            }
         });
     }
 
@@ -1187,6 +1734,16 @@ function fillFormCourseModal(course) {
         });
     }
 
+    if (course.contact_emails) {
+        course.contact_emails.forEach((contact_email) => {
+            tomSelectContactEmails.addOption({
+                value: contact_email.email,
+                text: contact_email.email,
+            });
+            tomSelectContactEmails.addItem(contact_email.email);
+        });
+    }
+
     if (course.image_path) {
         document.getElementById("image_path_preview").src =
             "/" + course.image_path;
@@ -1194,14 +1751,35 @@ function fillFormCourseModal(course) {
         document.getElementById("image_path_preview").src = defaultImagePreview;
     }
 
-    if (course.featured_big_carrousel_image_path) {
-        document.getElementById(
-            "featured_big_carrousel_image_path_preview"
-        ).src = "/" + course.featured_big_carrousel_image_path;
-    } else {
+    if (course.educational_program && !course.educational_program.is_modular) {
+        showCarrousels(false);
+
+        document.getElementById("featured_big_carrousel_title").value = "";
+        document.getElementById("featured_big_carrousel_description").value =
+            "";
+        document.getElementById("featured_small_carrousel").checked = false;
+
         document.getElementById(
             "featured_big_carrousel_image_path_preview"
         ).src = defaultImagePreview;
+    } else {
+        showCarrousels(true);
+        document.getElementById("featured_big_carrousel_title").value =
+            course.featured_big_carrousel_title;
+        document.getElementById("featured_big_carrousel_description").value =
+            course.featured_big_carrousel_description;
+        document.getElementById("featured_small_carrousel").checked =
+            course.featured_small_carrousel;
+
+        if (course.featured_big_carrousel_image_path) {
+            document.getElementById(
+                "featured_big_carrousel_image_path_preview"
+            ).src = "/" + course.featured_big_carrousel_image_path;
+        } else {
+            document.getElementById(
+                "featured_big_carrousel_image_path_preview"
+            ).src = defaultImagePreview;
+        }
     }
 
     if (course.blocks) loadStructureCourse(course.blocks);
@@ -1241,8 +1819,20 @@ function submitFormCourseModal(event) {
     const tags = tomSelectTags.items;
     formData.append("tags", JSON.stringify(tags));
 
-    const teachers = tomSelectTeachers.items;
-    formData.append("teachers", JSON.stringify(teachers));
+    const contactEmails = tomSelectContactEmails.items;
+    formData.append("contact_emails", JSON.stringify(contactEmails));
+
+    const teachersNoCoordinators = tomSelectNoCoordinatorsTeachers.items;
+    formData.append(
+        "teacher_no_coordinators",
+        JSON.stringify(teachersNoCoordinators)
+    );
+
+    const teachersCoordinators = tomSelectCoordinatorsTeachers.items;
+    formData.append(
+        "teacher_coordinators",
+        JSON.stringify(teachersCoordinators)
+    );
 
     const categories = tomSelectCategories.items;
     formData.append("categories", JSON.stringify(categories));
@@ -1289,7 +1879,7 @@ function submitFormCourseModal(event) {
 
     apiFetch(params)
         .then(() => {
-            coursesTable.replaceData(endPointTable);
+            reloadTableCourses();
             hideModal("course-modal");
         })
         .catch((data) => {
@@ -1315,7 +1905,18 @@ function changeStatusesCourses() {
         const status = course.status;
 
         let optionsStatuses = [];
-        if (status === "PENDING_APPROVAL") {
+
+        if (
+            [
+                "PENDING_APPROVAL",
+                "ACCEPTED",
+                "REJECTED",
+                "UNDER_CORRECTION_APPROVAL",
+                "PENDING_PUBLICATION",
+                "UNDER_CORRECTION_PUBLICATION",
+                "ACCEPTED_PUBLICATION",
+            ].includes(status)
+        ) {
             optionsStatuses = [
                 {
                     label: "Aceptado",
@@ -1329,16 +1930,10 @@ function changeStatusesCourses() {
                     label: "En subsanación para aprobación",
                     value: "UNDER_CORRECTION_APPROVAL",
                 },
-            ];
-        } else if (status === "ACCEPTED") {
-            optionsStatuses = [
                 {
                     label: "Pendiente de publicación",
                     value: "PENDING_PUBLICATION",
                 },
-            ];
-        } else if (status === "PENDING_PUBLICATION") {
-            optionsStatuses = [
                 {
                     label: "En subsanación para publicación",
                     value: "UNDER_CORRECTION_PUBLICATION",
@@ -1348,13 +1943,11 @@ function changeStatusesCourses() {
                     value: "ACCEPTED_PUBLICATION",
                 },
             ];
-        } else if (status === "UNDER_CORRECTION_PUBLICATION") {
-            optionsStatuses = [
-                {
-                    label: "Aceptado para publicación",
-                    value: "ACCEPTED_PUBLICATION",
-                },
-            ];
+
+            // Excluímos el estado actual
+            optionsStatuses = optionsStatuses.filter(
+                (option) => option.value !== status
+            );
         }
 
         // Se podrá retirar un curso en cualquier estado
@@ -1363,31 +1956,54 @@ function changeStatusesCourses() {
             value: "RETIRED",
         });
 
-        coursesList.innerHTML += `
-                <div class="mb-5 bg-gray-100 p-4 rounded-xl">
-                <h4>${course.name}</h4>
+        // Clonamos la plantilla de cambio de estado de curso
+        let statusCourseTemplate = document
+            .getElementById("change-status-course-template")
+            .content.cloneNode(true);
 
-                <div class="course px-4" data-uid="${course.uid}">
+        statusCourseTemplate.querySelector(
+            ".change-status-course .course-name"
+        ).innerText = course.name;
+        statusCourseTemplate.querySelector(
+            ".change-status-course .course"
+        ).dataset.uid = course.uid;
 
-                    <div class="poa-form">
+        // Cargamos los estados
+        let selectElement = statusCourseTemplate.querySelector(
+            ".change-status-course .status-course"
+        );
+        optionsStatuses.forEach((option) => {
+            let optionElement = document.createElement("option");
+            optionElement.value = option.value;
+            optionElement.text = option.label;
 
-                    </div>
+            selectElement.add(optionElement);
+        });
 
-                    <select class="status-course poa-select mb-2 min-w-[250px]">
-                        <option value="" selected>Selecciona un estado</option>
-                        ${optionsStatuses.map((option) => {
-                            return `<option value="${option.value}">${option.label}</option>`;
-                        })}
-                    </select>
-                    <div class="">
-                        <h4>Indica un motivo</h4>
-                        <textarea placeholder="El estado del curso se debe a..." class="reason-status-course poa-input"></textarea>
-                    </div>
-                </div>
-            </div>`;
+        coursesList.appendChild(statusCourseTemplate);
+
     });
 
+    document.getElementById("bulk_change_status").value = "";
+
+    bulkChangeStatuses()
     showModal("change-statuses-courses-modal", "Cambiar estado de cursos");
+}
+
+/**
+ * cambia el estado de todos los selectores en los cursos en el modal cambio de estado
+ */
+function bulkChangeStatuses() {
+    const bulkSelect = document.getElementById("bulk_change_status");
+    const selectors = document.querySelectorAll("#courses-list .status-course");
+    bulkSelect.addEventListener("change", function () {
+        selectors.forEach((select) => {
+            var opcionExist = select.querySelector('option[value="' + bulkSelect.value + '"]');
+            if (opcionExist){
+                opcionExist.selected = true;
+            }
+        });
+    });
 }
 
 /**
@@ -1409,7 +2025,7 @@ function submitChangeStatusesCourses() {
     apiFetch(params)
         .then(() => {
             hideModal("change-statuses-courses-modal");
-            coursesTable.replaceData(endPointTable);
+            reloadTableCourses();
         })
         .catch((data) => {
             showFormErrors(data.errors);
@@ -1485,9 +2101,12 @@ function resetModal() {
         defaultImagePreview;
     document.getElementById("course-composition").innerHTML = "";
 
-    tomSelectTeachers.clear();
+    tomSelectNoCoordinatorsTeachers.clear();
+    tomSelectCoordinatorsTeachers.clear();
+
     tomSelectCategories.clear();
     tomSelectTags.clear();
+    tomSelectContactEmails.clear();
 
     resetFormErrors("course-form");
     showBigCarrouselInfo(false);
@@ -1499,21 +2118,17 @@ function resetModal() {
  * Inicializa la tabla de estudiantes del curso y configura los eventos para la búsqueda y eliminación de estudiantes.
  */
 function loadCourseStudentsModal(courseUid) {
-    courseUidSelected = courseUid;
-
     if (courseStudensTable != null && courseStudensTable != undefined) {
         courseStudensTable.destroy();
     }
 
+    selectedCourseUid = courseUid;
+
     initializeCourseStudentsTable(courseUid);
-    controlsSearch(
-        courseStudensTable,
-        endPointStudentTable + courseUid,
-        "course-students-table"
-    );
+
     controlsPagination(courseStudensTable, "course-students-table");
 
-    showModal("course-students-modal", "Emisión de credenciales");
+    showModal("course-students-modal", "Listado de alumnos");
 }
 
 /**
@@ -1595,7 +2210,7 @@ function initializeCourseStudentsTable(courseUid) {
                     rowData.course_student_documents.forEach((document) => {
                         const documentPath = document.document_path;
                         btnArray.push({
-                            text: document.document_name,
+                            text: document.course_document.document_name,
                             action: () => {
                                 downloadFile(documentPath);
                             },
@@ -1615,7 +2230,7 @@ function initializeCourseStudentsTable(courseUid) {
     ];
 
     courseStudensTable = new Tabulator("#course-students-table", {
-        ajaxURL: endPointStudentTable + courseUid,
+        ajaxURL: `${endPointStudentTable}/${courseUid}`,
         ajaxConfig: "GET",
         ...tabulatorBaseConfig,
         ajaxResponse: function (url, params, response) {
@@ -1627,6 +2242,14 @@ function initializeCourseStudentsTable(courseUid) {
         },
         columns: columns,
     });
+
+    controlsPagination(courseStudensTable, "course-students-table");
+
+    controlsSearch(
+        courseStudensTable,
+        `${endPointStudentTable}/${courseUid}`,
+        "course-students-table"
+    );
 }
 
 function controlChecksCarrousels() {
@@ -1652,6 +2275,8 @@ function showBigCarrouselInfo(show) {
 }
 
 function approveStudentsCourse() {
+    const uidsStudentsInscriptions = getUidsStudentsInscriptions();
+
     const params = {
         url: "/learning_objects/courses/approve_inscriptions_course",
         method: "POST",
@@ -1664,7 +2289,7 @@ function approveStudentsCourse() {
     apiFetch(params)
         .then(() => {
             hideModal("change-statuses-courses-modal");
-            coursesTable.replaceData(endPointTable);
+            reloadStudentsTable();
         })
         .catch((data) => {
             showFormErrors(data.errors);
@@ -1672,9 +2297,7 @@ function approveStudentsCourse() {
 }
 
 function rejectStudentsCourse() {
-    const uidsStudentsInscriptions = selectedCourseStudents.map((student) => {
-        return student.course_student_info.uid;
-    });
+    const uidsStudentsInscriptions = getUidsStudentsInscriptions();
 
     const params = {
         url: "/learning_objects/courses/reject_inscriptions_course",
@@ -1688,13 +2311,23 @@ function rejectStudentsCourse() {
     apiFetch(params)
         .then(() => {
             hideModal("change-statuses-courses-modal");
-            coursesTable.replaceData(endPointTable);
+            reloadStudentsTable();
         })
         .catch((data) => {
             showFormErrors(data.errors);
         });
 }
 
+function reloadStudentsTable() {
+    const endpoint = `${endPointStudentTable}/${selectedCourseUid}`;
+    courseStudensTable.replaceData(endpoint);
+}
+
+function getUidsStudentsInscriptions() {
+    return selectedCourseStudents.map((student) => {
+        return student.course_student_info.uid;
+    });
+}
 /**
  *
  * @param {*} statusCode
@@ -1869,6 +2502,7 @@ function toggleCourseFields(formId, isDisabled) {
     const idsReadOnly = [
         "title",
         "description",
+        "contact_information",
         "min_required_students",
         "center",
         "objectives",
@@ -1905,13 +2539,19 @@ function toggleCourseFields(formId, isDisabled) {
     setDisabledSpecificDivFields(idsDivsAllow, isDisabled);
 
     if (isDisabled) {
-        tomSelectTeachers.disable();
+        tomSelectNoCoordinatorsTeachers.disable();
+        tomSelectCoordinatorsTeachers.disable();
+
         tomSelectCategories.disable();
         tomSelectTags.disable();
+        tomSelectContactEmails.disable();
     } else {
-        tomSelectTeachers.enable();
+        tomSelectNoCoordinatorsTeachers.enable();
+        tomSelectCoordinatorsTeachers.enable();
+
         tomSelectCategories.enable();
         tomSelectTags.enable();
+        tomSelectContactEmails.enable();
     }
 }
 
@@ -1923,6 +2563,7 @@ function setFieldsNewEdition() {
     const idsReadOnly = [
         "title",
         "description",
+        "contact_information",
         "min_required_students",
         "center",
         "objectives",
@@ -1958,7 +2599,10 @@ function setFieldsNewEdition() {
     // Desactivamos los selectores
     tomSelectTags.disable();
     tomSelectCategories.disable();
-    tomSelectTeachers.disable();
+    tomSelectNoCoordinatorsTeachers.disable();
+    tomSelectCoordinatorsTeachers.disable();
+
+    tomSelectContactEmails.disable();
 
     // Desactivamos el div de composición del curso
     const idsDivsBlock = ["course-composition-block"];
@@ -2127,4 +2771,118 @@ function getSelectedCompetences(order) {
     });
 
     return selectedCompetences;
+}
+
+function controlInscriptionDates(show) {
+    if (show) {
+        document.getElementById("inscription-dates").classList.remove("hidden");
+    } else {
+        document.getElementById("inscription-dates").classList.add("hidden");
+        document.getElementById("inscription_start_date").value = "";
+        document.getElementById("inscription_finish_date").value = "";
+    }
+}
+
+// Controla que no se puedan seleccionar un docente como coordinador y no coordinador a la vez
+function syncTomSelectsTeachers() {
+    tomSelectCoordinatorsTeachers.on('item_add', function(value) {
+        if (tomSelectNoCoordinatorsTeachers.getValue().includes(value)) {
+            tomSelectNoCoordinatorsTeachers.removeItem(value);
+        }
+    });
+
+    tomSelectNoCoordinatorsTeachers.on('item_add', function(value) {
+        if (tomSelectCoordinatorsTeachers.getValue().includes(value)) {
+            tomSelectCoordinatorsTeachers.removeItem(value);
+        }
+    });
+}
+
+//abrimos modal para seleccionar columnas
+function controlColumnsSecectorModal(){
+
+    showModal("columns-courses-modal");
+    var checkboxes = document.querySelectorAll('.checkbox_columns_selector input[type="checkbox"]');
+    checkboxes.forEach(function(checkbox) {
+        checkbox.addEventListener("click", function() {
+            if (this.checked) {
+                coursesTable.showColumn(this.value);
+                coursesTable.redraw();
+            } else {
+                coursesTable.hideColumn(this.value);
+                coursesTable.redraw();
+            }
+        });
+    });
+}
+
+function enrollStudentsToCourse(){
+
+    const usersToEnroll = tomSelectUsersToEnroll.getValue();
+
+    const formData = new FormData();
+
+    formData.append('courseUid', selectedCourseUid);
+    usersToEnroll.forEach(user => {
+        formData.append('usersToEnroll[]', user);
+    });
+
+    const params = {
+        url: "/learning_objects/courses/enroll_students",
+        method: "POST",
+        body: formData,
+        loader: true,
+        toast: true,
+    };
+
+    apiFetch(params)
+        .then(() => {
+            hideModal("enroll-course-modal");
+            tomSelectUsersToEnroll.destroy();
+            tomSelectUsersToEnroll = getLiveSearchTomSelectInstance(
+                "#enroll_students",
+                "/users/list_users/search_users_no_enrolled/"+selectedCourseUid+"/",
+                function (entry) {
+                    return {
+                        value: entry.uid,
+                        text: `${entry.first_name} ${entry.last_name}`,
+                    };
+                }
+            );
+            reloadStudentsTable();
+        })
+        .catch((data) => {
+            showFormErrors(data.errors);
+        });
+
+}
+
+function enrollStudentsCsv() {
+
+    const fileInput = document.getElementById('attachment');
+    const file = fileInput.files[0];
+
+    const formData = new FormData();
+    formData.append('attachment', file);
+    formData.append('course_uid', selectedCourseUid)
+
+    const params = {
+        url: "/learning_objects/courses/enroll_students_csv",
+        method: "POST",
+        body: formData,
+        toast: true,
+        loader: true,
+    };
+
+
+
+    apiFetch(params)
+        .then(() => {
+            hideModal("enroll-course-csv-modal");
+            reloadStudentsTable();
+        })
+        .catch((data) => {
+            showFormErrors(data.errors);
+        });
+
 }

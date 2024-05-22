@@ -10,7 +10,8 @@ use App\Models\CategoriesModel;
 use App\Models\GeneralOptionsModel;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Logs\LogsController;
 use Illuminate\Http\Request;
 
 class CategoriesController extends BaseController
@@ -22,7 +23,7 @@ class CategoriesController extends BaseController
         $this->middleware(function ($request, $next) {
             $can_access_categories = $this->checkAccessUserCategories();
 
-            if(!$can_access_categories) abort(403);
+            if (!$can_access_categories) abort(403);
             return $next($request);
         })->except('index');
     }
@@ -31,7 +32,7 @@ class CategoriesController extends BaseController
     {
         $can_access_categories = $this->checkAccessUserCategories();
 
-        if(!$can_access_categories) {
+        if (!$can_access_categories) {
             return view('access_not_allowed', [
                 'title' => 'No es posible administrar las categorías',
                 'description' => 'El administrador tiene bloqueado la administración de categorías a los gestores.'
@@ -165,7 +166,10 @@ class CategoriesController extends BaseController
             $category->image_path = $path . "/" . $filename;
         }
 
-        $category->save();
+        DB::transaction(function () use ($category) {
+            $category->save();
+            LogsController::createLog('Guardar categoría', 'Categorías', auth()->user()->uid);
+        });
 
         return response()->json(['message' => $isNew ? 'Categoría añadida correctamente' : 'Categoría modificada correctamente'], 200);
     }
@@ -199,10 +203,12 @@ class CategoriesController extends BaseController
     public function deleteCategories(Request $request)
     {
 
-        $uids = $request->input('uids');
+        $uids_categories = $request->input('uids');
 
-
-        CategoriesModel::destroy($uids);
+        DB::transaction(function () use ($uids_categories) {
+            CategoriesModel::destroy($uids_categories);
+            LogsController::createLog('Eliminar categoría', 'Categorías', auth()->user()->uid);
+        });
 
         return response()->json(['message' => 'Categorías eliminadas correctamente'], 200);
     }

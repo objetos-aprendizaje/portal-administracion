@@ -2,7 +2,7 @@ import {
     controlsPagination,
     tabulatorBaseConfig,
     updatePaginationInfo,
-    formatDate,
+    formatDateTime,
     controlsSearch,
     updateArrayRecords,
 } from "../tabulator_handler";
@@ -16,6 +16,10 @@ import {
     getMultipleTomSelectInstance,
     toggleFormFields,
     apiFetch,
+    instanceFlatpickr,
+    getFlatpickrDateRange,
+    getFlatpickrDateRangeSql,
+    getOptionsSelectedTomSelectInstance,
 } from "../app.js";
 import { showToast } from "../toast.js";
 
@@ -26,16 +30,24 @@ let emailNotificationsTable = null;
 let tomSelectRoles;
 let tomSelectUsers;
 let selectedEmailNotifications = [];
+let flatpickrNotificationDate;
+let tomSelectNotificationTypesFilter;
+let filters = [];
+
 document.addEventListener("DOMContentLoaded", function () {
     initHandlers();
     initializeEmailNotificationsTable();
     controlTypeDestination();
+    initFlatPickr();
     controlsSearch(
         emailNotificationsTable,
         endPointTable,
         "notification-email-table"
     );
     controlsPagination(emailNotificationsTable, "notification-email-table");
+    tomSelectNotificationTypesFilter = getMultipleTomSelectInstance(
+        "#notification_types"
+    );
 
     initTomSelectUsers();
 });
@@ -47,7 +59,38 @@ function initHandlers() {
             newEmailNotification();
         });
 
+    document
+        .getElementById("filter-notification-email-btn")
+        .addEventListener("click", function () {
+            openFiltersModal();
+        });
+
+    document
+        .getElementById("filter-btn")
+        .addEventListener("click", function () {
+            controlSaveHandlerFilters();
+        });
+
+    document
+        .getElementById("delete-all-filters")
+        .addEventListener("click", function () {
+            resetFilters();
+        });
+
     tomSelectRoles = getMultipleTomSelectInstance("#roles");
+
+    // Cargamos los roles
+    apiFetch({
+        url: "/users/list_users/get_user_roles",
+        method: "GET",
+    }).then((data) => {
+        data.forEach((rol) => {
+            tomSelectRoles.addOption({
+                value: rol.uid,
+                text: rol.name,
+            });
+        });
+    });
 
     document
         .getElementById("delete-notification-email-btn")
@@ -75,6 +118,181 @@ function initHandlers() {
         .addEventListener("submit", submitFormEmailNotificationModal);
 }
 
+function openFiltersModal() {
+    showModal("filter-notification-email-modal");
+}
+function initFlatPickr() {
+    flatpickrNotificationDate = instanceFlatpickr("date_email_notifications");
+}
+
+/**
+ * Maneja el evento de clic en el botón para aplicar los filtros.
+ * Recoge los filtros del modal, los muestra en la interfaz y vuelve a inicializar
+ * la tabla de cursos con los nuevos filtros aplicados.
+ */
+function controlSaveHandlerFilters() {
+    filters = collectFilters();
+
+    showFilters();
+    hideModal("filter-notification-email-modal");
+
+    initializeEmailNotificationsTable()
+}
+
+/**
+ * Recoge todos los filtros aplicados en el modal de filtros.
+ * Obtiene los valores de los elementos de entrada y los añade al array
+ * de filtros seleccionados.
+ */
+function collectFilters() {
+    let selectedFilters = [];
+    /**
+     *
+     * @param {*} name nombre del filtro
+     * @param {*} value Valor correspondiente a la opción seleccionada
+     * @param {*} option Opción seleccionada
+     * @param {*} filterKey Id correspondiente al filtro y al campo input al que corresponde
+     * @param {*} database_field Nombre del campo de la BD correspondiente al filtro
+     * @param {*} filterType Tipo de filtro
+     *
+     * Añade filtros al array
+     */
+    function addFilter(name, value, option, filterKey, database_field = "") {
+        if (value && value !== "") {
+            selectedFilters.push({
+                name,
+                value,
+                option,
+                filterKey,
+                database_field,
+            });
+        }
+    }
+
+    if (flatpickrNotificationDate.selectedDates.length)
+        addFilter(
+            "Fecha de notificacion",
+            getFlatpickrDateRangeSql(flatpickrNotificationDate),
+            getFlatpickrDateRange(flatpickrNotificationDate),
+            "date_email_notifications",
+            "send_date"
+        );
+
+    const stateEmailNotification = document.querySelector('#state_email_notification');
+    if (stateEmailNotification.value.length)
+        addFilter(
+            "Estado de la notificación",
+            stateEmailNotification.value,
+            stateEmailNotification.value == "1" ? "Enviado" : "No enviado",
+            "state_email_notification",
+            "sent"
+        );
+
+        // Collect values from TomSelects
+    if (tomSelectNotificationTypesFilter) {
+        const notificationTypes = tomSelectNotificationTypesFilter.getValue();
+
+        const selectedNotificationTypesLabel =
+            getOptionsSelectedTomSelectInstance(
+                tomSelectNotificationTypesFilter
+            );
+
+        if (notificationTypes.length)
+            addFilter(
+                "Tipos de notificación",
+                notificationTypes,
+                selectedNotificationTypesLabel,
+                "notification_types",
+                "notification_types",
+                "notifications"
+            );
+    }
+
+
+    return selectedFilters;
+}
+
+/**
+ * Muestra los filtros aplicados en la interfaz de usuario.
+ * Recorre el array de 'filters' y genera el HTML para cada filtro,
+ * permitiendo su visualización y posterior eliminación. Además muestra u oculta
+ * el botón de eliminación de filtros
+ */
+function showFilters() {
+    // Eliminamos todos los filtros
+    var currentFilters = document.querySelectorAll(".filter");
+
+    // Recorre cada elemento y lo elimina
+    currentFilters.forEach(function (filter) {
+        filter.remove();
+    });
+
+    filters.forEach((filter) => {
+        // Crea un nuevo div
+        var newDiv = document.createElement("div");
+
+        // Agrega la clase 'filter' al div
+        newDiv.classList.add("filter");
+
+        // Establece el HTML del nuevo div
+        newDiv.innerHTML = `
+            <div>${filter.name}: ${filter.option}</div>
+            <button data-filter-key="${filter.filterKey
+            }" class="delete-filter-btn">${heroicon(
+                "x-mark",
+                "outline"
+            )}</button>
+        `;
+
+        // Agrega el nuevo div al div existente
+        document.getElementById("filters").prepend(newDiv);
+    });
+
+    const deleteAllFiltersBtn = document.getElementById("delete-all-filters");
+
+    if (filters.length == 0) deleteAllFiltersBtn.classList.add("hidden");
+    else deleteAllFiltersBtn.classList.remove("hidden");
+
+    // Agregamos los listeners de eliminación a los filtros
+    document.querySelectorAll(".delete-filter-btn").forEach((deleteFilter) => {
+        deleteFilter.addEventListener("click", (event) => {
+            controlDeleteFilters(event.currentTarget);
+        });
+    });
+}
+
+function resetFilters() {
+    filters = [];
+    showFilters();
+    initializeEmailNotificationsTable()
+
+    flatpickrNotificationDate.clear();
+    tomSelectNotificationTypesFilter.clear();
+
+}
+
+function controlDeleteFilters(deleteBtn) {
+
+    const filterKey = deleteBtn.getAttribute("data-filter-key");
+
+    let removedFilter = filters.filter((filter) => filter.filterKey !== filterKey);
+
+
+    if (filterKey == "date_email_notifications"){
+        flatpickrNotificationDate.clear();
+    }else if (filterKey == "notification_types"){
+        tomSelectNotificationTypesFilter.clear();
+    } else {
+        document.getElementById(filterKey).value = "";
+    }
+
+    filters = filters.filter((filter) => filter.filterKey !== filterKey);
+    document.getElementById(filterKey).value = "";
+
+
+    showFilters();
+    initializeEmailNotificationsTable();
+}
 function initTomSelectUsers() {
     tomSelectUsers = new TomSelect("#users", {
         plugins: {
@@ -94,8 +312,8 @@ function initTomSelectUsers() {
 
             apiFetch(params)
                 .then((data) => {
-                    if (json.length) {
-                        const response = json.map((entry) => {
+                    if (data.length) {
+                        const response = data.map((entry) => {
                             return {
                                 value: entry.uid,
                                 text: `${entry.first_name} ${entry.last_name} (${entry.email})`,
@@ -109,6 +327,11 @@ function initTomSelectUsers() {
                 .catch(() => {
                     callback();
                 });
+        },
+        render: {
+            no_results: function (data, escape) {
+                return '<div class="no-results">No se encontraron resultados</div>';
+            },
         },
         onItemAdd: function () {
             this.control_input.value = "";
@@ -154,6 +377,8 @@ function fillFormEmailNotificationModal(email_notification) {
     document.getElementById("notification_email_uid").value =
         email_notification.uid;
     document.getElementById("send_date").value = email_notification.send_date;
+    document.getElementById("notification_type_uid").value =
+        email_notification.notification_type_uid;
 
     if (email_notification.sent) switchBtnsModal("view");
     else switchBtnsModal("add");
@@ -179,10 +404,14 @@ function switchBtnsModal(action) {
         btnsView.style.display = "flex";
 
         toggleFormFields("notification-email-form", true);
+        tomSelectRoles.disable();
+        tomSelectUsers.disable();
     } else if (action === "add") {
         btnsView.style.display = "none";
         btnsAdd.style.display = "flex";
         toggleFormFields("notification-email-form", false);
+        tomSelectRoles.enable();
+        tomSelectUsers.enable();
     }
 }
 
@@ -273,13 +502,18 @@ function initializeEmailNotificationsTable() {
         { title: "Asunto", field: "subject", widthGrow: 2 },
         { title: "Cuerpo", field: "body", widthGrow: 6 },
         {
+            title: "Tipo",
+            field: "notification_type_name",
+            widthGrow: 2,
+        },
+        {
             title: "Fecha de envío",
             field: "send_date",
             widthGrow: 2,
             formatter: function (cell, formatterParams, onRendered) {
                 const isoDate = cell.getValue();
                 if (!isoDate) return "";
-                return formatDate(isoDate);
+                return formatDateTime(isoDate);
             },
         },
         {
@@ -288,9 +522,9 @@ function initializeEmailNotificationsTable() {
             formatter: function (cell, formatterParams, onRendered) {
                 return `
                     <button type="button" class='btn action-btn'>${heroicon(
-                        "pencil-square",
-                        "outline"
-                    )}</button>
+                    "pencil-square",
+                    "outline"
+                )}</button>
                 `;
             },
             cellClick: function (e, cell) {
@@ -308,6 +542,11 @@ function initializeEmailNotificationsTable() {
     emailNotificationsTable = new Tabulator("#notification-email-table", {
         ajaxURL: endPointTable,
         ...tabulatorBaseConfig,
+        ajaxParams: {
+            filters: {
+                ...filters,
+            },
+        },
         ajaxResponse: function (url, params, response) {
             updatePaginationInfo(
                 emailNotificationsTable,
@@ -393,9 +632,12 @@ function submitFormEmailNotificationModal() {
 
     apiFetch(params)
         .then(() => {
-            resetModal();
             emailNotificationsTable.replaceData(endPointTable);
             hideModal("notification-email-modal");
+
+            setTimeout(() => {
+                resetModal();
+            }, 300);
         })
         .catch((data) => {
             showFormErrors(data.errors);
