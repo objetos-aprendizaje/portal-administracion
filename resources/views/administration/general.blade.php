@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="flex flex-col md:flex-row gap-12 mb-8">
-        <div class="poa-container w-full md:w-1/2 h-[430px]">
+        <div class="poa-container w-full md:w-1/2 h-[550px]">
             <div class="relative h-full flex justify-between flex-col gap-8">
 
                 <h2>Logo</h2>
@@ -45,19 +45,21 @@
             </div>
         </div>
 
-        <div class="poa-container w-full md:w-1/2 h-[430px]">
+        <div class="poa-container w-full md:w-1/2 h-[550px]">
             <div class="relative h-full flex flex-col">
                 <h2>Paleta de colores</h2>
 
                 <div class="h-full">
                     <div class="color-definition">
                         <div class="coloris-button">
-                            <input value="{{ $general_options['color_1'] }}" id="color-1" class="coloris" type="text"
+                            <input value="{{ $general_options['color_1'] }}" id="color-1" class="coloris cursor-pointer" type="text"
                                 data-coloris>
                         </div>
                         <div>
-                            <label for="color-1" class="text-primary font-roboto-bold">Color primario:</label> Botones,
-                            textos primarios.
+                            <label for="color-1" class="text-primary font-roboto-bold">Color Primario (Títulos y
+                                Botones):</label> Este color
+                            se utiliza para los títulos principales (h1, h2, h3, h4) y el fondo de los botones. Modifica la
+                            apariencia de los elementos más destacados y llamativos de la interfaz.
                         </div>
                     </div>
 
@@ -67,8 +69,11 @@
                                 data-coloris>
                         </div>
                         <div>
-                            <label for="color-2" class="text-primary font-roboto-bold">Color secundario:</label> Textos
-                            secundarios.
+                            <label for="color-2" class="text-primary font-roboto-bold">Color Secundario (Subtítulos y
+                                Botones Hover):</label> Este color se utiliza para los títulos de nivel inferior (h5), el
+                            efecto hover del fondo de los botones principales y el fondo del bloque de categorías.
+                            Proporciona un contraste con el color primario y se utiliza en elementos interactivos y áreas de
+                            contenido destacado.
                         </div>
                     </div>
 
@@ -78,8 +83,10 @@
                                 data-coloris>
                         </div>
                         <div>
-                            <label for="color-3" class="text-primary font-roboto-bold">Color terciario:</label> Este color
-                            aplica al fondo de botones secundarios
+                            <label for="color-3" class="text-primary font-roboto-bold">Color Terciario (Textos
+                                Principales):</label> Este color
+                            se utiliza para los textos principales, incluyendo los párrafos (p) y las etiquetas (label).
+                            Define la apariencia de la mayoría del texto en la interfaz
                         </div>
                     </div>
 
@@ -89,9 +96,10 @@
                                 data-coloris>
                         </div>
                         <div>
-                            <label for="color-4" class="text-primary font-roboto-bold">Color de fondo categorías:</label>
-                            Fondo del listado de categorías
-
+                            <label for="color-4" class="text-primary font-roboto-bold">Color Cuaternario (Textos Secundarios):</label>
+                            Este color se utiliza para los textos secundarios que son más pequeños que los párrafos y menos
+                            destacados. Se utiliza para proporcionar información adicional o secundaria, y para elementos de
+                            la interfaz que no necesitan destacar tanto como los elementos principales.
                         </div>
                     </div>
                 </div>
@@ -444,12 +452,15 @@
         <h2>Configuración de la tipografía</h2>
 
         <p class="mt-2 mb-4">
-            El portal emplea tres estilos de fuentes: Regular, Medium y Bold. Cada uno de estos estilos puede cargarse en cinco formatos distintos: .eot, .svg, .ttf, .woff y .woff2.
-            Aunque se sugiere adjuntar las fuentes en todos los formatos para asegurar la compatibilidad con todos los navegadores, no es obligatorio hacerlo. Puedes elegir subir las fuentes en los formatos que prefieras.
+            El portal emplea tres estilos de fuentes: Regular, Medium y Bold. Cada uno de estos estilos puede cargarse en
+            cinco formatos distintos: .eot, .svg, .ttf, .woff y .woff2.
+            Aunque se sugiere adjuntar las fuentes en todos los formatos para asegurar la compatibilidad con todos los
+            navegadores, no es obligatorio hacerlo. Puedes elegir subir las fuentes en los formatos que prefieras.
         </p>
 
         <p>
-            Sin embargo, ten en cuenta que si un navegador requiere un formato de fuente que no has subido, el navegador representará la web con la tipografía que tenga configurada por defecto.
+            Sin embargo, ten en cuenta que si un navegador requiere un formato de fuente que no has subido, el navegador
+            representará la web con la tipografía que tenga configurada por defecto.
         </p>
 
         <div class="poa-form">
@@ -545,7 +556,8 @@
                                     <div class="poa-input-file select-file-container">
                                         <div class="flex-none">
                                             <input type="file" id="woff2_regular_file_path" class="hidden input-font"
-                                                name="woff2_regular_file_path" accept=".woff2" data-font="woff2_regular_file_path">
+                                                name="woff2_regular_file_path" accept=".woff2"
+                                                data-font="woff2_regular_file_path">
                                             <label for="woff2_regular_file_path"
                                                 class="btn btn-rectangular btn-input-file">
                                                 Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
@@ -649,7 +661,8 @@
                                     <div class="poa-input-file  select-file-container">
                                         <div class="flex-none">
                                             <input type="file" id="svg_regular_file_path" class="hidden input-font"
-                                                name="svg_regular_file_path" accept=".svg" data-font="svg_regular_file_path">
+                                                name="svg_regular_file_path" accept=".svg"
+                                                data-font="svg_regular_file_path">
                                             <label for="svg_regular_file_path" class="btn btn-rectangular btn-input-file">
                                                 Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
                                             </label>
@@ -695,8 +708,9 @@
                                 <div class="content-container">
                                     <div class="poa-input-file  select-file-container">
                                         <div class="flex-none">
-                                            <input type="file" id="truetype_medium_file_path" class="hidden input-font"
-                                                name="truetype_medium_file_path" accept=".ttf" data-font="truetype_medium_file_path">
+                                            <input type="file" id="truetype_medium_file_path"
+                                                class="hidden input-font" name="truetype_medium_file_path" accept=".ttf"
+                                                data-font="truetype_medium_file_path">
                                             <label for="truetype_medium_file_path"
                                                 class="btn btn-rectangular btn-input-file">
                                                 Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
@@ -730,7 +744,8 @@
                                     <div class="poa-input-file select-file-container">
                                         <div class="flex-none">
                                             <input type="file" id="woff_medium_file_path" class="hidden input-font"
-                                                name="woff_medium_file_path" accept=".woff" data-font="woff_medium_file_path">
+                                                name="woff_medium_file_path" accept=".woff"
+                                                data-font="woff_medium_file_path">
                                             <label for="woff_medium_file_path" class="btn btn-rectangular btn-input-file">
                                                 Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
                                             </label>
@@ -763,7 +778,8 @@
                                     <div class="poa-input-file select-file-container">
                                         <div class="flex-none">
                                             <input type="file" id="woff2_medium_file_path" class="hidden input-font"
-                                                name="woff2_medium_file_path" accept=".woff2" data-font="woff2_medium_file_path">
+                                                name="woff2_medium_file_path" accept=".woff2"
+                                                data-font="woff2_medium_file_path">
                                             <label for="woff2_medium_file_path"
                                                 class="btn btn-rectangular btn-input-file">
                                                 Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
@@ -774,8 +790,7 @@
                                         </div>
                                     </div>
                                     <div class="woff2_medium_file_path_buttons">
-                                        <a id="woff2_medium_file_path"
-                                            data-font="woff2_medium_file_path"
+                                        <a id="woff2_medium_file_path" data-font="woff2_medium_file_path"
                                             class="{{ $general_options['woff2_medium_file_path'] ? '' : 'hidden' }} link-label download-font"
                                             target="new_blank"
                                             href="{{ $general_options['woff2_medium_file_path'] ? '/' . $general_options['woff2_medium_file_path'] : 'javascript:void(0)' }}"
@@ -796,8 +811,9 @@
                                 <div class="content-container">
                                     <div class="poa-input-file  select-file-container">
                                         <div class="flex-none">
-                                            <input type="file" id="embedded_opentype_medium_file_path" class="hidden input-font"
-                                                name="embedded_opentype_medium_file_path" accept=".eot" data-font="embedded_opentype_medium_file_path">
+                                            <input type="file" id="embedded_opentype_medium_file_path"
+                                                class="hidden input-font" name="embedded_opentype_medium_file_path"
+                                                accept=".eot" data-font="embedded_opentype_medium_file_path">
                                             <label for="embedded_opentype_medium_file_path"
                                                 class="btn btn-rectangular btn-input-file">
                                                 Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
@@ -830,8 +846,9 @@
                                 <div class="content-container">
                                     <div class="poa-input-file  select-file-container">
                                         <div class="flex-none">
-                                            <input type="file" id="opentype_medium_file_path" class="hidden input-font"
-                                                name="opentype_medium_file_path" accept=".otf" data-font="opentype_medium_file_path">
+                                            <input type="file" id="opentype_medium_file_path"
+                                                class="hidden input-font" name="opentype_medium_file_path" accept=".otf"
+                                                data-font="opentype_medium_file_path">
                                             <label for="opentype_medium_file_path"
                                                 class="btn btn-rectangular btn-input-file">
                                                 Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
@@ -842,8 +859,7 @@
                                         </div>
                                     </div>
                                     <div class="opentype_medium_file_path_buttons">
-                                        <a id="opentype_medium_file_path"
-                                            data-font="opentype_medium_file_path"
+                                        <a id="opentype_medium_file_path" data-font="opentype_medium_file_path"
                                             class="{{ $general_options['opentype_medium_file_path'] ? '' : 'hidden' }} link-label download-font"
                                             target="new_blank"
                                             href="{{ $general_options['opentype_medium_file_path'] ? '/' . $general_options['opentype_medium_file_path'] : 'javascript:void(0)' }}"
@@ -865,7 +881,8 @@
                                     <div class="poa-input-file select-file-container">
                                         <div class="flex-none">
                                             <input type="file" id="svg_medium_file_path" class="hidden input-font"
-                                                name="svg_medium_file_path" accept=".svg" data-font="svg_medium_file_path">
+                                                name="svg_medium_file_path" accept=".svg"
+                                                data-font="svg_medium_file_path">
                                             <label for="svg_medium_file_path" class="btn btn-rectangular btn-input-file">
                                                 Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
                                             </label>
@@ -875,8 +892,7 @@
                                         </div>
                                     </div>
                                     <div class="svg_medium_file_path_buttons">
-                                        <a id="svg_medium_file_path"
-                                            data-font="svg_medium_file_path"
+                                        <a id="svg_medium_file_path" data-font="svg_medium_file_path"
                                             class="{{ $general_options['svg_medium_file_path'] ? '' : 'hidden' }} link-label download-font"
                                             target="new_blank"
                                             href="{{ $general_options['svg_medium_file_path'] ? '/' . $general_options['svg_medium_file_path'] : 'javascript:void(0)' }}"
@@ -914,7 +930,8 @@
                                     <div class="poa-input-file  select-file-container">
                                         <div class="flex-none">
                                             <input type="file" id="truetype_bold_file_path" class="hidden input-font"
-                                                name="truetype_bold_file_path" accept=".ttf" data-font="truetype_bold_file_path">
+                                                name="truetype_bold_file_path" accept=".ttf"
+                                                data-font="truetype_bold_file_path">
                                             <label for="truetype_bold_file_path"
                                                 class="btn btn-rectangular btn-input-file">
                                                 Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
@@ -948,7 +965,8 @@
                                     <div class="poa-input-file  select-file-container">
                                         <div class="flex-none">
                                             <input type="file" id="woff_bold_file_path" class="hidden input-font"
-                                                name="woff_bold_file_path" accept=".woff" data-font="woff_bold_file_path">
+                                                name="woff_bold_file_path" accept=".woff"
+                                                data-font="woff_bold_file_path">
                                             <label for="woff_bold_file_path" class="btn btn-rectangular btn-input-file">
                                                 Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
                                             </label>
@@ -981,7 +999,8 @@
                                     <div class="poa-input-file select-file-container">
                                         <div class="flex-none">
                                             <input type="file" id="woff2_bold_file_path" class="hidden input-font"
-                                                name="woff2_bold_file_path" accept=".woff2" data-font="woff2_bold_file_path">
+                                                name="woff2_bold_file_path" accept=".woff2"
+                                                data-font="woff2_bold_file_path">
                                             <label for="woff2_bold_file_path" class="btn btn-rectangular btn-input-file">
                                                 Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
                                             </label>
@@ -991,8 +1010,7 @@
                                         </div>
                                     </div>
                                     <div class="woff2_bold_file_path_buttons">
-                                        <a id="woff2_bold_file_path"
-                                            data-font="woff2_bold_file_path"
+                                        <a id="woff2_bold_file_path" data-font="woff2_bold_file_path"
                                             class="{{ $general_options['woff2_bold_file_path'] ? '' : 'hidden' }} link-label download-font"
                                             target="new_blank"
                                             href="{{ $general_options['woff2_bold_file_path'] ? '/' . $general_options['woff2_bold_file_path'] : 'javascript:void(0)' }}"
@@ -1013,8 +1031,9 @@
                                 <div class="content-container">
                                     <div class="poa-input-file  select-file-container">
                                         <div class="flex-none">
-                                            <input type="file" id="embedded_opentype_bold_file_path" class="hidden input-font"
-                                                name="embedded_opentype_bold_file_path" accept=".eot" data-font="embedded_opentype_bold_file_path">
+                                            <input type="file" id="embedded_opentype_bold_file_path"
+                                                class="hidden input-font" name="embedded_opentype_bold_file_path"
+                                                accept=".eot" data-font="embedded_opentype_bold_file_path">
                                             <label for="embedded_opentype_bold_file_path"
                                                 class="btn btn-rectangular btn-input-file">
                                                 Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
@@ -1048,7 +1067,8 @@
                                     <div class="poa-input-file  select-file-container">
                                         <div class="flex-none">
                                             <input type="file" id="opentype_bold_file_path" class="hidden input-font"
-                                                name="opentype_bold_file_path" accept=".otf" data-font="opentype_bold_file_path">
+                                                name="opentype_bold_file_path" accept=".otf"
+                                                data-font="opentype_bold_file_path">
                                             <label for="opentype_bold_file_path"
                                                 class="btn btn-rectangular btn-input-file">
                                                 Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
