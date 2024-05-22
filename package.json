@@ -22,6 +22,7 @@
         "tabulator-tables": "^5.5.2",
         "tinymce": "^6.6.2",
         "toastify-js": "^1.12.0",
-        "tom-select": "^2.2.2"
+        "tom-select": "^2.2.2",
+        "treeselectjs": "^0.10.0"
     }
 }

@@ -10,6 +10,7 @@ export default {
             colors: {
                 primary: "var(--primary-color)",
                 secondary: "var(--secondary-color)",
+                color_hover: "var(--color-hover)",
                 danger: "#E74C3C"
             },
             fontFamily: {

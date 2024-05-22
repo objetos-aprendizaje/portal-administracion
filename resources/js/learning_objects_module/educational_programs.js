@@ -12,6 +12,7 @@ import {
     showFormErrors,
     resetFormErrors,
     getLiveSearchTomSelectInstance,
+    updateInputImage,
 } from "../app";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
 import { showToast } from "../toast.js";
@@ -26,16 +27,10 @@ const endPointTable =
 document.addEventListener("DOMContentLoaded", () => {
     initHandlers();
     initializeEducationalProgramsTable();
-    controlsSearch(
-        educationalProgramsTable,
-        endPointTable,
-        "educational-resource-types-table"
-    );
-    controlsPagination(
-        educationalProgramsTable,
-        "educational-resource-types-table"
-    );
+
     initializeTomSelect();
+
+    updateInputImage();
 });
 
 function initHandlers() {
@@ -142,7 +137,14 @@ function initializeEducationalProgramsTable() {
             title: "Convocatoria",
             field: "call_name",
         },
-
+        {
+            title: "Tipo",
+            field: "is_modular",
+            formatter: function (cell, formatterParams, onRendered) {
+                const isModular = cell.getValue();
+                return isModular ? "Modular" : "No modular";
+            },
+        },
         {
             title: "",
             field: "actions",
@@ -181,6 +183,17 @@ function initializeEducationalProgramsTable() {
         },
         columns: columns,
     });
+
+    controlsSearch(
+        educationalProgramsTable,
+        endPointTable,
+        "educational-resource-types-table"
+    );
+
+    controlsPagination(
+        educationalProgramsTable,
+        "educational-resource-types-table"
+    );
 }
 
 async function loadEducationalProgramModal(educationalProgramUid) {
@@ -207,6 +220,20 @@ function fillEducationalProgramModal(educationalProgram) {
         educationalProgram.educational_program_type_uid ?? "";
     document.getElementById("call_uid").value =
         educationalProgram.call_uid ?? "";
+
+    document.getElementById("inscription_start_date").value =
+        educationalProgram.inscription_start_date;
+    document.getElementById("inscription_finish_date").value =
+        educationalProgram.inscription_finish_date;
+
+    document.getElementById("is_modular").value = educationalProgram.is_modular;
+
+    if (educationalProgram.image_path) {
+        document.getElementById("image_path_preview").src =
+            "/" + educationalProgram.image_path;
+    } else {
+        document.getElementById("image_path_preview").src = defaultImagePreview;
+    }
 
     if (educationalProgram.courses) {
         educationalProgram.courses.forEach((course) => {
@@ -241,7 +268,7 @@ function submitFormEducationalProgram() {
     apiFetch(params)
         .then(() => {
             hideModal("educational-program-modal");
-            reloadTable;
+            reloadTable();
         })
         .catch((data) => {
             showFormErrors(data.errors);

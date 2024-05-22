@@ -24,8 +24,6 @@ document.addEventListener("DOMContentLoaded", function () {
     initHandlers();
 
     initializeNotificationTypesTable();
-    controlsSearch(notificationTypesTable, endPointTable, "notification-types-table");
-    controlsPagination(notificationTypesTable, "notification-types-table");
 });
 
 function initHandlers() {
@@ -151,6 +149,9 @@ function initializeNotificationTypesTable() {
         },
         columns: columns,
     });
+
+    controlsSearch(notificationTypesTable, endPointTable, "notification-types-table");
+    controlsPagination(notificationTypesTable, "notification-types-table");
 }
 
 async function loadNotificationTypeModal(uid) {
@@ -168,7 +169,6 @@ async function loadNotificationTypeModal(uid) {
 
 function fillFormNotificationTypeModal(notification_type) {
     document.getElementById("name").value = notification_type.name;
-    document.getElementById("description").value = notification_type.description;
     document.getElementById("notification_type_uid").value = notification_type.uid;
 }
 

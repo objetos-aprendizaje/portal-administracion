@@ -13,6 +13,15 @@ class EmailNotificationsModel extends Model
 
     protected $keyType = 'string';
 
+    protected $fillable = [
+        'uid', 'subject', 'body', 'type', 'send_date', 'sent', 'notification_type_uid'
+    ];
+
+    protected $casts = [
+        'uid' => 'string',
+    ];
+
+    public $incrementing = false;
 
     public function roles()
     {
@@ -36,6 +45,10 @@ class EmailNotificationsModel extends Model
             'uid',
             'uid'
         );
+    }
+    public function emailNotificationType()
+    {
+        return $this->belongsTo(NotificationsTypesModel::class, 'notification_type_uid', 'uid');
     }
 
 }

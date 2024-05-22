@@ -39,12 +39,28 @@
                 </div>
 
                 <div class="field">
-                    <div class="label-container label-center">
-                        <label for="educational_program_type_uid">Tipo de programa formativo <span class="text-red-500">*</span></label>
+                    <div class="label-container">
+                        <label for="description">Tipo <span class="text-red-500">*</span></label>
                     </div>
 
                     <div class="content-container">
-                        <select class="poa-select w-full" id="educational_program_type_uid" name="educational_program_type_uid">
+                        <select id="is_modular" name="is_modular" class="poa-select w-full">
+                            <option value="" selected>Selecciona el tipo</option>
+                            <option value="1">Modular</option>
+                            <option value="0">No modular</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="educational_program_type_uid">Tipo de programa formativo <span
+                                class="text-red-500">*</span></label>
+                    </div>
+
+                    <div class="content-container">
+                        <select class="poa-select w-full" id="educational_program_type_uid"
+                            name="educational_program_type_uid">
                             <option value="">Selecciona un tipo de programa formativo</option>
                             @foreach ($educational_program_types as $program_type)
                                 <option value="{{ $program_type['uid'] }}">{{ $program_type['name'] }}</option>
@@ -70,28 +86,75 @@
                 </div>
 
                 <div class="field">
+                    <div class="label-container label-center">
+                        <label for="inscription_start_date">Fecha de inicio de inscripción <span
+                                class="text-danger">*</span></label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <input type="datetime-local" class="poa-input" id="inscription_start_date"
+                            name="inscription_start_date" />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="inscription_finish_date">Fecha de fin de inscripción <span
+                                class="text-danger">*</span></label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <input type="datetime-local" class="poa-input" id="inscription_finish_date"
+                            name="inscription_finish_date" />
+                    </div>
+                </div>
+
+                <div class="field">
                     <div class="label-container">
                         <label for="select-courses">Cursos</label>
                     </div>
 
                     <div class="content-container">
-                        <select id="select-courses" class="mb-4" name="courses[]" multiple placeholder="Selecciona uno o varios cursos"
-                             autocomplete="off">
+                        <select id="select-courses" class="mb-4" name="courses[]" multiple
+                            placeholder="Selecciona uno o varios cursos" autocomplete="off">
                         </select>
                     </div>
 
+                </div>
+
+                <div class="field">
+                    <div class="label-container">
+                        <label for="image_path_preview">Imagen</label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <div class="poa-input-image">
+                            <img id="image_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}" />
+
+                            <div class="select-file-container">
+                                <input accept="image/*" type="file" id="image_path" name="image_path"
+                                    class="hidden" />
+
+                                <div class="flex items-center gap-[20px]">
+                                    <label for="image_path" class="btn btn-rectangular">
+                                        Subir {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                    </label>
+
+                                    <span class="image-name text-[14px]">Ningún archivo seleccionado</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="btn-block">
                     <button type="submit" class="btn btn-primary">
                         Guardar {{ e_heroicon('paper-airplane', 'outline') }}</button>
 
-                        <button data-modal-id="educational-program-modal" type="button" class="btn btn-secondary close-modal-btn">
-                            Cancelar {{ e_heroicon('x-mark', 'outline') }}</button>
+                    <button data-modal-id="educational-program-modal" type="button"
+                        class="btn btn-secondary close-modal-btn">
+                        Cancelar {{ e_heroicon('x-mark', 'outline') }}</button>
                 </div>
             </div>
 
-            <input type="hidden" id="educational_program_uid" name="educational_program_uid" value=""/>
+            <input type="hidden" id="educational_program_uid" name="educational_program_uid" value="" />
 
         </form>
 

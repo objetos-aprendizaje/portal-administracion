@@ -27,8 +27,7 @@ const endPointTable = "/administration/lms_systems/get_lms_systems";
 document.addEventListener("DOMContentLoaded", function () {
     initHandlers();
     initializeLmsSystemsTable();
-    controlsSearch(lmsSystemsTable, endPointTable, "lms-systems-table");
-    controlsPagination(lmsSystemsTable, "lms-systems-table");
+
     controlReloadTable();
 });
 
@@ -147,6 +146,9 @@ function initializeLmsSystemsTable() {
         },
         columns: columns,
     });
+
+    controlsSearch(lmsSystemsTable, endPointTable, "lms-systems-table");
+    controlsPagination(lmsSystemsTable, "lms-systems-table");
 }
 
 function newLmsSystem() {

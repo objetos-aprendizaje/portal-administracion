@@ -17,6 +17,11 @@ class CallsModel extends Model
 
     protected $keyType = 'string';
 
+    public $incrementing = false;
+
+    protected $casts = [
+        'uid' => 'string',
+    ];
 
     public function educationalProgramTypes()
     {

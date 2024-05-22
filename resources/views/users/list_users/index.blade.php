@@ -18,6 +18,7 @@
 
         </div>
 
+        <div id="filters" class="filters flex flex-wrap gap-x-3 gap-y-2 mb-4"></div>
 
         <div class="table-container">
             <div id="users-table"></div>

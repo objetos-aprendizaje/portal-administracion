@@ -1,20 +1,24 @@
 <?php
+
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
-function validateHexadecimalColor($color) {
+function validateHexadecimalColor($color)
+{
     // Expresión regular para validar un color hexadecimal (#RRGGBB o #RGB)
     $regex = '/^#([A-Fa-f0-9]{3}){1,2}([A-Fa-f0-9]{2})?$/';
 
     return preg_match($regex, $color) === 1;
 }
 
-function generate_uuid() {
+function generate_uuid()
+{
     return (string) Str::uuid();
 }
 
-function formatDateTime($datetime) {
+function formatDateTime($datetime)
+{
     // Convertir la fecha y hora a un objeto DateTime
     $date = new DateTime($datetime);
 
@@ -25,7 +29,8 @@ function formatDateTime($datetime) {
 /**
  * Busca un elemento en un array multidimensional
  */
-function findOneInArray($array, $key, $value) {
+function findOneInArray($array, $key, $value)
+{
 
     foreach ($array as $element) {
         if ($element[$key] === $value) {
@@ -36,37 +41,50 @@ function findOneInArray($array, $key, $value) {
     return null;
 }
 
+function sanitizeFilename($filename)
+{
+    // Eliminar espacios en blanco
+    $filename = str_replace(' ', '', $filename);
+
+    // Eliminar puntos, paréntesis y otros caracteres especiales
+    $filename = preg_replace('/[^A-Za-z0-9\-]/', '', $filename);
+
+    return $filename;
+}
 
 /**
  * Recibe un fichero, ruta y nombre (opcional) y lo guarda en la ruta especificada.
  * Devuelve la ruta completa del fichero guardado.
  */
-function saveFile($file, $destinationPath, $filename = null, $public_path = false) {
+function saveFile($file, $destinationPath, $filename = null, $public_path = false)
+{
     // Si el nombre del archivo no se proporciona, generarlo
     $extension = $file->getClientOriginalExtension();
 
     if (!$filename) {
         $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $originalName = sanitizeFilename($originalName);
         $timestamp = time();
         $filename = "{$originalName}-{$timestamp}.{$extension}";
     } else {
         $filename = "{$filename}.{$extension}";
     }
 
+    $internalDestinationPath = $destinationPath;
     // Determinar la ruta de destino
     if ($public_path) {
-        public_path($destinationPath);
+        public_path($internalDestinationPath);
     } else {
-        $destinationPath = storage_path($destinationPath);
+        $internalDestinationPath = storage_path($destinationPath);
     }
 
     // Comprobar si el directorio existe; si no, crearlo
-    if (!is_dir($destinationPath)) {
-        mkdir($destinationPath, 0777, true);
+    if (!is_dir($internalDestinationPath)) {
+        mkdir($internalDestinationPath, 0777, true);
     }
 
     // Mover el archivo al directorio destino
-    $file->move($destinationPath, $filename);
+    $file->move($internalDestinationPath, $filename);
 
     // Devolver la ruta completa del archivo
     return "{$destinationPath}/{$filename}";
@@ -75,7 +93,8 @@ function saveFile($file, $destinationPath, $filename = null, $public_path = fals
 /**
  * Elimina un archivo del sistema de archivos.
  */
-function deleteFile($path) {
+function deleteFile($path)
+{
     if (file_exists($path))
         unlink($path);
 }
@@ -88,7 +107,8 @@ function deleteFile($path) {
  * @param string $extension La extensión deseada sin el punto inicial.
  * @return bool Verdadero si el archivo tiene la extensión deseada, falso en caso contrario.
  */
-function checkFileExtension($file, $extension) {
+function checkFileExtension($file, $extension)
+{
     // Verifica si el archivo es realmente un archivo subido y tiene una extensión.
     if ($file && $file->getClientOriginalExtension()) {
         // Compara la extensión del archivo con la extensión deseada.
@@ -101,37 +121,8 @@ function checkFileExtension($file, $extension) {
 }
 
 
-function renderCompetences($competences, $level = 1, $first_loop = true) {
-    $html = '';
-    $icon_edit = heroicon('pencil-square', 'solid');
-    $css_class = $first_loop ? 'first' : '';
-    $level = $first_loop ? 0 : $level;
-
-    foreach ($competences as $competence) {
-        // Renderiza la competencia actual
-        $html .= "<div class='anidation-div {$css_class}' style='margin-left:{$level}em;'>";
-        $html .= "<div class='flex'>";
-        $html .= "<input type='checkbox' class='element-checkbox' id='{$competence['uid']}'> ";
-        $html .= "<label for='{$competence['uid']}' class='element-label'>{$competence['name']} </label> <button class='edit-btn' data-uid='{$competence['uid']}'>{$icon_edit}</button>";
-        $html .= "</div>";
-        if ($competence['description']) {
-            $html .= " <p>{$competence['description']}</p>";
-        }
-
-        // Verifica si hay subcompetencias y las renderiza recursivamente
-        if (!empty($competence['subcompetences'])) {
-            $html .= "<div>";
-            $html .= renderCompetences($competence['subcompetences'], 1, false); // Aumenta el nivel para la anidación
-            $html .= "</div>";
-        }
-
-        $html .= '</div>';
-    }
-
-    return $html;
-}
-
-function formatDateTimeNotifications($date) {
+function formatDateTimeNotifications($date)
+{
     $pastDate = new Carbon($date);
     $currentDate = Carbon::now();
     $interval = $currentDate->diff($pastDate);
@@ -159,7 +150,8 @@ function formatDateTimeNotifications($date) {
 
 
 
- function renderCategories($categories, $level = 1) {
+function renderCategories($categories, $level = 1)
+{
     $html = '';
     $icon_edit = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 16">
     <g clip-path="url(#clip0_224_4598)">
@@ -215,4 +207,47 @@ function formatDateTimeNotifications($date) {
 function currentUser()
 {
     return Auth::user();
+}
+
+function curl_call($url, $data = null, $headers = null, $method = 'GET')
+{
+    // Inicializa cURL
+    $ch = curl_init($url);
+
+    // Configura las opciones de cURL
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+
+    if ($data) {
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    }
+
+    if ($headers) {
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    }
+
+    // Ejecuta la petición cURL
+    $response = curl_exec($ch);
+
+    $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+    if (!in_array($statusCode, [200, 201])) {
+        throw new \Exception('Error en la petición cURL: ' . $statusCode);
+    }
+
+    // Cierra la sesión cURL
+    curl_close($ch);
+
+    return $response;
+}
+
+function add_timestamp_name_file($file)
+{
+    $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+    $extension = $file->getClientOriginalExtension();
+    $timestamp = time();
+
+    $filename = "{$originalName}-{$timestamp}.{$extension}";
+
+    return $filename;
 }

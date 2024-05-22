@@ -50,15 +50,7 @@ class UsersModel extends Authenticatable
 
     public function courseStudentDocuments()
     {
-        return $this->hasManyThrough(
-            CoursesStudentDocumentsModel::class,
-            CoursesStudentsModel::class,
-            'user_uid',
-            'courses_students_uid',
-            'uid',
-            'uid'
-        )->select(['courses_students_documents.*', 'course_documents.document_name'])
-            ->join('course_documents', 'courses_students_documents.course_documents_uid', '=', 'course_documents.uid');
+        return $this->hasMany(CoursesStudentsDocumentsModel::class, 'user_uid');
     }
 
     public function notificationsTypesPreferences()
@@ -75,4 +67,28 @@ class UsersModel extends Authenticatable
     {
         return !empty(array_intersect($roles, array_column($this->roles->toArray(), 'code')));
     }
+
+    // Relación muchos a muchos con la tabla intermedia user_general_notifications
+    public function notifications()
+    {
+        return $this->belongsToMany(GeneralNotificationsModel::class, 'user_general_notifications', 'user_uid', 'general_notification_uid')
+                    ->withPivot('view_date');
+    }
+
+    public function categories()
+    {
+        return $this->belongsToMany(
+            CategoriesModel::class,
+            'user_categories',
+            'user_uid',
+            'category_uid'
+        );
+    }
+
+     // Relación muchos a muchos con la tabla intermedia educational_resource_access
+    public function educationalResources()
+    {
+        return $this->belongsToMany(EducationalResourcesModel::class, 'educational_resource_access', 'user_uid', 'educational_resource_uid')->withPivot('date');;
+    }
+
 }

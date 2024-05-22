@@ -20,7 +20,11 @@
         </div>
 
         <div id="filters" class="filters flex flex-wrap gap-x-3 gap-y-2 mb-4">
+
+            <button id="delete-all-filters" class="delete-filters-btn hidden">Limpiar filtros</button>
+
         </div>
+
 
         <div class="table-container">
             <div id="courses-table"></div>
@@ -35,5 +39,8 @@
     @include('learning_objects.courses.course_students_modal')
     @include('learning_objects.courses.change_statuses_courses')
     @include('learning_objects.courses.filter_courses_modal')
+    @include('learning_objects.courses.columns_courses_modal')
+    @include('learning_objects.courses.enroll_course_modal')
+    @include('learning_objects.courses.enroll_course_csv_modal')
     @include('partials.modal-confirmation')
 @endsection

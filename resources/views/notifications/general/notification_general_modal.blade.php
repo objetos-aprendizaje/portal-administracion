@@ -34,14 +34,14 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="general_notification_type_uid">Tipo <span class="text-danger">*</span></label>
+                        <label for="notification_type_uid">Tipo <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
-                        <select class="poa-select w-full" id="general_notification_type_uid" name="general_notification_type_uid">
+                        <select class="poa-select w-full" id="notification_type_uid" name="notification_type_uid">
                             <option value="">Selecciona el tipo de notificación</option>
-                            @foreach ($general_notification_types as $general_notification_type)
-                                <option value="{{ $general_notification_type->uid }}">
-                                    {{ $general_notification_type->name }}
+                            @foreach ($notification_types as $notification_type)
+                                <option value="{{ $notification_type->uid }}">
+                                    {{ $notification_type->name }}
                                 </option>
                             @endforeach
                         </select>

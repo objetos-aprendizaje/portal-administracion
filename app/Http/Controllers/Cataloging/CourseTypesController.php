@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Cataloging;
 
+use App\Exceptions\OperationFailedException;
+use App\Models\CoursesModel;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use App\Models\CourseTypesModel;
 use Illuminate\Support\Facades\Validator;
-
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Logs\LogsController;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
@@ -27,7 +30,7 @@ class CourseTypesController extends BaseController
 
     public function index()
     {
-        if(!$this->checkAccessManagers()) {
+        if (!$this->checkAccessManagers()) {
             return view('access_not_allowed', [
                 'title' => 'No tienes permiso para administrar los tipos de cursos',
                 'description' => 'El administrador ha bloqueado la administración de tipos de cursos a los gestores.'
@@ -142,7 +145,10 @@ class CourseTypesController extends BaseController
         $course_type->name = $name;
         $course_type->description = $description;
 
-        $course_type->save();
+        DB::transaction(function () use ($course_type) {
+            $course_type->save();
+            LogsController::createLog('Guardar tipo de curso', 'Tipos de cursos', auth()->user()->uid);
+        });
 
         // Obtenemos todas los tipos
         $course_types = CourseTypesModel::get()->toArray();
@@ -158,14 +164,24 @@ class CourseTypesController extends BaseController
 
         $uids = $request->input('uids');
 
-        CourseTypesModel::destroy($uids);
+        $existsCourses = CoursesModel::whereIn('course_type_uid', $uids)->exists();
+
+        if ($existsCourses) {
+            throw new OperationFailedException("No se pueden eliminar los tipos de curso porque están asociados a cursos", 406);
+        }
+
+        DB::transaction(function () use ($uids) {
+            CourseTypesModel::destroy($uids);
+            LogsController::createLog('Eliminar tipo de curso', 'Tipos de cursos', auth()->user()->uid);
+        });
 
         $course_types = CourseTypesModel::get()->toArray();
 
         return response()->json(['message' => 'Tipos de curso eliminados correctamente', 'course_types' => $course_types], 200);
     }
 
-    private function checkAccessManagers() {
+    private function checkAccessManagers()
+    {
         $user = Auth::user();
 
         $roles_user = $user->roles->pluck('code')->toArray();

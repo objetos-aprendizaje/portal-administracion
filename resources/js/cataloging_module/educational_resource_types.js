@@ -20,15 +20,7 @@ let selectedEducationalResourceTypes = [];
 document.addEventListener("DOMContentLoaded", function () {
     initHandlers();
     initializeEducationalResourceTypesTable();
-    controlsSearch(
-        educationalResourceTypesTable,
-        endPointTable,
-        "educational-resource-types-table"
-    );
-    controlsPagination(
-        educationalResourceTypesTable,
-        "educational-resource-types-table"
-    );
+
 });
 
 function initHandlers() {
@@ -159,6 +151,17 @@ function initializeEducationalResourceTypesTable() {
             },
             columns: columns,
         }
+    );
+
+    controlsSearch(
+        educationalResourceTypesTable,
+        endPointTable,
+        "educational-resource-types-table"
+    );
+
+    controlsPagination(
+        educationalResourceTypesTable,
+        "educational-resource-types-table"
     );
 }
 

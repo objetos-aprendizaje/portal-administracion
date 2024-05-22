@@ -84,6 +84,7 @@ function initializeCategoriesCheckboxs() {
 
     parentCheckboxes.forEach(function (parentCheckbox) {
         parentCheckbox.addEventListener("change", function () {
+
             const childCheckboxes = document.querySelectorAll(
                 ".child-of-" + parentCheckbox.id
             );
@@ -233,15 +234,17 @@ async function loadCategoryModal(categoryUid = null) {
  * @param {boolean} isChecked - Indica si el checkbox padre está marcado o no.
  */
 function checkChildren(element, isChecked) {
-    const children = element.parentElement.querySelectorAll(
-        'input[type="checkbox"]:not(:checked)'
-    );
-    children.forEach((child) => {
-        if (child !== element) {
-            child.checked = isChecked;
-            checkChildren(child, isChecked);
-        }
-    });
+    if (element.checked){
+        var inputsHijos = element.parentElement.parentElement.querySelectorAll('input');
+        inputsHijos.forEach(function(input) {
+            input.checked = true;
+        });
+    }else{
+        var inputsHijos = element.parentElement.parentElement.querySelectorAll('input');
+        inputsHijos.forEach(function(input) {
+            input.checked = false;
+        });
+    }
 }
 
 /**

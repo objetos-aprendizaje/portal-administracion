@@ -79,6 +79,11 @@ function adjustPadding() {
     var body = document.body;
     var navbarHeight = navbar.offsetHeight;
     body.style.paddingTop = navbarHeight + "px";
+
+    // Configuramos min-height para el contenido principal con calc, restándole el padding top a 100vh
+    var mainContent = document.getElementById("main-content");
+    mainContent.style.minHeight = `calc(100vh - ${navbarHeight}px)`;
+
 }
 
 export function validateForm(formId) {
@@ -143,55 +148,46 @@ export function loadJSONFile(path) {
 
 export function showFormErrors(errors) {
     Object.keys(errors).forEach((field) => {
-        const element = document.getElementById(field);
+        errors[field].forEach((error) => {
+            const element = document.getElementById(field);
 
-        if (!element) return;
+            if (!element) return;
 
-        if (element.tagName === "INPUT" && element.type === "file") {
-            // Encuentra el div que quieres resaltar y añade la clase de error.
-            const div = element.closest(".select-file-container");
-            div.classList.add("error-border");
+            // Crea el div que contendrá los mensajes de error.
+            const errorContainer = document.createElement('div');
+            errorContainer.classList.add('error-container');
 
-            // Crea el mensaje de error y lo coloca fuera del div 'select-file-container'.
+            // Crea el mensaje de error y lo añade al div.
             const small = document.createElement("small");
-            small.textContent = errors[field];
+            small.textContent = error;
             small.classList.add("error-label");
-            div.parentNode.insertBefore(small, div.nextSibling);
-        } else if (element.getAttribute("data-choice")) {
-            // Encuentra el contenedor de Choices.js y añade la clase de error.
-            const choicesContainer = element.closest(".choices");
-            const choicesInnerContainer = element.closest(".choices__inner");
-            if (choicesContainer) {
-                choicesInnerContainer.classList.add("error-border");
+            errorContainer.appendChild(small);
 
-                // Crea el mensaje de error y lo coloca fuera del contenedor de Choices.js.
-                const small = document.createElement("small");
-                small.textContent = errors[field];
-                small.classList.add("error-label");
-                choicesContainer.parentNode.insertBefore(
-                    small,
-                    choicesContainer.nextSibling
-                );
+            if (element.tagName === "INPUT" && element.type === "file") {
+                const div = element.closest(".select-file-container");
+                div.classList.add("error-border");
+                div.parentNode.insertBefore(errorContainer, div.nextSibling);
+            } else if (element.getAttribute("data-choice")) {
+                const choicesContainer = element.closest(".choices");
+                const choicesInnerContainer = element.closest(".choices__inner");
+                if (choicesContainer) {
+                    choicesInnerContainer.classList.add("error-border");
+                    choicesContainer.parentNode.insertBefore(
+                        errorContainer,
+                        choicesContainer.nextSibling
+                    );
+                }
+            } else if (["INPUT", "TEXTAREA", "SELECT"].includes(element.tagName)) {
+                element.classList.add("error-border");
+                element.parentNode.appendChild(errorContainer);
+            } else if (element.getAttribute("data-tomselect")) {
+                const tomSelectContainer = element.closest(".ts-wrap");
+                if (tomSelectContainer) {
+                    tomSelectContainer.classList.add("error-border");
+                    tomSelectContainer.parentNode.appendChild(errorContainer);
+                }
             }
-        } else if (["INPUT", "TEXTAREA", "SELECT"].includes(element.tagName)) {
-            // El comportamiento original para otros tipos de elementos.
-            element.classList.add("error-border");
-
-            const small = document.createElement("small");
-            small.textContent = errors[field];
-            small.classList.add("error-label");
-            element.parentNode.appendChild(small);
-        } else if (element.getAttribute("data-tomselect")) {
-            const tomSelectContainer = element.closest(".ts-wrap");
-            if (tomSelectContainer) {
-                tomSelectContainer.classList.add("error-border");
-
-                const small = document.createElement("small");
-                small.textContent = errors[field];
-                small.classList.add("error-label");
-                tomSelectContainer.parentNode.appendChild(small);
-            }
-        }
+        });
     });
 }
 
@@ -356,6 +352,80 @@ export function getMultipleTomSelectInstance(idElement) {
     return tomSelectInstance;
 }
 
+export function getMultipleFreeTomSelectInstance(idElement) {
+    const tomSelectInstance = new TomSelect(idElement, {
+        plugins: {
+            remove_button: {
+                title: "Eliminar",
+            },
+        },
+        create: true,
+        createOnBlur: true,
+        render: {
+            no_results: function (data, escape) {
+                return "";
+            },
+            option_create: function (data, escape) {
+                return (
+                    '<div class="create">Añadir <strong>' +
+                    escape(data.input) +
+                    "</strong>&hellip;</div>"
+                );
+            },
+        },
+        onItemRemove: function (value) {
+            this.removeOption(value);
+        },
+    });
+
+    return tomSelectInstance;
+}
+
+/**
+ * Devuelve un objeto TomSelect con la capacidad de introducir múltiples emails
+ * @param {*} idElement
+ * @returns
+ */
+export function getMultipleFreeEmailsTomSelectInstance(idElement) {
+    return new TomSelect(idElement, {
+        plugins: {
+            remove_button: {
+                title: "Eliminar",
+            },
+        },
+        create: true,
+        createOnBlur: true,
+        createFilter: function (input) {
+            // Expresión regular para validar emails
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(input);
+        },
+        render: {
+            no_results: function (data, escape) {
+                // Si el input del usuario no es un email válido, muestra un mensaje
+                if (!this.settings.createFilter(data.input)) {
+                    return '<div class="no-results">Por favor, introduce un email válido</div>';
+                }
+                return "";
+            },
+            option_create: function (data, escape) {
+                // Si el input del usuario es un email válido, muestra la opción para añadirlo
+                if (this.settings.createFilter(data.input)) {
+                    return (
+                        '<div class="create">Añadir <strong>' +
+                        escape(data.input) +
+                        "</strong>&hellip;</div>"
+                    );
+                }
+                return "";
+            },
+        },
+        onItemRemove: function (value) {
+            this.removeOption(value);
+        },
+    });
+}
+
 /**
  * Devuelve un listado de labels de opciones seleccionadas de un tomSelect
  * @param {*} tomSelectInstance
@@ -511,6 +581,13 @@ export function instanceFlatpickr(idElement) {
         dateFormat: "d-m-Y H:i",
         enableTime: true,
         locale: Spanish,
+        onClose(selectedDates, dateStr, instance) {
+            if (selectedDates.length < 2) {
+                setTimeout(() => {
+                    instance.input.value = "";
+                }, 0);
+            }
+        },
     });
 
     return flatpickrInstance;
@@ -782,9 +859,10 @@ export function getFilterHtml(filterKey, filterName, filterOption) {
     return `
     <div class="filter" id="${filterKey}">
         <div>${filterName}: ${filterOption}</div>
-        <button data-filter-key="${
-            filterKey
-        }" class="delete-filter-btn">${heroicon("x-mark", "outline")}</button>
+        <button data-filter-key="${filterKey}" class="delete-filter-btn">${heroicon(
+        "x-mark",
+        "outline"
+    )}</button>
     </div>
 `;
 }
@@ -802,6 +880,32 @@ export function checkParamInUrl(param) {
 }
 
 export function wipeParamsInUrl() {
-    const urlWithoutParams = window.location.protocol + "//" + window.location.host + window.location.pathname;
+    const urlWithoutParams =
+        window.location.protocol +
+        "//" +
+        window.location.host +
+        window.location.pathname;
     window.history.replaceState({}, document.title, urlWithoutParams);
+}
+
+export function fillFormWithObject(obj, formId) {
+    const form = document.getElementById(formId);
+    const formData = new FormData(form);
+
+    // Itera sobre las propiedades del objeto
+    for (let key in obj) {
+        // Si el objeto tiene la propiedad (no es heredada) y el valor no es null
+        if (obj.hasOwnProperty(key) && obj[key] !== null) {
+            // Establece el valor en formData
+            formData.set(key, obj[key]);
+        }
+    }
+
+    // Itera sobre formData y establece los valores en el formulario
+    for (let [name, value] of formData) {
+        const input = form.elements[name];
+        if (input) {
+            input.value = value;
+        }
+    }
 }

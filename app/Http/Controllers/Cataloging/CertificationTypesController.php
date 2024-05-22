@@ -10,6 +10,8 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Logs\LogsController;
 
 
 class CertificationTypesController extends BaseController
@@ -137,7 +139,10 @@ class CertificationTypesController extends BaseController
         $certification_type->description = $description;
         $certification_type->category_uid = $category_uid;
 
-        $certification_type->save();
+        DB::transaction(function () use ($certification_type) {
+            $certification_type->save();
+            LogsController::createLog("Añadir tipos de certificados", 'Tipos de certificados', auth()->user()->uid);
+        });
 
         // Obtenemos todas los tipos
         $certification_types = CertificationTypesModel::get()->toArray();
@@ -153,7 +158,10 @@ class CertificationTypesController extends BaseController
 
         $uids = $request->input('uids');
 
-        CertificationTypesModel::destroy($uids);
+        DB::transaction(function () use ($uids) {
+            CertificationTypesModel::destroy($uids);
+            LogsController::createLog("Eliminación de tipos de certificados", 'Tipos de certificados', auth()->user()->uid);
+        });
 
         $certification_types = CertificationTypesModel::get()->toArray();
 

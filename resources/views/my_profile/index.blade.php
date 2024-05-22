@@ -14,8 +14,7 @@
                     <div class="content-container">
 
                         <div class="poa-input-image">
-                            <img id="photo_path_preview"
-                                src="{{ $user->photo_path ?? '/data/images/default_images/no_image_attached.svg' }}" />
+                            <img id="photo_path_preview" src="{{ $user->photo_path ?? env('NO_IMAGE_SELECTED_PATH') }}" />
 
                             <span class="dimensions">*Dimensiones: Alto: 50px x Ancho: 300px. Formato: PNG, JPG. Tam. Máx.:
                                 1MB</span>
@@ -105,7 +104,7 @@
                                     class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
                                 </div>
 
-                                <div class="checkbox-name">Notificaciones generales</div>
+                                <div class="checkbox-name">Recibir notificaciones generales</div>
                             </label>
                         </div>
 
@@ -148,7 +147,7 @@
                                     class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
                                 </div>
 
-                                <div class="checkbox-name">Notificaciones generales</div>
+                                <div class="checkbox-name">Recibir notificaciones por email</div>
                             </label>
                         </div>
                     </div>

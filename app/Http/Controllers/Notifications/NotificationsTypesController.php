@@ -1,11 +1,15 @@
 <?php
+
 namespace App\Http\Controllers\Notifications;
 
+use App\Models\GeneralNotificationsModel;
 use App\Models\NotificationsTypesModel;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use App\Http\Controllers\Logs\LogsController;
+use Illuminate\Support\Facades\DB;
 
 class NotificationsTypesController extends BaseController
 {
@@ -16,8 +20,8 @@ class NotificationsTypesController extends BaseController
         return view(
             'notifications.notifications_types.index',
             [
-                "page_name" => "Tipos de notificationes",
-                "page_title" => "Tipos de notificationes",
+                "page_name" => "Tipos de notificaciones",
+                "page_title" => "Tipos de notificaciones",
                 "resources" => [
                     "resources/js/notifications_module/notifications_types.js"
                 ],
@@ -120,6 +124,9 @@ class NotificationsTypesController extends BaseController
         // Obtenemos todas los tipos
         $notifications_types = NotificationsTypesModel::get()->toArray();
 
+        $messageLog = $isNew ? 'Tipo de notificación añadida' : 'Tipo de notificación actualizada';
+        LogsController::createLog($messageLog, 'Tipos de notificación', auth()->user()->uid);
+
         return response()->json([
             'message' => ($isNew) ? 'Tipo de notificación añadida correctamente' : 'Tipo de notificación actualizada correctamente',
             'notifications_types' => $notifications_types
@@ -131,12 +138,21 @@ class NotificationsTypesController extends BaseController
 
         $uids = $request->input('uids');
 
-        NotificationsTypesModel::destroy($uids);
+        // Comprobamos si hay notificaciones que estén vinculado a los tipos de notificación
+        $existNotifications = GeneralNotificationsModel::whereIn('notification_type_uid', $uids)->exists();
+
+        if ($existNotifications) {
+            return response()->json(['message' => 'No se pueden eliminar los tipos de notificación porque hay notificaciones vinculadas a ellos'], 406);
+        }
+
+        DB::transaction(function () use ($uids) {
+            NotificationsTypesModel::destroy($uids);
+            LogsController::createLog("Tipos de notificación eliminados", 'Tipos de notificación', auth()->user()->uid);
+        });
+
 
         $notifications_types = NotificationsTypesModel::get()->toArray();
 
         return response()->json(['message' => 'Tipos de notificación eliminados correctamente', 'notifications_types' => $notifications_types], 200);
     }
-
 }
-

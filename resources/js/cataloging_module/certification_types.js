@@ -27,12 +27,7 @@ document.addEventListener("DOMContentLoaded", function () {
     initHandlers();
     instanceCategoryChoices();
     initializeCourseTypesTable();
-    controlsSearch(
-        certificationTypesTable,
-        endPointTable,
-        "certification-types-table"
-    );
-    controlsPagination(certificationTypesTable, "certification-types-table");
+
 });
 
 function initHandlers() {
@@ -173,6 +168,14 @@ function initializeCourseTypesTable() {
         },
         columns: columns,
     });
+
+    controlsSearch(
+        certificationTypesTable,
+        endPointTable,
+        "certification-types-table"
+    );
+
+    controlsPagination(certificationTypesTable, "certification-types-table");
 }
 
 async function loadCourseTypeModal(uid) {

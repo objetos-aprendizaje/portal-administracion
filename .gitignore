@@ -16,6 +16,9 @@ node_modules
 /public/images/courses-images/*
 !/public/images/courses-images/index
 
+/public/images/educational-programs-images/*
+!/public/images/educational-programs-images/index
+
 /public/images/categories-images/*
 !/public/images/categories-images/index
 
@@ -27,6 +30,9 @@ node_modules
 
 /public/images/carrousel-images/*
 !/public/images/carrousel-images/index
+
+/public/images/resources-images/*
+!/public/images/resources-images/index
 
 /public/fonts/*
 !/public/fonts/index

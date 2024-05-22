@@ -20,6 +20,7 @@ import {
     getCreateElementsTomSelectInstance,
     toggleFormFields,
     apiFetch,
+    getOptionsSelectedTomSelectInstance,
 } from "../app.js";
 import { heroicon } from "../heroicons.js";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
@@ -27,16 +28,17 @@ import { showToast } from "../toast.js";
 
 let resourcesTable;
 let selectedResources = [];
+let filters = [];
 const endPointTable = "/learning_objects/educational_resources/get_resources";
 let tomSelectTags;
 let tomSelectCategories;
+let tomFilterSelectCategories;
 let metadataCounter = 0;
 document.addEventListener("DOMContentLoaded", () => {
     initHandlers();
 
     initializeResourcesTable();
-    controlsPagination(resourcesTable, "resources-table");
-    controlsSearch(resourcesTable, endPointTable, "resources-table");
+
     initializeTomSelect();
     updateInputImage();
     updateInputFile();
@@ -98,6 +100,23 @@ function initHandlers() {
     document
         .querySelector(".matadata-container")
         .addEventListener("click", removeMetadataPair);
+
+    document
+        .getElementById("filter-educational-resources-btn")
+        .addEventListener("click", function () {
+            showModal("filter-educational-resources-modal");
+        });
+    document
+        .getElementById("filter-btn")
+        .addEventListener("click", function () {
+            controlSaveHandlerFilters();
+        });
+
+    document
+        .getElementById("delete-all-filters")
+        .addEventListener("click", function () {
+            resetFilters();
+        });
 }
 
 function addMetadataPair() {
@@ -186,6 +205,7 @@ function createMetadataElementMetadata(metadata, id) {
 function initializeTomSelect() {
     tomSelectTags = getCreateElementsTomSelectInstance("#tags");
     tomSelectCategories = getMultipleTomSelectInstance("#select-categories");
+    tomFilterSelectCategories = getMultipleTomSelectInstance("#filter_select_categories");
 }
 
 function controlShowHideResourcesWay() {
@@ -230,6 +250,179 @@ function newEducationalResource() {
 
     toggleResourcesFields("educational-resource-form", false);
     showModal("educational-resource-modal", "Nuevo recurso educativo");
+}
+
+/**
+ * Maneja el evento de clic en el botón para aplicar los filtros.
+ * Recoge los filtros del modal, los muestra en la interfaz y vuelve a inicializar
+ * la tabla de cursos con los nuevos filtros aplicados.
+ */
+function controlSaveHandlerFilters() {
+    filters = collectFilters();
+
+    showFilters();
+
+    hideModal("filter-educational-resources-modal");
+
+    initializeResourcesTable();
+}
+
+/**
+ * Recoge todos los filtros aplicados en el modal de filtros.
+ * Obtiene los valores de los elementos de entrada y los añade al array
+ * de filtros seleccionados.
+ */
+function collectFilters() {
+    let selectedFilters = [];
+    /**
+     *
+     * @param {*} name nombre del filtro
+     * @param {*} value Valor correspondiente a la opción seleccionada
+     * @param {*} option Opción seleccionada
+     * @param {*} filterKey Id correspondiente al filtro y al campo input al que corresponde
+     * @param {*} database_field Nombre del campo de la BD correspondiente al filtro
+     * @param {*} filterType Tipo de filtro
+     *
+     * Añade filtros al array
+     */
+    function addFilter(name, value, option, filterKey, database_field = "") {
+        if (value && value !== "") {
+            selectedFilters.push({
+                name,
+                value,
+                option,
+                filterKey,
+                database_field,
+            });
+        }
+    }
+    let filter_resource_way = document.getElementById(
+        "filter_resource_way"
+    );
+
+    if (filter_resource_way.value) {
+
+        addFilter(
+            "Forma de recurso",
+            filter_resource_way.value,
+            filter_resource_way.value == "FILE" ? "Fichero" : "URL",
+            "filter_resource_way",
+            "resource_way"
+        );
+    }
+
+
+    let filter_educational_resource_type_uid = document.getElementById(
+        "filter_educational_resource_type_uid"
+    );
+    if (filter_educational_resource_type_uid.value) {
+        let selectedFilterOptionText =
+            filter_educational_resource_type_uid.options[filter_educational_resource_type_uid.selectedIndex].text;
+
+        addFilter(
+            "Tipo",
+            filter_educational_resource_type_uid.value,
+            selectedFilterOptionText,
+            "filter_educational_resource_type_uid",
+            "educational_resource_type_uid"
+        );
+    }
+
+    if (tomFilterSelectCategories) {
+        const categoriesFilter = tomFilterSelectCategories.getValue();
+
+        const selectedFilterCategoriesLabel = getOptionsSelectedTomSelectInstance(
+            tomFilterSelectCategories
+        );
+
+        if (categoriesFilter.length)
+            addFilter(
+                "Categorías",
+                categoriesFilter,
+                selectedFilterCategoriesLabel,
+                "Categories",
+                "categories"
+            );
+    }
+
+    return selectedFilters;
+}
+
+/**
+ * Muestra los filtros aplicados en la interfaz de usuario.
+ * Recorre el array de 'filters' y genera el HTML para cada filtro,
+ * permitiendo su visualización y posterior eliminación. Además muestra u oculta
+ * el botón de eliminación de filtros
+ */
+function showFilters() {
+    // Eliminamos todos los filtros
+    var currentFilters = document.querySelectorAll(".filter");
+
+    // Recorre cada elemento y lo elimina
+    currentFilters.forEach(function (filter) {
+        filter.remove();
+    });
+
+    filters.forEach((filter) => {
+        // Crea un nuevo div
+        var newDiv = document.createElement("div");
+
+        // Agrega la clase 'filter' al div
+        newDiv.classList.add("filter");
+
+        // Establece el HTML del nuevo div
+        newDiv.innerHTML = `
+            <div>${filter.name}: ${filter.option}</div>
+            <button data-filter-key="${filter.filterKey
+            }" class="delete-filter-btn">${heroicon(
+                "x-mark",
+                "outline"
+            )}</button>
+        `;
+
+        // Agrega el nuevo div al div existente
+        document.getElementById("filters").prepend(newDiv);
+    });
+
+    const deleteAllFiltersBtn = document.getElementById("delete-all-filters");
+
+    if (filters.length == 0) deleteAllFiltersBtn.classList.add("hidden");
+    else deleteAllFiltersBtn.classList.remove("hidden");
+
+    // Agregamos los listeners de eliminación a los filtros
+    document.querySelectorAll(".delete-filter-btn").forEach((deleteFilter) => {
+        deleteFilter.addEventListener("click", (event) => {
+            controlDeleteFilters(event.currentTarget);
+        });
+    });
+}
+
+function resetFilters() {
+    filters = [];
+    showFilters();
+    initializeResourcesTable();
+
+    tomFilterSelectCategories.clear();
+    document.getElementById("filter_resource_way").value = "";
+    document.getElementById("filter_educational_resource_type_uid").value = "";
+}
+
+/**
+ * Maneja el evento de clic para eliminar un filtro específico.
+ * Cuando se hace clic en un botón con la clase 'delete-filter-btn',
+ * este elimina el filtro correspondiente del array 'filters' y actualiza
+ * la visualización y la tabla de cursos.
+ */
+function controlDeleteFilters(deleteBtn) {
+    const filterKey = deleteBtn.getAttribute("data-filter-key");
+
+    filters = filters.filter((filter) => filter.filterKey !== filterKey);
+
+    if (filterKey == "Categories") tomFilterSelectCategories.clear();
+    else document.getElementById(filterKey).value = "";
+
+    showFilters();
+    initializeResourcesTable();
 }
 
 /**
@@ -305,13 +498,12 @@ function initializeResourcesTable() {
                 }
 
                 return `
-                <div class="label-status" style="background-color: ${color};">${
-                    cell.getRow().getData().status.name
-                }</div>
+                <div class="label-status" style="background-color: ${color};">${cell.getRow().getData().status.name
+                    }</div>
                 `;
             },
         },
-        { title: "Nombre", field: "name", widthGrow: 4 },
+        { title: "Título", field: "title", widthGrow: 4 },
         { title: "Descripción", field: "description", widthGrow: 2 },
         { title: "Tipo", field: "type.name", widthGrow: 2 },
         {
@@ -340,6 +532,11 @@ function initializeResourcesTable() {
         ajaxURL: endPointTable,
         ...tabulatorBaseConfig,
         columns: columns,
+        ajaxParams: {
+            filters: {
+                ...filters,
+            },
+        },
         ajaxResponse: function (url, params, response) {
             updatePaginationInfo(resourcesTable, response, "resources-table");
 
@@ -351,6 +548,9 @@ function initializeResourcesTable() {
             };
         },
     });
+
+    controlsPagination(resourcesTable, "resources-table");
+    controlsSearch(resourcesTable, endPointTable, "resources-table");
 }
 
 /**
@@ -408,7 +608,7 @@ function fillFormResourceModal(resource) {
     }
 
     document.getElementById("educational_resource_uid").value = resource.uid;
-    document.getElementById("name").value = resource.name;
+    document.getElementById("title").value = resource.title;
     document.getElementById("description").value = resource.description;
     document.getElementById("educational_resource_type_uid").value =
         resource.educational_resource_type_uid;
@@ -611,7 +811,7 @@ function changeStatusesResources() {
 
         resourcesList.innerHTML += `
                 <div class="mb-5 bg-gray-100 p-4 rounded-xl">
-                <h4>${resource.name}</h4>
+                <h4>${resource.title}</h4>
 
                 <div class="resource px-4" data-uid="${resource.uid}">
 
@@ -622,8 +822,8 @@ function changeStatusesResources() {
                     <select class="status-resource poa-select mb-2 min-w-[250px]">
                         <option value="" selected>Selecciona un estado</option>
                         ${optionsStatuses.map((option) => {
-                            return `<option value="${option.value}">${option.label}</option>`;
-                        })}
+            return `<option value="${option.value}">${option.label}</option>`;
+        })}
                     </select>
                     <div class="">
                         <h4>Indica un motivo</h4>

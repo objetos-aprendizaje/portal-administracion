@@ -10,6 +10,7 @@ use App\Models\DestinationsEmailNotificationsRolesModel;
 use App\Models\DestinationsEmailNotificationsUsersModel;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use App\Models\NotificationsTypesModel;
 
 use Illuminate\Http\Request;
 
@@ -20,8 +21,7 @@ class EmailNotificationsController extends BaseController
 
     public function index()
     {
-
-        $notifications = EmailNotificationsModel::get()->toArray();
+        $notification_types = NotificationsTypesModel::get();
 
         return view(
             'notifications.email.index',
@@ -31,9 +31,10 @@ class EmailNotificationsController extends BaseController
                 "resources" => [
                     "resources/js/notifications_module/email_notifications.js"
                 ],
-                "notifications" => $notifications,
                 "tabulator" => true,
-                "tomselect" => true
+                "tomselect" => true,
+                "flatpickr" => true,
+                "notification_types" => $notification_types
             ]
         );
     }
@@ -44,8 +45,12 @@ class EmailNotificationsController extends BaseController
         $size = $request->get('size', 1);
         $search = $request->get('search');
         $sort = $request->get('sort');
+        $filters = $request->get('filters');
 
-        $query = EmailNotificationsModel::query();
+        $query = EmailNotificationsModel::query()
+            ->with('emailNotificationType')
+            ->join('notifications_types', 'email_notifications.notification_type_uid', '=', 'notifications_types.uid', 'left')
+            ->select('email_notifications.*', 'notifications_types.name as notification_type_name');
 
         if ($search) {
             $query->where(function ($query) use ($search) {
@@ -60,6 +65,8 @@ class EmailNotificationsController extends BaseController
             }
         }
 
+        if ($filters) $this->applyFilters($filters, $query);
+
         $data = $query->paginate($size);
 
         return response()->json($data, 200);
@@ -72,18 +79,17 @@ class EmailNotificationsController extends BaseController
             return response()->json(['message' => env('ERROR_MESSAGE')], 400);
         }
 
-        $general_notification = EmailNotificationsModel::where('uid', $notification_general_uid)->with('roles')->with('users')->first();
+        $email_notification = EmailNotificationsModel::where('uid', $notification_general_uid)->with('roles')->with('users')->with('emailNotificationType')->first();
 
-        if (!$general_notification) {
+        if (!$email_notification) {
             return response()->json(['message' => 'La notificación general no existe'], 406);
         }
 
-        return response()->json($general_notification, 200);
+        return response()->json($email_notification, 200);
     }
 
-    public function saveEmailNotification(Request $request)
+    private function validateEmailNotification($request)
     {
-
         $messages = [
             'subject.required' => 'El campo asunto es obligatorio.',
             'subject.max' => 'El titulo no puede tener más de 255 caracteres.',
@@ -100,7 +106,7 @@ class EmailNotificationsController extends BaseController
             'subject' => [
                 'required', 'max:255',
             ],
-            'notification_general_uid' => 'nullable|exists:general_notifications,uid',
+            'notification_general_uid' => 'nullable|exists:email_notifications,uid',
             'type' => 'required',
             'body' => 'required',
             'send_date' => 'required|date|after_or_equal:now',
@@ -118,34 +124,39 @@ class EmailNotificationsController extends BaseController
             return $input->type === 'USERS';
         });
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        return $validator->errors();
+    }
+
+    public function saveEmailNotification(Request $request)
+    {
+
+        $validatorErrors = $this->validateEmailNotification($request);
+
+        if ($validatorErrors->any()) {
+            return response()->json(['errors' => $validatorErrors], 400);
         }
 
-        DB::transaction(function () use ($request, &$isNew) {
-            $notification_email_uid = $request->get('notification_email_uid');
-            $subject = $request->get('subject');
-            $body = $request->get('body');
-            $type = $request->get('type');
-            $send_date = $request->get('send_date');
+        $notification_email_uid = $request->get('notification_email_uid');
 
-            if ($notification_email_uid) {
-                $notification_email = EmailNotificationsModel::find($notification_email_uid);
-                if ($notification_email->sent) {
-                    throw new \Exception('La notificación ya ha sido enviada y no puede ser modificada.');
-                }
-                $isNew = false;
-            } else {
-                $notification_email_uid = generate_uuid();
-                $notification_email = new EmailNotificationsModel();
-                $notification_email->uid = $notification_email_uid;
-                $isNew = true;
+        if ($notification_email_uid) {
+            $notification_email = EmailNotificationsModel::where('uid', $notification_email_uid)->with(['roles', 'users'])->first();
+            if ($notification_email->sent) {
+                throw new \Exception('La notificación ya ha sido enviada y no puede ser modificada.');
             }
+            $isNew = false;
+        } else {
+            $notification_email_uid = generate_uuid();
+            $notification_email = new EmailNotificationsModel();
+            $notification_email->uid = $notification_email_uid;
+            $isNew = true;
+        }
 
-            $notification_email->subject = $subject;
-            $notification_email->body = $body;
-            $notification_email->type = $type;
-            $notification_email->send_date = $send_date;
+        $notification_email->fill($request->only([
+            'subject', 'body', 'type', 'end_date', 'send_date', 'notification_type_uid'
+        ]));
+
+        DB::transaction(function () use ($request, $notification_email, $isNew) {
+
             $notification_email->save();
 
             /**
@@ -155,31 +166,42 @@ class EmailNotificationsController extends BaseController
              * se eliminan las relaciones en la tabla de roles y se registran las relaciones
              * correspondientes en la tabla de usuarios.
              */
-            if ($type === 'ROLES') {
-                $roles_input = $request->get('roles');
-                foreach ($roles_input as $rol) {
-                    DestinationsEmailNotificationsRolesModel::create([
-                        "uid" => generate_uuid(),
-                        "rol_uid" => $rol,
-                        "email_notification_uid" => $notification_email_uid
-                    ]);
-                }
-            } elseif ($type === 'USERS') {
-                $users_input = $request->get('users');
 
-                foreach ($users_input as $user) {
-                    DestinationsEmailNotificationsUsersModel::create([
-                        "uid" => generate_uuid(),
-                        "user_uid" => $user,
-                        "email_notification_uid" => $notification_email_uid
-                    ]);
-                }
+            $type = $request->get('type');
+
+            if ($type === 'ROLES') {
+                $roles = $request->get('roles');
+                $this->handleRoles($roles, $notification_email);
+            } elseif ($type === 'USERS') {
+                $users = $request->get('users');
+                $this->handleUsers($users, $notification_email);
             }
         }, 5);
 
         return response()->json([
             'message' =>  $isNew ? 'Notificación por email creada correctamente' : 'Notificación por email actualizada correctamente'
         ], 200);
+    }
+
+    private function handleRoles($roles, $notification_email)
+    {
+        $rolesData = [];
+        foreach ($roles as $role) {
+            $rolesData[$role] = ['email_notification_uid' => $notification_email->uid, 'uid' => generate_uuid()];
+        }
+        $notification_email->roles()->sync($rolesData);
+        $notification_email->users()->detach();
+    }
+
+    private function handleUsers($users, $notification_email)
+    {
+        $usersData = [];
+        foreach ($users as $user) {
+
+            $usersData[$user] = ['email_notification_uid' => $notification_email->uid, 'uid' => generate_uuid()];
+        }
+        $notification_email->users()->sync($usersData);
+        $notification_email->roles()->detach();
     }
 
     public function deleteEmailNotifications(Request $request)
@@ -193,5 +215,34 @@ class EmailNotificationsController extends BaseController
         EmailNotificationsModel::destroy($uids);
 
         return response()->json(['message' => 'Notificaciones eliminadas correctamente'], 200);
+    }
+
+
+    private function applyFilters($filters, &$query)
+    {
+        foreach ($filters as $filter) {
+            if ($filter['database_field'] == "sent") {
+                $query->where("sent", $filter['value']);
+            } elseif ($filter['database_field'] == "notification_types") {
+                $query->whereIn('email_notifications.notification_type_uid', $filter['value']);
+            } elseif ($filter['database_field'] == 'send_date') {
+                if (count($filter['value']) == 2) {
+                    // Si recibimos un rango de fechas
+                    $query->where('send_date', '<=', $filter['value'][1])
+                        ->where('send_date', '>=', $filter['value'][0]);
+                } else {
+                    // Si recibimos solo una fecha
+                    $query->whereDate('send_date', '<=', $filter['value'])
+                        ->whereDate('send_date', '>=', $filter['value']);
+                }
+            }
+        }
+    }
+    public function getEmailNotificationTypes()
+    {
+
+        $email_notification_types = NotificationsTypesModel::get();
+
+        return response()->json($email_notification_types, 200);
     }
 }

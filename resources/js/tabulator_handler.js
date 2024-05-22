@@ -49,6 +49,31 @@ export const tabulatorBaseConfig = {
 
 /**
  *
+ * @param {*} tableId
+ * @returns Configuración específica para una tabla con paginación.
+ */
+export function getPaginationControls(tableId) {
+    const containerElement = document.querySelector(
+        `.pagination[data-table="${tableId}"]`
+    );
+    let paginationControls = {};
+
+    // Input de página actual
+    const currentPageElement = containerElement.querySelector(".current-page");
+
+    paginationControls.currentPage = currentPageElement.value;
+
+    // Selector de páginas a mostrar
+    const numPagesSelectorElement = containerElement.querySelector(
+        ".num-pages-selector"
+    );
+    paginationControls.paginationSize = numPagesSelectorElement.value;
+
+    return paginationControls;
+}
+
+/**
+ *
  * @param {*} table instancia de tabulator
  * @param {*} tableId id asignado al div que contiene la tabla
  * Añade controladores de eventos para la paginación de la tabla.
@@ -97,7 +122,6 @@ export function controlsPagination(table, tableId) {
             table.setPage(table.getPageMax());
         });
 
-    // Actualizar la página actual desde el input
     // Actualizar la página actual desde el input
     const currentPageElement = containerElement.querySelector(".current-page");
     if (currentPageElement) {
@@ -176,7 +200,6 @@ export function controlsSearch(tabulatorTable, endPointTable, tableId) {
     }
 }
 
-
 /**
  *
  * @param {*} tabulatorTable instancia de Tabulator
@@ -205,7 +228,6 @@ export function updatePaginationInfo(tabulatorTable, response, tableId) {
         pageInfoElement.innerText = `${start} a ${end} de ${response.total}`;
     }
 }
-
 
 /**
  *
@@ -336,7 +358,6 @@ export function dropdownMenu(cell, menuOptions) {
 
     // Rellenar el menú con opciones basadas en el array proporcionado.
     menuOptions.forEach((option) => {
-        console.log('option', option);
         const menuItem = document.createElement("a");
         menuItem.href = option.href || "#";
         menuItem.textContent = option.text;
@@ -371,14 +392,15 @@ export function dropdownMenu(cell, menuOptions) {
         },
         { once: true }
     );
-
 }
 
 function closeAllExistingOptionsMenus() {
     const allExistingOptionsMenus = document.querySelectorAll(".options-div");
     allExistingOptionsMenus.forEach((menu) => menu.remove());
 
-    const allExistingDropdownMenus = document.querySelectorAll(".dropdown-menu-container");
+    const allExistingDropdownMenus = document.querySelectorAll(
+        ".dropdown-menu-container"
+    );
     allExistingDropdownMenus.forEach((menu) => menu.remove());
 }
 

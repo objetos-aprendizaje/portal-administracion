@@ -22,13 +22,13 @@
                                 <label class="px-3 mb-[8px]">Correo</label>
                                 <input
                                     class="border-[1.5px] border-solid border-primary rounded-full p-3 focus:border-primary h-[60px]"
-                                    type="text" name="email" />
+                                    type="text" name="email" value="{{env('USER_DEVELOPMENT') ? 'admin@admin.com' : ''}}"/>
                             </div>
 
                             <div class="flex flex-col mb-[8px]">
                                 <label class="px-3 mb-[8px]">Contraseña</label>
                                 <input class="border-[1.5px] border-solid border-primary rounded-full h-[60px] p-3"
-                                    name="password" type="password" />
+                                    name="password" type="password" value="{{env('USER_DEVELOPMENT') ? 'admin-poa-2024' : ''}}"/>
                             </div>
 
                             <a href="{{ route('recover-password') }}" id="recover-password"

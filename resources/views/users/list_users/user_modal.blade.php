@@ -82,7 +82,7 @@
                     <div class="content-container">
 
                         <div class="poa-input-image">
-                            <img id="photo_path_preview" src="/data/images/default_images/no_image_attached.svg" />
+                            <img id="photo_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}" />
 
                             <span class="dimensions">*Dimensiones: Alto: 50px x Ancho: 300px. Formato: PNG, JPG. Tam. Máx.: 1MB</span>
 

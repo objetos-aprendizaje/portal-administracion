@@ -395,7 +395,7 @@
                     <div class="content-container little">
                         <div class="poa-input-image">
                             <img id="carrousel_image_path"
-                                src="{{ $general_options['carrousel_image_path'] ? asset($general_options['carrousel_image_path']) : '/data/images/default_images/no_image_attached.svg' }}" />
+                                src="{{ $general_options['carrousel_image_path'] ? asset($general_options['carrousel_image_path']) : env('NO_IMAGE_SELECTED_PATH') }}" />
 
                             <div class="select-file-container">
                                 <input accept="image/*" type="file" id="carrousel_image_input_file"

@@ -27,15 +27,7 @@ let selectedEducationalProgramTypes = [];
 document.addEventListener("DOMContentLoaded", function () {
     initHandlers();
     initializeEducationalProgramTypesTable();
-    controlsSearch(
-        educationalProgramTypesTable,
-        endPointTable,
-        "educational-program-types-table"
-    );
-    controlsPagination(
-        educationalProgramTypesTable,
-        "educational-program-types-table"
-    );
+
     handleDeleteEducationalProgramTypes();
 });
 
@@ -166,6 +158,17 @@ function initializeEducationalProgramTypesTable() {
             columns: columns,
         }
     );
+
+    controlsSearch(
+        educationalProgramTypesTable,
+        endPointTable,
+        "educational-program-types-table"
+    );
+
+    controlsPagination(
+        educationalProgramTypesTable,
+        "educational-program-types-table"
+    );
 }
 
 async function loadEducationalProgramTypeModal(uid) {
@@ -229,7 +232,7 @@ function submitFormEducationalProgramTypeModal() {
 
     apiFetch(params)
         .then(() => {
-            educationalProgramTypesTable.replaceData(endPointTable);
+            reloadTable();
             hideModal("educational-program-type-modal");
         })
         .catch((data) => {
@@ -280,34 +283,25 @@ function handleDeleteEducationalProgramTypes() {
  */
 async function deleteEducationalProgramTypes() {
     showLoader();
-    await fetch(
-        "/cataloging/educational_program_types/delete_educational_program_types",
-        {
-            method: "DELETE",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRF-TOKEN": getCsrfToken(),
-            },
-            body: JSON.stringify({
-                uids: selectedEducationalProgramTypes.map((type) => type.uid),
-            }),
-        }
-    )
-        .then(async (response) => {
-            const data = await response.json();
-            if (response.status === 200) {
-                showToast(data.message, "success");
 
-                educationalProgramTypesTable.replaceData(endPointTable);
-            } else if (response.status === 400) {
-                showToast(data.message, "error");
-            }
-        })
-        .catch((error) => {
-            showToast(defaultErrorMessageFetch, "error");
+    const selectedEducationalProgramTypesUids = selectedEducationalProgramTypes.map((type) => type.uid);
+    const params = {
+        url: "/cataloging/educational_program_types/delete_educational_program_types",
+        method: "DELETE",
+        body: {
+            uids: selectedEducationalProgramTypesUids
+        },
+        loader: true,
+        toast: true,
+        stringify: true
+    };
 
-            console.error("Hubo un problema con la operación fetch:", error);
-        });
+    apiFetch(params).then(() => {
+        hideLoader();
+        reloadTable();
+    });
+}
 
-    hideLoader();
+function reloadTable() {
+    educationalProgramTypesTable.replaceData(endPointTable);
 }

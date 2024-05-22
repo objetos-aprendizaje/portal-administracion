@@ -31,8 +31,6 @@ document.addEventListener("DOMContentLoaded", () => {
     initHandlers();
 
     initializeCallsTable();
-    controlsPagination(callsTable, "calls-table");
-    controlsSearch(callsTable, endPointTable, "calls-table");
     initTomSelect();
     updateInputFile();
 });
@@ -179,6 +177,9 @@ function initializeCallsTable() {
         },
         columns: columns,
     });
+
+    controlsPagination(callsTable, "calls-table");
+    controlsSearch(callsTable, endPointTable, "calls-table");
 }
 
 /**

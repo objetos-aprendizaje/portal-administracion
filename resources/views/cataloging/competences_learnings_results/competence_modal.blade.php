@@ -55,13 +55,13 @@
                 <div id="is-multi-select-container">
                     <div class="field">
                         <div class="label-container label-center">
-                            <label for="is_multi_select">Permite seleccionar varias opciones del subnivel <span
+                            <label for="is_multi_select">Permite seleccionar varios resultados de aprendizaje <span
                                     class="text-danger">*</span></label>
                         </div>
                         <div class="content-container">
                             <select id="is_multi_select" name="is_multi_select" class="poa-select w-full">
-                                <option value="" selected></option>
-                                <option value="1">Sí</option>
+                                <option value="">Seleccione una opción</option>
+                                <option value="1" selected>Sí</option>
                                 <option value="0">No</option>
                             </select>
                         </div>

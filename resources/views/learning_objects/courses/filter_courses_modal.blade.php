@@ -18,14 +18,15 @@
             <div class="grid md:grid-cols-2 grid-cols-1  gap-4">
                 <div>
                     <div class="label-container label-center">
-                        <label for="filter_course_status_uid">Estado</label>
+                        <label for="filter_courses_statuses">Estados de curso</label>
                     </div>
+
                     <div class="content-container mt-1">
-                        <select id="filter_course_status_uid" name="filter_course_status_uid" class="poa-select w-full">
-                            <option value="" selected></option>
+                        <select id="filter_courses_statuses" class="mb-4" name="courses_statuses[]" multiple
+                            placeholder="Selecciona estados de curso..." autocomplete="off">
                             @foreach ($courses_statuses as $course_status)
-                                <option value="{{ $course_status['uid'] }}">{{ $course_status['name'] }}
-                                </option>
+                                <option value="{{ $course_status['uid'] }}">
+                                    {{ $course_status['name'] }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -33,11 +34,12 @@
 
                 <div>
                     <div class="label-container label-center">
-                        <label for="filter_call_uid">Convocatoria</label>
+                        <label for="filter_calls">Convocatoria</label>
                     </div>
+
                     <div class="content-container mt-1">
-                        <select id="filter_call_uid" name="filter_call_uid" class="poa-select w-full">
-                            <option value="" selected>Ninguna</option>
+                        <select id="filter_calls" class="mb-4" name="filter_calls[]" multiple
+                            placeholder="Selecciona convocatorias..." autocomplete="off">
                             @foreach ($calls as $call)
                                 <option value="{{ $call['uid'] }}">{{ $call['name'] }}</option>
                             @endforeach
@@ -46,13 +48,14 @@
                 </div>
 
                 <div>
-                    <div class="label-container">
-                        <label for="filter_educational_program_type_uid">Tipo de programa formativo</label>
+                    <div class="label-container label-center">
+                        <label for="filter_educational_program_types">Tipo de programa formativo</label>
                     </div>
+
                     <div class="content-container mt-1">
-                        <select id="filter_educational_program_type_uid" name="filter_educational_program_type_uid"
-                            class="poa-select w-full">
-                            <option value="" selected>Ninguno</option>
+                        <select id="filter_educational_program_types" class="mb-4"
+                            name="filter_educational_program_types[]" multiple
+                            placeholder="Selecciona tipos de programas..." autocomplete="off">
                             @foreach ($educationals_programs_types as $educational_program_type)
                                 <option value="{{ $educational_program_type['uid'] }}">
                                     {{ $educational_program_type['name'] }}</option>
@@ -63,12 +66,12 @@
 
                 <div>
                     <div class="label-container label-center">
-                        <label for="filter_course_type_uid">Tipo de curso</label>
+                        <label for="filter_course_types">Tipo de curso</label>
                     </div>
 
                     <div class="content-container mt-1">
-                        <select id="filter_course_type_uid" name="filter_course_type_uid" class="poa-select w-full">
-                            <option value="" selected>Selecciona tipo de curso</option>
+                        <select id="filter_course_types" class="mb-4" name="filter_course_types[]" multiple
+                            placeholder="Selecciona tipos de curso..." autocomplete="off">
                             @foreach ($courses_types as $course_type)
                                 <option value="{{ $course_type['uid'] }}">
                                     {{ $course_type['name'] }}</option>
@@ -82,7 +85,8 @@
                         <label for="filter_inscription_date">Fecha Inscripción</label>
                     </div>
                     <div class="content-container mt-1">
-                        <input type="datetime-local" class="poa-input" id="filter_inscription_date" name="filter_inscription_date" />
+                        <input type="datetime-local" placeholder="Selecciona un rango de fechas" class="poa-input" id="filter_inscription_date"
+                            name="filter_inscription_date" />
                     </div>
                 </div>
 
@@ -91,7 +95,8 @@
                         <label for="filter_realization_date">Fecha Realización</label>
                     </div>
                     <div class="content-container mt-1">
-                        <input type="datetime-local" class="poa-input" id="filter_realization_date" name="filter_realization_date" />
+                        <input type="datetime-local" placeholder="Selecciona un rango de fechas" class="poa-input" id="filter_realization_date"
+                            name="filter_realization_date" />
                     </div>
                 </div>
 
@@ -116,7 +121,7 @@
 
                     <div class="content-container mt-1">
                         <input type="number" class="poa-input" id="filter_min_ects_workload"
-                            name="filter_min_ects_workload" value="" />
+                            name="filter_min_ects_workload" placeholder="0" value="" />
                     </div>
                 </div>
 
@@ -127,7 +132,7 @@
 
                     <div class="content-container mt-1">
                         <input type="number" class="poa-input" id="filter_max_ects_workload"
-                            name="filter_max_ects_workload" value="" />
+                            name="filter_max_ects_workload" value="" placeholder="100" />
                     </div>
                 </div>
 
@@ -148,7 +153,7 @@
 
                 </div>
 
-                <div >
+                <div>
                     <div class="label-container label-center">
                         <label for="filter_min_cost">Mínimo Coste (€)</label>
                     </div>
@@ -158,7 +163,7 @@
                     </div>
                 </div>
 
-                <div >
+                <div>
                     <div class="label-container label-center">
                         <label for="filter_max_cost">Máximo Coste (€)</label>
                     </div>
@@ -170,12 +175,12 @@
 
                 <div>
                     <div class="label-container label-center">
-                        <label for="filter_teachers">Docentes</label>
+                        <label for="filter_coordinators_teachers">Docentes coordinadores</label>
                     </div>
 
                     <div class="content-container mt-1">
-                        <select id="filter_teachers" class="mb-4" name="teacher[]" multiple
-                            placeholder="Selecciona un docente..." autocomplete="off">
+                        <select id="filter_coordinators_teachers" class="mb-4" name="teachers_coordinators[]" multiple
+                            placeholder="Selecciona un docente coordinador..." autocomplete="off">
                             @foreach ($teachers as $teacher)
                                 <option value="{{ $teacher['uid'] }}">
                                     {{ $teacher['first_name'] }} {{ $teacher['last_name'] }}</option>
@@ -184,25 +189,41 @@
                     </div>
                 </div>
 
-                <div >
+                <div>
+                    <div class="label-container label-center">
+                        <label for="filter_no_coordinators_teachers">Docentes no coordinadores</label>
+                    </div>
+
+                    <div class="content-container mt-1">
+                        <select id="filter_no_coordinators_teachers" class="mb-4" name="filter_no_coordinators_teachers[]" multiple
+                            placeholder="Selecciona un docente no coordinador..." autocomplete="off">
+                            @foreach ($teachers as $teacher)
+                                <option value="{{ $teacher['uid'] }}">
+                                    {{ $teacher['first_name'] }} {{ $teacher['last_name'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div>
                     <div class="label-container">
                         <label for="filter_min_required_students">Mínimo de estudiantes requeridos</label>
                     </div>
 
                     <div class="content-container mt-1">
                         <input type="number" class="poa-input" id="filter_min_required_students"
-                            name="filter_min_required_students" value="" />
+                            name="filter_min_required_students" placeholder="0" value="" />
                     </div>
                 </div>
 
-                <div >
+                <div>
                     <div class="label-container">
                         <label for="filter_max_required_students">Máximo de estudiantes requeridos</label>
                     </div>
 
                     <div class="content-container mt-1">
                         <input type="number" class="poa-input" id="filter_max_required_students"
-                            name="filter_max_required_students" value="" />
+                            name="filter_max_required_students" placeholder="0" value="" />
                     </div>
                 </div>
 
@@ -212,8 +233,13 @@
                     </div>
 
                     <div class="content-container mt-1">
-                        <input class="poa-input" type="text" id="filter_center"
-                            name="filter_center" />
+                        <select id="filter_center" name="filter_center" class="poa-select w-full">
+                            <option value="" selected>Selecciona centro</option>
+                            @foreach ($centers as $center)
+                                <option value="{{ $center['uid'] }}">
+                                    {{ $center['name'] }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
 
@@ -233,10 +259,20 @@
                     </div>
                 </div>
 
+                <div>
+                    <div class="label-container label-center">
+                        <label for="filter_creators">Competencias</label>
+                    </div>
+
+                    <div class="content-container mt-1">
+                        <div class="custom-treeselect" id="treeselect-competences"></div>
+                    </div>
+                </div>
+
             </div>
 
             <div class="flex justify-center mt-8">
-                <button id="filtrar-btn" type="button" class="btn btn-primary">
+                <button id="filter-btn" type="button" class="btn btn-primary">
                     Filtrar {{ e_heroicon('adjustments-horizontal', 'outline') }}</button>
             </div>
 

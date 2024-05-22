@@ -34,6 +34,22 @@
 
                 <div class="field">
                     <div class="label-container label-center">
+                        <label for="notification_type_uid">Tipo <span class="text-danger">*</span></label>
+                    </div>
+                    <div class="content-container">
+                        <select class="poa-select w-full" id="notification_type_uid" name="notification_type_uid">
+                            <option value="">Selecciona el tipo de notificación</option>
+                            @foreach ($notification_types as $notification_type)
+                                <option value="{{ $notification_type->uid }}">
+                                    {{ $notification_type->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="label-container label-center">
                         <label for="send_date">Fecha de envío <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">

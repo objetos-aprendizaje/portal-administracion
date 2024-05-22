@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Administration\ApiKeysController;
 use App\Http\Controllers\Administration\AuthenticationConfigurationController;
+use App\Http\Controllers\Administration\CarrouselsController;
+use App\Http\Controllers\Administration\CentersController;
 use App\Http\Controllers\Administration\FooterPagesController;
 use App\Http\Controllers\Administration\GeneralAdministrationController;
 use App\Http\Controllers\Administration\HeaderPagesController;
@@ -19,14 +21,15 @@ use App\Http\Controllers\Cataloging\CategoriesController;
 use App\Http\Controllers\Cataloging\CourseTypesController;
 use App\Http\Controllers\Cataloging\EducationalProgramTypesController;
 use App\Http\Controllers\Cataloging\EducationalResourceTypesController;
+use App\Http\Controllers\LearningObjects\EducationalResourcesPerUsersController;
 use App\Http\Controllers\LearningObjects\EducationalProgramsController;
 use App\Http\Controllers\Notifications\GeneralNotificationsController;
 use App\Http\Controllers\LearningObjects\EducationalResourcesController;
-use App\Http\Controllers\Logs\ListLogsController;
+use App\Http\Controllers\Logs\LogsController;
 use App\Http\Controllers\Users\ListUsersController;
 use App\Http\Controllers\Analytics\AnalyticsUsersController;
 use App\Http\Controllers\Cataloging\CertificationTypesController;
-use App\Http\Controllers\Cataloging\CompetencesController;
+use App\Http\Controllers\Cataloging\CompetencesLearningsResultsController;
 use App\Http\Controllers\Credentials\StudentsCredentialsController;
 use App\Http\Controllers\Credentials\TeachersCredentialsController;
 use App\Http\Controllers\LoginController;
@@ -36,10 +39,13 @@ use App\Http\Controllers\Notifications\NotificationsChangesStatusesCoursesContro
 use App\Http\Controllers\Notifications\NotificationsTypesController;
 use App\Http\Controllers\RecoverPasswordController;
 use App\Http\Controllers\ResetPasswordController;
+use App\Http\Controllers\Webhooks\UpdateUserImageController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
-
+use App\Http\Controllers\Notifications\NotificationsPerUsersController;
+use App\Http\Controllers\Webhooks\FileController;
+use App\Http\Controllers\CertificateTestAccessController;
 
 /*
 |--------------------------------------------------------------------------
@@ -71,6 +77,9 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/administration/login_systems', [LoginSystemsController::class, 'index'])->name('login-systems');
         Route::get('/administration/authentication_configuration', [AuthenticationConfigurationController::class, 'index'])->name('administration-authentication');
         Route::get('/administration/lms_systems', [LmsSystemsController::class, 'index'])->name('lms-systems');
+
+        Route::get('/administration/centres', [CentersController::class, 'index'])->name('centres');
+
         Route::get('/administration/api_keys', [ApiKeysController::class, 'index'])->name('api-keys');
 
         Route::post('/administration/save_smtp_email_form', [GeneralAdministrationController::class, 'saveSMTPEmailForm']);
@@ -115,12 +124,25 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/administration/lms_systems/get_lms_systems', [LmsSystemsController::class, 'getLmsSystems']);
         Route::delete('/administration/lms_systems/delete_lms_systems', [LmsSystemsController::class, 'deleteLmsSystems']);
 
+        Route::post('/administration/centers/save_center', [CentersController::class, 'saveCenter']);
+        Route::get('/administration/centers/get_center/{centre_uid}', [CentersController::class, 'getCenter']);
+        Route::get('/administration/centers/get_centers', [CentersController::class, 'getCenters']);
+        Route::delete('/administration/centers/delete_centers', [CentersController::class, 'deleteCenters']);
+
+        Route::get('/administration/carrousels', [CarrouselsController::class, 'index'])->name('carrousels');
+        Route::post('/administration/carrousels/save_big_carrousels_approvals', [CarrouselsController::class, 'save_big_carrousels_approvals']);
+        Route::post('/administration/carrousels/save_small_carrousels_approvals', [CarrouselsController::class, 'save_small_carrousels_approvals']);
+
 
         Route::get('/notifications/notifications_types', [NotificationsTypesController::class, 'index'])->name('notifications-types');
         Route::get('/notifications/notifications_types/get_list_notification_types', [NotificationsTypesController::class, 'getNotificationsTypes']);
         Route::get('/notifications/notifications_types/get_notification_type/{notification_type_uid}', [NotificationsTypesController::class, 'getNotificationType']);
         Route::post('/notifications/notifications_types/save_notification_type', [NotificationsTypesController::class, 'saveNotificationType']);
         Route::delete('/notifications/notifications_types/delete_notifications_types', [NotificationsTypesController::class, 'deleteNotificationsTypes']);
+
+        Route::get('/notifications/notifications_per_users', [NotificationsPerUsersController::class, 'index'])->name('notifications-per-users');
+        Route::get('/notifications/notifications_per_users/get_list_users', [NotificationsPerUsersController::class, 'getNotificationsPerUsers']);
+        Route::get('/notifications/notifications_per_users/get_notifications/{user_uid}', [NotificationsPerUsersController::class, 'getNotificationsPerUser']);
     });
 
     Route::middleware(['role:ADMINISTRATOR,MANAGEMENT'])->group(function () {
@@ -149,12 +171,16 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/cataloging/categories/get_category/{category_uid}', [CategoriesController::class, 'getCategory']);
         Route::get('/cataloging/categories/get_all_categories', [CategoriesController::class, 'getAllCategories']);
         Route::delete('/cataloging/categories/delete_categories', [CategoriesController::class, 'deleteCategories']);
-        Route::get('/cataloging/competences/get_competences', [CompetencesController::class, 'getCompetences']);
-        Route::post('/cataloging/competences/save_competence', [CompetencesController::class, 'saveCompetence']);
-        Route::get('/cataloging/competences/get_list_competences', [CompetencesController::class, 'getListCompetences']);
-        Route::get('/cataloging/competences/get_competence/{competence_uid}', [CompetencesController::class, 'getCompetence']);
-        Route::get('/cataloging/competences/get_all_competences', [CompetencesController::class, 'getAllCompetences']);
-        Route::delete('/cataloging/competences/delete_competences', [CompetencesController::class, 'deleteCompetences']);
+        Route::get('/cataloging/competences_learnings_results/get_competences', [CompetencesLearningsResultsController::class, 'getCompetences']);
+        Route::post('/cataloging/competences_learnings_results/save_competence', [CompetencesLearningsResultsController::class, 'saveCompetence']);
+        Route::post('/cataloging/competences_learnings_results/save_learning_result', [CompetencesLearningsResultsController::class, 'saveLearningResult']);
+        Route::get('/cataloging/competences_learnings_results/get_learning_result/{learning_result_uid}', [CompetencesLearningsResultsController::class, 'getLearningResult']);
+
+
+        Route::get('/cataloging/competences_learnings_results/get_list_competences', [CompetencesLearningsResultsController::class, 'getListCompetences']);
+        Route::get('/cataloging/competences_learnings_results/get_competence/{competence_uid}', [CompetencesLearningsResultsController::class, 'getCompetence']);
+        Route::get('/cataloging/competences_learnings_results/get_all_competences', [CompetencesLearningsResultsController::class, 'getAllCompetences']);
+        Route::delete('/cataloging/competences_learnings_results/delete_competences_learning_results', [CompetencesLearningsResultsController::class, 'deleteCompetencesLearningResults']);
         Route::get('/cataloging/course_types/get_list_course_types', [CourseTypesController::class, 'getCourseTypes']);
         Route::get('/cataloging/course_types/get_course_type/{course_type_uid}', [CourseTypesController::class, 'getCourseType']);
         Route::post('/cataloging/course_types/save_course_type', [CourseTypesController::class, 'saveCourseType']);
@@ -173,7 +199,7 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::post('/cataloging/educational_program_types/save_educational_program_type', [EducationalProgramTypesController::class, 'saveEducationalProgramType']);
         Route::delete('/cataloging/educational_program_types/delete_educational_program_types', [EducationalProgramTypesController::class, 'deleteEducationalProgramTypes']);
         Route::get('/cataloging/categories', [CategoriesController::class, 'index'])->name('cataloging-categories');
-        Route::get('/cataloging/competences', [CompetencesController::class, 'index'])->name('cataloging-competences');
+        Route::get('/cataloging/competences_learnings_results', [CompetencesLearningsResultsController::class, 'index'])->name('cataloging-competences-learning-results');
         Route::get('/cataloging/course_types', [CourseTypesController::class, 'index'])->name('cataloging-course-types');
         Route::get('/cataloging/educational_resources_types', [EducationalResourceTypesController::class, 'index'])->name('cataloging-educational-resources');
         Route::get('/cataloging/educational_program_types', [EducationalProgramTypesController::class, 'index'])->name('cataloging-educational-program-types');
@@ -186,11 +212,8 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/notifications/general/get_list_general_notifications', [GeneralNotificationsController::class, 'getGeneralNotifications']);
         Route::get('/notifications/general/get_general_notification/{notification_general_uid}', [GeneralNotificationsController::class, 'getGeneralNotification']);
         Route::get('/notifications/general/get_general_notification_user/{notification_general_uid}', [GeneralNotificationsController::class, 'getGeneralNotificationUser']);
-        Route::get('/notifications/general/get_general_notification_user/{notification_general_uid}', [GeneralNotificationsController::class, 'getGeneralNotificationUser']);
 
         Route::get('/notifications/notifications_statuses_courses/get_notifications_statuses_courses/{status_notification_uid}', [NotificationsChangesStatusesCoursesController::class, 'getNotificationsChangesStatusesCoursesController']);
-
-        Route::get('/notifications/general/get_general_notification_types', [GeneralNotificationsController::class, 'getGeneralNotificationTypes']);
 
         Route::post('/notifications/general/save_general_notifications', [GeneralNotificationsController::class, 'saveGeneralNotification']);
         Route::delete('/notifications/general/delete_general_notifications', [GeneralNotificationsController::class, 'deleteGeneralNotifications']);
@@ -215,10 +238,21 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::post('/learning_objects/courses/duplicate_course/{course_uid}', [ManagementCoursesController::class, 'duplicateCourse']);
         Route::post('/learning_objects/courses/new_edition_course/{course_uid}', [ManagementCoursesController::class, 'newEditionCourse']);
         Route::get('/learning_objects/educational_resources', [EducationalResourcesController::class, 'index'])->name('learning-objects-educational-resources');
+
+        Route::get('/learning_objects/educational_resources_per_users', [EducationalResourcesPerUsersController::class, 'index'])->name('learning-objects-educational-resources-per-users');
+        Route::get('/learning_objects/educational_resources_per_users/get_list_users', [EducationalResourcesPerUsersController::class, 'getEducationalResourcesPerUsers']);
+        Route::get('/learning_objects/educational_resources_per_users/get_notifications/{user_uid}', [EducationalResourcesPerUsersController::class, 'getEducationalResourcesPerUser']);
+
+
+
         Route::get('/learning_objects/educational_programs', [EducationalProgramsController::class, 'index'])->name('learning-objects-educational-programs');
         Route::get('/learning_objects/courses', [ManagementCoursesController::class, 'index'])->name('courses');
         Route::post('/learning_objects/courses/get_courses', [ManagementCoursesController::class, 'getCourses']);
         Route::get('/learning_objects/courses/get_all_competences', [ManagementCoursesController::class, 'getAllCompetences']);
+        Route::get('/learning_objects/educational_programs/get_educational_program_type', [ManagementCoursesController::class, 'getAllCompetences']);
+        Route::post('/learning_objects/courses/enroll_students', [ManagementCoursesController::class, 'enrollStudents']);
+        Route::post('/learning_objects/courses/enroll_students_csv', [ManagementCoursesController::class, 'enrollStudentsCsv']);
+
 
 
         Route::get('/learning_objects/educational_resources/get_resource/{uid}', [EducationalResourcesController::class, 'getResource']);
@@ -242,10 +276,10 @@ Route::middleware(['combined.auth'])->group(function () {
     });
 
     Route::middleware(['role:ADMINISTRATOR,MANAGEMENT'])->group(function () {
-        Route::get('/logs/list_logs', [ListLogsController::class, 'index'])->name('list-logs');
+        Route::get('/logs/list_logs', [LogsController::class, 'index'])->name('list-logs');
         Route::get('/analytics/users', [AnalyticsUsersController::class, 'index'])->name('analytics-users');
 
-        Route::get('/logs/list_logs/get_logs', [ListLogsController::class, 'getLogs']);
+        Route::get('/logs/list_logs/get_logs', [LogsController::class, 'getLogs']);
 
         Route::get('/analytics/users/get_user_roles', [AnalyticsUsersController::class, 'getUsersRoles'])->name('analytics-users-roles');
     });
@@ -255,6 +289,7 @@ Route::middleware(['combined.auth'])->group(function () {
     Route::get('/users/list_users/get_users', [ListUsersController::class, 'getUsers']);
     Route::get('/users/list_users/search_users/{search}', [ListUsersController::class, 'searchUsers']);
     Route::get('/users/list_users/search_users_backend/{search}', [ListUsersController::class, 'searchUsersBackend']);
+    Route::get('/users/list_users/search_users_no_enrolled/{course}/{search}', [ListUsersController::class, 'searchUsersNoEnrolled']);
 
     Route::get('/users/list_users/get_user_roles', [ListUsersController::class, 'getUserRoles']);
     Route::get('/users/list_users/get_user/{user_uid}', [ListUsersController::class, 'getUser']);
@@ -284,7 +319,6 @@ Route::middleware(['combined.auth'])->group(function () {
 
     Route::get('/my_profile', [MyProfileController::class, 'index'])->name('my-profile');
     Route::post('/my_profile/update', [MyProfileController::class, 'updateUser']);
-
 });
 
 Route::middleware('guest')->group(function () {
@@ -313,3 +347,12 @@ Route::post('/recover_password/send', [RecoverPasswordController::class, 'recove
 
 Route::get('/reset_password/{token}', [ResetPasswordController::class, 'index'])->name('reset-password');
 Route::post('/reset_password/send', [ResetPasswordController::class, 'resetPassword']);
+
+
+Route::middleware(['api_auth'])->group(function () {
+    Route::post('/webhook/update_user_image', [UpdateUserImageController::class, 'index']);
+    Route::post('/api/upload_file', [FileController::class, 'uploadFile']);
+    Route::post('/api/download_file', [FileController::class, 'downloadFile']);
+});
+
+Route::get('/certificate-access', [CertificateTestAccessController::class, 'index'])->name('certificate-access');

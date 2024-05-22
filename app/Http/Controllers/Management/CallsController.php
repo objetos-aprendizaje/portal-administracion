@@ -8,8 +8,11 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use App\Models\EducationalProgramTypesModel;
 use App\Models\CallsModel;
+use App\Models\CoursesModel;
+use App\Models\EducationalProgramsModel;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Logs\LogsController;
 
 
 use Illuminate\Http\Request;
@@ -76,15 +79,8 @@ class CallsController extends BaseController
         return response()->json($call);
     }
 
-    /**
-     * Crea una nueva convocatoria.
-     *
-     * @param  \Illuminate\Http\Request  $request Los datos de la nueva convocatoria.
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function saveCall(Request $request)
+    private function validateCall($request)
     {
-
         $messages = [
             'name.required' => 'El nombre es obligatorio.',
             'start_date.required' => 'La fecha de inicio es obligatoria.',
@@ -103,68 +99,93 @@ class CallsController extends BaseController
             'program_types' => 'required|array',
         ], $messages);
 
+        $errorsValidator = $validator->errors();
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        return $errorsValidator;
+    }
+
+    /**
+     * Crea una nueva convocatoria.
+     *
+     * @param  \Illuminate\Http\Request  $request Los datos de la nueva convocatoria.
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function saveCall(Request $request)
+    {
+
+        $errorsValidator = $this->validateCall($request);
+
+        if ($errorsValidator->any()) {
+            return response()->json(['errors' => $errorsValidator], 422);
         }
 
         $call_uid = $request->input("call_uid");
 
-        return DB::transaction(function () use ($request, $call_uid) {
+        if (!$call_uid) {
+            $call = new CallsModel();
+            $call_uid = generate_uuid();
+            $call->uid = $call_uid;
+            $isNew = true;
+        } else {
+            $call = CallsModel::find($call_uid);
+            $isNew = false;
+        }
 
-            if (!$call_uid) {
-                $call = new CallsModel();
-                $call_uid = generate_uuid();
-                $call->uid = $call_uid;
-                $isNew = true;
-            } else {
-                $call = CallsModel::find($call_uid);
-                $isNew = false;
-            }
+        return DB::transaction(function () use ($request, $isNew, $call) {
 
-            $call->fill($request->only([
-                'name', 'description', 'start_date', 'end_date',
-            ]));
-
-            // Para el archivo adjunto
-            if ($request->hasFile('attachment')) {
-                $file = $request->file('attachment');
-
-                // Aquí puedes guardar el archivo como lo necesites
-                $uniqueName = time() . '_' . $file->getClientOriginalName();
-
-                // Guardar el archivo en la carpeta public/attachments
-                $file->move(public_path('attachments'), $uniqueName);
-
-                $call->attachment_path = 'attachments/' . $uniqueName;
-            }
-
-            $call->save();
-
-            $educational_programs_types_associated = $request->input('program_types');
-
-            // Si estamos editando, podemos usar el método sync, si estamos creando debemos insertar los registros directamente
-            if ($isNew) {
-                foreach ($educational_programs_types_associated as $program_type) {
-                    CallsEducationalProgramTypesModel::create([
-                        "uid" => generate_uuid(),
-                        "call_uid" => $call_uid,
-                        "educational_program_type_uid" => $program_type
-                    ]);
-                }
-            } else {
-                // Sincronización de los tipos de programas formativos asociados
-                $syncData = [];
-                if (!empty($educational_programs_types_associated)) {
-                    foreach ($educational_programs_types_associated as $program_type) {
-                        $syncData[$program_type] = ['uid' => generate_uuid()];
-                    }
-                }
-                $call->educationalProgramTypes()->sync($syncData);
-            }
+            $this->handleFileUpload($request, $call);
+            $this->fillCall($request, $call);
+            $this->handleEducationalProgramTypes($request, $call, $isNew);
+            $this->logAction();
 
             return response()->json(['message' => $isNew ? 'Convocatoria añadida correctamente' : 'Convocatoria actualizada correctamente']);
         }, 5);
+    }
+
+    private function handleFileUpload($request, $call)
+    {
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $uniqueName = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('attachments'), $uniqueName);
+            $call->attachment_path = 'attachments/' . $uniqueName;
+        }
+    }
+
+    private function fillCall($request, $call)
+    {
+        $call->fill($request->only([
+            'name', 'description', 'start_date', 'end_date',
+        ]));
+        $call->save();
+    }
+
+    private function handleEducationalProgramTypes($request, $call, $isNew)
+    {
+        $educational_programs_types_associated = $request->input('program_types');
+
+        if ($isNew) {
+            foreach ($educational_programs_types_associated as $program_type) {
+                CallsEducationalProgramTypesModel::create([
+                    "uid" => generate_uuid(),
+                    "call_uid" => $call->uid,
+                    "educational_program_type_uid" => $program_type
+                ]);
+            }
+        } else {
+            $syncData = [];
+            if (!empty($educational_programs_types_associated)) {
+                foreach ($educational_programs_types_associated as $program_type) {
+                    $syncData[$program_type] = ['uid' => generate_uuid()];
+                }
+            }
+            $call->educationalProgramTypes()->sync($syncData);
+        }
+    }
+
+    private function logAction()
+    {
+        LogsController::createLog('Añadir convocatoria', 'Convocatorias', auth()->user()->uid);
     }
 
     /**
@@ -175,8 +196,20 @@ class CallsController extends BaseController
      */
     public function deleteCalls(Request $request)
     {
-        $uids = $request->input('uids');
-        CallsModel::destroy($uids);
+        $uids_calls = $request->input('uids');
+
+        // Comprobamos si hay convocatorias asociadas a los programas formativos
+        $exist_courses = CoursesModel::whereIn('call_uid', $uids_calls)->exists();
+        $exist_educational_programs = EducationalProgramsModel::whereIn('call_uid', $uids_calls)->exists();
+
+        if ($exist_courses || $exist_educational_programs) {
+            return response()->json(['message' => 'No se pueden eliminar las convocatorias porque están asociadas a cursos o programas formativos.'], 422);
+        }
+
+        DB::transaction(function () use ($uids_calls) {
+            CallsModel::destroy($uids_calls);
+            LogsController::createLog('Eliminar convocatoria', 'Convocatorias', auth()->user()->uid);
+        });
 
         return response()->json(['message' => 'Convocatorias eliminadas correctamente']);
     }

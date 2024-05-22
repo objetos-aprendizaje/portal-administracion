@@ -8,6 +8,8 @@ use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
 use App\Models\GeneralOptionsModel;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Logs\LogsController;
 
 class LoginSystemsController extends BaseController
 {
@@ -37,11 +39,17 @@ class LoginSystemsController extends BaseController
             'google_client_secret' => $request->input('google_client_secret'),
         ];
 
-        foreach ($updateData as $key => $value) {
-            GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
-        }
+        DB::transaction(function () use ($updateData, $request) {
+            foreach ($updateData as $key => $value) {
+                GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
+            }
 
-        $this->updateCache('parameters_login_systems', $request, ['google_login_active', 'google_client_id', 'google_client_secret']);
+            $this->updateCache('parameters_login_systems', $request, ['google_login_active', 'google_client_id', 'google_client_secret']);
+
+            LogsController::createLog('Actualización de inicio de sesión en Google', 'Sistemas de inicio de sesión', auth()->user()->uid);
+        });
+
+
 
         return response()->json(['message' => 'Login de Google guardado correctamente']);
     }
@@ -55,11 +63,16 @@ class LoginSystemsController extends BaseController
             'facebook_client_secret' => $request->input('facebook_client_secret'),
         ];
 
-        foreach ($updateData as $key => $value) {
-            GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
-        }
+        DB::transaction(function () use ($updateData, $request) {
+            foreach ($updateData as $key => $value) {
+                GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
+            }
 
-        $this->updateCache('parameters_login_systems', $request, ['facebook_login_active', 'facebook_client_id', 'facebook_client_secret']);
+            $this->updateCache('parameters_login_systems', $request, ['facebook_login_active', 'facebook_client_id', 'facebook_client_secret']);
+
+            LogsController::createLog('Actualización de inicio de sesión en Facebook', 'Sistemas de inicio de sesión', auth()->user()->uid);
+        });
+
 
         return response()->json(['message' => 'Login de Facebook guardado correctamente']);
     }
@@ -73,11 +86,16 @@ class LoginSystemsController extends BaseController
             'twitter_client_secret' => $request->input('twitter_client_secret'),
         ];
 
-        foreach ($updateData as $key => $value) {
-            GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
-        }
+        DB::transaction(function () use ($updateData, $request) {
+            foreach ($updateData as $key => $value) {
+                GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
+            }
 
-        $this->updateCache('parameters_login_systems', $request, ['twitter_login_active', 'twitter_client_id', 'twitter_client_secret']);
+            $this->updateCache('parameters_login_systems', $request, ['twitter_login_active', 'twitter_client_id', 'twitter_client_secret']);
+
+            LogsController::createLog('Actualización de inicio de sesión en Twitter', 'Sistemas de inicio de sesión', auth()->user()->uid);
+        });
+
 
         return response()->json(['message' => 'Login de Twitter guardado correctamente']);
     }
@@ -91,17 +109,22 @@ class LoginSystemsController extends BaseController
             'linkedin_client_secret' => $request->input('linkedin_client_secret'),
         ];
 
-        foreach ($updateData as $key => $value) {
-            GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
-        }
+        DB::transaction(function () use ($updateData, $request) {
+            foreach ($updateData as $key => $value) {
+                GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
+            }
 
-        $this->updateCache('parameters_login_systems', $request, ['linkedin_login_active', 'linkedin_client_id', 'linkedin_client_secret']);
+            $this->updateCache('parameters_login_systems', $request, ['linkedin_login_active', 'linkedin_client_id', 'linkedin_client_secret']);
+
+            LogsController::createLog('Actualización de inicio de sesión en Linkedin', 'Sistemas de inicio de sesión', auth()->user()->uid);
+        });
 
         return response()->json(['message' => 'Login de Linkedin guardado correctamente']);
     }
 
     // Actualiza la caché con los parámetros de inicio de sesión
-    private function updateCache($cacheKey, $request, $fields) {
+    private function updateCache($cacheKey, $request, $fields)
+    {
         // Obtén el objeto de la caché
         $parameters = Cache::get($cacheKey);
 
@@ -109,6 +132,13 @@ class LoginSystemsController extends BaseController
         foreach ($fields as $field) {
             $parameters[$field] = $request->input($field);
         }
+
+        $url = env('FRONT_URL') . '/webhook/update_login_system';
+
+        $header = ['API_KEY: ' . env('API_KEY_FRONT_WEBHOOKS')];
+
+        // Realiza una petición POST a la URL del webhook del front para actualizar los parámetros de inicio de sesión
+        curl_call($url, null, $header, 'POST');
 
         // Pone el objeto actualizado de nuevo en la caché
         Cache::put($cacheKey, $parameters);

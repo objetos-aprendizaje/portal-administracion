@@ -7,11 +7,7 @@ import {
     updatePaginationInfo,
     controlsSearch,
 } from "../tabulator_handler";
-import {
-    showFormErrors,
-    resetFormErrors,
-    apiFetch,
-} from "../app.js";
+import { showFormErrors, resetFormErrors, apiFetch } from "../app.js";
 import { showToast } from "../toast.js";
 
 import { TabulatorFull as Tabulator } from "tabulator-tables";
@@ -25,13 +21,6 @@ document.addEventListener("DOMContentLoaded", function () {
     initHandlers();
 
     initializeRedirectionQueriesTable();
-    controlsPagination(redirectionQueriesTable, "redirection-queries-table");
-
-    controlsSearch(
-        redirectionQueriesTable,
-        endPointTable,
-        "redirection-queries-table"
-    );
 });
 
 function initHandlers() {
@@ -73,7 +62,9 @@ function initHandlers() {
             }
         });
 
-    document.getElementById("redirection-query-form").addEventListener("submit", submitNewRedirectionQuery);
+    document
+        .getElementById("redirection-query-form")
+        .addEventListener("submit", submitNewRedirectionQuery);
 }
 
 function newRedirectionQuery() {
@@ -176,6 +167,14 @@ function initializeRedirectionQueriesTable() {
         },
         columns: columns,
     });
+
+    controlsPagination(redirectionQueriesTable, "redirection-queries-table");
+
+    controlsSearch(
+        redirectionQueriesTable,
+        endPointTable,
+        "redirection-queries-table"
+    );
 }
 
 async function loadRedirectionQueryModal(redirectionQueryUid) {
@@ -205,7 +204,6 @@ function fillRedirectionQueryModal(redirectionQuery) {
  * Elimina una redirección de consulta
  */
 async function deleteRedirectionQueryProgramType(uidRedirectionQuery) {
-
     const params = {
         url: "/administration/redirection_queries_educational_program_types/delete_redirection_query",
         method: "DELETE",
@@ -213,7 +211,7 @@ async function deleteRedirectionQueryProgramType(uidRedirectionQuery) {
         stringify: true,
         loader: true,
         toast: true,
-    }
+    };
 
     apiFetch(params);
 }
@@ -222,7 +220,11 @@ async function deleteRedirectionQueries() {
     const params = {
         url: "/administration/redirection_queries_educational_program_types/delete_redirections_queries",
         method: "DELETE",
-        body: { uids: selectedRedirectionQueries.map((redirectionQuery) => redirectionQuery.uid)},
+        body: {
+            uids: selectedRedirectionQueries.map(
+                (redirectionQuery) => redirectionQuery.uid
+            ),
+        },
         stringify: true,
         loader: true,
         toast: true,

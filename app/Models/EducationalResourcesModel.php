@@ -19,7 +19,7 @@ class EducationalResourcesModel extends Model
 
     protected $fillable = [
         'uid',
-        'name',
+        'title',
         'description',
         'image_path',
         'path',

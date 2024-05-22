@@ -9,6 +9,7 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Logs\LogsController;
 
 class LmsSystemsController extends BaseController
 {
@@ -114,6 +115,8 @@ class LmsSystemsController extends BaseController
 
             $lms_system->save();
 
+            LogsController::createLog('Añadir sistema LMS', 'Sistemas LMS', auth()->user()->uid);
+
             return response()->json(['message' => $isNew ? 'LMS añadido correctamente' : 'LMS actualizado correctamente']);
         }, 5);
     }
@@ -128,7 +131,10 @@ class LmsSystemsController extends BaseController
     {
         $uids = $request->input('uids');
 
-        LmsSystemsModel::destroy($uids);
+        return DB::transaction(function () use ($uids) {
+            LmsSystemsModel::destroy($uids);
+            LogsController::createLog('Eliminar sistema LMS', 'Sistemas LMS', auth()->user()->uid);
+        }, 5);
 
         return response()->json(['message' => 'LMS eliminados correctamente']);
     }

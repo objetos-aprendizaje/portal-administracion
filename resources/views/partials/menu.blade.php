@@ -2,15 +2,16 @@
     $current_module = request()->segment(1);
 @endphp
 
-<div class="menu menu-collapsed text-white h-screen">
-    <ul id="main-menu" class="main-menu space-y-2 menu-collapsed">
+<div class="menu text-white h-screen menu-collapsed menu-show">
+    <ul id="main-menu" class="main-menu space-y-2">
 
         @if (Auth::user()->hasAnyRole(['ADMINISTRATOR']))
+
             <li class="{{ $current_module === 'administration' ? 'menu-element-selected' : '' }}">
                 {{ e_heroicon('pencil', 'outline') }}
                 <span>Administración</span>
 
-                <div class="sub-menu hidden">
+                <div class="sub-menu hidden sub-menu-administracion">
                     <ul>
                         <li>
                             <a href="{{ route('administracion-general') }}">General</a>
@@ -29,7 +30,8 @@
                         <li><a href="{{ route('login-systems') }}">Sistemas de inicio de sesión</a></li>
                         <li><a href="{{ route('lms-systems') }}">Sistemas LMS</a></li>
                         <li><a href="{{ route('api-keys') }}">Claves de API</a></li>
-
+                        <li><a href="{{ route('centres') }}">Centros</a></li>
+                        <li><a href="{{ route('carrousels') }}">Gestión de carrouseles</a></li>
                     </ul>
                 </div>
             </li>
@@ -62,7 +64,7 @@
                         <li><a href="{{ route('cataloging-educational-resources') }}">Tipos de recursos educativos</a>
                         </li>
                         <li><a href="{{ route('cataloging-educational-program-types') }}">Tipos de programas</a></li>
-                        <li><a href="{{ route('cataloging-competences') }}">Competencias</a></li>
+                        <li><a href="{{ route('cataloging-competences-learning-results') }}">Competencias y resultados de aprendizaje</a></li>
                         <li><a href="{{ route('cataloging-certification-types') }}">Tipos de certificación</a></li>
                     </ul>
                 </div>
@@ -93,6 +95,7 @@
                         <li><a href="{{ route('notifications-email') }}">Por correo</a></li>
                         @if (Auth::user()->hasAnyRole(['ADMINISTRATOR']))
                             <li><a href="{{ route('notifications-types') }}">Tipos de notificaciones</a></li>
+                            <li><a href="{{ route('notifications-per-users') }}">Notificaciones por usuarios</a></li>
                         @endif
                     </ul>
                 </div>
@@ -111,6 +114,8 @@
                         <li><a href="{{ route('learning-objects-educational-programs') }}">Programas formativos</a>
                         </li>
                         <li><a href="{{ route('learning-objects-educational-resources') }}">Recursos educativos</a>
+                        </li>
+                        <li><a href="{{ route('learning-objects-educational-resources-per-users') }}">Recursos educativos por usuarios</a>
                         </li>
                     </ul>
                 </div>
@@ -180,3 +185,4 @@
         </li>
     </ul>
 </div>
+<div id="container-sub-menu"></div>

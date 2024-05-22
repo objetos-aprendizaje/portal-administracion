@@ -8,10 +8,10 @@ import {
     resetFormErrors,
     updateInputImage,
     apiFetch,
+    fillFormWithObject,
+    resetFormFields,
 } from "../app.js";
 import { showToast } from "../toast.js";
-
-let competences = [];
 
 document.addEventListener("DOMContentLoaded", function () {
     initHandlers();
@@ -49,15 +49,87 @@ async function initHandlers() {
         .addEventListener("click", newCompetence);
 
     document
-        .getElementById("parent_competence_uid")
-        .addEventListener("change", function () {
-            const competenceUid = this.value;
-            changeFatherCompetence(competenceUid);
-        });
+        .getElementById("learning-result-form")
+        .addEventListener("submit", submitLearningObjectForm);
 
     initializeCompetencesCheckboxs();
-    initializeEditButtons();
     updateInputImage();
+
+    document.body.addEventListener("click", function (event) {
+        const addLearningResultBtn = event.target.closest(
+            ".add-learning-result-btn"
+        );
+        const editLearningResultBtn = event.target.closest(
+            ".edit-learning-result-btn"
+        );
+        const editCompetenceBtn = event.target.closest(".edit-competence-btn");
+
+        if (addLearningResultBtn) {
+            const competenceUid = addLearningResultBtn.dataset.uid;
+            newLearningResult(competenceUid);
+        } else if (editLearningResultBtn) {
+            const learningResultUid = editLearningResultBtn.dataset.uid;
+            reloadCompetencesSelect();
+            loadLearningResultModal(learningResultUid);
+        } else if (editCompetenceBtn) {
+            const competenceUid = editCompetenceBtn.dataset.uid;
+            loadCompetenceModal(competenceUid);
+        }
+    });
+}
+
+function loadLearningResultModal(learningResultUid) {
+    const params = {
+        url:
+            "/cataloging/competences_learnings_results/get_learning_result/" +
+            learningResultUid,
+        method: "GET",
+        loader: true,
+    };
+
+    apiFetch(params).then((data) => {
+        const fillFieldsForm = {
+            ...data,
+            learning_result_uid: data.uid,
+        };
+        fillFormWithObject(fillFieldsForm, "learning-result-form");
+        showModal("learning-result-modal", "Editar resultado de aprendizaje");
+    });
+}
+
+function newLearningResult(competenceUid) {
+    resetFormFields("learning-result-form");
+
+    const fieldsLearningResultForm = {
+        competence_uid: competenceUid,
+    };
+
+    fillFormWithObject(fieldsLearningResultForm, "learning-result-form");
+
+    showModal("learning-result-modal", "Nuevo resultado de aprendizaje");
+}
+
+function submitLearningObjectForm() {
+    const formData = new FormData(this);
+
+    const params = {
+        url: "/cataloging/competences_learnings_results/save_learning_result",
+        method: "POST",
+        body: formData,
+        loader: true,
+        toast: true,
+    };
+
+    resetFormErrors("learning-result-form");
+
+    apiFetch(params)
+        .then(() => {
+            hideModal("learning-result-modal");
+            reloadListCompetences();
+        })
+        .catch((data) => {
+            showFormErrors(data.errors);
+        });
 }
 
 async function searchCompetences() {
@@ -68,21 +140,6 @@ async function searchCompetences() {
     const competencesHtml = await getHtmlListCompetences(textToSearch);
 
     document.getElementById("list-competences").innerHTML = competencesHtml;
-}
-
-/**
- * Inicializa los botones de edición para cada competencia.
- */
-function initializeEditButtons() {
-    const editButtons = document.querySelectorAll(".edit-btn");
-    editButtons.forEach((button) => {
-        button.addEventListener("click", async function () {
-            const uid = this.getAttribute("data-uid");
-            document.getElementById("competence_uid").value = uid;
-            await loadCompetenceModal(uid);
-            showModal("competence-modal", "Editar competencia");
-        });
-    });
 }
 
 /**
@@ -117,7 +174,7 @@ function submitFormCompetence() {
     const formData = new FormData(this);
 
     const params = {
-        url: "/cataloging/competences/save_competence",
+        url: "/cataloging/competences_learnings_results/save_competence",
         method: "POST",
         body: formData,
         loader: true,
@@ -128,7 +185,6 @@ function submitFormCompetence() {
 
     apiFetch(params)
         .then(() => {
-            document.getElementById("competence-form").reset();
             hideModal("competence-modal");
             reloadListCompetences();
         })
@@ -141,34 +197,23 @@ function submitFormCompetence() {
  * Inicializa el botón para crear una nueva competencia y abre el modal correspondiente.
  */
 async function newCompetence() {
-    await loadCompetenceModal();
+    await reloadCompetencesSelect();
+
+    resetFormFields("competence-form");
     showModal("competence-modal", "Nueva competencia");
 }
 
-/**
- * Obtiene la lista de todas las competencias.
- * @return {Array} - Un array de objetos que representan las competencias.
- */
-async function getCompetences() {
+async function reloadCompetencesSelect() {
     const params = {
-        url: "/cataloging/competences/get_all_competences",
+        url: "/cataloging/competences_learnings_results/get_all_competences",
         method: "GET",
+        loader: true,
     };
 
-    const response = await apiFetch(params);
+    const competences = await apiFetch(params);
 
-    return response;
-}
-
-async function getCompetence(competenceUid) {
-    const params = {
-        url: "/cataloging/competences/get_competence/" + competenceUid,
-        method: "GET",
-    };
-
-    const data = await apiFetch(params);
-
-    return data;
+    document.getElementById("parent_competence_uid").innerHTML =
+        buildOptions(competences);
 }
 
 /**
@@ -193,66 +238,28 @@ function buildOptions(competences, level = 0) {
 }
 
 /**
- * Carga el modal para crear/editar una competencia.
+ * Carga el modal para editar una competencia.
  * @param {string} competenceUid - El UID de la competencia a editar. Null para una nueva competencia.
  */
 async function loadCompetenceModal(competenceUid = null) {
-    competences = await getCompetences();
+    const params = {
+        url:
+            "/cataloging/competences_learnings_results/get_competence/" +
+            competenceUid,
+        method: "GET",
+        loader: true,
+    };
 
-    // Machacar el select con nuevas opciones
-    let optionsHtml = '<option value="" selected>Ninguna</option>';
+    resetFormFields("competence-form");
 
-    optionsHtml += buildOptions(competences);
-
-    const selectParentCompetence = document.getElementById(
-        "parent_competence_uid"
-    );
-
-    selectParentCompetence.innerHTML = optionsHtml;
-
-    if (competenceUid) {
-        const competence = await getCompetence(competenceUid);
-
-        // Rellenar campos de texto y textarea
-        document.getElementById("name").value = competence.name || "";
-        document.getElementById("description").value =
-            competence.description || "";
-        document.getElementById("competence_uid").value = competence.uid || "";
-        document.getElementById("is_multi_select").value =
-            competence.is_multi_select;
-
-        if (competence.parent_competence_uid)
-            selectParentCompetence.value = competence.parent_competence_uid;
-
-        if (competence.is_multi_select === null) {
-            document
-                .getElementById("is-multi-select-container")
-                .classList.add("hidden");
-
-            document.getElementById("is_multi_select").value = "";
-        } else {
-            document
-                .getElementById("is-multi-select-container")
-                .classList.remove("hidden");
-
-            document.getElementById("is_multi_select").value =
-                competence.is_multi_select;
+    apiFetch(params).then((response) => {
+        const data = {
+            ...response,
+            competence_uid: response.uid
         }
-    } else {
-        // Resetear el formulario
-        document.getElementById("name").value = "";
-        document.getElementById("description").value = "";
-        document.getElementById("competence_uid").value = "";
-        document
-            .getElementById("is-multi-select-container")
-            .classList.remove("hidden");
-        document.getElementById("is_multi_select").value = "";
-        document
-            .getElementById("is-multi-select-container")
-            .classList.remove("hidden");
-
-        selectParentCompetence.value = "";
-    }
+        fillFormWithObject(data, "competence-form");
+        showModal("competence-modal", "Editar competencia");
+    });
 }
 
 /**
@@ -281,7 +288,6 @@ async function reloadListCompetences() {
     document.getElementById("list-competences").innerHTML = html;
 
     initializeCompetencesCheckboxs();
-    initializeEditButtons();
 }
 
 /**
@@ -291,7 +297,7 @@ async function reloadListCompetences() {
 async function getHtmlListCompetences(search = false) {
     // Creamos el objeto URL
     const url = new URL(
-        "/cataloging/competences/get_list_competences",
+        "/cataloging/competences_learnings_results/get_list_competences",
         window.location.origin
     );
 
@@ -315,19 +321,10 @@ async function getHtmlListCompetences(search = false) {
  */
 async function deleteSelectedCompetences() {
     // Get all checked checkboxes
-    const checkedCheckboxes = document.querySelectorAll(
-        ".element-checkbox:checked"
-    );
-    const competenceUids = [];
+    const checkedUids = getCheckedUids();
 
-    checkedCheckboxes.forEach((checkbox) => {
-        competenceUids.push(checkbox.id);
-    });
-
-    // Check if any competences are selected
-    if (competenceUids.length === 0) {
+    if(!checkedUids.competences.length && !checkedUids.learningResults.length) {
         showToast("No has seleccionado ninguna competencia", "error");
-
         return;
     }
 
@@ -337,7 +334,7 @@ async function deleteSelectedCompetences() {
         "Esta acción no se puede deshacer."
     ).then((result) => {
         if (result) {
-            deleteCompetences(competenceUids);
+            deleteCompetences(checkedUids);
         }
     });
 }
@@ -346,13 +343,15 @@ async function deleteSelectedCompetences() {
  * Realiza la operación de eliminación de competencias en el servidor.
  * @param {Array} competenceUids - Un array de UIDs de las competencias a eliminar.
  */
-async function deleteCompetences(competenceUids) {
+async function deleteCompetences(checkedUids) {
+
     const params = {
-        url: "/cataloging/competences/delete_competences",
+        url: "/cataloging/competences_learnings_results/delete_competences_learning_results",
         method: "DELETE",
-        body: { uids: competenceUids },
+        body: { uids: checkedUids },
         stringify: true,
         loader: true,
+        toast: true,
     };
 
     apiFetch(params).then(() => {
@@ -360,41 +359,26 @@ async function deleteCompetences(competenceUids) {
     });
 }
 
-function changeFatherCompetence(competenceUid) {
-    // Buscamos en el array de competencias la competencia padre
-    if (competenceUid) {
-        const competence = findCompetence(competences, competenceUid);
-        document
-            .getElementById("is-multi-select-container")
-            .classList.toggle("hidden", !competence.is_multi_select);
+function getCheckedUids() {
+    let checkedElements = {
+        competences: [],
+        learningResults: [],
+    };
+    const checkedCompetencesCheckboxes = document.querySelectorAll(
+        ".competence-checkbox:checked"
+    );
 
-        if (!competence.is_multi_select) {
-            document.getElementById("is_multi_select").value = "";
-        }
-    } else {
-        document
-            .getElementById("is-multi-select-container")
-            .classList.remove("hidden");
-        document.getElementById("is_multi_select").value = "";
-    }
-}
+    const checkedLearningResultsCheckboxes = document.querySelectorAll(
+        ".learning-result-checkbox:checked"
+    );
 
-function findCompetence(competences, competenceUid) {
-    for (let competence of competences) {
-        if (competence.uid === competenceUid) {
-            return competence;
-        }
+    checkedCompetencesCheckboxes.forEach((checkbox) => {
+        checkedElements.competences.push(checkbox.id);
+    });
 
-        if (competence.subcompetences) {
-            const found = findCompetence(
-                competence.subcompetences,
-                competenceUid
-            );
-            if (found) {
-                return found;
-            }
-        }
-    }
+    checkedLearningResultsCheckboxes.forEach((checkbox) => {
+        checkedElements.learningResults.push(checkbox.id);
+    });
 
-    return null;
+    return checkedElements;
 }

@@ -18,12 +18,13 @@ class CoursesModel extends Model
     public $incrementing = false;
 
     protected $fillable = [
-        'title', 'description', 'course_type_uid', 'educational_program_type_uid',
-        'call_uid', 'course_status_uid', 'min_required_students', 'center',
+        'title', 'description', 'contact_information', 'course_type_uid', 'educational_program_type_uid',
+        'call_uid', 'course_status_uid', 'min_required_students', 'center_uid',
         'inscription_start_date', 'inscription_finish_date', 'realization_start_date', 'realization_finish_date',
         'presentation_video_url', 'objectives', 'ects_workload', 'educational_program_uid',
         'validate_student_registrations', 'lms_url', 'cost', 'featured_big_carrousel',
-        'featured_big_carrousel_title', 'featured_big_carrousel_description', 'featured_small_carrousel', 'structure'
+        'featured_big_carrousel_title', 'featured_big_carrousel_description', 'featured_small_carrousel', 'structure',
+        'calification_type'
     ];
 
 
@@ -44,7 +45,7 @@ class CoursesModel extends Model
             'courses_teachers',
             'course_uid',
             'user_uid'
-        );
+        )->withPivot('type');
     }
 
     public function students()
@@ -110,4 +111,60 @@ class CoursesModel extends Model
             'uid'
         );
     }
+
+    public function contact_emails() {
+        return $this->hasMany(
+            CoursesEmailsContactsModel::class,
+            'course_uid',
+            'uid'
+        );
+    }
+
+    public function center() {
+        return $this->belongsTo(
+            CentersModel::class,
+            'center_uid',
+            'uid'
+        );
+    }
+
+    public function educational_program() {
+        return $this->belongsTo(
+            EducationalProgramsModel::class,
+            'educational_program_uid',
+            'uid'
+        );
+    }
+
+    public function student_documents()
+    {
+        return $this->belongsToMany(
+            CourseDocumentsModel::class,
+            'courses_students_documents',
+            'course_document_uid',
+            'uid',
+            'uid',
+            'course_uid'
+        )->withPivot('user_uid', 'document_path');
+    }
+
+    public function teachers_no_coordinate()
+    {
+        return $this->belongsToMany(
+            UsersModel::class,
+            'courses_teachers',
+            'course_uid',
+            'user_uid'
+        )->wherePivot('type', '<>', 'coordinator');
+    }
+    public function teachers_coordinate()
+    {
+        return $this->belongsToMany(
+            UsersModel::class,
+            'courses_teachers',
+            'course_uid',
+            'user_uid'
+        )->wherePivot('type', '=', 'coordinator');
+    }
+
 }

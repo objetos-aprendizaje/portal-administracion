@@ -2,17 +2,22 @@
 
 namespace App\Http\Controllers\Cataloging;
 
+use App\Exceptions\OperationFailedException;
+use App\Models\EducationalResourcesModel;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use App\Models\EducationalResourceTypesModel;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Logs\LogsController;
 
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 
-class EducationalResourceTypesController extends BaseController {
+class EducationalResourceTypesController extends BaseController
+{
 
     use AuthorizesRequests, ValidatesRequests;
 
@@ -24,9 +29,10 @@ class EducationalResourceTypesController extends BaseController {
         })->except('index');
     }
 
-    public function index () {
+    public function index()
+    {
 
-        if(!$this->checkManagementAccess()) {
+        if (!$this->checkManagementAccess()) {
             return view('access_not_allowed', [
                 'title' => 'No tienes permiso para administrar los tipos de recurso educativo',
                 'description' => 'El administrador ha bloqueado la administración de tipos de recurso educativo a los gestores.'
@@ -47,13 +53,13 @@ class EducationalResourceTypesController extends BaseController {
                 "tabulator" => true
             ]
         );
-
     }
 
     /**
      * Obtiene todas los tipos de recurso educativo.
      */
-    public function getEducationalResourceTypes (Request $request) {
+    public function getEducationalResourceTypes(Request $request)
+    {
 
         $size = $request->get('size', 1);
         $search = $request->get('search');
@@ -74,13 +80,13 @@ class EducationalResourceTypesController extends BaseController {
         $data = $query->paginate($size);
 
         return response()->json($data, 200);
-
     }
 
     /**
      * Obtiene un tipo de recurso educativo por uid
      */
-    public function getEducationalResourceType ($educational_resource_type_uid) {
+    public function getEducationalResourceType($educational_resource_type_uid)
+    {
 
         if (!$educational_resource_type_uid) {
             return response()->json(['message' => env('ERROR_MESSAGE')], 400);
@@ -93,13 +99,13 @@ class EducationalResourceTypesController extends BaseController {
         }
 
         return response()->json($educational_resource_type, 200);
-
     }
 
     /**
      * Guarda una tipo de recurso educativo. Si recibe un uid, actualiza el tipo de recurso educativo con ese uid.
      */
-    public function saveEducationalResourceType (Request $request) {
+    public function saveEducationalResourceType(Request $request)
+    {
 
         $messages = [
             'name.required' => 'El campo nombre es obligatorio.',
@@ -110,7 +116,8 @@ class EducationalResourceTypesController extends BaseController {
         ];
 
         $validator = Validator::make($request->all(), [
-            'name' => ['required', 'min:3', 'max:255',
+            'name' => [
+                'required', 'min:3', 'max:255',
                 Rule::unique('educational_resource_types', 'name')->ignore($request->get('educational_resource_type_uid'), 'uid'),
             ],
             'description' => 'nullable',
@@ -140,7 +147,10 @@ class EducationalResourceTypesController extends BaseController {
         $educational_resource_type->name = $name;
         $educational_resource_type->description = $description;
 
-        $educational_resource_type->save();
+        DB::transaction(function () use ($educational_resource_type) {
+            $educational_resource_type->save();
+            LogsController::createLog('Guardar tipo de recurso educativo', 'Tipos de recursos educativos', auth()->user()->uid);
+        });
 
         // Obtenemos todas los tipos
         $educational_resource_types = EducationalResourceTypesModel::get()->toArray();
@@ -149,23 +159,32 @@ class EducationalResourceTypesController extends BaseController {
             'message' => ($isNew) ? 'Tipo de recurso educativo añadido correctamente' : 'Tipo de recurso educativo actualizado correctamente',
             'educational_resource_types' => $educational_resource_types
         ], 200);
-
     }
 
-    public function deleteEducationalResourceTypes (Request $request) {
+    public function deleteEducationalResourceTypes(Request $request)
+    {
 
         $uids = $request->input('uids');
 
-        EducationalResourceTypesModel::destroy($uids);
+        $existsEducationalResources = EducationalResourcesModel::whereIn("educational_resource_type_uid", $uids)->exists();
+
+        if ($existsEducationalResources) {
+            throw new OperationFailedException('No se pueden eliminar los tipos seleccionados porque están siendo utilizados por recursos educativos', 406);
+        }
+
+        DB::transaction(function () use ($uids) {
+            EducationalResourceTypesModel::destroy($uids);
+            LogsController::createLog('Eliminar tipos de recursos educativos', 'Tipos de recursos educativos', auth()->user()->uid);
+        });
 
         $educational_resource_types = EducationalResourceTypesModel::get()->toArray();
 
         return response()->json(['message' => 'Tipos de recurso educativo eliminados correctamente', 'educational_resource_types' => $educational_resource_types], 200);
-
     }
 
     // Verifica si en caso de que el usuario sea sólo gestor, si tiene permisos
-    private function checkManagementAccess() {
+    private function checkManagementAccess()
+    {
         $user = Auth::user();
 
         $roles_user = $user->roles->pluck('code')->toArray();
@@ -179,5 +198,4 @@ class EducationalResourceTypesController extends BaseController {
 
         return true;
     }
-
 }

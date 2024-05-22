@@ -6,6 +6,8 @@ use App\Models\ApiKeysModel;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Logs\LogsController;
 
 class ApiKeysController extends BaseController
 {
@@ -99,7 +101,10 @@ class ApiKeysController extends BaseController
             'api_key_uid', 'name', 'api_key'
         ]));
 
-        $api_key_query->save();
+        DB::transaction(function () use ($api_key_query) {
+            $api_key_query->save();
+            LogsController::createLog('Añadir clave API', 'Claves APIs', auth()->user()->uid);
+        }, 5);
 
         return response()->json(['message' => 'Clave guardada correctamente']);
     }

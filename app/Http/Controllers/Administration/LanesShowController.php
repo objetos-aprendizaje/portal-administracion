@@ -7,6 +7,8 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
 use App\Models\GeneralOptionsModel;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Logs\LogsController;
 
 class LanesShowController extends BaseController
 {
@@ -25,10 +27,10 @@ class LanesShowController extends BaseController
                 ],
             ]
         );
-
     }
 
-    public function saveLanesShow(Request $request) {
+    public function saveLanesShow(Request $request)
+    {
 
         $updateData = [
             'lane_recents_courses' => $request->input('lane_recents_courses'),
@@ -37,12 +39,14 @@ class LanesShowController extends BaseController
             'lane_recents_itineraries' => $request->input('lane_recents_itineraries'),
         ];
 
-        foreach ($updateData as $key => $value) {
-            GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
-        }
+        DB::transaction(function () use ($updateData) {
+            foreach ($updateData as $key => $value) {
+                GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
+            }
+
+            LogsController::createLog('Actualización de carriles a mostrar', 'Carriles a mostrar', auth()->user()->uid);
+        });
 
         return response()->json(['message' => 'Preferencias de carriles actualizados correctamente']);
-
     }
-
 }
