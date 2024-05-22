@@ -800,7 +800,7 @@ button.element-disabled {
 
 /******************************* COLORIS ********************/
 .coloris {
-    @apply w-[30px] opacity-0 rounded-full
+    @apply w-[30px] opacity-0 rounded-full cursor-pointer;
 }
 
 .coloris-button .clr-field button {
