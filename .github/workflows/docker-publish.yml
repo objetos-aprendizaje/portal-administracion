@@ -13,6 +13,9 @@ jobs:
     - uses: actions/checkout@v2
       # Checks out your repository under $GITHUB_WORKSPACE, so your job can access it
 
+    - name: Create .env file
+      run: echo "DB_HOST=image_build" > .env
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
 
