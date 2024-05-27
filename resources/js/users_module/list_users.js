@@ -43,7 +43,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     initializeTomSelect();
 
-    updateInputImage();
+    updateInputImage(6144);
 });
 
 function initHandlers() {
@@ -128,6 +128,8 @@ async function deleteUsers() {
         body: { usersUids: selectedUsers.map((user) => user.uid) },
         toast: true,
         loader: true,
+        stringify: true,
+        url: "/users/list_users/delete_users"
     };
 
     apiFetch(params).then(() => {
@@ -293,6 +295,7 @@ async function loadUserModal(uid) {
     const params = {
         url: `/users/list_users/get_user/${uid}`,
         method: "GET",
+        loader: true,
     };
 
     apiFetch(params).then((data) => {
@@ -360,7 +363,7 @@ function submitFormUserModal() {
 function resetModal() {
     const form = document.getElementById("user-form");
     form.reset();
-    resetFormErrors();
+    resetFormErrors("user-form");
 
     const imgElement = document.getElementById("photo_path_preview");
     imgElement.src = defaultImagePreview;

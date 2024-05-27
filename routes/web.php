@@ -181,6 +181,10 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/cataloging/competences_learnings_results/get_competence/{competence_uid}', [CompetencesLearningsResultsController::class, 'getCompetence']);
         Route::get('/cataloging/competences_learnings_results/get_all_competences', [CompetencesLearningsResultsController::class, 'getAllCompetences']);
         Route::delete('/cataloging/competences_learnings_results/delete_competences_learning_results', [CompetencesLearningsResultsController::class, 'deleteCompetencesLearningResults']);
+
+        Route::post("/cataloging/competences_learnings_results/import_esco_framework", [CompetencesLearningsResultsController::class, 'importEscoFramework']);
+
+
         Route::get('/cataloging/course_types/get_list_course_types', [CourseTypesController::class, 'getCourseTypes']);
         Route::get('/cataloging/course_types/get_course_type/{course_type_uid}', [CourseTypesController::class, 'getCourseType']);
         Route::post('/cataloging/course_types/save_course_type', [CourseTypesController::class, 'saveCourseType']);
@@ -203,6 +207,10 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/cataloging/course_types', [CourseTypesController::class, 'index'])->name('cataloging-course-types');
         Route::get('/cataloging/educational_resources_types', [EducationalResourceTypesController::class, 'index'])->name('cataloging-educational-resources');
         Route::get('/cataloging/educational_program_types', [EducationalProgramTypesController::class, 'index'])->name('cataloging-educational-program-types');
+
+
+
+
     });
 
     Route::middleware(['role:ADMINISTRATOR,MANAGEMENT,TEACHER'])->group(function () {

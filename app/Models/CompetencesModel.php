@@ -13,6 +13,8 @@ class CompetencesModel extends Model
 
     protected $keyType = 'string';
 
+    protected $fillable = ['uid', 'name', 'parent_competence_uid', 'is_multi_select', 'origin_code'];
+
     public function parentCompetence()
     {
         return $this->belongsTo(CompetencesModel::class, 'parent_competence_uid')->with('parentCompetence')->whereNull('parent_competence_uid')->orderBy('name', 'ASC');

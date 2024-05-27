@@ -34,7 +34,7 @@ class ChangeStatusToInscription extends Command
         // fecha de inicio de inscripción inferior a la actual
         $courses = CoursesModel::where('inscription_start_date', '<=', now())
             ->where('inscription_finish_date', '>=', now())
-            ->with(['status', 'categories'])
+            ->with(['status', 'categories', 'tags'])
             ->whereHas('status', function ($query) {
                 $query->where('code', 'ACCEPTED_PUBLICATION');
             })
@@ -53,8 +53,34 @@ class ChangeStatusToInscription extends Command
                 foreach ($emailNotificationsAutomaticDataChunks as $chunk) {
                     EmailNotificationsAutomaticModel::insert($chunk);
                 }
+
+                // Enviamos los cursos a la api de búsqueda para posteriormente poder buscarlos desde el front
+                if(env('ENABLED_API_SEARCH')) {
+                    $this->sendCoursesToApiSearch($courses);
+                }
             });
         }
+    }
+
+    private function sendCoursesToApiSearch($courses) {
+        $data = [];
+
+        foreach($courses as $course) {
+            $tags = $course->tags->pluck("tag")->toArray();
+            $data[] = (object)[
+                "uid" => $course->uid,
+                "title" => $course->title,
+                "description" => $course->description ?? "",
+                "tags" => $tags,
+            ];
+        }
+
+        $endpoint = env('API_SEARCH_URL') . '/submit_courses';
+        $headers = [
+            'API-KEY' => env('API_SEARCH_KEY'),
+        ];
+
+        guzzle_call($endpoint, $data, $headers, 'POST');
     }
 
     private function getEmailsNotificationsUsersInterested($courses)

@@ -3,6 +3,8 @@
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 
 function validateHexadecimalColor($color)
 {
@@ -239,6 +241,42 @@ function curl_call($url, $data = null, $headers = null, $method = 'GET')
     curl_close($ch);
 
     return $response;
+}
+
+
+function guzzle_call($url, $data = null, $headers = null, $method = 'GET')
+{
+    // Inicializa Guzzle
+    $client = new Client();
+
+    // Configura las opciones de Guzzle
+    $options = [];
+    if ($data) {
+        $options['json'] = $data;
+    }
+
+    if ($headers) {
+        $options['headers'] = $headers;
+    }
+
+    try {
+        // Ejecuta la petición con Guzzle
+        $response = $client->request($method, $url, $options);
+
+        // Devuelve la respuesta
+        return (string) $response->getBody();
+    } catch (RequestException $e) {
+        if ($e->hasResponse()) {
+            // Obtiene la respuesta completa
+            $response = $e->getResponse();
+            $statusCode = $response->getStatusCode();
+            $body = (string) $response->getBody();
+
+            throw new \Exception('Error en la petición Guzzle: ' . $statusCode . ' - ' . $body);
+        } else {
+            throw new \Exception('Error en la petición Guzzle: ' . $e->getMessage());
+        }
+    }
 }
 
 function add_timestamp_name_file($file)

@@ -136,6 +136,7 @@ class ListUsersController extends BaseController
             'email.required' => 'Introduce el email del usuario.',
             'email.unique' => 'Este email ya está registrado.',
             'roles.required' => 'Debe seleccionar al menos un rol',
+            'photo_path.max' => 'La imagen no puede superar los 6MB'
         ];
 
 
@@ -151,6 +152,7 @@ class ListUsersController extends BaseController
                     $fail('Debes seleccionar al menos un rol');
                 }
             }],
+            'photo_path' => 'max:6144', // Tamaño máximo de 2MB
         ];
 
         $user_uid = $request->input('user_uid');
@@ -230,8 +232,10 @@ class ListUsersController extends BaseController
     public function deleteUsers(Request $request)
     {
 
+        $users_uids = $request->input('usersUids');
+
         // Comprobamos si es docente y está asociado a algún curso
-        $coursesTeacher = CoursesUsersModel::with(["role", "course", "user"])->whereIn('user_uid', $request->input('usersUids'))->whereHas('role', function ($query) {
+        $coursesTeacher = CoursesUsersModel::with(["role", "course", "user"])->whereIn('user_uid', $users_uids)->whereHas('role', function ($query) {
             $query->where('code', 'TEACHER');
         })->get()->toArray();
 
@@ -248,9 +252,7 @@ class ListUsersController extends BaseController
             return response()->json(['message' => 'No se pueden eliminar usuarios docentes asociados a cursos', 'errorsTeachersAssociated' => $errorsTeachersAssociated], 400);
         }
 
-        $users_uids = $request->input('usersUids');
-
-        return DB::transaction(function () use ($users_uids) {
+        DB::transaction(function () use ($users_uids) {
             UsersModel::whereIn('uid', $users_uids)->delete();
             LogsController::createLog("Eliminación de usuarios", 'Usuarios', auth()->user()->uid);
         });
@@ -279,7 +281,7 @@ class ListUsersController extends BaseController
         return response()->json($users, 200);
     }
 
-    public function searchUsersNoEnrolled($course,$search)
+    public function searchUsersNoEnrolled($course, $search)
     {
 
         $users_query = UsersModel::query()->with('roles')
@@ -292,7 +294,7 @@ class ListUsersController extends BaseController
                     ->orWhere('email', 'LIKE', "%{$search}%")
                     ->orWhere('nif', 'LIKE', "%{$search}%");
             })
-            ->whereDoesntHave('coursesStudents', function ($query) use ($course){
+            ->whereDoesntHave('coursesStudents', function ($query) use ($course) {
                 $query->where('course_uid', $course);
             });
 

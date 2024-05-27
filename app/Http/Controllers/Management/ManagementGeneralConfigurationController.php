@@ -46,13 +46,11 @@ class ManagementGeneralConfigurationController extends BaseController
     {
 
         $updateData = [
-            'necessary_approval_courses' => $request->input('necessary_approval_courses'),
             'necessary_approval_resources' => $request->input('necessary_approval_resources'),
-            'course_status_change_notifications' => $request->input('course_status_change_notifications'),
             'necessary_approval_editions' => $request->input('necessary_approval_editions'),
         ];
 
-        return DB::transaction(function () use ($updateData) {
+        DB::transaction(function () use ($updateData) {
             foreach ($updateData as $key => $value) {
                 GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
             }
@@ -65,17 +63,16 @@ class ManagementGeneralConfigurationController extends BaseController
 
     public function saveTeachersAutomaticAproval(Request $request)
     {
-        $uidUsers = $request->input('selectedTeachers');
+        $uidsTeachers = $request->input('selectedTeachers');
 
-        // Primero eliminamos los UIDs que no están en la lista enviada
-        AutomaticResourceAprovalUsersModel::whereNotIn('user_uid', $uidUsers)->delete();
-
-        return DB::transaction(function () use ($uidUsers) {
+        DB::transaction(function () use ($uidsTeachers) {
+            // Primero eliminamos los UIDs que no están en la lista enviada
+            AutomaticResourceAprovalUsersModel::whereNotIn('user_uid', $uidsTeachers)->delete();
 
             // Luego insertamos o actualizamos los que sí están
-            foreach ($uidUsers as $uidUser) {
-                AutomaticResourceAprovalUsersModel::updateOrInsert(
-                    ['user_uid' => $uidUser],
+            foreach ($uidsTeachers as $uidTeacher) {
+                AutomaticResourceAprovalUsersModel::firstOrCreate(
+                    ['user_uid' => $uidTeacher],
                     ['uid' => generate_uuid()]
                 );
             }

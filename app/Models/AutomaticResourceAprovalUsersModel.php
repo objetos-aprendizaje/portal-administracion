@@ -13,4 +13,14 @@ class AutomaticResourceAprovalUsersModel extends Model
 
     protected $keyType = 'string';
 
+    protected $casts = [
+        'uid' => 'string',
+    ];
+
+    public $incrementing = false;
+
+    protected $fillable = [
+        'uid',
+        'user_uid'
+    ];
 }

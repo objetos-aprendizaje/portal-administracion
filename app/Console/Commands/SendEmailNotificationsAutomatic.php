@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\SendNotificationJob;
+use App\Jobs\SendEmailJob;
 use App\Models\EmailNotificationsAutomaticModel;
 use Exception;
 use Illuminate\Console\Command;
@@ -38,7 +38,7 @@ class SendEmailNotificationsAutomatic extends Command
             $parameters = json_decode($notification->parameters, true);
 
             try {
-                dispatch(new SendNotificationJob($notification['user']->email, $notification['subject'], $parameters, 'emails.'.$notification['template']));
+                dispatch(new SendEmailJob($notification['user']->email, $notification['subject'], $parameters, 'emails.'.$notification['template']));
             } catch (Exception $e) {
                 Log::error('Error al despachar el trabajo de envío de notificación: '.$e->getMessage());
                 $notification->sending_attempts++;

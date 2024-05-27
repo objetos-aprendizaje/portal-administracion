@@ -83,7 +83,6 @@ function adjustPadding() {
     // Configuramos min-height para el contenido principal con calc, restándole el padding top a 100vh
     var mainContent = document.getElementById("main-content");
     mainContent.style.minHeight = `calc(100vh - ${navbarHeight}px)`;
-
 }
 
 export function validateForm(formId) {
@@ -154,8 +153,8 @@ export function showFormErrors(errors) {
             if (!element) return;
 
             // Crea el div que contendrá los mensajes de error.
-            const errorContainer = document.createElement('div');
-            errorContainer.classList.add('error-container');
+            const errorContainer = document.createElement("div");
+            errorContainer.classList.add("error-container");
 
             // Crea el mensaje de error y lo añade al div.
             const small = document.createElement("small");
@@ -169,7 +168,8 @@ export function showFormErrors(errors) {
                 div.parentNode.insertBefore(errorContainer, div.nextSibling);
             } else if (element.getAttribute("data-choice")) {
                 const choicesContainer = element.closest(".choices");
-                const choicesInnerContainer = element.closest(".choices__inner");
+                const choicesInnerContainer =
+                    element.closest(".choices__inner");
                 if (choicesContainer) {
                     choicesInnerContainer.classList.add("error-border");
                     choicesContainer.parentNode.insertBefore(
@@ -177,7 +177,9 @@ export function showFormErrors(errors) {
                         choicesContainer.nextSibling
                     );
                 }
-            } else if (["INPUT", "TEXTAREA", "SELECT"].includes(element.tagName)) {
+            } else if (
+                ["INPUT", "TEXTAREA", "SELECT"].includes(element.tagName)
+            ) {
                 element.classList.add("error-border");
                 element.parentNode.appendChild(errorContainer);
             } else if (element.getAttribute("data-tomselect")) {
@@ -213,7 +215,7 @@ export function resetFormErrors(formId) {
  * Maneja la actualización de una vista previa de imagen y el nombre del archivo en un input "file".
  * Se activa al cambiar el archivo en elementos con la clase "poa-input-image".
  */
-export function updateInputImage() {
+export function updateInputImage(maxSizeKb = false) {
     let classDiv = "poa-input-image";
     document.addEventListener("change", function (e) {
         const target = e.target;
@@ -223,25 +225,35 @@ export function updateInputImage() {
             const img = previewDiv.querySelector("img");
             const span = previewDiv.querySelector(".image-name");
 
-            if (target.files && target.files[0]) {
-                const fileType = target.files[0].type;
-                if (!fileType.startsWith("image/")) {
-                    console.log("El archivo seleccionado no es una imagen.");
-                    return;
-                }
-                const reader = new FileReader();
-
-                reader.onload = function (event) {
-                    img.src = event.target.result;
-                };
-
-                reader.readAsDataURL(target.files[0]);
-
-                span.textContent = target.files[0].name;
-            } else {
+            if (!target.files || !target.files[0]) {
                 img.src = defaultImagePreview;
                 span.textContent = "Ningún archivo seleccionado";
+                return;
             }
+
+            const fileType = target.files[0].type;
+            if (!fileType.startsWith("image/")) {
+                showToast("El archivo seleccionado no es una imagen", "error");
+                return;
+            }
+
+            if (maxSizeKb) {
+                const maxSizeBytes = (maxSizeKb / 1024) * 1024 * 1024;
+                if (target.files[0].size > maxSizeBytes) {
+                    showToast("El archivo seleccionado es demasiado grande", "error");
+                    return;
+                }
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = function (event) {
+                img.src = event.target.result;
+            };
+
+            reader.readAsDataURL(target.files[0]);
+
+            span.textContent = target.files[0].name;
         }
     });
 }

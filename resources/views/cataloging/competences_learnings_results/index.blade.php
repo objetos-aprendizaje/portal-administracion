@@ -14,6 +14,10 @@
             </div>
 
             <div>
+                <button id="import-csv-btn" type="button" class="btn btn-icon">
+                    {{ e_heroicon('folder-plus', 'outline') }}
+                </button>
+
                 <button id="new-competence-btn" type="button" class="btn btn-icon">
                     {{ e_heroicon('plus', 'outline') }}
                 </button>
@@ -36,6 +40,9 @@
 
     @include('cataloging.competences_learnings_results.competence_modal')
     @include('cataloging.competences_learnings_results.learning_result_modal')
+    @include('cataloging.competences.import_competence_framework')
+    @include('cataloging.competences.import_esco_framework')
+
 
     @include('partials.modal-confirmation')
 @endsection

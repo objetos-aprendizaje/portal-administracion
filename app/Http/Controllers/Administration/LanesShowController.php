@@ -33,10 +33,10 @@ class LanesShowController extends BaseController
     {
 
         $updateData = [
-            'lane_recents_courses' => $request->input('lane_recents_courses'),
-            'lane_recents_educational_programs' => $request->input('lane_recents_educational_programs'),
+            'lane_featured_courses' => $request->input('lane_featured_courses'),
+            'lane_featured_educationals_programs' => $request->input('lane_featured_educationals_programs'),
             'lane_recents_educational_resources' => $request->input('lane_recents_educational_resources'),
-            'lane_recents_itineraries' => $request->input('lane_recents_itineraries'),
+            'lane_featured_itineraries' => $request->input('lane_featured_itineraries'),
         ];
 
         DB::transaction(function () use ($updateData) {

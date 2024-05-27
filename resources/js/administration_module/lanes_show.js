@@ -13,10 +13,10 @@ function initHandlers() {
 function submitLanesShowForm() {
     const formData = new FormData(this);
 
-    formData.append("lane_recents_courses", document.getElementById("lane_recents_courses").checked ? "1" : "0");
-    formData.append("lane_recents_educational_programs", document.getElementById("lane_recents_educational_programs").checked ? "1" : "0");
+    formData.append("lane_featured_courses", document.getElementById("lane_featured_courses").checked ? "1" : "0");
+    formData.append("lane_featured_educationals_programs", document.getElementById("lane_featured_educationals_programs").checked ? "1" : "0");
     formData.append("lane_recents_educational_resources", document.getElementById("lane_recents_educational_resources").checked ? "1" : "0");
-    formData.append("lane_recents_itineraries", document.getElementById("lane_recents_itineraries").checked ? "1" : "0");
+    formData.append("lane_featured_itineraries", document.getElementById("lane_featured_itineraries").checked ? "1" : "0");
 
 
     const params = {

@@ -1,0 +1,30 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('destinations_general_notifications_roles', function (Blueprint $table) {
+            $table->char('uid', 36)->primary();
+            $table->char('general_notification_uid', 36)->index('gen_notif_uid_fk');
+            $table->char('rol_uid', 36)->index('rol_uid_fk');
+
+            $table->unique(['general_notification_uid', 'rol_uid'], 'unique_general_notification_uid_rol_uid');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('destinations_general_notifications_roles');
+    }
+};

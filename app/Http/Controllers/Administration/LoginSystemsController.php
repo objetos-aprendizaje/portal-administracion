@@ -133,12 +133,12 @@ class LoginSystemsController extends BaseController
             $parameters[$field] = $request->input($field);
         }
 
-        $url = env('FRONT_URL') . '/webhook/update_login_system';
+        $url = env('FRONT_URL') . '/api/update_login_system';
+        $header = ['API-KEY' => env('API_KEY_FRONT')];
 
-        $header = ['API_KEY: ' . env('API_KEY_FRONT_WEBHOOKS')];
-
-        // Realiza una petición POST a la URL del webhook del front para actualizar los parámetros de inicio de sesión
-        curl_call($url, null, $header, 'POST');
+        // Realiza una petición POST a la URL de la api del front para que vacíe la caché de los
+        // sistemas de inicio de sesión
+        guzzle_call($url, null, $header, 'POST');
 
         // Pone el objeto actualizado de nuevo en la caché
         Cache::put($cacheKey, $parameters);

@@ -51,6 +51,7 @@ class MyProfileController extends BaseController
 
         $validator = Validator::make($request->all(), [
             'nif' => ['required', 'max:9', new NifNie],
+            'photo_path' => 'max:6144'
         ], $messages);
 
         if ($validator->fails()) {
