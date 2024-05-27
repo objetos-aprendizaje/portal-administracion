@@ -47,10 +47,8 @@ function saveGeneralConfigurationOptions() {
         url: "/management/general_configuration/save_general_options",
         method: "POST",
         body: {
-            "necessary_approval_courses": document.getElementById("necessary_approval_courses").checked,
             "necessary_approval_resources": document.getElementById("necessary_approval_resources").checked,
             "necessary_approval_editions": document.getElementById("necessary_approval_editions").checked,
-            "course_status_change_notifications": document.getElementById("course_status_change_notifications").checked,
         },
         toast: true,
         loader: true,

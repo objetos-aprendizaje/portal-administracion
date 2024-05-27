@@ -24,7 +24,7 @@
                         <label for="name">Nombre <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input type="text" id="name" name="name" class="poa-input" />
+                        <input type="text" id="name" name="name" class="poa-input" placeholder="MOOC"/>
                     </div>
                 </div>
 

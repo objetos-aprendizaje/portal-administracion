@@ -225,6 +225,7 @@ function submitCarrouselDefaultForm() {
 }
 
 function deleteFont(fontKey) {
+    console.log(fontKey)
     const params = {
         url: "/administration/delete_font",
         method: "DELETE",
@@ -278,16 +279,15 @@ function addFont(event) {
         document.querySelector(`.${fontKey}_buttons`).innerHTML =
             downloadLink + deleteLink;
 
-        controlDeleteFonts();
-    });
+        });
 }
 
 function controlDeleteFonts() {
-    document.querySelectorAll(".delete-font").forEach((element) => {
-        element.addEventListener("click", (event) => {
+    document.addEventListener("click", (event) => {
+        if (event.target.matches(".delete-font")) {
             event.preventDefault(); // Evita que el navegador siga el enlace
-            let fontKey = event.currentTarget.getAttribute("data-font");
+            let fontKey = event.target.getAttribute("data-font");
             deleteFont(fontKey);
-        });
+        }
     });
 }

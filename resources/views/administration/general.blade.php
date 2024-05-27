@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="flex flex-col md:flex-row gap-12 mb-8">
-        <div class="poa-container w-full md:w-1/2 h-[550px]">
+        <div class="poa-container w-full md:w-1/2">
             <div class="relative h-full flex justify-between flex-col gap-8">
 
                 <h2>Logo</h2>
@@ -45,7 +45,7 @@
             </div>
         </div>
 
-        <div class="poa-container w-full md:w-1/2 h-[550px]">
+        <div class="poa-container w-full md:w-1/2">
             <div class="relative h-full flex flex-col">
                 <h2>Paleta de colores</h2>
 
@@ -405,6 +405,7 @@
                             <img id="carrousel_image_path"
                                 src="{{ $general_options['carrousel_image_path'] ? asset($general_options['carrousel_image_path']) : env('NO_IMAGE_SELECTED_PATH') }}" />
 
+
                             <div class="select-file-container">
                                 <input accept="image/*" type="file" id="carrousel_image_input_file"
                                     name="carrousel_image_input_file" class="hidden" />
@@ -418,6 +419,8 @@
                                 </div>
                             </div>
 
+                            <span class="dimensions">*Se recomienda subir imagen con aspecto panorámico con una resolución mínima de: 1200px x 600px.
+                                Formato: PNG, JPG, JPEG.</span>
                         </div>
                     </div>
                 </div>

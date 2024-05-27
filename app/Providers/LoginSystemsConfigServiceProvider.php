@@ -6,6 +6,7 @@ use App\Models\GeneralOptionsModel;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class LoginSystemsConfigServiceProvider extends ServiceProvider
 {
@@ -22,7 +23,9 @@ class LoginSystemsConfigServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if(!count(DB::getConnections())) return;
+        if (env('DB_HOST') == 'image_build') return;
+
+        if (!Schema::hasTable('general_options')) return;
 
         if (!Cache::has('parameters_login_systems')) {
             $parameters_login_systems = GeneralOptionsModel::whereIn('option_name', [

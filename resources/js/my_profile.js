@@ -6,7 +6,7 @@ import {
 } from "./app";
 
 document.addEventListener("DOMContentLoaded", function () {
-    updateInputImage();
+    updateInputImage(6144);
 
     initHandlers();
 

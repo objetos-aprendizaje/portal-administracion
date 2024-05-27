@@ -45,8 +45,8 @@
                     <div class="content-container">
                         <div class="poa-input-image">
                             <img id="image_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}" />
-                            <span class="dimensions">*Dimensiones: Alto: 50px x Ancho: 300px. Formato: PNG, JPG. Tam.
-                                Máx.: 1MB</span>
+                            <span class="dimensions">*Se recomienda imagen con aspecto cuadrado con una resolución mínima de: 200px x 200px.
+                                Formato: PNG, JPG. Tam. Máx.: 6MB</span>
 
                             <div class="select-file-container">
                                 <input accept="image/*" type="file" id="image_path" name="image_path"

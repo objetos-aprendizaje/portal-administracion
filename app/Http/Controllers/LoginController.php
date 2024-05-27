@@ -121,6 +121,8 @@ class LoginController extends BaseController
         Session::flush();
         Auth::logout();
 
-        return redirect('/');
+        $url_logout = "https://".env('DOMINIO_PRINCIPAL')."/login";
+
+        return redirect($url_logout);
     }
 }

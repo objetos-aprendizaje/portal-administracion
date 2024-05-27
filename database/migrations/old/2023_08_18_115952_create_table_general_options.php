@@ -40,10 +40,10 @@ return new class extends Migration
             ["option_name" => "fiscal_domicile"],
             ["option_name" => "work_center_address"],
             ["option_name" => "legal_advice"],
-            ["option_name" => "lane_recents_courses"],
-            ["option_name" => "lane_recents_educational_programs"],
+            ["option_name" => "lane_featured_courses"],
+            ["option_name" => "lane_featured_educationals_programs"],
             ["option_name" => "lane_recents_educational_resources"],
-            ["option_name" => "lane_recents_itineraries"],
+            ["option_name" => "lane_featured_itineraries"],
             ["option_name" => "necessary_approval_courses"],
             ["option_name" => "necessary_approval_resources"],
             ["option_name" => "course_status_change_notifications"]

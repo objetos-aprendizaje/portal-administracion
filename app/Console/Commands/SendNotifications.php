@@ -6,7 +6,7 @@ use App\Models\EmailNotificationsModel;
 use App\Models\UsersModel;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
-use App\Jobs\SendNotificationJob;
+use App\Jobs\SendEmailJob;
 use Illuminate\Support\Facades\Cache;
 
 class SendNotifications extends Command
@@ -72,7 +72,7 @@ class SendNotifications extends Command
                         "body" => $notification['body'],
                     ];
 
-                    dispatch(new SendNotificationJob($user['email'], $notification['subject'], $parameters, 'emails.notification'));
+                    dispatch(new SendEmailJob($user['email'], $notification['subject'], $parameters, 'emails.notification'));
                 } catch (\Exception $e) {
                     Log::error('Error enviando email a ' . $user['email'] . ' ' . $e->getMessage());
                 }
@@ -98,7 +98,7 @@ class SendNotifications extends Command
                         $parameters = [
                             "body" => $notification['body'],
                         ];
-                        dispatch(new SendNotificationJob($user['email'], $notification['subject'], $parameters, 'emails.notification'));
+                        dispatch(new SendEmailJob($user['email'], $notification['subject'], $parameters, 'emails.notification'));
                     } catch (\Exception $e) {
                         Log::error('Error enviando email a ' . $user['email'] . ' ' . $e->getMessage());
                     }
@@ -117,7 +117,7 @@ class SendNotifications extends Command
                     "body" => $notification['body'],
                 ];
 
-                dispatch(new SendNotificationJob($user['email'], $notification['subject'], $parameters, 'emails.notification'));
+                dispatch(new SendEmailJob($user['email'], $notification['subject'], $parameters, 'emails.notification'));
             } catch (\Exception $e) {
                 Log::error('Error enviando email a ' . $user['email'] . ' ' . $e->getMessage());
             }

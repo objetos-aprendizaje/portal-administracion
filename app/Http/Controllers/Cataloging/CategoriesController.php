@@ -125,7 +125,8 @@ class CategoriesController extends BaseController
             'description' => 'nullable',
             'parent_category_uid' => 'nullable|exists:categories,uid',
             'color' => 'required',
-            'image_path' => $request->get('category_uid') ? 'image' : 'required|image'
+            'image_path' => $request->get('category_uid') ? 'image' : 'required|image',
+            'image_path' => 'max:6144'
         ], $messages);
 
         if ($validator->fails()) {

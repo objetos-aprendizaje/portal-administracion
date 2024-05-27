@@ -24,10 +24,8 @@ class MailConfigServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (!Schema::hasTable('general_options')) {
-            return;
-        }
-
+        if (env('DB_HOST') == 'image_build') return;
+        if (!Schema::hasTable('general_options')) return;
 
         if (!Cache::has('parameters_email_service') || empty(Cache::get('parameters_email_service'))) {
             $parameters_email_service = GeneralOptionsModel::whereIn('option_name', [

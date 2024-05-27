@@ -19,11 +19,11 @@ class CompetencesLearningsResultsController extends BaseController
 
     public function index()
     {
-
         $competences_anidated = CompetencesModel::whereNull('parent_competence_uid')
             ->with(['subcompetences'])
             ->orderBy('name', 'ASC')
             ->get()->toArray();
+
 
         $competences = CompetencesModel::orderBy('name', 'ASC')->get()->toArray();
 
@@ -45,7 +45,7 @@ class CompetencesLearningsResultsController extends BaseController
     public function getAllCompetences()
     {
 
-        $competences = CompetencesModel::whereNull('parent_competence_uid')->with('subcompetences')->get()->toArray();
+        $competences = CompetencesModel::with('subcompetences')->get()->toArray();
 
         return response()->json($competences, 200);
     }
@@ -147,10 +147,10 @@ class CompetencesLearningsResultsController extends BaseController
     {
         $search = $request->input("search");
 
-
         $query = CompetencesModel::whereNull('parent_competence_uid')
             ->with(['subcompetences'])
-            ->orderBy('name', 'ASC');
+            ->orderBy('name', 'ASC')
+            ->get()->toArray();
 
         // Si se proporcionó un término de búsqueda, lo aplicamos
         if ($search) {
@@ -227,5 +227,351 @@ class CompetencesLearningsResultsController extends BaseController
         $learningResult = LearningResultsModel::where('uid', $learningResultUid)->first();
 
         return response()->json($learningResult, 200);
+    }
+
+    public function importEscoFramework(Request $request)
+    {
+
+        $messages = [
+            'skills_hierarchy_file.required' => 'El fichero skills_hierarchy es obligatorio',
+            'skills_file.max' => 'El fichero skills_file es obligatorio',
+            'broader_relations_skill_pillar_file.required' => 'El fichero broader_relations_skill_pillar es obligatorio',
+        ];
+
+        $rules = [
+            'skills_hierarchy_file' => 'required|file',
+            'skills_file' => 'required|file',
+            'broader_relations_skill_pillar_file' => 'required|file',
+        ];
+
+        $validator = Validator::make($request->all(), $rules, $messages);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $skills_hierarchy_file = $request->file('skills_hierarchy_file');
+        $skills_hierarchy = $this->csvFileToObject($skills_hierarchy_file);
+
+
+        $hierarchy = $this->buildHierarchy($skills_hierarchy);
+
+        foreach($hierarchy as $h) {
+            CompetencesModel::create($h);
+
+        }
+
+
+        $skills_file = $request->file('skills_file');
+        $skills = $this->csvFileToObject($skills_file);
+
+
+
+        $broader_relations_skill_pillar_file = $request->file('broader_relations_skill_pillar_file');
+        $broader_relations_skill_pillar = $this->csvFileToObject($broader_relations_skill_pillar_file);
+
+
+
+        $hierarchyCompetences = [];
+        $hierarchySkills = [];
+
+
+        //recorremos las skills
+        foreach($skills as $skill) {
+
+            // recorremos el fichero que relaciona resultados y competencias
+            foreach($broader_relations_skill_pillar as $broader_relations) {
+
+                //verificamos que existan los datos necesarios
+                if (isset($broader_relations[1]) && isset($skill[1])){
+
+                    //localizamos el dato
+                    if($broader_relations[1] == $skill[1]) {
+
+                        //comprobamos que $skill tiene hijos con el broarder
+                        $has_children = $this->hasChildren($broader_relations_skill_pillar, $skill[1]);
+
+                        //En este caso estas skills que tienen hijos, se han de considerar como competencias para almacenarlas así.
+                        if ($has_children == true){
+
+                            $result = $this->buildHierarchyCompetences($broader_relations[3], $skill);
+
+                            $hierarchyCompetences = array_merge($hierarchyCompetences, $result);
+
+                        }
+                    }
+                }
+            }
+        }
+
+        //almacenamos en base de datos
+        foreach($hierarchyCompetences as $h) {
+            CompetencesModel::create($h);
+        }
+
+        //recorremos las skills
+        foreach($skills as $skill) {
+
+            // recorremos el fichero que relaciona resultados y competencias
+            foreach($broader_relations_skill_pillar as $broader_relations) {
+
+                //verificamos que existan los datos necesarios
+                if (isset($broader_relations[1]) && isset($skill[1])){
+
+                    if($broader_relations[1] == $skill[1]) {
+
+                        //comprobamos que $skill no tiene hijos con el broarder
+                        $has_children = $this->hasChildren($broader_relations_skill_pillar, $skill[1]);
+
+                        //En este caso ya no tienen hijos entonces son resultados de aprendizaje.
+                        if ($has_children == false){
+
+                            $result = $this->buildHierarchySkills($broader_relations[3], $skill);
+
+                            $hierarchySkills = array_merge($hierarchySkills, $result);
+
+                        }
+                    }
+                }
+            }
+        }
+
+        //almacenamos en base de datos
+        foreach($hierarchySkills as $h) {
+            LearningResultsModel::create($h);
+        }
+
+        return response()->json(['message' => 'Competencias y resultados de aprendizaje añadidos'], 200);
+
+    }
+
+
+    private function searchFatherCompetence($uid, $broader_relations_skill_pillar) {
+        foreach($broader_relations_skill_pillar as $row) {
+            if($this->extractuidUrl($row[1]) == $uid) {
+                return $row;
+            }
+        }
+    }
+
+
+
+
+    private function buildHierarchy($data)
+    {
+        $hierarchy = [];
+
+        $parent_level_0_uuid = "";
+        $parent_level_1_uuid = "";
+        $parent_level_2_uuid = "";
+
+        $uid_esco = generate_uuid();
+        $hierarchy[] = [
+            "uid" => $uid_esco,
+            "name" => "ESCO",
+            "description" => "",
+            "parent_competence_uid" => NULL,
+            'is_multi_select' => '1',
+            'origin_code' => ""
+        ];
+
+        foreach ($data as $row) {
+            // Si no está correcta la fila
+            if (count($row) < 8) continue;
+
+            if($row[0] != "" && $row[2] == "" && $row[4] == "" && $row[6] == "") {
+
+                $level0_uid = generate_uuid();
+
+                $hierarchy[] = [
+                    "uid" => $level0_uid,
+                    "name" => $row[1],
+                    "description" => $row[8],
+                    "parent_competence_uid" => $uid_esco,
+                    'is_multi_select' => '1',
+                    'origin_code' => $row[0]
+                ];
+
+                $parent_level_0_uuid = $level0_uid;
+
+
+            }elseif ($row[0] != "" && $row[2] != "" && $row[4] == "" && $row[6] == ""){
+
+                $level1_uid = generate_uuid();
+
+                $hierarchy[] = [
+                    "uid" => $level1_uid,
+                    "name" => $row[3],
+                    "description" => $row[8],
+                    "parent_competence_uid" => $parent_level_0_uuid,
+                    'is_multi_select' => '1',
+                    'origin_code' => $row[2],
+                ];
+
+                $parent_level_1_uuid = $level1_uid;
+
+            }elseif($row[0] != "" && $row[2] != "" && $row[4] != "" && $row[6] == ""){
+
+                $level2_uid = generate_uuid();
+
+                $hierarchy[] = [
+                    "uid" => $level2_uid,
+                    "name" => $row[5],
+                    "description" => $row[8],
+                    "parent_competence_uid" => $parent_level_1_uuid,
+                    'is_multi_select' => '1',
+                    'origin_code' => $row[4]
+                ];
+
+                $parent_level_2_uuid = $level2_uid;
+
+            }elseif($row[0] != "" && $row[2] != "" && $row[4] != "" && $row[6] != ""){
+
+                $level3_uid = generate_uuid();
+
+                $hierarchy[] = [
+                    "uid" => $level3_uid,
+                    "name" => $row[7],
+                    "description" => $row[8],
+                    "parent_competence_uid" => $parent_level_2_uuid,
+                    'is_multi_select' => '0',
+                    'origin_code' => $row[6]
+                ];
+
+            }
+
+        }
+
+        return $hierarchy;
+    }
+
+    function isUuid($string) {
+        return preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $string) === 1;
+    }
+
+    private function search_competence($value, $competences, $field)
+    {
+        $values = array_column($competences, $field);
+        $index = array_search($value, $values);
+
+        if($index) return $competences[$index];
+        else return false;
+    }
+
+    private function extractuidUrl($url)
+    {
+        // Parse the URL into its components
+        $components = parse_url($url);
+
+        // Split the path into segments
+        $segments = explode('/', $components['path']);
+
+        // The uid is the last segment
+        $uid = end($segments);
+
+        return $uid;
+    }
+
+
+    private function csvFileToObject($file, $filter = [])
+    {
+        $data = [];
+        $csvFile = new \SplFileObject($file->getRealPath());
+        $csvFile->setFlags(\SplFileObject::READ_CSV);
+
+        $isFirstLine = true;
+
+        while (!$csvFile->eof()) {
+            $row = $csvFile->fgetcsv();
+
+            if ($isFirstLine) {
+                $isFirstLine = false;
+                continue;
+            }
+
+            if ($row) {
+                $includeRow = true;
+
+                foreach ($filter as $position => $value) {
+                    if (!isset($row[$position]) || $row[$position] != $value) {
+                        $includeRow = false;
+                        break;
+                    }
+                }
+
+                if ($includeRow) {
+                    $data[] = $row;
+                }
+            }
+        }
+
+        return $data;
+    }
+
+    private function buildHierarchyCompetences($broader_relation, $skill){
+
+        $hierarchyCompetences = [];
+
+        $parent_uid = DB::table('competences')
+        ->where('origin_code', $broader_relation)
+        ->pluck('uid')->toArray();
+
+        //dd($broader_relations, $skill, $parent_uid);
+
+        foreach($parent_uid as $new_competence){
+
+            $level4_uid = generate_uuid();
+
+            $hierarchyCompetences[] = [
+                "uid" => $level4_uid,
+                "name" => $skill[4],
+                "description" => $skill[12],
+                "parent_competence_uid" => $new_competence,
+                'is_multi_select' => '1',
+                'origin_code' => $skill[1]
+            ];
+        }
+        return $hierarchyCompetences;
+    }
+    private function buildHierarchySkills($broader_relation, $skill){
+
+        $hierarchySkills = [];
+
+        $parent_uid = DB::table('competences')
+        ->where('origin_code', $broader_relation)
+        ->pluck('uid')->toArray();
+
+        //dd($broader_relations, $skill, $parent_uid);
+
+        foreach($parent_uid as $new_competence){
+
+            $level5_uid = generate_uuid();
+
+            $hierarchySkills[] = [
+                "uid" => $level5_uid,
+                "name" => $skill[4],
+                "description" => $skill[12],
+                "competence_uid" => $new_competence,
+                'is_multi_select' => '1',
+                'origin_code' => $skill[1]
+            ];
+        }
+        return $hierarchySkills;
+    }
+    private function hasChildren($broader_relations, $skill) {
+
+        $has_children = false;
+
+        foreach($broader_relations as $broader_relations_2) {
+            if(!isset($broader_relations_2[3])) {
+                continue;
+            }
+            if ($broader_relations_2[3] == $skill){
+
+                $has_children = true;
+                break;
+            }
+        }
+        return $has_children;
     }
 }

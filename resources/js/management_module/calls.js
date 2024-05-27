@@ -217,6 +217,7 @@ async function loadCallModal(callUid) {
     const params = {
         url: `/management/calls/get_call/${callUid}`,
         method: "GET",
+        loader: true,
     }
 
     apiFetch(params).then((data) => {

@@ -44,7 +44,7 @@ function initHandlers() {
             }
         });
 
-    updateInputImage();
+    updateInputImage(6144);
 
     initializeEditButtons();
 
@@ -84,7 +84,6 @@ function initializeCategoriesCheckboxs() {
 
     parentCheckboxes.forEach(function (parentCheckbox) {
         parentCheckbox.addEventListener("change", function () {
-
             const childCheckboxes = document.querySelectorAll(
                 ".child-of-" + parentCheckbox.id
             );
@@ -144,17 +143,7 @@ async function getCategories() {
     const params = {
         url: "/cataloging/categories/get_all_categories",
         method: "GET",
-    };
-
-    const response = await apiFetch(params);
-
-    return response;
-}
-
-async function getCategory(categoryUid) {
-    const params = {
-        url: "/cataloging/categories/get_category/" + categoryUid,
-        method: "GET",
+        loader: true,
     };
 
     const response = await apiFetch(params);
@@ -200,21 +189,15 @@ async function loadCategoryModal(categoryUid = null) {
     selectParentCategory.innerHTML = optionsHtml;
 
     if (categoryUid) {
-        const category = await getCategory(categoryUid);
+        const params = {
+            url: "/cataloging/categories/get_category/" + categoryUid,
+            method: "GET",
+            loader: true,
+        };
 
-        // Rellenar campos de texto y textarea
-        document.getElementById("name").value = category.name || "";
-        document.getElementById("description").value =
-            category.description || "";
-        document.getElementById("category_uid").value = category.uid || "";
-        changeColorColoris(document.getElementById("color"), category.color);
+        const category = await apiFetch(params);
 
-        if (category.parent_category_uid)
-            selectParentCategory.value = category.parent_category_uid;
-
-        if (category.image_path)
-            document.getElementById("image_path_preview").src =
-                "/" + category.image_path;
+        fillCategoryModal(category);
     } else {
         // Resetear el formulario
         document.getElementById("name").value = "";
@@ -228,20 +211,36 @@ async function loadCategoryModal(categoryUid = null) {
     }
 }
 
+function fillCategoryModal(category) {
+    // Rellenar campos de texto y textarea
+    document.getElementById("name").value = category.name || "";
+    document.getElementById("description").value = category.description || "";
+    document.getElementById("category_uid").value = category.uid || "";
+    changeColorColoris(document.getElementById("color"), category.color);
+    if (category.parent_category_uid)
+        selectParentCategory.value = category.parent_category_uid;
+
+    if (category.image_path)
+        document.getElementById("image_path_preview").src =
+            "/" + category.image_path;
+}
+
 /**
  * Marca o desmarca todos los checkboxes hijos de un checkbox padre.
  * @param {HTMLElement} element - El checkbox padre.
  * @param {boolean} isChecked - Indica si el checkbox padre está marcado o no.
  */
 function checkChildren(element, isChecked) {
-    if (element.checked){
-        var inputsHijos = element.parentElement.parentElement.querySelectorAll('input');
-        inputsHijos.forEach(function(input) {
+    if (element.checked) {
+        var inputsHijos =
+            element.parentElement.parentElement.querySelectorAll("input");
+        inputsHijos.forEach(function (input) {
             input.checked = true;
         });
-    }else{
-        var inputsHijos = element.parentElement.parentElement.querySelectorAll('input');
-        inputsHijos.forEach(function(input) {
+    } else {
+        var inputsHijos =
+            element.parentElement.parentElement.querySelectorAll("input");
+        inputsHijos.forEach(function (input) {
             input.checked = false;
         });
     }

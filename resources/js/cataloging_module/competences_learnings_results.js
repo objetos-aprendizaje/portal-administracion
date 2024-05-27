@@ -10,11 +10,15 @@ import {
     apiFetch,
     fillFormWithObject,
     resetFormFields,
+    updateInputFile,
+
 } from "../app.js";
 import { showToast } from "../toast.js";
 
 document.addEventListener("DOMContentLoaded", function () {
     initHandlers();
+    updateInputFile();
+
 });
 
 async function initHandlers() {
@@ -51,6 +55,23 @@ async function initHandlers() {
     document
         .getElementById("learning-result-form")
         .addEventListener("submit", submitLearningObjectForm);
+
+
+    document
+    .getElementById("import-csv-btn")
+    .addEventListener("click", function () {
+        showModal("import_competence_framework-modal", "Importar competencias");
+    });
+
+document
+    .getElementById("import-esco-framework")
+    .addEventListener("click", function () {
+        showModal("import-esco-framework-modal", "Importar Marco ESCO");
+    });
+
+document
+    .getElementById("esco-framework-form")
+    .addEventListener("submit", submitEscoFrameworkForm);
 
     initializeCompetencesCheckboxs();
     updateInputImage();
@@ -114,6 +135,28 @@ function submitLearningObjectForm() {
 
     const params = {
         url: "/cataloging/competences_learnings_results/save_learning_result",
+
+        method: "POST",
+        body: formData,
+        loader: true,
+        toast: true,
+    };
+
+    apiFetch(params)
+        .then(() => {
+            hideModal("learning-result-modal");
+            reloadListCompetences();
+        });
+}
+
+function submitEscoFrameworkForm() {
+    resetFormErrors("esco-framework-form");
+
+
+    const formData = new FormData(this);
+
+    const params = {
+        url: "/cataloging/competences_learnings_results/import_esco_framework",
         method: "POST",
         body: formData,
         loader: true,
@@ -125,6 +168,7 @@ function submitLearningObjectForm() {
     apiFetch(params)
         .then(() => {
             hideModal("learning-result-modal");
+            hideModal("import_competence_framework-modal");
             reloadListCompetences();
         })
         .catch((data) => {

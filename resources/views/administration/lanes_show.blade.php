@@ -8,25 +8,25 @@
 
         <form id="lanes-show-form">
             <div class="checkbox mb-2 mt-4">
-                <label for="lane_recents_courses" class="inline-flex relative items-center cursor-pointer">
-                    <input {{ $general_options['lane_recents_courses'] ? 'checked' : '' }} type="checkbox"
-                        id="lane_recents_courses" name="lane_recents_courses" class="sr-only peer">
+                <label for="lane_featured_courses" class="inline-flex relative items-center cursor-pointer">
+                    <input {{ $general_options['lane_featured_courses'] ? 'checked' : '' }} type="checkbox"
+                        id="lane_featured_courses" name="lane_featured_courses" class="sr-only peer">
                     <div
                         class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
                     </div>
-                    <div class="checkbox-name">Cursos más recientes</div>
+                    <div class="checkbox-name">Cursos destacados</div>
                 </label>
             </div>
 
             <div class="checkbox mb-2">
-                <label for="lane_recents_educational_programs"
+                <label for="lane_featured_educationals_programs"
                     class="inline-flex relative items-center cursor-pointer">
-                    <input {{ $general_options['lane_recents_educational_programs'] ? 'checked' : '' }} type="checkbox"
-                        id="lane_recents_educational_programs" name="lane_recents_educational_programs" class="sr-only peer">
+                    <input {{ $general_options['lane_featured_educationals_programs'] ? 'checked' : '' }} type="checkbox"
+                        id="lane_featured_educationals_programs" name="lane_featured_educationals_programs" class="sr-only peer">
                     <div
                         class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
                     </div>
-                    <div class="checkbox-name">Programas formativos más recientes</div>
+                    <div class="checkbox-name">Programas formativos destacados</div>
                 </label>
             </div>
 
@@ -38,14 +38,14 @@
                     <div
                         class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
                     </div>
-                    <div class="checkbox-name">Recursos educativos más recientes</div>
+                    <div class="checkbox-name">Recursos educativos destacados</div>
                 </label>
             </div>
 
             <div class="checkbox mb-2">
-                <label for="lane_recents_itineraries" class="inline-flex relative items-center cursor-pointer">
-                    <input {{ $general_options['lane_recents_itineraries'] ? 'checked' : '' }} type="checkbox"
-                        id="lane_recents_itineraries" name="lane_recents_itineraries" class="sr-only peer">
+                <label for="lane_featured_itineraries" class="inline-flex relative items-center cursor-pointer">
+                    <input {{ $general_options['lane_featured_itineraries'] ? 'checked' : '' }} type="checkbox"
+                        id="lane_featured_itineraries" name="lane_featured_itineraries" class="sr-only peer">
                     <div
                         class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
                     </div>

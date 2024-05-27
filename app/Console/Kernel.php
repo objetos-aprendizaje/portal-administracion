@@ -12,6 +12,7 @@ class Kernel extends ConsoleKernel
         \App\Console\Commands\ChangeStatusToInscription::class,
         \App\Console\Commands\ChangeStatusToDevelopment::class,
         \App\Console\Commands\SendEmailNotificationsAutomatic::class,
+        \App\Console\Commands\SendSuggestions::class,
     ];
 
     /**
@@ -22,6 +23,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:send-notifications')->everyFiveMinutes()->withoutOverlapping();
         $schedule->command('app:change-status-to-development')->everyFiveMinutes()->withoutOverlapping();
         $schedule->command('app:change-status-to-inscription')->everyFiveMinutes()->withoutOverlapping();
+        $schedule->command('app:send-suggestions')->everyFiveMinutes()->withoutOverlapping();
     }
 
     /**

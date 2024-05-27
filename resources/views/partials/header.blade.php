@@ -41,7 +41,7 @@
             </div>
 
             <div class="flex items-center" title="Cerrar sesión">
-                <a href="/logout">
+                <a href="https://{{ env('DOMINIO_PRINCIPAL') }}/logout">
                     <button type="button" class="btn btn-primary btn-close-session">Cerrar sesión
                         {{ e_heroicon('arrow-left-on-rectangle', 'outline') }}
                     </button>
