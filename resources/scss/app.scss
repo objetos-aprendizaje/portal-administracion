@@ -1047,3 +1047,6 @@ body.modal-open {
 .link-label {
     @apply text-[14px]
 }
+.columns-selector{
+    @apply text-white rounded-2xl block w-[32px] h-[32px] p-[6px] bg-primary
+}

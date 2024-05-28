@@ -95,7 +95,9 @@
 
                     </form>
 
-                    <div class="text-center p-4"><a href="https://{{ env('DOMINIO_CERTIFICADO') }}/certificate-access">Acceso mediante Certificado Digital</a></div>
+                    @if ($cert_login != "")
+                        <div class="text-center p-4"><a href="https://{{ env('DOMINIO_CERTIFICADO') }}/certificate-access">Acceso mediante Certificado Digital</a></div>
+                    @endif
 
                 </div>
             </div>

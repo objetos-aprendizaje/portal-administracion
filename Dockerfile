@@ -6,6 +6,7 @@ RUN apt-get update && apt install --fix-missing -y \
 		libsqlite3-dev libsqlite3-0 mariadb-client curl exif ftp \
 		zip unzip git npm \
 		libldap2-dev \
+		netcat-traditional \
 	&& apt install --no-install-recommends -y libpq-dev \
 	&& docker-php-ext-install intl \
 	&& docker-php-ext-install mysqli \
