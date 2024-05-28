@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Logs\LogsController;
 use App\Models\LearningResultsModel;
+use Exception;
 use Illuminate\Http\Request;
 
 class CompetencesLearningsResultsController extends BaseController
@@ -265,11 +266,8 @@ class CompetencesLearningsResultsController extends BaseController
         $skills_file = $request->file('skills_file');
         $skills = $this->csvFileToObject($skills_file);
 
-
-
         $broader_relations_skill_pillar_file = $request->file('broader_relations_skill_pillar_file');
         $broader_relations_skill_pillar = $this->csvFileToObject($broader_relations_skill_pillar_file);
-
 
 
         $hierarchyCompetences = [];
@@ -323,8 +321,9 @@ class CompetencesLearningsResultsController extends BaseController
                         //comprobamos que $skill no tiene hijos con el broarder
                         $has_children = $this->hasChildren($broader_relations_skill_pillar, $skill[1]);
 
+
                         //En este caso ya no tienen hijos entonces son resultados de aprendizaje.
-                        if ($has_children == false){
+                        if (!$has_children){
 
                             $result = $this->buildHierarchySkills($broader_relations[3], $skill);
 
@@ -335,6 +334,7 @@ class CompetencesLearningsResultsController extends BaseController
                 }
             }
         }
+
 
         //almacenamos en base de datos
         foreach($hierarchySkills as $h) {
@@ -353,8 +353,6 @@ class CompetencesLearningsResultsController extends BaseController
             }
         }
     }
-
-
 
 
     private function buildHierarchy($data)
@@ -573,5 +571,68 @@ class CompetencesLearningsResultsController extends BaseController
             }
         }
         return $has_children;
+    }
+
+
+    function getSkillsWithChildren($broader_relations) {
+        $resultados = [];
+
+        foreach ($broader_relations as $subarray) {
+            if (isset($subarray[3]) && !in_array($subarray[3], $resultados)) {
+                $resultados[] = $subarray[3];
+            }
+        }
+
+        return $resultados;
+    }
+
+    function getSkillsWithoutChildren($broader_relations) {
+        $posicion1 = [];
+        $posicion3 = [];
+
+        // Recorre el array y llena los arrays de posición 1 y posición 3
+        foreach ($broader_relations as $subarray) {
+            if (isset($subarray[1])) {
+                $posicion1[] = $subarray[1];
+            }
+            if (isset($subarray[3])) {
+                $posicion3[] = $subarray[3];
+            }
+        }
+
+        // Filtra los valores de posición 1 que no están en posición 3
+        $resultado = array_filter($posicion1, function($valor) use ($posicion3) {
+            return !in_array($valor, $posicion3);
+        });
+
+        // Elimina duplicados
+        $resultado = array_unique($resultado);
+
+        return $resultado;
+    }
+
+    function searchSkillFathers($broader_relations, $skill_uri) {
+        $fathers = [];
+        foreach($broader_relations as $relation) {
+            if(!isset($relation[3])) {
+                continue;
+            }
+            if($relation[1] == $skill_uri) $fathers[] = $relation[3];
+        }
+
+        return $fathers;
+    }
+
+    function searchInHierarchy($hierarchy, $uri) {
+        $hierarchy_found = false;
+        $i = 0;
+        foreach($hierarchy as $h) {
+            if($h["origin_code"] == $uri) $hierarchy_found = $h;
+        }
+
+        if($i > 1) {
+            throw new Exception("más de un padre");
+        }
+        return $hierarchy_found;
     }
 }

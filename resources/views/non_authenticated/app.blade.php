@@ -36,9 +36,18 @@
         </script>
     @endif
 
+
+
 </head>
 
 <body>
+
+    @if ($errors->any())
+    @foreach ($errors->all() as $error)
+    {{$error}}
+@endforeach
+@endif
+
     @yield('content')
 
 </body>

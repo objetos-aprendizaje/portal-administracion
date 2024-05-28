@@ -75,7 +75,7 @@ class ChangeStatusToInscription extends Command
             ];
         }
 
-        $endpoint = env('API_SEARCH_URL') . '/submit_courses';
+        $endpoint = env('API_SEARCH_URL') . '/submit_learning_objects';
         $headers = [
             'API-KEY' => env('API_SEARCH_KEY'),
         ];
