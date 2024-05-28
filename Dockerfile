@@ -81,5 +81,16 @@ RUN chmod -R 775 /var/www/html
 # Ajustamos entrypoint y scripts de inicio
 COPY ./docker_files/10-wait-mysql.sh /etc/cont-init.d/10-wait-mysql.sh
 COPY ./docker_files/15-run-migrations.sh /etc/cont-init.d/15-run-migrations.sh
-RUN printf "#!/bin/sh\n/bin/sh /etc/cont-init.d/*.sh && /usr/local/bin/docker-php-entrypoint apache2-foreground" > /startup.sh && chmod +x /startup.sh /etc/cont-init.d/*.sh
+COPY <<EOF /startup.sh
+#!/bin/sh
+for script in /etc/cont-init.d/*.sh; do
+  /bin/sh "$script"
+  if [ $? -ne 0 ]; then
+    echo "Error executing $script. Abort startup"
+    exit 1
+  fi
+done
+/usr/local/bin/docker-php-entrypoint apache2-foreground
+EOF
+RUN chmod +x /startup.sh /etc/cont-init.d/*.sh
 ENTRYPOINT ["/startup.sh"]
