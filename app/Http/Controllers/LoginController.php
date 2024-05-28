@@ -28,7 +28,8 @@ class LoginController extends BaseController
             "logo" => $logo,
             "resources" => [
                 "resources/js/login.js"
-            ]
+            ],
+            "cert_login" => env('DOMINIO_CERTIFICADO')
         ]);
     }
 

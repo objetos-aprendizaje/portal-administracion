@@ -1386,7 +1386,7 @@ function initializeCoursesTable() {
             visible:false,
         },
         {
-            title: "<span class='cursor-pointer'>COL</span>",
+            title: `<span class='cursor-pointer columns-selector'>${heroicon("view-columns")}</span>`,
             field: "actions",
             formatter: function (cell, formatterParams, onRendered) {
                 return `<button type="button" class='btn action-btn'>${heroicon(
