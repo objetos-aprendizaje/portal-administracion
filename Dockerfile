@@ -84,9 +84,9 @@ COPY ./docker_files/15-run-migrations.sh /etc/cont-init.d/15-run-migrations.sh
 COPY <<EOF /startup.sh
 #!/bin/sh
 for script in /etc/cont-init.d/*.sh; do
-  /bin/sh "$script"
-  if [ $? -ne 0 ]; then
-    echo "Error executing $script. Abort startup"
+  /bin/sh "\$script"
+  if [ \$? -ne 0 ]; then
+    echo "Error executing \$script. Abort startup"
     exit 1
   fi
 done
