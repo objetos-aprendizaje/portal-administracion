@@ -45,7 +45,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
 use App\Http\Controllers\Notifications\NotificationsPerUsersController;
 use App\Http\Controllers\Webhooks\FileController;
-use App\Http\Controllers\CertificateTestAccessController;
+use App\Http\Controllers\CertificateAccessController;
 
 /*
 |--------------------------------------------------------------------------
@@ -57,7 +57,6 @@ use App\Http\Controllers\CertificateTestAccessController;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-
 Route::middleware(['combined.auth'])->group(function () {
 
     Route::get('/', function () {
@@ -347,6 +346,8 @@ Route::middleware('guest')->group(function () {
 
     Route::get('auth/facebook', [LoginController::class, 'redirectToFacebook']);
     Route::get('auth/facebook/callback', [LoginController::class, 'handleFacebookCallback']);
+
+    Route::get('/token_login/{token}', [LoginController::class, 'tokenLogin']);
 });
 Route::get('/logout', [LoginController::class, 'logout']);
 
@@ -363,4 +364,4 @@ Route::middleware(['api_auth'])->group(function () {
     Route::post('/api/download_file', [FileController::class, 'downloadFile']);
 });
 
-Route::get('/certificate-access', [CertificateTestAccessController::class, 'index'])->name('certificate-access');
+Route::get('/certificate-access', [CertificateAccessController::class, 'index'])->name('certificate-access');

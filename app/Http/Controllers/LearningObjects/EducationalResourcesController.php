@@ -338,52 +338,74 @@ class EducationalResourcesController extends BaseController
     }
 
 
-    /**
-     * Cambia el estado a un array de recursos
-     */
     public function changeStatusesResources(Request $request)
     {
-
         $changesResourcesStatuses = $request->input('changesResourcesStatuses');
 
         if (!$changesResourcesStatuses) {
             return response()->json(['message' => 'No se han enviado los datos correctamente'], 406);
         }
 
-        // Obtenemos los cursos de la base de datos
-        $resources_bd = EducationalResourcesModel::whereIn('uid', array_column($changesResourcesStatuses, "uid"))->with('status')->get()->toArray();
-        $statuses_resources = EducationalResourceStatusesModel::all()->toArray();
+        // Sacamos los recursos de la base de datos
+        $resources_bd = EducationalResourcesModel::whereIn('uid', array_column($changesResourcesStatuses, "uid"))->with('status')->with("tags")->get();
 
-        // Aquí iremos almacenando los datos de los cursos que se van a actualizar
+        // Todos los estados de los recursos
+        $statuses_resources = EducationalResourceStatusesModel::all();
+
+        // Preparamos un array con los nuevos estados para los recursos y un array para enviarlo a la api de búsqueda
+        list($updated_resources_data, $data_search_api) = $this->prepareData($changesResourcesStatuses, $resources_bd, $statuses_resources);
+
+        // Actualizamos los estados de los recursos y enviamos los recursos a la api de búsqueda
+        $this->updateDatabase($updated_resources_data, $data_search_api);
+
+        return response()->json(['message' => 'Se han actualizado los estados de los recursos correctamente'], 200);
+    }
+
+    private function prepareData($changesResourcesStatuses, $resources_bd, $statuses_resources)
+    {
         $updated_resources_data = [];
+        $data_search_api = [];
 
-        // Recorremos los cursos que nos vienen en el request y los comparamos con los de la base de datos
         foreach ($changesResourcesStatuses as $changeResourceStatus) {
+            // Sacamos el recurso del array extraído de la base de datos
+            $resource_bd = findOneInArrayOfObjects($resources_bd, 'uid', $changeResourceStatus['uid']);
 
-            // Obtenemos el curso de la base de datos
-            $resource_bd = findOneInArray($resources_bd, 'uid', $changeResourceStatus['uid']);
-
-            // Si no existe el curso en la base de datos, devolvemos un error
             if (!$resource_bd) {
                 return response()->json(['message' => 'Uno de los recursos no existe'], 406);
             }
 
-            // Le cambiamos a cada curso el estado que nos viene en el request
-            $status_bd = findOneInArray($statuses_resources, 'code', $changeResourceStatus['status']);
+            // Sacamos el estado que le corresponde al recurso del array de la base de datos
+            $status_bd = findOneInArrayOfObjects($statuses_resources, 'code', $changeResourceStatus['status']);
 
             if (!$status_bd) {
                 return response()->json(['message' => 'El estado es incorrecto'], 406);
             }
 
+            // Añadimos el recurso con el nuevo estado al array
             $updated_resources_data[] = [
-                'uid' => $resource_bd['uid'],
-                'resource_status_uid' => $status_bd['uid'],
-                'reason' => $changeResourceStatus['reason'] ?? null
+                'uid' => $resource_bd->uid,
+                'resource_status_uid' => $status_bd->uid,
+                'reason' => $changeResourceStatus->reason ?? null
             ];
+
+            // Si el recurso está publicado, lo añadimos al array para enviarlo a la api de búsqueda
+            if($status_bd["code"] == "PUBLISHED") {
+                $tags = $resource_bd->tags->pluck('tag')->toArray();
+                $data_search_api[] = [
+                    "uid" => $resource_bd->uid,
+                    "title" => $resource_bd->title,
+                    "description" => $resource_bd->description ?? "",
+                    "tags" => $tags
+                ];
+            }
         }
 
-        DB::transaction(function () use ($updated_resources_data) {
-            // Guardamos en la base de datos los cambios
+        return [$updated_resources_data, $data_search_api];
+    }
+
+    private function updateDatabase($updated_resources_data, $data_search_api)
+    {
+        DB::transaction(function () use ($updated_resources_data, $data_search_api) {
             foreach ($updated_resources_data as $data) {
                 EducationalResourcesModel::updateOrInsert(
                     ['uid' => $data['uid']],
@@ -394,9 +416,20 @@ class EducationalResourcesController extends BaseController
                 );
             }
 
+            if(env('ENABLED_API_SEARCH')) {
+                $this->sendResourcesToApiSearch($data_search_api);
+            }
+
             LogsController::createLog("Cambio de estado de recursos educativos", 'Recursos educativos', auth()->user()->uid);
         });
+    }
 
-        return response()->json(['message' => 'Se han actualizado los estados de los recursos correctamente'], 200);
+    private function sendResourcesToApiSearch($data) {
+        $endpoint = env('API_SEARCH_URL') . '/submit_learning_objects';
+        $headers = [
+            'API-KEY' => env('API_SEARCH_KEY'),
+        ];
+
+        guzzle_call($endpoint, $data, $headers, 'POST');
     }
 }

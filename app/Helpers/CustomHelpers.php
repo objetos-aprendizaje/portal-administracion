@@ -43,6 +43,19 @@ function findOneInArray($array, $key, $value)
     return null;
 }
 
+/**
+ * Busca un elemento en un array de objetos
+ */
+function findOneInArrayOfObjects($arr, $key, $value)
+{
+    foreach ($arr as $prop) {
+        if ($prop->{$key} === $value) {
+            return $prop;
+        }
+    }
+
+    return null;
+}
 function sanitizeFilename($filename)
 {
     // Eliminar espacios en blanco
@@ -288,4 +301,16 @@ function add_timestamp_name_file($file)
     $filename = "{$originalName}-{$timestamp}.{$extension}";
 
     return $filename;
+}
+function generateToken($longitud = 64) {
+    $char = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ()';
+    $charLong = strlen($char);
+    $token = '';
+
+    for ($i = 0; $i < $longitud; $i++) {
+        $randomIndex = random_int(0, $charLong - 1);
+        $token .= $char[$randomIndex];
+    }
+
+    return $token;
 }
