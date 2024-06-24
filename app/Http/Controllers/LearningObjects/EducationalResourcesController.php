@@ -13,7 +13,10 @@ use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Logs\LogsController;
-
+use App\Models\EmailNotificationsAutomaticModel;
+use App\Models\GeneralNotificationsAutomaticModel;
+use App\Models\GeneralNotificationsAutomaticUsersModel;
+use App\Models\UsersModel;
 
 class EducationalResourcesController extends BaseController
 {
@@ -348,89 +351,148 @@ class EducationalResourcesController extends BaseController
         }
 
         // Sacamos los recursos de la base de datos
-        $resources_bd = EducationalResourcesModel::whereIn('uid', array_column($changesResourcesStatuses, "uid"))->with('status')->with("tags")->get();
-
-        // Todos los estados de los recursos
-        $statuses_resources = EducationalResourceStatusesModel::all();
-
-        // Preparamos un array con los nuevos estados para los recursos y un array para enviarlo a la api de búsqueda
-        list($updated_resources_data, $data_search_api) = $this->prepareData($changesResourcesStatuses, $resources_bd, $statuses_resources);
+        $resources_bd = EducationalResourcesModel::whereIn('uid', array_column($changesResourcesStatuses, "uid"))
+            ->with([
+                "status",
+                "tags",
+                "categories"
+            ])
+            ->get()->keyBy("uid");
 
         // Actualizamos los estados de los recursos y enviamos los recursos a la api de búsqueda
-        $this->updateDatabase($updated_resources_data, $data_search_api);
+        $this->updateEducationalResourcesStatuses($changesResourcesStatuses, $resources_bd);
 
         return response()->json(['message' => 'Se han actualizado los estados de los recursos correctamente'], 200);
     }
 
-    private function prepareData($changesResourcesStatuses, $resources_bd, $statuses_resources)
+    private function updateEducationalResourcesStatuses($changesResourcesStatuses, $resourcesBd)
     {
-        $updated_resources_data = [];
-        $data_search_api = [];
+        $statuses_resources = EducationalResourceStatusesModel::get()->keyBy("code");
 
-        foreach ($changesResourcesStatuses as $changeResourceStatus) {
-            // Sacamos el recurso del array extraído de la base de datos
-            $resource_bd = findOneInArrayOfObjects($resources_bd, 'uid', $changeResourceStatus['uid']);
+        $studentsUsers = $this->getStudentsUsers();
 
-            if (!$resource_bd) {
-                return response()->json(['message' => 'Uno de los recursos no existe'], 406);
-            }
+        DB::transaction(function () use ($changesResourcesStatuses, $resourcesBd, $statuses_resources, $studentsUsers) {
+            foreach ($changesResourcesStatuses as $changeStatus) {
+                $newStatus = $statuses_resources[$changeStatus['status']];
+                $resource = $resourcesBd[$changeStatus['uid']];
 
-            // Sacamos el estado que le corresponde al recurso del array de la base de datos
-            $status_bd = findOneInArrayOfObjects($statuses_resources, 'code', $changeResourceStatus['status']);
+                $resource->status_uid = $newStatus->uid;
+                $resource->save();
 
-            if (!$status_bd) {
-                return response()->json(['message' => 'El estado es incorrecto'], 406);
-            }
-
-            // Añadimos el recurso con el nuevo estado al array
-            $updated_resources_data[] = [
-                'uid' => $resource_bd->uid,
-                'resource_status_uid' => $status_bd->uid,
-                'reason' => $changeResourceStatus->reason ?? null
-            ];
-
-            // Si el recurso está publicado, lo añadimos al array para enviarlo a la api de búsqueda
-            if($status_bd["code"] == "PUBLISHED") {
-                $tags = $resource_bd->tags->pluck('tag')->toArray();
-                $data_search_api[] = [
-                    "uid" => $resource_bd->uid,
-                    "title" => $resource_bd->title,
-                    "description" => $resource_bd->description ?? "",
-                    "tags" => $tags
-                ];
-            }
-        }
-
-        return [$updated_resources_data, $data_search_api];
-    }
-
-    private function updateDatabase($updated_resources_data, $data_search_api)
-    {
-        DB::transaction(function () use ($updated_resources_data, $data_search_api) {
-            foreach ($updated_resources_data as $data) {
-                EducationalResourcesModel::updateOrInsert(
-                    ['uid' => $data['uid']],
-                    [
-                        'status_uid' => $data['resource_status_uid'],
-                        'status_reason' => $data['reason']
-                    ]
-                );
-            }
-
-            if(env('ENABLED_API_SEARCH')) {
-                $this->sendResourcesToApiSearch($data_search_api);
+                if ($newStatus->code == 'PUBLISHED') {
+                    $this->sendEmailNotifications($resource, $studentsUsers);
+                    $this->sendGeneralNotifications($resource, $studentsUsers);
+                    if (env('ENABLED_API_SEARCH')) $this->sendResourcesToApiSearch($resource);
+                }
             }
 
             LogsController::createLog("Cambio de estado de recursos educativos", 'Recursos educativos', auth()->user()->uid);
         });
     }
 
-    private function sendResourcesToApiSearch($data) {
+    private function sendGeneralNotifications($resource, $studentsUsers)
+    {
+
+        $resourceCategoryUids = $resource->categories->pluck("uid");
+
+        // Filtramos los usuarios y nos quedamos con los que tengan notificaciones por email
+        $usersFiltered = $studentsUsers->filter(function ($user) use ($resourceCategoryUids) {
+            // Extrae las UIDs de las categorías del usuario
+            $userCategoryUids = $user->categories->pluck("uid");
+            // Encuentra la intersección de las categorías del usuario y las categorías del recurso
+            $commonCategories = $userCategoryUids->intersect($resourceCategoryUids);
+            // Si hay categorías en común, el usuario debe ser incluido en el filtro
+            return !$commonCategories->isEmpty() && !$user->automaticGeneralNotificationsTypesDisabled->contains('code', 'NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS');
+        });
+
+        $generalNotificationAutomaticUid = generate_uuid();
+        $generalAutomaticNotification = new GeneralNotificationsAutomaticModel();
+        $generalAutomaticNotification->uid = $generalNotificationAutomaticUid;
+        $generalAutomaticNotification->title = "Nuevo recurso educativo";
+        $generalAutomaticNotification->description = "Se ha añadido un nuevo recurso educativo: " . $resource->title;
+        $generalAutomaticNotification->entity = "new_educational_resource";
+        $generalAutomaticNotification->entity_uid = $resource->uid;
+        $generalAutomaticNotification->created_at = now();
+        $generalAutomaticNotification->save();
+
+        $dataInsert = [];
+        foreach ($usersFiltered as $user) {
+            $dataInsert[] = [
+                "uid" => generate_uuid(),
+                "general_notifications_automatic_uid" => $generalNotificationAutomaticUid,
+                "user_uid" => $user->uid,
+            ];
+        }
+
+        $dataInsert = array_chunk($dataInsert, 500);
+        foreach ($dataInsert as $data) {
+            GeneralNotificationsAutomaticUsersModel::insert($data);
+        }
+    }
+
+    private function sendEmailNotifications($resource, $studentsUsers)
+    {
+        $resourceCategoryUids = $resource->categories->pluck("uid");
+
+        // Filtramos los usuarios y nos quedamos con los que tengan notificaciones por email
+        $usersFiltered = $studentsUsers->filter(function ($user) use ($resourceCategoryUids) {
+            // Extrae las UIDs de las categorías del usuario
+            $userCategoryUids = $user->categories->pluck("uid");
+            // Encuentra la intersección de las categorías del usuario y las categorías del recurso
+            $commonCategories = $userCategoryUids->intersect($resourceCategoryUids);
+            // Si hay categorías en común, el usuario debe ser incluido en el filtro
+            return !$commonCategories->isEmpty() &&
+            !$user->automaticEmailNotificationsTypesDisabled->contains('code', 'NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS');
+        });
+
+        $dataInsert = [];
+        foreach ($usersFiltered as $user) {
+            $dataInsert[] = [
+                "uid" => generate_uuid(),
+                "user_uid" => $user->uid,
+                "template" => "recommended_educational_resource_user",
+                'subject' => 'Nuevo recurso educativo',
+                "parameters" => json_encode([
+                    "resource_title" => $resource->title,
+                ]),
+            ];
+        }
+
+        $dataInsert = array_chunk($dataInsert, 500);
+        foreach ($dataInsert as $data) {
+            EmailNotificationsAutomaticModel::insert($data);
+        }
+    }
+
+    private function sendResourcesToApiSearch($resource)
+    {
         $endpoint = env('API_SEARCH_URL') . '/submit_learning_objects';
         $headers = [
             'API-KEY' => env('API_SEARCH_KEY'),
         ];
 
+        $data[] = [
+            "uid" => $resource->uid,
+            "title" => $resource->title,
+            "description" => $resource->description ?? "",
+            "tags" => json_encode($resource->tags->toArray())
+        ];
+
         guzzle_call($endpoint, $data, $headers, 'POST');
+    }
+
+    private function getStudentsUsers()
+    {
+        $students = UsersModel::whereHas('roles', function ($query) {
+            $query->where('code', 'STUDENT');
+        })
+            ->with([
+                "categories",
+                "automaticGeneralNotificationsTypesDisabled",
+                "automaticEmailNotificationsTypesDisabled"
+            ])
+            ->get();
+
+        return $students;
     }
 }
