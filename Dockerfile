@@ -84,7 +84,7 @@ RUN chmod -R 775 /var/www/html
 # Ajustamos entrypoint y scripts de inicio
 COPY ./docker_files/10-wait-mysql.sh /etc/cont-init.d/10-wait-mysql.sh
 COPY ./docker_files/15-run-migrations.sh /etc/cont-init.d/15-run-migrations.sh
-COPY ./docker_files/20-directory-permissions.sh /etc/cont-init.d/15-run-migrations.sh
+COPY ./docker_files/20-directory-permissions.sh /etc/cont-init.d/20-directory-permissions.sh
 COPY <<EOF /startup.sh
 #!/bin/sh
 for script in /etc/cont-init.d/*.sh; do
