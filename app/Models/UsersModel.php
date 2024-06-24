@@ -13,6 +13,12 @@ class UsersModel extends Authenticatable
 
     protected $keyType = 'string';
 
+    protected $casts = [
+        'uid' => 'string',
+    ];
+
+    public $incrementing = false;
+
     protected $fillable = ['first_name', 'last_name', 'nif', 'email', 'user_rol_uid', 'curriculum'];
 
     public function rol()
@@ -35,7 +41,7 @@ class UsersModel extends Authenticatable
             'courses_students',
             'user_uid',
             'course_uid'
-        )->withPivot('calification_type', 'approved', 'credential')->select(['title']);
+        )->withPivot('calification_type', 'acceptance_status', 'credential')->select(['title']);
     }
 
     public function coursesTeachers()
@@ -53,19 +59,59 @@ class UsersModel extends Authenticatable
         return $this->hasMany(CoursesStudentsDocumentsModel::class, 'user_uid');
     }
 
-    public function notificationsTypesPreferences()
+    public function educationalProgramDocuments()
+    {
+        return $this->hasMany(EducationalProgramsStudentsDocumentsModel::class, 'user_uid');
+    }
+
+    public function generalNotificationsTypesDisabled()
     {
         return $this->belongsToMany(
             NotificationsTypesModel::class,
-            'user_notification_types_preferences',
+            'user_general_notification_types_disabled',
             'user_uid',
             'notification_type_uid'
+        );
+    }
+
+    public function emailNotificationsTypesDisabled()
+    {
+        return $this->belongsToMany(
+            NotificationsTypesModel::class,
+            'user_email_notification_types_disabled',
+            'user_uid',
+            'notification_type_uid'
+        );
+    }
+
+    public function automaticGeneralNotificationsTypesDisabled()
+    {
+        return $this->belongsToMany(
+            AutomaticNotificationTypesModel::class,
+            'user_automatic_general_notification_types_disabled',
+            'user_uid',
+            'automatic_notification_type_uid'
+        );
+    }
+
+    public function automaticEmailNotificationsTypesDisabled()
+    {
+        return $this->belongsToMany(
+            AutomaticNotificationTypesModel::class,
+            'user_email_automatic_notification_types_disabled',
+            'user_uid',
+            'automatic_notification_type_uid'
         );
     }
 
     public function hasAnyRole(array $roles)
     {
         return !empty(array_intersect($roles, array_column($this->roles->toArray(), 'code')));
+    }
+
+    public function hasAnyAutomaticGeneralNotificationTypeDisabled(array $roles)
+    {
+        return !empty(array_intersect($roles, array_column($this->automaticGeneralNotificationsTypesDisabled->toArray(), 'code')));
     }
 
     // Relación muchos a muchos con la tabla intermedia user_general_notifications
@@ -89,6 +135,16 @@ class UsersModel extends Authenticatable
     public function educationalResources()
     {
         return $this->belongsToMany(EducationalResourcesModel::class, 'educational_resource_access', 'user_uid', 'educational_resource_uid')->withPivot('date');;
+    }
+
+    public function EducationalProgramsStudents()
+    {
+        return $this->belongsToMany(
+            EducationalProgramsModel::class,
+            'educational_programs_students',
+            'user_uid',
+            'educational_program_uid'
+        )->withPivot('calification_type', 'approved', 'credential')->select(['title']);
     }
 
 }

@@ -26,6 +26,7 @@ class PaymentsController extends BaseController {
                 "resources" => [
                     "resources/js/administration_module/payments.js"
                 ],
+                'submenuselected' => 'administration-payments',
             ]
         );
     }

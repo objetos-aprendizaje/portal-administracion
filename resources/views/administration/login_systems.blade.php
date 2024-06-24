@@ -227,4 +227,158 @@
 
     </div>
 
+    <div class="poa-container mb-8">
+
+        <h2>CAS</h2>
+
+        <form id="cas-login-form">
+            @csrf
+
+            <div class="poa-form">
+
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="cas_login_active">Activado</label>
+                    </div>
+
+                    <div class="content-container little">
+                        <div class="checkbox">
+                            <label for="cas_login_active" class="inline-flex relative items-center cursor-pointer">
+                                <input {{ $cas_active ? 'checked' : '' }}
+                                    type="checkbox" id="cas_login_active" name="cas_login_active" class="sr-only peer">
+                                <div
+                                    class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="cas_entity_id">Entity ID</label>
+                    </div>
+                    <div class="content-container little">
+                        <input value="{{ $cas ? $cas['idp_entity_id'] : '' }}" placeholder="Entity ID"
+                            class="poa-input" type="text" id="cas_entity_id" name="cas_entity_id" />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="cas_login_url">Login URL</label>
+                    </div>
+                    <div class="content-container little">
+                        <input value="{{ $cas ? $cas['idp_login_url'] : '' }}" placeholder="Login URL"
+                            class="poa-input" type="text" id="cas_login_url" name="cas_login_url" />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="cas_logout_url">Logout URL</label>
+                    </div>
+                    <div class="content-container little">
+                        <input value="{{ $cas ? $cas['idp_logout_url'] : '' }}" placeholder="Logout URL"
+                            class="poa-input" type="text" id="cas_logout_url" name="cas_logout_url" />
+                    </div>
+                </div>
+
+
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="cas_certificate">Certificado x509</label>
+                    </div>
+                    <div class="content-container little">
+                        <input value="{{ $cas ? $cas['idp_x509_cert'] : '' }}" class="poa-input" type="text"
+                            id="cas_certificate" name="cas_certificate" />
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="save-rrss-btn">Guardar
+                {{ e_heroicon('paper-airplane', 'outline') }}</button>
+
+        </form>
+
+
+    </div>
+
+    <div class="poa-container mb-8">
+
+        <h2>Rediris</h2>
+
+        <form id="rediris-login-form">
+            @csrf
+
+            <div class="poa-form">
+
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="rediris_login_active">Activado</label>
+                    </div>
+
+                    <div class="content-container little">
+                        <div class="checkbox">
+                            <label for="rediris_login_active" class="inline-flex relative items-center cursor-pointer">
+                                <input {{ $rediris_active ? 'checked' : '' }}
+                                    type="checkbox" id="rediris_login_active" name="rediris_login_active" class="sr-only peer">
+                                <div
+                                    class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="rediris_entity_id">Entity ID</label>
+                    </div>
+                    <div class="content-container little">
+                        <input value="{{ $rediris ? $rediris['idp_entity_id'] : '' }}" placeholder="Entity ID"
+                            class="poa-input" type="text" id="rediris_entity_id" name="rediris_entity_id" />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="rediris_login_url">Login URL</label>
+                    </div>
+                    <div class="content-container little">
+                        <input value="{{ $rediris ? $rediris['idp_login_url'] : '' }}" placeholder="Login URL"
+                            class="poa-input" type="text" id="rediris_login_url" name="rediris_login_url" />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="rediris_logout_url">Logout URL</label>
+                    </div>
+                    <div class="content-container little">
+                        <input value="{{ $rediris ? $rediris['idp_logout_url'] : '' }}" placeholder="Logout URL"
+                            class="poa-input" type="text" id="rediris_logout_url" name="rediris_logout_url" />
+                    </div>
+                </div>
+
+
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="rediris_certificate">Certificado x509</label>
+                    </div>
+                    <div class="content-container little">
+                        <input value="{{ $rediris ? $rediris['idp_x509_cert'] : '' }}" class="poa-input" type="text"
+                            id="rediris_certificate" name="rediris_certificate" />
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="save-rrss-btn">Guardar
+                {{ e_heroicon('paper-airplane', 'outline') }}</button>
+
+        </form>
+
+
+    </div>
+
 @endsection

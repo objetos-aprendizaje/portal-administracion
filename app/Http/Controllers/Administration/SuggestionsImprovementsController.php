@@ -29,6 +29,7 @@ class SuggestionsImprovementsController extends BaseController
                 ],
                 "emails_suggestions" => $emails_suggestions,
                 "tabulator" => true,
+                "submenuselected" => "suggestions-improvements",
             ]
         );
     }

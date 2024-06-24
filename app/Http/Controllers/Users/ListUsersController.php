@@ -10,7 +10,6 @@ use App\Models\UserRolesModel;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\CoursesUsersModel;
 use App\Http\Controllers\Logs\LogsController;
 use App\Rules\NifNie;
 
@@ -33,6 +32,7 @@ class ListUsersController extends BaseController
                 "tabulator" => true,
                 "tomselect" => true,
                 "flatpickr" => true,
+                "submenuselected" => "list-users",
             ]
         );
     }
@@ -226,6 +226,42 @@ class ListUsersController extends BaseController
         }, 5);
     }
 
+    public function exportUsers()
+    {
+        $users = UsersModel::with('roles')->get()->toArray();
+
+        // Exportamos a CSV
+        $temp = tmpfile();
+        $tempPath = stream_get_meta_data($temp)['uri'];
+
+        $output = fopen($tempPath, 'w');
+        fputcsv($output, array('Nombre', 'Apellidos', 'NIF', 'Email', 'Roles'));
+
+        foreach ($users as $user) {
+            $roles = [];
+            foreach ($user['roles'] as $role) {
+                $roles[] = $role['code'];
+            }
+            $roles = implode(', ', $roles);
+            fputcsv($output, array($user['first_name'], $user['last_name'], $user['nif'], $user['email'], $roles));
+        }
+
+        $filename = 'usuarios_' . date('YmdHis') . '.csv';
+
+        // Mueve el archivo temporal a la carpeta public
+        $publicPath = 'downloads_temps/' . $filename;
+
+        fflush($output);
+        rename($tempPath, public_path($publicPath));
+
+        fclose($output);
+
+        LogsController::createLog("Exportación de usuarios", 'Usuarios', auth()->user()->uid);
+
+        // Devuelve la URL de descarga del archivo
+        return response()->json(['downloadUrl' => asset($publicPath)]);
+    }
+
     /**
      * Recibe un array de uids de usuarios y los elimina
      */
@@ -233,24 +269,6 @@ class ListUsersController extends BaseController
     {
 
         $users_uids = $request->input('usersUids');
-
-        // Comprobamos si es docente y está asociado a algún curso
-        $coursesTeacher = CoursesUsersModel::with(["role", "course", "user"])->whereIn('user_uid', $users_uids)->whereHas('role', function ($query) {
-            $query->where('code', 'TEACHER');
-        })->get()->toArray();
-
-        if (!empty($coursesTeacher)) {
-            $errorsTeachersAssociated = [];
-
-            foreach ($coursesTeacher as $course) {
-                $errorsTeachersAssociated[] = [
-                    "user" => $course['user']['first_name'] . " " . $course['user']['last_name'],
-                    "course" => $course['course']['title']
-                ];
-            }
-
-            return response()->json(['message' => 'No se pueden eliminar usuarios docentes asociados a cursos', 'errorsTeachersAssociated' => $errorsTeachersAssociated], 400);
-        }
 
         DB::transaction(function () use ($users_uids) {
             UsersModel::whereIn('uid', $users_uids)->delete();
@@ -296,6 +314,29 @@ class ListUsersController extends BaseController
             })
             ->whereDoesntHave('coursesStudents', function ($query) use ($course) {
                 $query->where('course_uid', $course);
+            });
+
+        $users = $users_query->limit(5)->get()->toArray();
+
+
+        return response()->json($users, 200);
+    }
+
+    public function searchUsersNoEnrolledEducationalProgram($course, $search)
+    {
+
+        $users_query = UsersModel::query()->with('roles')
+            ->whereHas('roles', function ($query) {
+                $query->whereIn('code', ['STUDENT']);
+            })
+            ->where(function ($query) use ($search) {
+                $query->where('first_name', 'LIKE', "%{$search}%")
+                    ->orWhere('last_name', 'LIKE', "%{$search}%")
+                    ->orWhere('email', 'LIKE', "%{$search}%")
+                    ->orWhere('nif', 'LIKE', "%{$search}%");
+            })
+            ->whereDoesntHave('EducationalProgramsStudents', function ($query) use ($course) {
+                $query->where('educational_program_uid', $course);
             });
 
         $users = $users_query->limit(5)->get()->toArray();

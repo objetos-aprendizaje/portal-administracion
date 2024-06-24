@@ -29,6 +29,7 @@ class GeneralAdministrationController extends BaseController
                 "resources" => [
                     "resources/js/administration_module/general.js"
                 ],
+                'submenuselected' => 'administracion-general',
             ]
         );
     }
@@ -36,27 +37,37 @@ class GeneralAdministrationController extends BaseController
     public function saveSMTPEmailForm(Request $request)
     {
 
-        $updateData = [
-            'smtp_server' => $request->input('server'),
-            'smtp_port' => $request->input('port'),
-            'smtp_user' => $request->input('username'),
-            'smtp_password' => $request->input('password'),
-            'smtp_name_from' => $request->input('smtp_name_from'),
+        $messages = [
+            'smtp_server.required' => 'El servidor de correo es obligatorio',
+            'smtp_port.required' => 'El puerto del servidor de correo es obligatorio',
+            'smtp_user.required' => 'El usuario del servidor de correo es obligatorio',
+            'smtp_name_from.required' => 'El nombre del servidor de correo es obligatorio',
+            'smtp_encryption.required' => 'La encriptación del servidor de correo es obligatoria',
+            'smtp_address_from.required' => 'La dirección del servidor de correo es obligatoria',
+            'smtp_password.required' => 'La contraseña del servidor de correo es obligatoria'
         ];
 
-        $allNull = collect($updateData)->every(function ($value) {
-            return is_null($value);
-        });
+        $rules = [
+            'smtp_server' => 'required',
+            'smtp_port' => 'required',
+            'smtp_user' => 'required',
+            'smtp_name_from' => 'required',
+            'smtp_password' => 'required',
+            'smtp_encryption' => 'nullable|in:TLS,SSL',
+            'smtp_address_from' => 'required',
+        ];
 
-        $allFilled = collect($updateData)->every(function ($value) {
-            return !is_null($value) && $value !== '';
-        });
+        $validator = Validator::make($request->all(), $rules, $messages);
 
-        if (!($allNull || $allFilled)) {
-            return response()->json(['message' => 'Todos los campos deben estar vacíos o todos deben estar rellenos.'], 400);
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validator->errors()], 422);
         }
 
-        $configEmailService = [];
+        $updateData = $request->all();
+
+        if(!$updateData['smtp_password']) {
+            unset($updateData['smtp_password']);
+        }
 
         DB::transaction(function () use ($updateData) {
             foreach ($updateData as $key => $value) {
@@ -67,7 +78,7 @@ class GeneralAdministrationController extends BaseController
             LogsController::createLog('Actualización del servidor de correo', 'Configuración general', auth()->user()->uid);
         });
 
-        Cache::put('parameters_email_service', $configEmailService, 60 * 24); // Cache for 24 hours
+        Cache::put('parameters_email_service', $updateData, 60 * 24); // Cache for 24 hours
 
         // Procesar los datos y responder (puedes devolver JSON)
         return response()->json(['message' => 'Servidor de correo guardado correctamente']);
@@ -225,6 +236,7 @@ class GeneralAdministrationController extends BaseController
         $updateData = [
             'carrousel_title' => $request->input('carrousel_title'),
             'carrousel_description' => $request->input('carrousel_description'),
+            'main_slider_color_font' => $request->input('main_slider_color_font'),
         ];
 
         $carrousel_image_input_file = $request->file('carrousel_image_input_file');
@@ -251,7 +263,7 @@ class GeneralAdministrationController extends BaseController
         $fontKey = $request->input('fontKey');
         $fontPath = saveFile($fontFile, "fonts", $fontKey, true);
 
-        if(!$fontPath) return response()->json(['message' => 'Error al guardar la fuente', 405]);
+        if (!$fontPath) return response()->json(['message' => 'Error al guardar la fuente', 405]);
 
         DB::transaction(function () use ($fontPath, $fontKey) {
             GeneralOptionsModel::where('option_name', $fontKey)->update(['option_value' => $fontPath]);
@@ -259,7 +271,6 @@ class GeneralAdministrationController extends BaseController
         });
 
         return response()->json(['fontPath' => $fontPath, 'message' => 'Fuente guardada correctamente']);
-
     }
 
     public function deleteFont(Request $request)

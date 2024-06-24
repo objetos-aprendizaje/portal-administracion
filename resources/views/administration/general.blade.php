@@ -29,7 +29,7 @@
                         </div>
 
                     </div>
-                    <small class="text-center text-[#C7C7C7] mt-8">*Dimensiones: Alto: 50px x Ancho: 300px. Formato: PNG,
+                    <small class="text-center text-[#C7C7C7] mt-8">*Dimensiones: Alto: 300px x Ancho: 800px. Formato: PNG,
                         JPG. Tam. Máx.: 1MB</small>
                 </div>
 
@@ -52,8 +52,8 @@
                 <div class="h-full">
                     <div class="color-definition">
                         <div class="coloris-button">
-                            <input value="{{ $general_options['color_1'] }}" id="color-1" class="coloris cursor-pointer" type="text"
-                                data-coloris>
+                            <input value="{{ $general_options['color_1'] }}" id="color-1" class="coloris cursor-pointer"
+                                type="text" data-coloris>
                         </div>
                         <div>
                             <label for="color-1" class="text-primary font-roboto-bold">Color Primario (Títulos y
@@ -96,7 +96,8 @@
                                 data-coloris>
                         </div>
                         <div>
-                            <label for="color-4" class="text-primary font-roboto-bold">Color Cuaternario (Textos Secundarios):</label>
+                            <label for="color-4" class="text-primary font-roboto-bold">Color Cuaternario (Textos
+                                Secundarios):</label>
                             Este color se utiliza para los textos secundarios que son más pequeños que los párrafos y menos
                             destacados. Se utiliza para proporcionar información adicional o secundaria, y para elementos de
                             la interfaz que no necesitan destacar tanto como los elementos principales.
@@ -237,47 +238,72 @@
             <div class="poa-form">
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="server">Servidor SMTP (host)</label>
+                        <label for="smtp_server">Servidor SMTP (host)</label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['smtp_server'] }}" class="poa-input"
-                            placeholder="smtp.ejemplo.com" type="text" id="server" name="server" />
+                            placeholder="smtp.ejemplo.com" type="text" id="smtp_server" name="smtp_server" />
                     </div>
                 </div>
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="port">Puerto</label>
+                        <label for="smtp_port">Puerto</label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['smtp_port'] }}" class="poa-input" placeholder="587"
-                            type="number" id="port" name="port" />
+                            type="number" id="smtp_port" name="smtp_port" />
                     </div>
                 </div>
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="username">Usuario</label>
+                        <label for="smtp_user">Usuario</label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['smtp_user'] }}" class="poa-input" placeholder="tu_usuario"
-                            type="text" id="username" name="username" />
+                            type="text" id="smtp_user" name="smtp_user" />
                     </div>
                 </div>
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="password">Contraseña</label>
+                        <label for="smtp_password">Contraseña</label>
                     </div>
                     <div class="content-container little">
-                        <input placeholder="*********" class="poa-input" type="password" id="password"
-                            name="password" />
+                        <input value="{{ $general_options['smtp_password'] }}" class="poa-input" type="text"
+                            id="smtp_password" name="smtp_password" />
                     </div>
                 </div>
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="username">Nombre de envío</label>
+                        <label for="smtp_address_from">Dirección de remitente</label>
+                    </div>
+                    <div class="content-container little">
+                        <input value="{{ $general_options['smtp_address_from'] }}" class="poa-input"
+                            placeholder="tu_usuario_from" type="text" id="smtp_address_from"
+                            name="smtp_address_from" />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="smtp_encryption">Tipo de encriptación</label>
+                    </div>
+
+                    <div class="content-container little">
+                        <select id="smtp_encryption" name="smtp_encryption" class="poa-select w-full">
+                            <option value="" selected>Ninguna</option>
+                            <option value="TLS">TLS</option>
+                            <option value="SSL">SSL</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="smtp_name_from">Nombre de envío</label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['smtp_name_from'] }}" class="poa-input"
@@ -386,11 +412,11 @@
     </div>
 
     <div class="poa-container mb-8">
-        <h2>Configuración por defecto del carrousel de inicio</h2>
+        <h2>Configuración del slider inicial</h2>
 
         <p class="mt-2 mb-4">
-            En caso de que no haya definido ningún curso para que aparezca destacado en el carrousel, se mostrará en primera
-            posición la siguiente imagen junto con un su título y descripción.
+            Esta es la configuración del slider que se mostrará en la página principal del portal, junto con los sliders de
+            los cursos.
         </p>
 
         <form id="carrousel-default-config-form">
@@ -398,7 +424,7 @@
             <div class="poa-form">
                 <div class="field">
                     <div class="label-container">
-                        <label for="carrousel_image_input_file">Imagen</label>
+                        <label for="carrousel_image_input_file">Imagen <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <div class="poa-input-image">
@@ -419,7 +445,8 @@
                                 </div>
                             </div>
 
-                            <span class="dimensions">*Se recomienda subir imagen con aspecto panorámico con una resolución mínima de: 1200px x 600px.
+                            <span class="dimensions">*Se recomienda subir imagen con aspecto panorámico con una resolución
+                                mínima de: 1200px x 600px.
                                 Formato: PNG, JPG, JPEG.</span>
                         </div>
                     </div>
@@ -427,7 +454,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="carrousel_title">Título</label>
+                        <label for="carrousel_title">Título <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input placeholder="Título" class="poa-input" type="text" id="carrousel_title"
@@ -437,11 +464,23 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="carrousel_description">Descripción</label>
+                        <label for="carrousel_description">Descripción <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input placeholder="Descripción" value="{{ $general_options['carrousel_description'] }}"
                             class="poa-input" type="text" id="carrousel_description" name="carrousel_description" />
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="label-container">
+                        <label for="main_slider_color_font">Color <span class="text-danger">*</span></label>
+                    </div>
+                    <div class="content-container little">
+                        <div class="coloris-button">
+                            <input value="{{ $general_options['main_slider_color_font'] ?? '#fff' }}"
+                                id="main_slider_color_font" name="main_slider_color_font" class="coloris" type="text"
+                                data-coloris>
+                        </div>
                     </div>
                 </div>
             </div>

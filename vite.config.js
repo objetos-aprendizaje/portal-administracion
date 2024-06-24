@@ -65,7 +65,8 @@ export default defineConfig({
                 "node_modules/treeselectjs/dist/treeselectjs.css",
                 "resources/js/administration_module/centers.js",
                 "resources/js/administration_module/carrousels.js",
-                "resources/js/notifications_module/notifications_per_users.js"
+                "resources/js/notifications_module/notifications_per_users.js",
+                "resources/js/learning_objects_module/educational_resources_per_users.js"
             ],
             refresh: true,
         }),

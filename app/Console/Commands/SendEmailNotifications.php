@@ -9,14 +9,14 @@ use Illuminate\Support\Facades\Log;
 use App\Jobs\SendEmailJob;
 use Illuminate\Support\Facades\Cache;
 
-class SendNotifications extends Command
+class SendEmailNotifications extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'app:send-notifications';
+    protected $signature = 'app:send-email-notifications';
 
     /**
      * The console command description.
@@ -41,7 +41,7 @@ class SendNotifications extends Command
             return;
         }
 
-        $all_users = UsersModel::with('roles')->get();
+        $all_users = UsersModel::with('roles')->with("emailNotificationsTypesDisabled")->get();
 
         foreach ($email_notifications as $notification) {
             $this->processNotification($notification, $all_users);
@@ -64,8 +64,11 @@ class SendNotifications extends Command
 
     private function processAllUsersNotification($notification, $all_users)
     {
-        $all_users_chunks = array_chunk($all_users->toArray(), 200);
-        foreach ($all_users_chunks as $usersChunk) {
+        // Excluímos los usuarios que tienen deshabilitado el tipo de notificación
+        $usersInterested = $this->filterUsersNotInterestedNotificationType($all_users, $notification);
+
+        $userChunks = array_chunk($usersInterested->toArray(), 200);
+        foreach ($userChunks as $usersChunk) {
             foreach ($usersChunk as $user) {
                 try {
                     $parameters = [
@@ -82,11 +85,14 @@ class SendNotifications extends Command
 
     private function processRolesNotification($notification, $all_users)
     {
+        // Excluímos los usuarios que tienen deshabilitado el tipo de notificación
+        $usersInterested = $this->filterUsersNotInterestedNotificationType($all_users, $notification);
+
         // Tipo de notificación de roles
         foreach ($notification->roles as $role) {
 
             // Extraemos los usuarios correspondientes al rol
-            $usersWithRole = $all_users->filter(function ($user) use ($role) {
+            $usersWithRole = $usersInterested->filter(function ($user) use ($role) {
                 return $user->roles->contains('uid', $role->uid);
             });
 
@@ -111,6 +117,8 @@ class SendNotifications extends Command
     {
         $users = $notification['users'];
 
+        $users = $this->filterUsersNotInterestedNotificationType($users, $notification);
+
         foreach ($users as $user) {
             try {
                 $parameters = [
@@ -128,7 +136,7 @@ class SendNotifications extends Command
 
     private function getEmailNotifications()
     {
-        $email_notifications = EmailNotificationsModel::where('sent', 0)->get();
+        $email_notifications = EmailNotificationsModel::where('sent', 0)->with("emailNotificationType")->get();
 
         return $email_notifications;
     }
@@ -142,5 +150,22 @@ class SendNotifications extends Command
         });
 
         return $allNull;
+    }
+
+    /**
+     * Filtra los usuarios que no están interesados en el tipo de notificación
+     */
+    private function filterUsersNotInterestedNotificationType($users, $notification)
+    {
+
+        $usersEnabledNotificationsEmail = $users->filter(function ($user) {
+            return $user->email_notifications_allowed;
+        });
+
+        $usersInterestedCategory = $usersEnabledNotificationsEmail->filter(function ($user) use ($notification) {
+            return $notification->notification_type_uid || !$user->emailNotificationsTypesDisabled->contains('uid', $notification->notification_type_uid);
+        });
+
+        return $usersInterestedCategory;
     }
 }

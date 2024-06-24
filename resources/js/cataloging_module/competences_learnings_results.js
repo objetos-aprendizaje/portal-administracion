@@ -63,40 +63,56 @@ async function initHandlers() {
         showModal("import_competence_framework-modal", "Importar competencias");
     });
 
-document
-    .getElementById("import-esco-framework")
-    .addEventListener("click", function () {
-        showModal("import-esco-framework-modal", "Importar Marco ESCO");
-    });
+    document
+        .getElementById("btn-export-import")
+        .addEventListener("click", function () {
+            showModal("export_import-modal", "Exportar/Importar");
+        });
 
-document
-    .getElementById("esco-framework-form")
-    .addEventListener("submit", submitEscoFrameworkForm);
+    document
+        .getElementById("import-esco-framework")
+        .addEventListener("click", function () {
+            showModal("import-esco-framework-modal", "Importar Marco ESCO");
+        });
 
-    initializeCompetencesCheckboxs();
-    updateInputImage();
+    document
+        .getElementById("esco-framework-form")
+        .addEventListener("submit", submitEscoFrameworkForm);
 
-    document.body.addEventListener("click", function (event) {
-        const addLearningResultBtn = event.target.closest(
-            ".add-learning-result-btn"
-        );
-        const editLearningResultBtn = event.target.closest(
-            ".edit-learning-result-btn"
-        );
-        const editCompetenceBtn = event.target.closest(".edit-competence-btn");
+        initializeCompetencesCheckboxs();
+        updateInputImage();
 
-        if (addLearningResultBtn) {
-            const competenceUid = addLearningResultBtn.dataset.uid;
-            newLearningResult(competenceUid);
-        } else if (editLearningResultBtn) {
-            const learningResultUid = editLearningResultBtn.dataset.uid;
-            reloadCompetencesSelect();
-            loadLearningResultModal(learningResultUid);
-        } else if (editCompetenceBtn) {
-            const competenceUid = editCompetenceBtn.dataset.uid;
-            loadCompetenceModal(competenceUid);
-        }
-    });
+        document.body.addEventListener("click", function (event) {
+            const addLearningResultBtn = event.target.closest(
+                ".add-learning-result-btn"
+            );
+            const editLearningResultBtn = event.target.closest(
+                ".edit-learning-result-btn"
+            );
+            const editCompetenceBtn = event.target.closest(".edit-competence-btn");
+
+            if (addLearningResultBtn) {
+                const competenceUid = addLearningResultBtn.dataset.uid;
+                newLearningResult(competenceUid);
+            } else if (editLearningResultBtn) {
+                const learningResultUid = editLearningResultBtn.dataset.uid;
+                reloadCompetencesSelect();
+                loadLearningResultModal(learningResultUid);
+            } else if (editCompetenceBtn) {
+                const competenceUid = editCompetenceBtn.dataset.uid;
+                loadCompetenceModal(competenceUid);
+            }
+        });
+
+    document
+        .getElementById("import-framework-form")
+        .addEventListener("submit", submitImportFrameworkForm);
+
+    document
+        .getElementById("btn-export")
+        .addEventListener("click", function () {
+            exportCSV();
+        });
 }
 
 function loadLearningResultModal(learningResultUid) {
@@ -209,6 +225,19 @@ function initializeCompetencesCheckboxs() {
             checkChildren(this, this.checked);
         });
     });
+
+    const competenceSelector = document.getElementById("parent_competence_uid");
+
+    competenceSelector.addEventListener("change", function () {
+        let parent = document.getElementById("parent_competence_uid").value;
+        const typeText = document.querySelector(".type-competence");
+        if (parent != ""){
+            typeText.classList.add("hidden");
+        }else{
+            typeText.classList.remove("hidden");
+        }
+    });
+
 }
 
 /**
@@ -265,8 +294,13 @@ async function reloadCompetencesSelect() {
  * Esta función utiliza la recursividad para manejar múltiples niveles de anidación, creando una representación visual
  * anidada en el elemento select similar a como lo hace WordPress, con indentaciones para subcategorías.
  */
-function buildOptions(competences, level = 0) {
-    let options = "";
+function buildOptions(competences, level = 0, addNoneOption = true) {
+    let options = '';
+
+    // Añadir la opción "Ninguna" solo si addNoneOption es true
+    if (addNoneOption) {
+        options += '<option value="">Ninguna</option>';
+    }
     const prefix = "- ".repeat(level); // Crear un prefijo con guiones para la indentación
 
     competences.forEach((competence) => {
@@ -274,7 +308,8 @@ function buildOptions(competences, level = 0) {
         options += `<option value="${competence.uid}">${prefix}${competence.name}</option>`;
         // Si hay subcategorías, hacer una llamada recursiva para añadirlas también
         if (competence.subcompetences && competence.subcompetences.length > 0) {
-            options += buildOptions(competence.subcompetences, level + 1);
+            // En llamadas recursivas, no añadir la opción "Ninguna"
+            options += buildOptions(competence.subcompetences, level + 1, false);
         }
     });
 
@@ -340,19 +375,12 @@ async function reloadListCompetences() {
  */
 async function getHtmlListCompetences(search = false) {
     // Creamos el objeto URL
-    const url = new URL(
-        "/cataloging/competences_learnings_results/get_list_competences",
-        window.location.origin
-    );
-
-    // Si 'search' está definido y no es un string vacío, lo añadimos a la cadena de consulta
-    if (search) {
-        url.searchParams.append("search", search);
-    }
-
     const params = {
-        url: url,
-        method: "GET",
+        url: "/cataloging/competences_learnings_results/get_list_competences",
+        method: "POST",
+        loader: true,
+        body: { search: search },
+        stringify: true,
     };
 
     const data = await apiFetch(params);
@@ -425,4 +453,49 @@ function getCheckedUids() {
     });
 
     return checkedElements;
+}
+
+function exportCSV(){
+    const params = {
+        url: "/cataloging/export_csv",
+        method: "GET",
+        loader: true,
+    };
+
+    apiFetch(params).then((data) => {
+
+        var jsonString = JSON.stringify(data, null, 2);
+        var blob = new Blob([jsonString], { type: "application/json" });
+        var downloadLink = document.createElement("a");
+        downloadLink.href = window.URL.createObjectURL(blob);
+        downloadLink.download = "data.json";
+        downloadLink.innerHTML = "Descargar JSON";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+
+    });
+
+}
+function submitImportFrameworkForm(){
+
+    const formData = new FormData(this);
+
+    const params = {
+        url: "/cataloging/import_csv",
+        method: "POST",
+        body: formData,
+        loader: true,
+        toast: true,
+    };
+
+    apiFetch(params)
+        .then(() => {
+            hideModal("export_import-modal");
+            reloadListCompetences();
+        })
+        .catch((data) => {
+            showFormErrors(data.errors);
+        });
+
 }

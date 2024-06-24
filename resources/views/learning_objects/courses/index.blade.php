@@ -11,11 +11,26 @@
         <div class="table-control-header">
             @include('partials.table-search', ['table' => 'courses-table'])
 
-            <div class="flex gap-[20px]">
-                <button id="add-course-btn" type="button"
-                    class="btn btn-primary icon">{{ e_heroicon('plus', 'outline') }}</button>
-                <button id="change-statuses-btn" type="button" class="btn btn-primary">Cambiar estado
-                    {{ e_heroicon('arrows-right-left', 'outline') }}</button>
+            <div class="flex gap-1">
+                <div>
+                    <button type="button" id="add-course-btn" class="btn-icon">
+                        {{ e_heroicon('plus', 'outline') }}
+                    </button>
+                </div>
+                <div>
+                    <button type="button" class="btn-icon" id="btn-reload-table">
+                        {{ e_heroicon('arrow-path', 'outline') }}
+                    </button>
+                </div>
+
+                @if (Auth::user()->hasAnyRole(['ADMINISTRATOR', 'MANAGEMENT']))
+                    <div>
+                        <button type="button" class="btn-icon" id="change-statuses-btn">
+                            {{ e_heroicon('arrows-right-left', 'outline') }}
+                        </button>
+                    </div>
+                @endif
+
             </div>
         </div>
 

@@ -314,3 +314,10 @@ function generateToken($longitud = 64) {
 
     return $token;
 }
+
+function formatDatetimeUser($datetime) {
+    $date = new DateTime($datetime);
+    $formatter = new IntlDateFormatter('es_ES', IntlDateFormatter::FULL, IntlDateFormatter::FULL);
+    $formatter->setPattern('d \'de\' MMMM \'de\' Y \'a las\' H:mm');
+    return $formatter->format($date);
+}

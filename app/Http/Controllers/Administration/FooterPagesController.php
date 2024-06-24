@@ -25,6 +25,7 @@ class FooterPagesController extends BaseController
                 ],
                 "tinymce" => true,
                 "tabulator" => true,
+                "submenuselected" => "footer-pages",
             ]
         );
     }

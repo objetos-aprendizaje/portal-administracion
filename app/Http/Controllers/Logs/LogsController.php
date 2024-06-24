@@ -43,6 +43,7 @@ class LogsController extends BaseController
                 "users" => $users,
                 "tomselect" => true,
                 "flatpickr" => true,
+                "submenuselected" => "list-logs",
             ]
         );
     }

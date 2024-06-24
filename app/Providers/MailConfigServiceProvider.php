@@ -33,7 +33,9 @@ class MailConfigServiceProvider extends ServiceProvider
                 'smtp_port',
                 'smtp_user',
                 'smtp_password',
-                'smtp_name_from'
+                'smtp_name_from',
+                'smtp_encryption',
+                'smtp_address_from'
             ])->get()->toArray();
             $config = [];
 
@@ -46,14 +48,12 @@ class MailConfigServiceProvider extends ServiceProvider
 
         $parameters_email_service = Cache::get('parameters_email_service');
 
-        Config::set('mail.mailers.smtp.encryption', env('MAIL_ENCRYPTION'));
-        Config::set('mail.from.address', $parameters_email_service['smtp_user'] ?? null);
-        Config::set('mail.from.name', $parameters_email_service['smtp_name_from'] ?? env('MAIL_FROM_NAME'));
-
-
         Config::set('mail.mailers.smtp.host', $parameters_email_service['smtp_server'] ?? null);
         Config::set('mail.mailers.smtp.port', $parameters_email_service['smtp_port'] ?? null);
         Config::set('mail.mailers.smtp.username', $parameters_email_service['smtp_user'] ?? null);
         Config::set('mail.mailers.smtp.password', $parameters_email_service['smtp_password'] ?? null);
+        Config::set('mail.from.name', $parameters_email_service['smtp_name_from'] ?? env('MAIL_FROM_NAME'));
+        Config::set('mail.mailers.smtp.encryption', $parameters_email_service['smtp_encryption'] ?? null);
+        Config::set('mail.from.address', $parameters_email_service['smtp_address_from'] ?? null);
     }
 }

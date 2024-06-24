@@ -1,0 +1,69 @@
+[
+  {
+    "uid": "29f52bc8-db85-4fdd-804f-807630c15893",
+    "name": "ESCO",
+    "description": null,
+    "is_multi_select": 1,
+    "parent_competence_uid": null,
+    "origin_code": "",
+    "created_at": "2024-05-27T16:08:51.000000Z",
+    "updated_at": "2024-05-27T16:08:51.000000Z",
+    "subcompetences": [
+      {
+        "uid": "16b48a13-d43a-41eb-b435-234cfbac6a3b",
+        "name": "competencias lingüísticas y conocimiento de lenguas",
+        "description": null,
+        "is_multi_select": 1,
+        "parent_competence_uid": "29f52bc8-db85-4fdd-804f-807630c15893",
+        "origin_code": "http://data.europa.eu/esco/skill/e35a5936-091d-4e87-bafe-f264e55bd656",
+        "created_at": "2024-05-27T16:08:51.000000Z",
+        "updated_at": "2024-05-27T16:08:51.000000Z",
+        "subcompetences": [
+          {
+            "uid": "3c108bcd-3fea-48e6-a21b-c06010fae5a6",
+            "name": "lenguas clásicas",
+            "description": null,
+            "is_multi_select": 1,
+            "parent_competence_uid": "16b48a13-d43a-41eb-b435-234cfbac6a3b",
+            "origin_code": "http://data.europa.eu/esco/skill/e434e71a-f068-44ed-8059-d1af9eb592d7",
+            "created_at": "2024-05-27T16:08:51.000000Z",
+            "updated_at": "2024-05-27T16:08:51.000000Z",
+            "subcompetences": [
+              {
+                "uid": "87cf9b8b-4e4c-41a1-b9cb-284e607b78de",
+                "name": "griego clásico",
+                "description": null,
+                "is_multi_select": 1,
+                "parent_competence_uid": "3c108bcd-3fea-48e6-a21b-c06010fae5a6",
+                "origin_code": "http://data.europa.eu/esco/skill/896b0b7f-e793-4b3f-a7a6-4ab1d237f695",
+                "created_at": "2024-05-27T16:09:15.000000Z",
+                "updated_at": "2024-05-27T16:09:15.000000Z",
+                "subcompetences": [],
+                "learning_results": [
+                  {
+                    "uid": "3a21da76-5500-4a2a-8c78-20b716c777dc",
+                    "name": "comprender el griego clásico escrito",
+                    "description": "Leer y comprender textos escritos en griego clásico.",
+                    "competence_uid": "87cf9b8b-4e4c-41a1-b9cb-284e607b78de",
+                    "origin_code": null,
+                    "created_at": "2024-05-27T16:11:26.000000Z",
+                    "updated_at": "2024-05-27T16:11:26.000000Z"
+                  },
+                  {
+                    "uid": "3be7d194-959a-464b-9431-f063ced13506",
+                    "name": "escribir en griego clásico",
+                    "description": "Redactar textos escritos en griego antiguo.",
+                    "competence_uid": "87cf9b8b-4e4c-41a1-b9cb-284e607b78de",
+                    "origin_code": null,
+                    "created_at": "2024-05-27T16:11:27.000000Z",
+                    "updated_at": "2024-05-27T16:11:27.000000Z"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

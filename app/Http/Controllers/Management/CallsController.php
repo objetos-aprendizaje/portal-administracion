@@ -61,7 +61,8 @@ class CallsController extends BaseController
                 ],
                 "educational_program_types" => $educational_program_types,
                 "tomselect" => true,
-                "tabulator" => true
+                "tabulator" => true,
+                "submenuselected" => "management-calls",
 
             ]
         );

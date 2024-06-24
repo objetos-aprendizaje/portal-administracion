@@ -8,13 +8,15 @@
             desde el front.
         </p>
 
-        <div class="flex justify-between mb-2 items-center">
-            <div class="mb-4 flex gap-4 flex-1">
+        <div class="flex justify-between mb-2 items-center ">
+            <div class="flex gap-4 flex-1 items-center">
                 <div class="w-1/2">
                     <input type="email" placeholder="Introduce un email" class="poa-input w-full h-full" id="email-input">
                 </div>
                 <div>
-                    <button class="btn btn-primary" id="add-email-btn">Añadir {{ e_heroicon('plus', 'outline') }}</button>
+                    <button type="button" id="add-email-btn" class="btn-icon">
+                        {{ e_heroicon('plus', 'outline') }}
+                    </button>
                 </div>
             </div>
             <div class="flex gap-1">

@@ -48,7 +48,8 @@ class CourseTypesController extends BaseController
                     "resources/js/cataloging_module/course_types.js"
                 ],
                 "course_types" => $course_types,
-                "tabulator" => true
+                "tabulator" => true,
+                "submenuselected" => "cataloging-course-types",
             ]
         );
     }

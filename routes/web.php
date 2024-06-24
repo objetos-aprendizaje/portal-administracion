@@ -28,6 +28,10 @@ use App\Http\Controllers\LearningObjects\EducationalResourcesController;
 use App\Http\Controllers\Logs\LogsController;
 use App\Http\Controllers\Users\ListUsersController;
 use App\Http\Controllers\Analytics\AnalyticsUsersController;
+use App\Http\Controllers\Api\ConfirmCourseCreationController;
+use App\Http\Controllers\Api\RegisterUserController;
+use App\Http\Controllers\Api\UpdateCourseController;
+use App\Http\Controllers\Api\UpdateUserController;
 use App\Http\Controllers\Cataloging\CertificationTypesController;
 use App\Http\Controllers\Cataloging\CompetencesLearningsResultsController;
 use App\Http\Controllers\Credentials\StudentsCredentialsController;
@@ -102,6 +106,8 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::post('/administration/login_systems/save_facebook_login', [LoginSystemsController::class, 'submitFacebookForm'])->name('facebook-login');
         Route::post('/administration/login_systems/save_twitter_login', [LoginSystemsController::class, 'submitTwitterForm'])->name('twitter-login');
         Route::post('/administration/login_systems/save_linkedin_login', [LoginSystemsController::class, 'submitLinkedinForm'])->name('linkedin-login');
+        Route::post('/administration/login_systems/save_cas_login', [LoginSystemsController::class, 'submitCasForm'])->name('cas-login');
+        Route::post('/administration/login_systems/save_rediris_login', [LoginSystemsController::class, 'submitRedirisForm'])->name('rediris-login');
 
         Route::post('/administration/save_manager_permissions', [ManagementPermissionsController::class, 'saveManagersPermissionsForm']);
         Route::post('/administration/suggestions_improvements/save_email', [SuggestionsImprovementsController::class, 'saveEmail']);
@@ -176,12 +182,14 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/cataloging/competences_learnings_results/get_learning_result/{learning_result_uid}', [CompetencesLearningsResultsController::class, 'getLearningResult']);
 
 
-        Route::get('/cataloging/competences_learnings_results/get_list_competences', [CompetencesLearningsResultsController::class, 'getListCompetences']);
+        Route::post('/cataloging/competences_learnings_results/get_list_competences', [CompetencesLearningsResultsController::class, 'getListCompetences']);
         Route::get('/cataloging/competences_learnings_results/get_competence/{competence_uid}', [CompetencesLearningsResultsController::class, 'getCompetence']);
         Route::get('/cataloging/competences_learnings_results/get_all_competences', [CompetencesLearningsResultsController::class, 'getAllCompetences']);
         Route::delete('/cataloging/competences_learnings_results/delete_competences_learning_results', [CompetencesLearningsResultsController::class, 'deleteCompetencesLearningResults']);
 
         Route::post("/cataloging/competences_learnings_results/import_esco_framework", [CompetencesLearningsResultsController::class, 'importEscoFramework']);
+        Route::get('/cataloging/export_csv', [CompetencesLearningsResultsController::class, 'exportCSV']);
+        Route::post('/cataloging/import_csv', [CompetencesLearningsResultsController::class, 'importCSV']);
 
 
         Route::get('/cataloging/course_types/get_list_course_types', [CourseTypesController::class, 'getCourseTypes']);
@@ -206,10 +214,6 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/cataloging/course_types', [CourseTypesController::class, 'index'])->name('cataloging-course-types');
         Route::get('/cataloging/educational_resources_types', [EducationalResourceTypesController::class, 'index'])->name('cataloging-educational-resources');
         Route::get('/cataloging/educational_program_types', [EducationalProgramTypesController::class, 'index'])->name('cataloging-educational-program-types');
-
-
-
-
     });
 
     Route::middleware(['role:ADMINISTRATOR,MANAGEMENT,TEACHER'])->group(function () {
@@ -231,9 +235,15 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::delete('/notifications/email/delete_email_notifications', [EmailNotificationsController::class, 'deleteEmailNotifications']);
     });
 
+    Route::middleware(['role:ADMINISTRATOR,MANAGEMENT,TEACHER'])->group(function () {
+        Route::post('/sliders/save_previsualization', [CarrouselsController::class, 'previsualizeSlider']);
+    });
+
+    Route::middleware(['role:ADMINISTRATOR,MANAGEMENT'])->group(function () {
+        Route::post('/learning_objects/courses/change_statuses_courses', [ManagementCoursesController::class, 'changeStatusesCourses']);
+    });
 
     Route::middleware(['role:ADMINISTRATOR,MANAGEMENT,TEACHER'])->group(function () {
-        Route::post('/learning_objects/courses/change_statuses_courses', [ManagementCoursesController::class, 'changeStatusesCourses']);
         Route::post('/learning_objects/courses/save_course', [ManagementCoursesController::class, 'saveCourse']);
         Route::post('/learning_objects/courses/filter_courses', [ManagementCoursesController::class, 'filterCourses']);
         Route::get('/learning_objects/courses/get_course/{course_uid}', [ManagementCoursesController::class, 'getCourse']);
@@ -260,6 +270,8 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::post('/learning_objects/courses/enroll_students', [ManagementCoursesController::class, 'enrollStudents']);
         Route::post('/learning_objects/courses/enroll_students_csv', [ManagementCoursesController::class, 'enrollStudentsCsv']);
 
+        Route::post('/learning_objects/courses/download_document_student', [ManagementCoursesController::class, 'downloadDocumentStudent']);
+
 
 
         Route::get('/learning_objects/educational_resources/get_resource/{uid}', [EducationalResourcesController::class, 'getResource']);
@@ -272,6 +284,15 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/learning_objects/educational_programs/get_educational_program/{educational_program_uid}', [EducationalProgramsController::class, 'getEducationalProgram']);
         Route::delete('/learning_objects/educational_programs/delete_educational_programs', [EducationalProgramsController::class, 'deleteEducationalPrograms']);
         Route::get('/learning_objects/educational_programs/search_courses_without_educational_program/{search}', [EducationalProgramsController::class, 'searchCoursesWithoutEducationalProgram']);
+        Route::post('/learning_objects/educational_programs/change_statuses_educational_programs', [EducationalProgramsController::class, 'changeStatusesEducationalPrograms']);
+        Route::get('/learning_objects/educational_programs/get_educational_program_students/{educational_program_uid}', [EducationalProgramsController::class, 'getEducationalProgramStudents']);
+        Route::post('/learning_objects/educational_program/enroll_students', [EducationalProgramsController::class, 'enrollStudents']);
+        Route::post('/learning_objects/educational_program/enroll_students_csv', [EducationalProgramsController::class, 'enrollStudentsCsv']);
+        Route::post('/learning_objects/educational_program/change_status_inscriptions_educational_program', [EducationalProgramsController::class, 'changeStatusInscriptionsEducationalProgram']);
+        Route::post('/learning_objects/educational_program/edition_or_duplicate_educational_program', [EducationalProgramsController::class, 'editionOrDuplicateEducationalProgram']);
+        Route::post('/learning_objects/educational_program/download_document_student', [EducationalProgramsController::class, 'downloadDocumentStudent']);
+
+        Route::post('/learning_objects/educational_program/new_edition_educational_program', [EducationalProgramsController::class, 'newEditionEducationalProgram']);
 
 
         Route::get('/credentials/students', [StudentsCredentialsController::class, 'index'])->name('credentials-students');
@@ -297,10 +318,13 @@ Route::middleware(['combined.auth'])->group(function () {
     Route::get('/users/list_users/search_users/{search}', [ListUsersController::class, 'searchUsers']);
     Route::get('/users/list_users/search_users_backend/{search}', [ListUsersController::class, 'searchUsersBackend']);
     Route::get('/users/list_users/search_users_no_enrolled/{course}/{search}', [ListUsersController::class, 'searchUsersNoEnrolled']);
+    Route::get('/users/list_users/search_users_no_enrolled_educational_program/{educational_program}/{search}', [ListUsersController::class, 'searchUsersNoEnrolledEducationalProgram']);
 
     Route::get('/users/list_users/get_user_roles', [ListUsersController::class, 'getUserRoles']);
     Route::get('/users/list_users/get_user/{user_uid}', [ListUsersController::class, 'getUser']);
     Route::post('/users/list_users/save_user', [ListUsersController::class, 'saveUser']);
+    Route::post('/users/list_users/export_users', [ListUsersController::class, 'exportUsers']);
+
     Route::delete('/users/list_users/delete_users', [ListUsersController::class, 'deleteUsers']);
 
 
@@ -347,7 +371,6 @@ Route::middleware('guest')->group(function () {
     Route::get('auth/facebook', [LoginController::class, 'redirectToFacebook']);
     Route::get('auth/facebook/callback', [LoginController::class, 'handleFacebookCallback']);
 
-    Route::get('/token_login/{token}', [LoginController::class, 'tokenLogin']);
 });
 Route::get('/logout', [LoginController::class, 'logout']);
 
@@ -362,6 +385,12 @@ Route::middleware(['api_auth'])->group(function () {
     Route::post('/webhook/update_user_image', [UpdateUserImageController::class, 'index']);
     Route::post('/api/upload_file', [FileController::class, 'uploadFile']);
     Route::post('/api/download_file', [FileController::class, 'downloadFile']);
+
+    Route::post('/api/register_user', [RegisterUserController::class, 'index']);
+    Route::post('/api/confirm_course_creation', [ConfirmCourseCreationController::class, 'index']);
+    Route::post('/api/update_course', [UpdateCourseController::class, 'index']);
+    Route::post('/api/update_user', [UpdateUserController::class, 'index']);
 });
 
 Route::get('/certificate-access', [CertificateAccessController::class, 'index'])->name('certificate-access');
+Route::get('/token_login/{token}', [LoginController::class, 'tokenLogin']);

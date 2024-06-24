@@ -24,6 +24,7 @@ class ApiKeysController extends BaseController
                     "resources/js/administration_module/api_keys.js",
                 ],
                 "tabulator" => true,
+                "submenuselected" => "api-keys",
             ]
         );
     }

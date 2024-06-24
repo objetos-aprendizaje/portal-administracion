@@ -1,6 +1,6 @@
 <div id="educational-program-modal" class="modal">
 
-    <div class="modal-body w-full md:max-w-[700px]">
+    <div class="modal-body w-full md:max-w-[1200px]">
 
         <div class="modal-header">
             <div>
@@ -38,16 +38,41 @@
                     </div>
                 </div>
 
-                <div class="field">
-                    <div class="label-container">
-                        <label for="description">Tipo <span class="text-red-500">*</span></label>
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="min_required_students">Mínimo de estudiantes requeridos</label>
                     </div>
 
-                    <div class="content-container">
-                        <select id="is_modular" name="is_modular" class="poa-select w-full">
-                            <option value="" selected>Selecciona el tipo</option>
-                            <option value="1">Modular</option>
-                            <option value="0">No modular</option>
+                    <div class="content-container mt-1">
+                        <input type="number" class="poa-input" id="min_required_students" name="min_required_students"
+                            value="0" />
+                    </div>
+                </div>
+
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="tags">Etiquetas</label>
+                    </div>
+
+                    <div class="content-container mt-1" id="tags-container">
+                        <input id="tags" name="tags" autocomplete="off" name="tags"
+                            placeholder="Introduce etiquetas" />
+                    </div>
+
+                </div>
+
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="select-categories">Categorías</label>
+                    </div>
+
+                    <div class="content-container mt-1" id="categories-container">
+                        <select id="select-categories" class="mb-4" name="categories[]" multiple
+                            placeholder="Selecciona categorías..." autocomplete="off">
+                            @foreach ($categories as $category)
+                                <option value="{{ $category['uid'] }}">
+                                    {{ $category['name'] }}</option>
+                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -107,6 +132,114 @@
                     </div>
                 </div>
 
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="validate_student_registrations">Validar registros de estudiantes</label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <div class="checkbox">
+                            <label for="validate_student_registrations"
+                                class="inline-flex relative items-center cursor-pointer">
+                                <input type="checkbox" id="validate_student_registrations"
+                                    name="validate_student_registrations" class="sr-only peer">
+                                <div
+                                    class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field mt-2 no-visible" id="criteria-area">
+                    <div class="label-container">
+                        <label for="evaluation_criteria">Criterio de validación <span
+                                class="text-danger">*</span></label>
+                    </div>
+
+                    <div class="content-container mt-1">
+                        <textarea placeholder="Los criterios de evaluación son los siguientes..." rows="5" class="poa-input"
+                            id="evaluation_criteria" name="evaluation_criteria"></textarea>
+                    </div>
+                </div>
+
+                <div class="field mt-2 no-visible" id="documents-container">
+
+                    <div class="label-container">
+                        <label>Documentos necesarios para el programa formativo</label>
+                    </div>
+
+                    <div class="content-container" id="document-container">
+                        <div class="document-list" id="document-list">
+
+                        </div>
+
+                        <div class="flex justify-end">
+                            <div>
+                                <button type="button" class="btn-icon" id="btn-add-document">
+                                    {{ e_heroicon('plus', 'outline') }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="cost">Coste (€)</label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <input type="number" placeholder="100€" step="any" class="poa-input" id="cost"
+                            name="cost" value="0" />
+                    </div>
+                </div>
+
+                <section class="hidden" id="enrolling-dates-container">
+                    <div class="field">
+                        <div class="label-container label-center">
+                            <label for="enrolling_start_date">Fecha de inicio de matriculación <span
+                                    class="text-danger">*</span></label>
+                        </div>
+                        <div class="content-container mt-1">
+                            <input type="datetime-local" class="poa-input" id="enrolling_start_date"
+                                name="enrolling_start_date" />
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="label-container label-center">
+                            <label for="enrolling_finish_date">Fecha de fin de matriculación <span
+                                    class="text-danger">*</span></label>
+                        </div>
+                        <div class="content-container mt-1">
+                            <input type="datetime-local" class="poa-input" id="enrolling_finish_date"
+                                name="enrolling_finish_date" />
+                        </div>
+                    </div>
+                </section>
+
+
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="realization_start_date">Fecha de inicio de realización <span
+                                class="text-danger">*</span></label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <input type="datetime-local" class="poa-input" id="realization_start_date"
+                            name="realization_start_date" />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="realization_finish_date">Fecha de fin de realización <span
+                                class="text-danger">*</span></label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <input type="datetime-local" class="poa-input" id="realization_finish_date"
+                            name="realization_finish_date" />
+                    </div>
+                </div>
+
                 <div class="field">
                     <div class="label-container">
                         <label for="select-courses">Cursos</label>
@@ -144,14 +277,123 @@
                     </div>
                 </div>
 
-                <div class="btn-block">
-                    <button type="submit" class="btn btn-primary">
-                        Guardar {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                <section id="feature-main-slider-container">
+                    <div class="field mt-2">
+                        <div class="label-container label-center">
+                            <label for="featured_slider">Destacar en el slider principal</label>
+                        </div>
 
-                    <button data-modal-id="educational-program-modal" type="button"
-                        class="btn btn-secondary close-modal-btn">
-                        Cancelar {{ e_heroicon('x-mark', 'outline') }}</button>
+                        <div class="content-container mt-1">
+                            <div class="checkbox">
+                                <label for="featured_slider" class="inline-flex relative items-center cursor-pointer">
+                                    <input type="checkbox" id="featured_slider" name="featured_slider"
+                                        class="sr-only peer">
+                                    <div
+                                        class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="hidden" id="featured-slider-info">
+                        <div class="field mt-2">
+                            <div class="label-container label-center">
+                                <label for="featured_slider_title">Título en el slider</label>
+                            </div>
+                            <div class="content-container mt-1">
+                                <input type="text" placeholder="Curso en bellasartes" class="poa-input"
+                                    id="featured_slider_title" name="featured_slider_title" />
+                            </div>
+                        </div>
+
+                        <div class="field mt-2">
+                            <div class="label-container">
+                                <label for="featured_slider_description">Descripción en el slider</label>
+                            </div>
+
+                            <div class="content-container mt-1">
+                                <textarea
+                                    placeholder="La aportación más significativa del grado en bellas artes es la de formar artistas capaces de aportar criterios..."
+                                    rows="5" class="poa-input" id="featured_slider_description" name="featured_slider_description"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="field mt-2">
+                            <div class="label-container">
+                                <label for="featured_slider_color_font">Color de la tipografía</label>
+                            </div>
+
+                            <div class="content-container mt-1">
+                                <div class="coloris-button">
+                                    <input value="" id="featured_slider_color_font"
+                                        name="featured_slider_color_font" class="coloris" type="text"
+                                        data-coloris>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field mt-2">
+                            <div class="label-container">
+                                <label for="featured_slider_image_path">Imagen en el slider</label>
+                            </div>
+                            <div class="content-container mt-1">
+                                <div class="poa-input-image mb-2">
+                                    <img id="featured_slider_image_path_preview"
+                                        src="{{ env('NO_IMAGE_SELECTED_PATH') }}" />
+
+                                    <div class="select-file-container">
+                                        <input accept="image/*" type="file" id="featured_slider_image_path"
+                                            name="featured_slider_image_path" class="hidden" />
+
+                                        <div class="flex items-center gap-[20px]">
+                                            <label for="featured_slider_image_path" class="btn btn-rectangular">
+                                                Subir {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                            </label>
+
+                                            <span class="image-name text-[14px]">Ningún archivo seleccionado</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <a id="previsualize-slider" href="javascript:void(0)">Previsualizar slider</a>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <section id="feature-main-carrousel-container">
+                    <div class="field mt-2">
+                        <div class="label-container label-center">
+                            <label for="featured_main_carrousel">Destacar en el carrousel</label>
+                        </div>
+
+                        <div class="content-container mt-1">
+                            <div class="checkbox">
+                                <label for="featured_main_carrousel"
+                                    class="inline-flex relative items-center cursor-pointer">
+                                    <input type="checkbox" id="featured_main_carrousel"
+                                        name="featured_main_carrousel" class="sr-only peer">
+                                    <div
+                                        class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="btn-block" id="btns-save">
+                    <div id="draft-button-container" class="hidden">
+                        <button type="submit" value="draft" id="draft-button" class="btn btn-secondary">
+                            Guardar como borrador {{ e_heroicon('check', 'outline') }}</button>
+                    </div>
+
+                    <button type="submit" value="submit" id="submit-button" class="btn btn-primary ">
+                        Guardar {{ e_heroicon('paper-airplane', 'outline') }}</button>
                 </div>
+
             </div>
 
             <input type="hidden" id="educational_program_uid" name="educational_program_uid" value="" />
@@ -161,3 +403,16 @@
     </div>
 
 </div>
+
+<template id="document-template">
+    <div class="document" data-document-uid="">
+        <div class="flex gap-2 mb-2">
+            <input type="text" class="poa-input document-name" placeholder="Nombre" />
+            <div class="flex-none">
+                <button type="button" class="btn-icon btn-remove-document">
+                    {{ e_heroicon('trash', 'outline') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</template>

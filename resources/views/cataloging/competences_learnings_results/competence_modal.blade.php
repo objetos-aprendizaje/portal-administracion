@@ -44,11 +44,19 @@
 
                     <div class="content-container">
                         <select id="parent_competence_uid" name="parent_competence_uid" class="poa-select w-full">
-                            <option value="" selected>Ninguna</option>
-                            @foreach ($competences as $competence)
-                                <option value="{{ $competence['uid'] }}">{{ $competence['name'] }}</option>
-                            @endforeach
                         </select>
+                    </div>
+                </div>
+
+                <div class="type-competence">
+                    <div class="field">
+                        <div class="label-container label-center">
+                            <label for="type">Tipo</label>
+                        </div>
+                        <div class="content-container">
+                            <input placeholder="Tipo" type="text" id="type" name="type"
+                                class="poa-input" />
+                        </div>
                     </div>
                 </div>
 

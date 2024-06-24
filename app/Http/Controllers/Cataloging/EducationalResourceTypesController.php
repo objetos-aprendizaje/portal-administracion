@@ -50,7 +50,8 @@ class EducationalResourceTypesController extends BaseController
                     "resources/js/cataloging_module/educational_resource_types.js"
                 ],
                 "educational_resource_types" => $educational_resource_types,
-                "tabulator" => true
+                "tabulator" => true,
+                "submenuselected" => "cataloging-educational-resources",
             ]
         );
     }

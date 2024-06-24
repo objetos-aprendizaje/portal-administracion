@@ -77,21 +77,18 @@
 
                 <div class="field mt-2">
                     <div class="label-container label-center">
-                        <label for="educational_program_uid">Programa formativo <span
-                                class="text-danger">*</span></label>
+                        <label for="belongs_to_educational_program">¿Pertenece a un programa formativo?</label>
                     </div>
                     <div class="content-container mt-1">
-                        <div class="select-container">
-                            <select id="educational_program_uid" name="educational_program_uid"
-                                class="poa-select w-full">
-                                <option value="" selected>Ninguno</option>
-                                @foreach ($educational_programs as $educational_program)
-                                    <option data-is_modular="{{ $educational_program['is_modular'] }}"
-                                        value="{{ $educational_program['uid'] }}">{{ $educational_program['name'] }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <input type="hidden" name="educational_program_uid" />
+                        <div class="checkbox">
+                            <label for="belongs_to_educational_program"
+                                class="inline-flex relative items-center cursor-pointer">
+                                <input type="checkbox" id="belongs_to_educational_program"
+                                    name="belongs_to_educational_program" class="sr-only peer">
+                                <div
+                                    class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
+                                </div>
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -112,7 +109,6 @@
                                 @endforeach
                             </select>
 
-                            <input type="hidden" name="educational_program_type_uid" />
                         </div>
                     </div>
                 </div>
@@ -131,22 +127,22 @@
                                         {{ $course_type['name'] }}</option>
                                 @endforeach
                             </select>
-                            <input type="hidden" name="course_type_uid" />
-
                         </div>
                     </div>
                 </div>
 
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="min_required_students">Mínimo de estudiantes requeridos</label>
-                    </div>
+                <section id="min-required-students-container">
+                    <div class="field mt-2">
+                        <div class="label-container label-center">
+                            <label for="min_required_students">Mínimo de estudiantes requeridos</label>
+                        </div>
 
-                    <div class="content-container mt-1">
-                        <input type="number" class="poa-input" id="min_required_students" name="min_required_students"
-                            value="0" />
+                        <div class="content-container mt-1">
+                            <input type="number" class="poa-input" id="min_required_students"
+                                name="min_required_students" value="0" />
+                        </div>
                     </div>
-                </div>
+                </section>
 
                 <div class="field mt-2">
                     <div class="label-container label-center">
@@ -164,7 +160,7 @@
                     </div>
                 </div>
 
-                <section id="inscription-dates">
+                <section id="inscription-dates-container">
                     <div class="field mt-2">
                         <div class="label-container label-center">
                             <label for="inscription_start_date">Fecha de inicio de inscripción <span
@@ -189,27 +185,98 @@
 
                 </section>
 
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="enrolling_start_date">Fecha de inicio de matriculación <span
-                                class="text-danger">*</span></label>
+                <section id="validate-student-registrations-container">
+                    <div class="field mt-2">
+                        <div class="label-container label-center">
+                            <label for="validate_student_registrations">Validar registros de estudiantes</label>
+                        </div>
+                        <div class="content-container mt-1">
+                            <div class="checkbox">
+                                <label for="validate_student_registrations"
+                                    class="inline-flex relative items-center cursor-pointer">
+                                    <input type="checkbox" id="validate_student_registrations"
+                                        name="validate_student_registrations" class="sr-only peer">
+                                    <div
+                                        class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
                     </div>
-                    <div class="content-container mt-1">
-                        <input type="datetime-local" class="poa-input" id="enrolling_start_date"
-                            name="enrolling_start_date" />
-                    </div>
-                </div>
+                </section>
 
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="enrolling_finish_date">Fecha de fin de matriculación <span
-                                class="text-danger">*</span></label>
+                <section class="hidden" id="criteria-area">
+                    <div class="field mt-2">
+                        <div class="label-container">
+                            <label for="evaluation_criteria">Criterio de validación <span
+                                    class="text-danger">*</span></label>
+                        </div>
+
+                        <div class="content-container mt-1">
+                            <textarea placeholder="Los criterios de evaluación son los siguientes..." rows="5" class="poa-input"
+                                id="evaluation_criteria" name="evaluation_criteria"></textarea>
+                        </div>
                     </div>
-                    <div class="content-container mt-1">
-                        <input type="datetime-local" class="poa-input" id="enrolling_finish_date"
-                            name="enrolling_finish_date" />
+                </section>
+
+                <section class="hidden" id="documents-container">
+                    <div class="field">
+                        <div class="label-container">
+                            <label>Documentos necesarios para la inscripción</label>
+                        </div>
+
+                        <div class="content-container" id="document-container">
+                            <div class="document-list" id="document-list">
+
+                            </div>
+
+                            <div class="flex justify-end">
+                                <div>
+                                    <button type="button" class="btn-icon" id="btn-add-document">
+                                        {{ e_heroicon('plus', 'outline') }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                </section>
+
+                <section id="cost-container">
+                    <div class="field mt-2">
+                        <div class="label-container label-center">
+                            <label for="cost">Coste (€)</label>
+                        </div>
+                        <div class="content-container mt-1">
+                            <input type="number" placeholder="100€" step="any" class="poa-input"
+                                id="cost" name="cost" value="" />
+                        </div>
+
+                    </div>
+                </section>
+
+                <section class="hidden" id="enrolling-dates-container">
+                    <div class="field mt-2">
+                        <div class="label-container label-center">
+                            <label for="enrolling_start_date">Fecha de inicio de matriculación <span
+                                    class="text-danger">*</span></label>
+                        </div>
+                        <div class="content-container mt-1">
+                            <input type="datetime-local" class="poa-input" id="enrolling_start_date"
+                                name="enrolling_start_date" />
+                        </div>
+                    </div>
+
+                    <div class="field mt-2">
+                        <div class="label-container label-center">
+                            <label for="enrolling_finish_date">Fecha de fin de matriculación <span
+                                    class="text-danger">*</span></label>
+                        </div>
+                        <div class="content-container mt-1">
+                            <input type="datetime-local" class="poa-input" id="enrolling_finish_date"
+                                name="enrolling_finish_date" />
+                        </div>
+                    </div>
+                </section>
 
                 <div class="field mt-2">
                     <div class="label-container label-center">
@@ -299,36 +366,6 @@
                     </div>
                 </div>
 
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="validate_student_registrations">Validar registros de estudiantes</label>
-                    </div>
-                    <div class="content-container mt-1">
-                        <div class="checkbox">
-                            <label for="validate_student_registrations"
-                                class="inline-flex relative items-center cursor-pointer">
-                                <input type="checkbox" id="validate_student_registrations"
-                                    name="validate_student_registrations" class="sr-only peer">
-                                <div
-                                    class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="field mt-2 no-visible" id="criteria-area">
-                    <div class="label-container">
-                        <label for="evaluation_criteria">Criterio de validación <span
-                                class="text-danger">*</span></label>
-                    </div>
-
-                    <div class="content-container mt-1">
-                        <textarea placeholder="Los criterios de evaluación son los siguientes..." rows="5" class="poa-input"
-                            id="evaluation_criteria" name="evaluation_criteria"></textarea>
-                    </div>
-                </div>
-
                 <div class="hidden mt-2" id="validation-information-field">
                     <div class="label-container label-center">
                         <label for="validation_information">Información de validación</label>
@@ -351,17 +388,19 @@
                     </div>
                 </div>
 
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="tags">Etiquetas</label>
-                    </div>
+                <section id="tags-container">
+                    <div class="field mt-2">
+                        <div class="label-container label-center">
+                            <label for="tags">Etiquetas</label>
+                        </div>
 
-                    <div class="content-container mt-1" id="tags-container">
-                        <input id="tags" name="tags" autocomplete="off" name="tags"
-                            placeholder="Introduce etiquetas" />
-                    </div>
+                        <div class="content-container mt-1" id="tags-container">
+                            <input id="tags" name="tags" autocomplete="off" name="tags"
+                                placeholder="Introduce etiquetas" />
+                        </div>
 
-                </div>
+                    </div>
+                </section>
 
                 <div class="field mt-2">
                     <div class="label-container label-center">
@@ -371,6 +410,21 @@
                     <div class="content-container mt-1">
                         <input id="contact_emails" autocomplete="off" name="contact_emails"
                             placeholder="Introduce emails de contacto" />
+                    </div>
+                </div>
+
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="lms_system_uid">LMS</label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <select class="poa-select w-full" id="lms_system_uid" name="lms_system_uid">
+                            <option value="" selected>Selecciona LMS</option>
+                            @foreach ($lmsSystems as $lms)
+                                <option value="{{ $lms->uid }}">
+                                    {{ $lms->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
 
@@ -404,8 +458,8 @@
                         <label for="teachers-no-coordinators">Docentes no coordinadores</label>
                     </div>
                     <div class="content-container mt-1" id="teachers-container">
-                        <select id="teachers-no-coordinators" class="mb-4" name="teacher_no_coordinators[]" multiple
-                            placeholder="Selecciona un docente no coordinador..." autocomplete="off">
+                        <select id="teachers-no-coordinators" class="mb-4" name="teacher_no_coordinators[]"
+                            multiple placeholder="Selecciona un docente no coordinador..." autocomplete="off">
                             @foreach ($teachers as $teacher)
                                 <option value="{{ $teacher['uid'] }}">
                                     {{ $teacher['first_name'] }} {{ $teacher['last_name'] }}</option>
@@ -414,58 +468,28 @@
                     </div>
                 </div>
 
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="select-categories">Categorías</label>
-                    </div>
-
-                    <div class="content-container mt-1" id="categories-container">
-                        <select id="select-categories" class="mb-4" name="categories[]" multiple
-                            placeholder="Selecciona categorías..." autocomplete="off">
-                            @foreach ($categories as $category)
-                                <option value="{{ $category['uid'] }}">
-                                    {{ $category['name'] }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                </div>
-
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="cost">Coste (€)</label>
-                    </div>
-                    <div class="content-container mt-1">
-                        <input type="number" placeholder="100€" step="any" class="poa-input" id="cost"
-                            name="cost" value="0" />
-                    </div>
-
-                </div>
-
-                <div class="field">
-                    <div class="label-container">
-                        <label>Documentos necesarios para la inscripción</label>
-                    </div>
-
-                    <div class="content-container" id="document-container">
-                        <div class="document-list" id="document-list">
-
-                        </div>
-
-                        <div class="flex justify-end">
-                            <div>
-                                <button type="button" class="btn-icon" id="btn-add-document">
-                                    {{ e_heroicon('plus', 'outline') }}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <section id="carrousel-big">
+                <section id="categories-container">
                     <div class="field mt-2">
                         <div class="label-container label-center">
-                            <label for="featured_big_carrousel">Destacar en el carrousel grande</label>
+                            <label for="select-categories">Categorías</label>
+                        </div>
+
+                        <div class="content-container mt-1" id="categories-container">
+                            <select id="select-categories" class="mb-4" name="categories[]" multiple
+                                placeholder="Selecciona categorías..." autocomplete="off">
+                                @foreach ($categories as $category)
+                                    <option value="{{ $category['uid'] }}">
+                                        {{ $category['name'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="feature-main-slider-container">
+                    <div class="field mt-2">
+                        <div class="label-container label-center">
+                            <label for="featured_big_carrousel">Destacar en el slider principal</label>
                         </div>
 
                         <div class="content-container mt-1">
@@ -509,10 +533,24 @@
 
                         <div class="field mt-2">
                             <div class="label-container">
+                                <label for="featured_slider_color_font">Color de la tipografía</label>
+                            </div>
+
+                            <div class="content-container mt-1">
+                                <div class="coloris-button">
+                                    <input value="" id="featured_slider_color_font"
+                                        name="featured_slider_color_font" class="coloris" type="text"
+                                        data-coloris>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field mt-2">
+                            <div class="label-container">
                                 <label for="featured_big_carrousel_image_path">Imagen en el carrousel grande</label>
                             </div>
                             <div class="content-container mt-1">
-                                <div class="poa-input-image">
+                                <div class="poa-input-image mb-2">
                                     <img id="featured_big_carrousel_image_path_preview"
                                         src="{{ env('NO_IMAGE_SELECTED_PATH') }}" />
 
@@ -530,13 +568,15 @@
                                         </div>
                                     </div>
                                 </div>
+                                <a id="previsualize-slider" href="javascript:void(0)">Previsualizar slider</a>
                             </div>
                         </div>
+
                     </div>
 
                 </section>
 
-                <section id="carrousel-small">
+                <section id="feature-main-carrousel-container">
                     <div class="field mt-2">
                         <div class="label-container label-center">
                             <label for="featured_small_carrousel">Destacar en el carrousel pequeño</label>

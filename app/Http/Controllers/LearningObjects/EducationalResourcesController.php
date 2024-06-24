@@ -34,7 +34,8 @@ class EducationalResourcesController extends BaseController
                 "tabulator" => true,
                 "tomselect" => true,
                 "educational_resources_types" => $educational_resources_types,
-                "categories" => $categories
+                "categories" => $categories,
+                "submenuselected" => "learning-objects-educational-resources",
             ]
         );
     }

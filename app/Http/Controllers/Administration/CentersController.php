@@ -28,6 +28,7 @@ class CentersController extends BaseController
                     "resources/js/administration_module/centers.js"
                 ],
                 "tabulator" => true,
+                "submenuselected" => "centres",
             ]
         );
     }

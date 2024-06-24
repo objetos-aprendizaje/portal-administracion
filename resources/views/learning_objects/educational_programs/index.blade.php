@@ -22,6 +22,11 @@
                         {{ e_heroicon('arrow-path', 'outline') }}
                     </button>
                 </div>
+                <div>
+                    <button type="button" class="btn-icon" id="change-statuses-btn">
+                        {{ e_heroicon('arrows-right-left', 'outline') }}
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -33,7 +38,11 @@
 
     </div>
 
-    @include('partials.modal-confirmation')
     @include('learning_objects.educational_programs.educational_program_modal')
+    @include('learning_objects.educational_programs.change_statuses_educational_programs_modal')
+    @include('learning_objects.educational_programs.educational_program_students_modal')
+    @include('learning_objects.educational_programs.enroll_educational_program_modal')
+    @include('learning_objects.educational_programs.enroll_educational_program_csv_modal')
+    @include('partials.modal-confirmation')
 
 @endsection

@@ -19,10 +19,17 @@ class CompetencesModel extends Model
     {
         return $this->belongsTo(CompetencesModel::class, 'parent_competence_uid')->with('parentCompetence')->whereNull('parent_competence_uid')->orderBy('name', 'ASC');
     }
+
     public function subcompetences()
     {
         return $this->hasMany(CompetencesModel::class, 'parent_competence_uid', 'uid')
-            ->with(['subcompetences', 'learningResults']);
+            ->orderBy('created_at', 'ASC')
+            ->with(['subcompetences' => function ($query) {
+                $query->orderBy('name', 'ASC')
+                      ->with(['learningResults' => function ($query) {
+                          $query->orderBy('created_at', 'ASC');
+                      }]);
+            }]);
     }
 
     public function learningResults()

@@ -29,6 +29,7 @@
             <span class="font-roboto-bold">broaderRelationsSkillPillar.csv</span>
         </p>
 
+        <p>Por favor, ten en cuenta que este proceso es muy tedioso debido a la longitud del marco ESCO, por lo que es muy probable que tarde varios minutos</p>
 
         <div class="poa-form mt-4">
 

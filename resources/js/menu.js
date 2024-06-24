@@ -2,13 +2,14 @@ import { setCookie, getCookie } from "./cookie_handler.js";
 
 document.addEventListener("DOMContentLoaded", function () {
     setupMainMenuHoverBehavior();
-    handleSubmenuPositioning();
+    //handleSubmenuPositioning();
 
     // Botón para contraer o desplegar menú
     var toggleButton = document.getElementById("collapse-expand-menu-btn");
     toggleButton.addEventListener("click", function () {
         toggleMenu();
     });
+
 
     // Sacamos de caché el estado del menú
     const menuStatusCookie = getCookie("menuStatus");
@@ -76,26 +77,58 @@ function setupMainMenuHoverBehavior() {
     // Obtén el elemento del menú principal
     var mainMenu = document.getElementById("main-menu");
     // Selecciona todos los elementos de menú en el menú principal
-    var menuItems = mainMenu.querySelectorAll("li");
+    var menuItems = mainMenu.querySelectorAll(".container-menu");
 
     // Itera sobre los elementos de menú
     menuItems.forEach(function (menuItem) {
         // Encuentra el submenú asociado al elemento de menú actual
         var subMenu = menuItem.querySelector(".sub-menu");
 
-        // Agrega el evento "mouseover" para mostrar el submenú al pasar el cursor sobre el elemento de menú
-        menuItem.addEventListener("mouseover", function () {
+        var closeIcon = menuItem.querySelector(".close-sub-menu");
+        var openIcon = menuItem.querySelector(".open-sub-menu");
+
+        var clickObject = menuItem.querySelector("li");
+        // Agrega el evento "click" para mostrar y/o ocultar el submenú
+        clickObject.addEventListener("click", function () {
+
             if (subMenu) {
-                subMenu.classList.remove("hidden");
+                if (subMenu.classList.contains('hidden-opacity')) {
+                    subMenu.style.height = subMenu.scrollHeight + 'px';
+                    subMenu.classList.remove('hidden-opacity');
+                    subMenu.classList.add('sub-menu-width');
+                    setTimeout(() => {
+                        subMenu.style.height = 'auto';
+                    }, 500); // Duración de la transición en ms
+
+                    closeIcon.classList.add('hidden');
+                    openIcon.classList.remove('hidden');
+
+                } else {
+                    subMenu.style.height = subMenu.scrollHeight + 'px';
+                    setTimeout(() => {
+                        subMenu.style.height = '0';
+                    }, 10); // Pequeño retraso para permitir el repaint antes de colapsar
+                    subMenu.classList.add('hidden-opacity');
+                    subMenu.classList.remove('sub-menu-width');
+
+                    closeIcon.classList.remove('hidden');
+                    openIcon.classList.add('hidden');
+                }
             }
         });
 
-        // Agrega el evento "mouseout" para ocultar el submenú al retirar el cursor del elemento de menú
-        menuItem.addEventListener("mouseout", function () {
-            if (subMenu) {
-                subMenu.classList.add("hidden");
-            }
-        });
+        var menuSelected = menuItem.querySelector("li");
+
+
+        if(menuSelected.classList.contains('menu-element-selected')){
+            subMenu.style.height = subMenu.scrollHeight + 'px';
+            subMenu.classList.remove('hidden-opacity');
+            subMenu.classList.add('sub-menu-width');
+            setTimeout(() => {
+                subMenu.style.height = 'auto';
+            }, 500); // Duración de la transición en ms
+        }
+
     });
 }
 
@@ -105,10 +138,27 @@ function setupMainMenuHoverBehavior() {
 function toggleMenu() {
     const menu = document.querySelector(".menu");
 
+    var closeIcon = document.querySelectorAll(".close-sub-menu");
+    var openIcon = document.querySelectorAll(".open-sub-menu");
+
+
+
     if (menu.classList.contains("menu-collapsed")) {
         setMenuStatus("menu-non-collapsed");
+        closeIcon.forEach(function (icon) {
+            icon.classList.remove('hidden');
+        });
+        openIcon.forEach(function (icon) {
+            icon.classList.add('hidden');
+        });
     } else if (menu.classList.contains("menu-non-collapsed")) {
         setMenuStatus("menu-collapsed");
+        closeIcon.forEach(function (icon) {
+            icon.classList.add('hidden');
+        });
+        openIcon.forEach(function (icon) {
+            icon.classList.add('hidden');
+        });
     }
 }
 

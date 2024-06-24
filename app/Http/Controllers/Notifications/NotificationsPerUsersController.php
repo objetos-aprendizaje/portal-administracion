@@ -27,7 +27,8 @@ class NotificationsPerUsersController extends BaseController
                     "resources/js/notifications_module/notifications_per_users.js"
                 ],
                 "notifications_per_users" => $notifications_per_users,
-                "tabulator" => true
+                "tabulator" => true,
+                "submenuselected" => "notifications-per-users",
             ]
         );
     }

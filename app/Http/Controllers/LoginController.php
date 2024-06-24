@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\GeneralOptionsModel;
+use App\Models\Saml2TenantsModel;
 use App\Models\UsersModel;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
@@ -10,6 +11,7 @@ use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Cache;
 
 
 class LoginController extends BaseController
@@ -22,6 +24,23 @@ class LoginController extends BaseController
         if ($logo_bd != null) $logo = $logo_bd['option_value'];
         else $logo = null;
 
+
+        $loginCas = GeneralOptionsModel::where('option_name', 'cas_active')->first();
+        $loginCasUrl = Saml2TenantsModel::where('key', 'cas')->first();
+
+        if($loginCas['option_value'] == 1) {
+            $urlCas = url('saml2/' . $loginCasUrl->uuid . '/login');
+        } else $urlCas = false;
+
+        $loginRediris = GeneralOptionsModel::where('option_name', 'rediris_active')->first();
+        $loginRedirisUrl = Saml2TenantsModel::where('key', 'rediris')->first();
+
+        if($loginRediris['option_value'] == 1) {
+            $urlRediris = url('saml2/' . $loginRedirisUrl->uuid . '/login');
+        } else $urlRediris = false;
+
+        $parameters_login_systems = Cache::get('parameters_login_systems');
+
         return view('non_authenticated.login', [
             "page_name" => "Inicia sesión",
             "page_title" => "Inicia sesión",
@@ -29,7 +48,10 @@ class LoginController extends BaseController
             "resources" => [
                 "resources/js/login.js"
             ],
-            "cert_login" => env('DOMINIO_CERTIFICADO')
+            "cert_login" => env('DOMINIO_CERTIFICADO'),
+            "urlCas" => $urlCas,
+            "urlRediris" => $urlRediris,
+            "parameters_login_systems" => $parameters_login_systems
         ]);
     }
 
@@ -122,7 +144,7 @@ class LoginController extends BaseController
         Session::flush();
         Auth::logout();
 
-        $url_logout = "https://".env('DOMINIO_PRINCIPAL')."/login";
+        $url_logout = env('APP_URL')."/login";
 
         return redirect($url_logout);
     }
@@ -131,13 +153,13 @@ class LoginController extends BaseController
         $user = UsersModel::where('token_x509', $token)->first();
 
         if ($user){
-            $url_logout = "https://".env('DOMINIO_PRINCIPAL')."/login";
+            $url_logout = env('DOMINIO_PRINCIPAL')."/login";
             Auth::login($user);
             $this->deleteTokenLogin($user);
-            return redirect("https://".env('DOMINIO_PRINCIPAL'));
+            return redirect(env('DOMINIO_PRINCIPAL'));
         }else{
             $this->deleteTokenLogin($user);
-            return redirect("https://".env('DOMINIO_PRINCIPAL')."/login?e=certificate-error");
+            return redirect(env('DOMINIO_PRINCIPAL')."/login?e=certificate-error");
         }
     }
     private function deleteTokenLogin($user){

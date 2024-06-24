@@ -85,6 +85,12 @@ function initHandlers() {
         .addEventListener("click", function () {
             controlSaveHandlerFilters();
         });
+
+    document
+        .getElementById("export-users-btn")
+        .addEventListener("click", () => {
+            exportUsers();
+        });
 }
 
 /**
@@ -118,6 +124,22 @@ function initializeTomSelect() {
     });
 }
 
+function exportUsers() {
+    const params = {
+        method: "POST",
+        url: "/users/list_users/export_users",
+        loader: true,
+    };
+
+    apiFetch(params).then((data) => {
+        // Accede a la propiedad downloadUrl del objeto JSON
+        const downloadUrl = data.downloadUrl;
+
+        // Inicia la descarga del archivo
+        window.location.href = downloadUrl;
+    });
+}
+
 /**
  * Elimina usuarios seleccionados.
  * Realiza una petición DELETE al servidor y actualiza la tabla si tiene éxito.
@@ -129,7 +151,7 @@ async function deleteUsers() {
         toast: true,
         loader: true,
         stringify: true,
-        url: "/users/list_users/delete_users"
+        url: "/users/list_users/delete_users",
     };
 
     apiFetch(params).then(() => {
@@ -190,7 +212,7 @@ async function initializeUsersTable() {
                 formatter: function (cell, formatterParams, onRendered) {
                     const imagePath = cell.getValue()
                         ? cell.getValue()
-                        : "default_images/no-user.svg";
+                        : "data/images/default_images/no-user.svg";
                     return `
                 <div class="flex justify-center">
                     <img src="/${imagePath}" alt="Imagen" class="w-8 rounded-full">

@@ -46,4 +46,13 @@ class BlocksModel extends Model
         );
     }
 
+    public function learningResults() {
+        return $this->belongsToMany(
+            LearningResultsModel::class,
+            'learning_results_blocks',
+            'course_block_uid',
+            'learning_result_uid'
+        );
+    }
+
 }

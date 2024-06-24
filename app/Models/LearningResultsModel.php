@@ -12,7 +12,7 @@ class LearningResultsModel extends Model
     protected $primaryKey = 'uid';
 
     protected $fillable = [
-        'uid', 'name', 'description', 'competence_uid'
+        'uid', 'name', 'description', 'competence_uid', 'type'
     ];
 
     protected $keyType = 'string';

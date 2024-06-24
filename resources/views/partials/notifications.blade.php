@@ -1,10 +1,9 @@
 <div id="notification-box"
-class="hidden notification-box bg-white absolute w-[600px] top-[calc(100%+10px)] right-0 rounded-lg overflow-y-scroll border-gray-200 border-[3.5px] py-[24px] px-[24px] max-h-[300px]">
+class="hidden notification-box bg-white absolute w-[300px] md:w-[600px] top-[calc(100%+10px)] rounded-lg overflow-y-scroll border-gray-200 border-[3.5px] py-[24px] px-[24px] max-h-[300px]">
 
 <div class="font-roboto-bold text-[22px] text-primary leading-[22px]">Notificaciones</div>
 
 <hr class="mt-[18px] border-gray-300" />
-
 
 @if (!empty($notifications))
     @foreach ($notifications as $notification)

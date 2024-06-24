@@ -5,10 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class UserNotificationTypesPreferencesModel extends Authenticatable
+class UserGeneralNotificationTypesDisabledModel extends Authenticatable
 {
     use HasFactory;
-    protected $table = 'user_notification_types_preferences';
+    protected $table = 'user_general_notification_types_disabled';
     protected $primaryKey = 'uid';
 
     protected $keyType = 'string';

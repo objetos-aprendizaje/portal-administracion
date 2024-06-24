@@ -3,6 +3,8 @@ import {
     updateArrayRecords,
     tabulatorBaseConfig,
     updatePaginationInfo,
+    controlsSearch,
+    controlsPagination
 } from "../tabulator_handler";
 import { heroicon } from "../heroicons";
 import {

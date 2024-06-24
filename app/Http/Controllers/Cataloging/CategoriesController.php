@@ -54,6 +54,7 @@ class CategoriesController extends BaseController
                 "categories" => $categories,
                 "categories_anidated" => $categories_anidated,
                 "coloris" => true,
+                "submenuselected" => "cataloging-categories",
             ]
         );
     }
