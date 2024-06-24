@@ -8,6 +8,8 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use App\Models\UserRolesModel;
+use App\Models\UserRoleRelationshipsModel;
 
 class CertificateAccessController extends BaseController
 {
@@ -36,6 +38,13 @@ class CertificateAccessController extends BaseController
                 $user->logged_x509 = 1;
                 $user->save();
 
+                $rol = UserRolesModel::where("code", "TEACHER")->first();
+                $rol_relation = new UserRoleRelationshipsModel();
+                $rol_relation->uid = generate_uuid();
+                $rol_relation->user_uid = $user->uid;
+                $rol_relation->user_role_uid = $rol;
+                $rol_relation->save();
+
                 $user = UsersModel::where('email', strtolower($_SERVER["REDIRECT_SSL_CLIENT_SAN_Email_0"]))->first();
 
                 return redirect($this->redirectWithTokenX509($user));
@@ -44,7 +53,7 @@ class CertificateAccessController extends BaseController
 
         }else{
 
-            return redirect("https://".env('DOMINIO_PRINCIPAL')."/login?e=certificate-error");
+            return redirect(env('DOMINIO_PRINCIPAL')."/login?e=certificate-error");
 
         }
     }
@@ -52,7 +61,7 @@ class CertificateAccessController extends BaseController
 
         $user->token_x509 = generateToken();
         $user->save();
-        $url = "https://".env('DOMINIO_CERTIFICADO')."/token_login/".$user->token_x509;
+        $url = env('DOMINIO_PRINCIPAL')."/token_login/".$user->token_x509;
         return $url;
 
     }

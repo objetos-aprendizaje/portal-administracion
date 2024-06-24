@@ -23,14 +23,6 @@
             </p>
         </div>
 
-        <div class="border-primary border p-4 rounded cursor-pointer">
-            <h3>Otros marcos de competencias</h3>
-
-            <p>
-                Importa un archivo CSV con el marco de competencias que desees.
-            </p>
-        </div>
-
     </div>
 
 </div>

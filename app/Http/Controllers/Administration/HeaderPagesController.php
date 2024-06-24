@@ -25,6 +25,7 @@ class HeaderPagesController extends BaseController
                 ],
                 "tinymce" => true,
                 "tabulator" => true,
+                "submenuselected" => "header-pages",
             ]
         );
     }

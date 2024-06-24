@@ -38,6 +38,7 @@ class CertificationTypesController extends BaseController
                 "categories" => $categories,
                 "tomselect" => true,
                 "choicesjs" => true,
+                "submenuselected" => "cataloging-certification-types",
             ]
         );
     }

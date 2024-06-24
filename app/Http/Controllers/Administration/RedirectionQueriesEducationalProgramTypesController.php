@@ -32,7 +32,8 @@ class RedirectionQueriesEducationalProgramTypesController extends BaseController
                     "resources/js/modal_handler.js"
                 ],
                 "tabulator" => true,
-                "educational_program_types" => $educational_program_types
+                "educational_program_types" => $educational_program_types,
+                "submenuselected" => "redirection-queries-educational-program-types",
             ]
         );
     }

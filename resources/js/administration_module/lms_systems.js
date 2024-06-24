@@ -199,6 +199,7 @@ function submitLmsSystemForm() {
     apiFetch(params)
         .then(() => {
             lmsSystemsTable.replaceData(endPointTable);
+            hideModal("lms-system-modal");
         })
         .catch((data) => {
             showFormErrors(data.errors);

@@ -14,6 +14,9 @@
             </div>
 
             <div>
+                <button type="button" class="btn-icon" id="btn-export-import">
+                    {{ e_heroicon('arrows-up-down', 'outline') }}
+                </button>
                 <button id="import-csv-btn" type="button" class="btn btn-icon">
                     {{ e_heroicon('folder-plus', 'outline') }}
                 </button>
@@ -42,6 +45,7 @@
     @include('cataloging.competences_learnings_results.learning_result_modal')
     @include('cataloging.competences.import_competence_framework')
     @include('cataloging.competences.import_esco_framework')
+    @include('cataloging.competences.export_import_modal')
 
 
     @include('partials.modal-confirmation')

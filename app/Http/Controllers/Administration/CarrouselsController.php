@@ -9,7 +9,8 @@ use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Logs\LogsController;
-
+use App\Models\SlidersPrevisualizationsModel;
+use Illuminate\Support\Facades\Validator;
 
 class CarrouselsController extends BaseController
 {
@@ -29,15 +30,57 @@ class CarrouselsController extends BaseController
         $courses_small_carrousel_approved = CoursesSmallCarrouselsApprovalsModel::pluck('course_uid')->toArray();
 
         return view('administration.carrousels.index', [
-            "page_name" => "Gestión de carrouseles",
-            "page_title" => "Gestión de carrouseles",
+            "page_name" => "Slider y carrousel principal",
+            "page_title" => "Slider y carrousel principal",
             "resources" => [
                 "resources/js/administration_module/carrousels.js"
             ],
             "courses_big_carrousel" => $courses_big_carrousel,
             "courses_small_carrousel" => $courses_small_carrousel,
             "courses_big_carrousel_approved" => $courses_big_carrousel_approved,
-            "courses_small_carrousel_approved" => $courses_small_carrousel_approved
+            "courses_small_carrousel_approved" => $courses_small_carrousel_approved,
+            "submenuselected" => "carrousels",
+        ]);
+    }
+
+    public function previsualizeSlider(Request $request) {
+
+        $rules = [
+            'title' => 'required',
+            'description' => 'required',
+            'image' => 'required',
+        ];
+
+        $messages = [
+            'title.required' => 'Debes especificar un título',
+            'description.required' => 'Debes especificar una descripción',
+            'image.required' => 'Debes adjuntar una imagen',
+        ];
+
+        $validator = Validator::make($request->all(), $rules, $messages);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validator->errors()->first()
+            ], 400);
+        }
+
+        // Guardamos la imagen
+        $image = $request->file('image');
+
+        $imagePath = saveFile($image, "images/previsualizations-sliders", null, true);
+
+        $previsualizationSlider = new SlidersPrevisualizationsModel();
+        $previsualizationSlider->uid = generate_uuid();
+        $previsualizationSlider->fill($request->all());
+        $previsualizationSlider->image_path = $imagePath;
+
+        $previsualizationSlider->save();
+
+        return response()->json([
+            'message' => 'Se ha guardado la previsualización del slider',
+            'previsualizationUid' => $previsualizationSlider->uid
         ]);
     }
 

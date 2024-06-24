@@ -25,6 +25,9 @@ RUN apt-get update \
     && make \
     && make install
 
+# Instalación de la extensión rdkafka para PHP
+RUN pecl install rdkafka
+
 RUN rm -rf /var/lib/apt/lists/*
 
 # Añadir el php.ini de producción ofrecido por la imagen.

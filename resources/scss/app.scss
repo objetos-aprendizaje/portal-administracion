@@ -588,7 +588,7 @@ button.element-disabled {
         @apply relative
     }
     .notification-dot {
-        @apply absolute bg-red-500 rounded-full w-1.5 h-1.5 top-2 right-0.5
+        @apply absolute bg-red-500 rounded-full w-1.5 h-1.5 top-0.5 right-0.5
     }
     @apply w-12 h-12 flex justify-center items-center rounded-full bg-[#EEEEEE] relative
 }
@@ -614,6 +614,9 @@ button.element-disabled {
 /******************************* FORMS ********************/
 .poa-form{
     & .field.no-visible {
+        @apply hidden
+    }
+    & .no-visible {
         @apply hidden
     }
 
@@ -706,7 +709,7 @@ button.element-disabled {
 }
 
 .menu.menu-non-collapsed {
-    @apply w-[260px]
+    @apply w-[300px]
 }
 .menu-show{
     @apply block
@@ -727,19 +730,14 @@ button.element-disabled {
         @apply text-primary
     }
     li {
-        @apply flex items-center gap-8 cursor-pointer relative hover:bg-[#EAEDF2]
+        @apply flex items-center gap-4 cursor-pointer relative flex-wrap
     }
-
     li:hover svg {
         @apply text-primary
     }
 
     svg {
         @apply w-7 text-[#C7C7C7]
-    }
-
-    .menu-element-selected {
-        @apply bg-[#EAEDF2] border-solid border-l-4 border-primary
     }
 
     .menu-element-selected svg {
@@ -751,11 +749,17 @@ button.element-disabled {
     }
 
     .sub-menu {
-        @apply  absolute top-0 z-50 right-[-260px] text-black w-[260px] bg-white
+        @apply  top-0 z-50 text-black bg-white opacity-100 overflow-hidden transition-opacity
     }
 
+    .sub-menu-width{
+        @apply w-[265px]
+    }
+    .sub-menu ul {
+        @apply pt-[15px]
+    }
     .sub-menu ul li {
-        @apply hover:text-primary hover:font-roboto-bold
+        @apply hover:text-primary hover:font-roboto-bold pl-[44px] pt-[10px] pr-[44px] pb-[10px]
     }
 
     .sub-menu ul li.disabled {
@@ -767,10 +771,35 @@ button.element-disabled {
     }
 
     .sub-menu a {
-        @apply text-black p-2 block w-full hover:text-primary
+        @apply text-[#8A8A8A] block w-full hover:text-primary
     }
 
-    @apply select-none fixed left-0 z-50
+    .transition-all {
+        transition: all 0.5s;
+    }
+
+    .hidden-opacity {
+        @apply opacity-0 h-0 w-0 overflow-hidden
+    }
+    .container-menu{
+        @apply px-[20px] py-[15px] my-[0px]
+    }
+    .sub-menu a.submenu-selected{
+        @apply text-primary font-roboto-bold
+    }
+    .close-sub-menu{
+        @apply absolute right-0
+    }
+    .open-sub-menu{
+        @apply absolute right-0
+    }
+    .mi-perfil {
+        @apply text-black
+    }
+    .hidden-collapse-expand-menu-btn{
+        @apply hidden
+    }
+    @apply select-none fixed left-0 overflow-y-auto h-[calc(100%-120px)]
 }
 
 /******************************* ANALYTICS ********************/
@@ -896,7 +925,6 @@ body.modal-open {
     }
     @apply flex items-center gap-[20px]
 }
-
 /******************************* ACCORDION ********************/
 .accordion {
     h3 {

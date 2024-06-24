@@ -26,6 +26,7 @@ class EducationalResourcesPerUsersController extends BaseController
                 "tabulator" => true,
                 "tomselect" => true,
                 "notifications_per_users" => $educational_resources_per_users,
+                "submenuselected" => "learning-objects-educational-resources-per-users",
             ]
         );
     }

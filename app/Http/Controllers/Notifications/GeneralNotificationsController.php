@@ -38,7 +38,8 @@ class GeneralNotificationsController extends BaseController
                 "tabulator" => true,
                 "tomselect" => true,
                 "flatpickr" => true,
-                "notification_types" => $notification_types
+                "notification_types" => $notification_types,
+                "submenuselected" => "notifications-general",
             ]
         );
     }
@@ -265,7 +266,6 @@ class GeneralNotificationsController extends BaseController
             'notification_general_uid' => 'nullable|exists:general_notifications,uid',
             'end_date' => 'required',
             'type' => 'required',
-            'notification_type_uid' => 'required'
         ];
 
         $notification_general_uid = $request->get('notification_general_uid');

@@ -34,7 +34,8 @@ class EmailNotificationsController extends BaseController
                 "tabulator" => true,
                 "tomselect" => true,
                 "flatpickr" => true,
-                "notification_types" => $notification_types
+                "notification_types" => $notification_types,
+                "submenuselected" => "notifications-email",
             ]
         );
     }
@@ -49,6 +50,8 @@ class EmailNotificationsController extends BaseController
 
         $query = EmailNotificationsModel::query()
             ->with('emailNotificationType')
+            ->with('roles')
+            ->with('users')
             ->join('notifications_types', 'email_notifications.notification_type_uid', '=', 'notifications_types.uid', 'left')
             ->select('email_notifications.*', 'notifications_types.name as notification_type_name');
 
@@ -235,6 +238,14 @@ class EmailNotificationsController extends BaseController
                     $query->whereDate('send_date', '<=', $filter['value'])
                         ->whereDate('send_date', '>=', $filter['value']);
                 }
+            }else if ($filter['database_field'] == "roles") {
+                $query->whereHas('roles', function ($query) use ($filter) {
+                    $query->whereIn('user_roles.uid', $filter['value']);
+                });
+            } else if ($filter['database_field'] == "users") {
+                $query->whereHas('users', function ($query) use ($filter) {
+                    $query->whereIn('users.uid', $filter['value']);
+                });
             }
         }
     }

@@ -16,9 +16,9 @@
 
             <div class="gap-4 mb-4 flex-col grid md:grid-cols-2 grid-cols-1">
 
-                <div class="field">
+                <div class="mb-4">
                     <div class="label-container label-center">
-                        <label for="type">Para <span class="text-danger">*</span></label>
+                        <label for="type-filter">Para <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
                         <select class="poa-select w-full" id="type-filter" name="type-filter">
@@ -30,7 +30,7 @@
                     </div>
                 </div>
 
-                <div class="field no-visible" id="destination-roles-filter">
+                <div class="mb-4 no-visible" id="destination-roles-filter">
                     <div class="label-container label-center">
                         <label for="roles-filter">Destino <span class="text-danger">*</span></label>
                     </div>
@@ -40,7 +40,7 @@
                     </div>
                 </div>
 
-                <div class="field no-visible" id="destination-users-filter">
+                <div class="mb-4  no-visible" id="destination-users-filter">
                     <div class="label-container label-center">
                         <label for="users-filter">Destino <span class="text-danger">*</span></label>
                     </div>

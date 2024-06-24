@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Logs\LogsController;
+use App\Models\AutomaticNotificationTypesModel;
 use App\Rules\NifNie;
 use Illuminate\Support\Facades\Validator;
 
@@ -19,11 +20,16 @@ class MyProfileController extends BaseController
 
     public function index()
     {
-        $user = Auth::user();
-
-        $user->load('notificationsTypesPreferences');
 
         $notification_types = NotificationsTypesModel::all();
+        $automaticNotificationTypes = AutomaticNotificationTypesModel::all();
+
+        $user = Auth::user();
+        $userGeneralNotificationsDisabled = $user->generalNotificationsTypesDisabled()->get()->toArray();
+        $userEmailNotificationsDisabled = $user->emailNotificationsTypesDisabled()->get()->toArray();
+
+        $userAutomaticGeneralNotificationsDisabled = $user->automaticGeneralNotificationsTypesDisabled()->get()->toArray();
+        $userAutomaticEmailNotificationsDisabled = $user->automaticEmailNotificationsTypesDisabled()->get()->toArray();
 
         return view(
             'my_profile.index',
@@ -36,6 +42,12 @@ class MyProfileController extends BaseController
                 ],
                 'notification_types' => $notification_types,
                 "user" => $user,
+                "submenuselected" => "my_profile",
+                "userGeneralNotificationsDisabled" => $userGeneralNotificationsDisabled,
+                "userEmailNotificationsDisabled" => $userEmailNotificationsDisabled,
+                "automaticNotificationTypes" => $automaticNotificationTypes,
+                "userAutomaticGeneralNotificationsDisabled" => $userAutomaticGeneralNotificationsDisabled,
+                "userAutomaticEmailNotificationsDisabled" => $userAutomaticEmailNotificationsDisabled
             ]
         );
     }
@@ -65,20 +77,13 @@ class MyProfileController extends BaseController
         $user->general_notifications_allowed = $request->input('general_notifications_allowed');
         $user->email_notifications_allowed = $request->input('email_notifications_allowed');
 
-        $notification_types = $request->input('notification_types');
-        $notification_types = json_decode($notification_types, true);
+        DB::transaction(function () use ($user, $request) {
 
-        DB::transaction(function () use ($notification_types, $user, $request) {
-            $notification_types_sync = [];
-            foreach ($notification_types as $notification_type) {
-                $notification_types_sync[] = [
-                    'uid' => generate_uuid(),
-                    'notification_type_uid' => $notification_type,
-                    'user_uid' => $user->uid,
-                ];
-            }
+            $this->syncGeneralNotificationTypes($request);
+            $this->syncEmailNotificationTypes($request);
 
-            $user->notificationsTypesPreferences()->sync($notification_types_sync);
+            $this->syncAutomaticGeneralNotificationTypes($request);
+            $this->syncAutomaticEmailNotificationTypes($request);
 
             if ($request->file('photo_path')) {
                 $file = $request->file('photo_path');
@@ -100,5 +105,69 @@ class MyProfileController extends BaseController
         });
 
         return response()->json(['message' => 'Tu perfil se ha actualizado correctamente'], 200);
+    }
+
+    private function syncGeneralNotificationTypes(Request $request)
+    {
+        $general_notification_types_disabled = $request->input('general_notification_types_disabled');
+        $general_notification_types_disabled = json_decode($general_notification_types_disabled, true);
+        $general_notification_types_sync = $this->prepareNotificationTypesSync($general_notification_types_disabled);
+
+        auth()->user()->generalNotificationsTypesDisabled()->sync($general_notification_types_sync);
+    }
+
+    private function syncEmailNotificationTypes(Request $request)
+    {
+        $email_notification_types_disabled = $request->input('email_notification_types_disabled');
+        $email_notification_types_disabled = json_decode($email_notification_types_disabled, true);
+        $email_notification_types_sync = $this->prepareNotificationTypesSync($email_notification_types_disabled);
+
+        auth()->user()->emailNotificationsTypesDisabled()->sync($email_notification_types_sync);
+    }
+
+    private function syncAutomaticGeneralNotificationTypes(Request $request)
+    {
+        $automatic_general_notification_types_disabled = $request->input('automatic_general_notification_types_disabled');
+        $automatic_general_notification_types_disabled = json_decode($automatic_general_notification_types_disabled, true);
+        $automatic_general_notification_types_sync = $this->prepareAutomaticNotificationTypesSync($automatic_general_notification_types_disabled);
+
+        auth()->user()->automaticGeneralNotificationsTypesDisabled()->sync($automatic_general_notification_types_sync);
+    }
+
+    private function syncAutomaticEmailNotificationTypes(Request $request)
+    {
+        $automatic_email_notification_types_disabled = $request->input('automatic_email_notification_types_disabled');
+        $automatic_email_notification_types_disabled = json_decode($automatic_email_notification_types_disabled, true);
+        $automatic_email_notification_types_sync = $this->prepareAutomaticNotificationTypesSync($automatic_email_notification_types_disabled);
+
+        auth()->user()->automaticEmailNotificationsTypesDisabled()->sync($automatic_email_notification_types_sync);
+    }
+
+    private function prepareNotificationTypesSync($notification_types)
+    {
+        $notification_types_sync = [];
+
+        foreach ($notification_types as $notification_type) {
+            $notification_types_sync[] = [
+                'uid' => generate_uuid(),
+                'notification_type_uid' => $notification_type,
+            ];
+        }
+
+        return $notification_types_sync;
+    }
+
+    private function prepareAutomaticNotificationTypesSync($notification_types)
+    {
+        $notification_types_sync = [];
+
+        foreach ($notification_types as $notification_type) {
+            $notification_types_sync[] = [
+                'uid' => generate_uuid(),
+                'automatic_notification_type_uid' => $notification_type,
+            ];
+        }
+
+        return $notification_types_sync;
     }
 }

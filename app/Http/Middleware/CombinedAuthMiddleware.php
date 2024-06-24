@@ -106,18 +106,24 @@ class CombinedAuthMiddleware
                 return $notification;
             });
 
-        $notifications_changes_statuses_courses = NotificationsChangesStatusesCoursesModel::with(['user', 'status', 'course'])
-            ->where('user_uid', $user_uid)
-            ->where('date', '>=', now()->subDays(7))
-            ->orderBy('date', 'desc')
-            ->get()->map(function ($notification) {
-                $notification->type = 'course_status';
-                return $notification;
-            });
+        // Sólo incluímos estas notificaciones si el usuario no ha desactivado las notificaciones de comunicaciones de matriculación
+        $courseEnrollmentCommunications = $user->hasAnyAutomaticGeneralNotificationTypeDisabled(['COURSE_ENROLLMENT_COMMUNICATIONS']);
+        if (!$courseEnrollmentCommunications) {
+            $notifications_changes_statuses_courses = NotificationsChangesStatusesCoursesModel::with(['user', 'status', 'course'])
+                ->where('user_uid', $user_uid)
+                ->where('date', '>=', now()->subDays(7))
+                ->orderBy('date', 'desc')
+                ->get()->map(function ($notification) {
+                    $notification->type = 'course_status';
+                    return $notification;
+                });
 
-        // Combinamos notificaciones generales con notificaciones de cambios de estado de cursos y ordenamos por fecha
-        $notifications = $general_notifications->concat($notifications_changes_statuses_courses)
-            ->sortByDesc('date')->toArray();
+            // Combinamos notificaciones generales con notificaciones de cambios de estado de cursos y ordenamos por fecha
+            $notifications = $general_notifications->concat($notifications_changes_statuses_courses)
+                ->sortByDesc('date')->toArray();
+        } else {
+            $notifications = $general_notifications->toArray();
+        }
 
         // Comprobamos si tiene alguna notificación sin leer para mostrarlo en el icono de notificaciones
         $is_read_values = array_column($notifications, 'is_read');

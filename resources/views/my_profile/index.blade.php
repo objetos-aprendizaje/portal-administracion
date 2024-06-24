@@ -16,7 +16,8 @@
                         <div class="poa-input-image">
                             <img id="photo_path_preview" src="{{ $user->photo_path ?? env('NO_IMAGE_SELECTED_PATH') }}" />
 
-                            <span class="dimensions">*Se recomienda imagen con aspecto cuadrado con una resolución mínima de: 400px x 400px.
+                            <span class="dimensions">*Se recomienda imagen con aspecto cuadrado con una resolución mínima
+                                de: 400px x 400px.
                                 Formato: PNG, JPG. Tam. Máx.: 6MB</span>
 
                             <div class="select-file-container">
@@ -110,17 +111,36 @@
 
                         @foreach ($notification_types as $notification_type)
                             <div class="checkbox mb-2 ml-4">
-                                <label for="{{ $notification_type->uid }}"
+                                <label for="general-{{ $notification_type->uid }}"
                                     class="inline-flex relative items-center cursor-pointer">
 
-                                    <input type="checkbox" id="{{ $notification_type->uid }}"
-                                        class="sr-only peer notification-type" value="{{ $notification_type->uid }}"
-                                        {{ in_array($notification_type->uid, array_column($user->notificationsTypesPreferences->toArray(), 'uid')) ? 'checked' : '' }}>
+                                    <input type="checkbox" id="general-{{ $notification_type->uid }}"
+                                        class="sr-only peer general-notification-type"
+                                        value="{{ $notification_type->uid }}"
+                                        {{ !in_array($notification_type->uid, array_column($userGeneralNotificationsDisabled, 'uid')) ? 'checked' : '' }}>
 
                                     <div
                                         class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
                                     </div>
                                     <div class="checkbox-name">{{ $notification_type->name }}</div>
+                                </label>
+                            </div>
+                        @endforeach
+
+                        @foreach ($automaticNotificationTypes as $automaticNotificationType)
+                            <div class="checkbox mb-2 ml-4">
+                                <label for="automatic-general-{{ $automaticNotificationType->uid }}"
+                                    class="inline-flex relative items-center cursor-pointer">
+
+                                    <input type="checkbox" id="automatic-general-{{ $automaticNotificationType->uid }}"
+                                        class="sr-only peer automatic-general-notification-type"
+                                        value="{{ $automaticNotificationType->uid }}"
+                                        {{ !in_array($automaticNotificationType->uid, array_column($userAutomaticGeneralNotificationsDisabled, 'uid')) ? 'checked' : '' }}>
+
+                                    <div
+                                        class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
+                                    </div>
+                                    <div class="checkbox-name">{{ $automaticNotificationType->name }}</div>
                                 </label>
                             </div>
                         @endforeach
@@ -150,6 +170,42 @@
                                 <div class="checkbox-name">Recibir notificaciones por email</div>
                             </label>
                         </div>
+
+                        @foreach ($notification_types as $notification_type)
+                            <div class="checkbox mb-2 ml-4">
+                                <label for="email-{{ $notification_type->uid }}"
+                                    class="inline-flex relative items-center cursor-pointer">
+
+                                    <input type="checkbox" id="email-{{ $notification_type->uid }}"
+                                        class="sr-only peer email-notification-type"
+                                        value="{{ $notification_type->uid }}"
+                                        {{ !in_array($notification_type->uid, array_column($userEmailNotificationsDisabled, 'uid')) ? 'checked' : '' }}>
+
+                                    <div
+                                        class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
+                                    </div>
+                                    <div class="checkbox-name">{{ $notification_type->name }}</div>
+                                </label>
+                            </div>
+                        @endforeach
+
+                        @foreach ($automaticNotificationTypes as $automaticNotificationType)
+                            <div class="checkbox mb-2 ml-4">
+                                <label for="automatic-email-{{ $automaticNotificationType->uid }}"
+                                    class="inline-flex relative items-center cursor-pointer">
+
+                                    <input type="checkbox" id="automatic-email-{{ $automaticNotificationType->uid }}"
+                                        class="sr-only peer automatic-email-notification-type"
+                                        value="{{ $automaticNotificationType->uid }}"
+                                        {{ !in_array($automaticNotificationType->uid, array_column($userAutomaticEmailNotificationsDisabled, 'uid')) ? 'checked' : '' }}>
+
+                                    <div
+                                        class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
+                                    </div>
+                                    <div class="checkbox-name">{{ $automaticNotificationType->name }}</div>
+                                </label>
+                            </div>
+                        @endforeach
                     </div>
 
                 </div>

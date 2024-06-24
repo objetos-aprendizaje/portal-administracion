@@ -21,7 +21,8 @@ class StudentsCredentialsController extends BaseController
                 "resources" => [
                     "resources/js/credentials_module/students_credentials.js"
                 ],
-                "tabulator" => true
+                "tabulator" => true,
+                "submenuselected" => "credentials-students",
             ]
         );
     }

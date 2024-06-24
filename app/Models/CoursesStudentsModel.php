@@ -13,4 +13,7 @@ class CoursesStudentsModel extends Model
 
     protected $keyType = 'string';
 
+    public function course() {
+        return $this->belongsTo(CoursesModel::class, 'course_uid', 'uid');
+    }
 }

@@ -27,6 +27,7 @@ class LmsSystemsController extends BaseController
                     "resources/js/administration_module/lms_systems.js"
                 ],
                 "tabulator" => true,
+                "submenuselected" => "lms-systems",
             ]
         );
     }
@@ -131,7 +132,7 @@ class LmsSystemsController extends BaseController
     {
         $uids = $request->input('uids');
 
-        return DB::transaction(function () use ($uids) {
+        DB::transaction(function () use ($uids) {
             LmsSystemsModel::destroy($uids);
             LogsController::createLog('Eliminar sistema LMS', 'Sistemas LMS', auth()->user()->uid);
         }, 5);

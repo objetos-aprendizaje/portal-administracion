@@ -26,6 +26,7 @@ class ManagementPermissionsController extends BaseController
                 "resources" => [
                     "resources/js/administration_module/management_permissions.js"
                 ],
+                'submenuselected' => 'management-permissions',
             ]
         );
     }

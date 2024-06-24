@@ -36,7 +36,8 @@ class EducationalProgramTypesController extends BaseController
                     "resources/js/cataloging_module/educational_program_types.js"
                 ],
                 "educational_program_types" => $educational_program_types,
-                "tabulator" => true
+                "tabulator" => true,
+                "submenuselected" => "cataloging-educational-program-types",
             ]
         );
     }
@@ -127,12 +128,18 @@ class EducationalProgramTypesController extends BaseController
             $isNew = true;
         }
 
+
+        $managers_can_emit_credentials = intval($request->get('managers_can_emit_credentials'));
+        $teachers_can_emit_credentials = intval($request->get('teachers_can_emit_credentials'));
+
         $educational_program_type->fill([
             'name' => $request->get('name'),
             'description' => $request->get('description'),
-            'managers_can_emit_credentials' => $request->get('managers_can_emit_credentials') ? 1 : 0,
-            'teachers_can_emit_credentials' => $request->get('teachers_can_emit_credentials') ? 1 : 0,
+            'managers_can_emit_credentials' => $managers_can_emit_credentials,
+            'teachers_can_emit_credentials' => $teachers_can_emit_credentials,
         ]);
+
+
 
         DB::transaction(function () use ($educational_program_type, $isNew) {
             $educational_program_type->save();

@@ -20,13 +20,7 @@ class CompetencesLearningsResultsController extends BaseController
 
     public function index()
     {
-        $competences_anidated = CompetencesModel::whereNull('parent_competence_uid')
-            ->with(['subcompetences'])
-            ->orderBy('name', 'ASC')
-            ->get()->toArray();
-
-
-        $competences = CompetencesModel::orderBy('name', 'ASC')->get()->toArray();
+        $competences_anidated = $this->getCompetencesLearningResultsAnidated();
 
         return view(
             'cataloging.competences_learnings_results.index',
@@ -36,19 +30,35 @@ class CompetencesLearningsResultsController extends BaseController
                 "resources" => [
                     "resources/js/cataloging_module/competences_learnings_results.js"
                 ],
-                "competences" => $competences,
-                "competences_anidated" => $competences_anidated,
-                "coloris" => true
+                "competences_anidated" => $competences_anidated->toArray(),
+                "coloris" => true,
+                "submenuselected" => "cataloging-competences-learning-results",
             ]
         );
     }
 
     public function getAllCompetences()
     {
-
-        $competences = CompetencesModel::with('subcompetences')->get()->toArray();
+        $competences = $this->getCompetencesLearningResultsAnidated();
 
         return response()->json($competences, 200);
+    }
+
+    private function getCompetencesLearningResultsAnidated($search = null)
+    {
+        $competencesLearningResultsQuery = CompetencesModel::with('subcompetences')->whereNull('parent_competence_uid')
+            ->orderBy('created_at', 'DESC');
+
+        // Si se proporcionó un término de búsqueda, lo aplicamos
+        if ($search) {
+            $competencesLearningResultsQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('description', 'like', '%' . $search . '%');
+            });
+        }
+
+        $competencesLearningResults = $competencesLearningResultsQuery->get();
+        return $competencesLearningResults;
     }
 
     public function getCompetence($competence_uid)
@@ -148,23 +158,9 @@ class CompetencesLearningsResultsController extends BaseController
     {
         $search = $request->input("search");
 
-        $query = CompetencesModel::whereNull('parent_competence_uid')
-            ->with(['subcompetences'])
-            ->orderBy('name', 'ASC')
-            ->get()->toArray();
+        $competences = $this->getCompetencesLearningResultsAnidated($search);
 
-        // Si se proporcionó un término de búsqueda, lo aplicamos
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('description', 'like', '%' . $search . '%');
-            });
-        }
-
-        // Ahora ejecutamos la consulta y obtenemos los resultados
-        $competences = $query->get()->toArray();
-
-        $html = view('cataloging.competences_learnings_results.competences', ['competences' => $competences, 'first_loop' => true])->render();
+        $html = view('cataloging.competences_learnings_results.competences', ['competences' => $competences->toArray(), 'first_loop' => true])->render();
 
         return response()->json(['html' => $html]);
     }
@@ -254,101 +250,95 @@ class CompetencesLearningsResultsController extends BaseController
         $skills_hierarchy_file = $request->file('skills_hierarchy_file');
         $skills_hierarchy = $this->csvFileToObject($skills_hierarchy_file);
 
+        DB::transaction(function () use ($skills_hierarchy, $request) {
+            $hierarchy = $this->buildHierarchy($skills_hierarchy);
 
-        $hierarchy = $this->buildHierarchy($skills_hierarchy);
+            foreach ($hierarchy as $h) {
+                CompetencesModel::create($h);
+            }
 
-        foreach($hierarchy as $h) {
-            CompetencesModel::create($h);
+            $skills_file = $request->file('skills_file');
+            $skills = $this->csvFileToObject($skills_file);
 
-        }
+            $broader_relations_skill_pillar_file = $request->file('broader_relations_skill_pillar_file');
+            $broader_relations_skill_pillar = $this->csvFileToObject($broader_relations_skill_pillar_file);
 
+            $hierarchyCompetences = [];
+            $hierarchySkills = [];
 
-        $skills_file = $request->file('skills_file');
-        $skills = $this->csvFileToObject($skills_file);
+            //recorremos las skills
+            foreach ($skills as $skill) {
 
-        $broader_relations_skill_pillar_file = $request->file('broader_relations_skill_pillar_file');
-        $broader_relations_skill_pillar = $this->csvFileToObject($broader_relations_skill_pillar_file);
+                // recorremos el fichero que relaciona resultados y competencias
+                foreach ($broader_relations_skill_pillar as $broader_relations) {
 
+                    //verificamos que existan los datos necesarios
+                    if (isset($broader_relations[1]) && isset($skill[1])) {
 
-        $hierarchyCompetences = [];
-        $hierarchySkills = [];
+                        //localizamos el dato
+                        if ($broader_relations[1] == $skill[1]) {
 
+                            //comprobamos que $skill tiene hijos con el broarder
+                            $has_children = $this->hasChildren($broader_relations_skill_pillar, $skill[1]);
 
-        //recorremos las skills
-        foreach($skills as $skill) {
+                            //En este caso estas skills que tienen hijos, se han de considerar como competencias para almacenarlas así.
+                            if ($has_children == true) {
 
-            // recorremos el fichero que relaciona resultados y competencias
-            foreach($broader_relations_skill_pillar as $broader_relations) {
+                                $result = $this->buildHierarchyCompetences($broader_relations[3], $skill);
 
-                //verificamos que existan los datos necesarios
-                if (isset($broader_relations[1]) && isset($skill[1])){
-
-                    //localizamos el dato
-                    if($broader_relations[1] == $skill[1]) {
-
-                        //comprobamos que $skill tiene hijos con el broarder
-                        $has_children = $this->hasChildren($broader_relations_skill_pillar, $skill[1]);
-
-                        //En este caso estas skills que tienen hijos, se han de considerar como competencias para almacenarlas así.
-                        if ($has_children == true){
-
-                            $result = $this->buildHierarchyCompetences($broader_relations[3], $skill);
-
-                            $hierarchyCompetences = array_merge($hierarchyCompetences, $result);
-
+                                $hierarchyCompetences = array_merge($hierarchyCompetences, $result);
+                            }
                         }
                     }
                 }
             }
-        }
 
-        //almacenamos en base de datos
-        foreach($hierarchyCompetences as $h) {
-            CompetencesModel::create($h);
-        }
+            //almacenamos en base de datos
+            foreach ($hierarchyCompetences as $h) {
+                CompetencesModel::create($h);
+            }
 
-        //recorremos las skills
-        foreach($skills as $skill) {
+            //recorremos las skills
+            foreach ($skills as $skill) {
 
-            // recorremos el fichero que relaciona resultados y competencias
-            foreach($broader_relations_skill_pillar as $broader_relations) {
+                // recorremos el fichero que relaciona resultados y competencias
+                foreach ($broader_relations_skill_pillar as $broader_relations) {
 
-                //verificamos que existan los datos necesarios
-                if (isset($broader_relations[1]) && isset($skill[1])){
+                    //verificamos que existan los datos necesarios
+                    if (isset($broader_relations[1]) && isset($skill[1])) {
 
-                    if($broader_relations[1] == $skill[1]) {
+                        if ($broader_relations[1] == $skill[1]) {
 
-                        //comprobamos que $skill no tiene hijos con el broarder
-                        $has_children = $this->hasChildren($broader_relations_skill_pillar, $skill[1]);
+                            //comprobamos que $skill no tiene hijos con el broarder
+                            $has_children = $this->hasChildren($broader_relations_skill_pillar, $skill[1]);
 
 
-                        //En este caso ya no tienen hijos entonces son resultados de aprendizaje.
-                        if (!$has_children){
+                            //En este caso ya no tienen hijos entonces son resultados de aprendizaje.
+                            if (!$has_children) {
 
-                            $result = $this->buildHierarchySkills($broader_relations[3], $skill);
+                                $result = $this->buildHierarchySkills($broader_relations[3], $skill);
 
-                            $hierarchySkills = array_merge($hierarchySkills, $result);
-
+                                $hierarchySkills = array_merge($hierarchySkills, $result);
+                            }
                         }
                     }
                 }
             }
-        }
 
-
-        //almacenamos en base de datos
-        foreach($hierarchySkills as $h) {
-            LearningResultsModel::create($h);
-        }
+            //almacenamos en base de datos
+            foreach ($hierarchySkills as $h) {
+                LearningResultsModel::create($h);
+            }
+        });
 
         return response()->json(['message' => 'Competencias y resultados de aprendizaje añadidos'], 200);
-
     }
 
 
-    private function searchFatherCompetence($uid, $broader_relations_skill_pillar) {
-        foreach($broader_relations_skill_pillar as $row) {
-            if($this->extractuidUrl($row[1]) == $uid) {
+    private function searchFatherCompetence($uid, $broader_relations_skill_pillar)
+    {
+        foreach ($broader_relations_skill_pillar as $row) {
+            if ($this->extractuidUrl($row[1]) == $uid) {
                 return $row;
             }
         }
@@ -377,7 +367,7 @@ class CompetencesLearningsResultsController extends BaseController
             // Si no está correcta la fila
             if (count($row) < 8) continue;
 
-            if($row[0] != "" && $row[2] == "" && $row[4] == "" && $row[6] == "") {
+            if ($row[0] != "" && $row[2] == "" && $row[4] == "" && $row[6] == "") {
 
                 $level0_uid = generate_uuid();
 
@@ -391,9 +381,7 @@ class CompetencesLearningsResultsController extends BaseController
                 ];
 
                 $parent_level_0_uuid = $level0_uid;
-
-
-            }elseif ($row[0] != "" && $row[2] != "" && $row[4] == "" && $row[6] == ""){
+            } elseif ($row[0] != "" && $row[2] != "" && $row[4] == "" && $row[6] == "") {
 
                 $level1_uid = generate_uuid();
 
@@ -407,8 +395,7 @@ class CompetencesLearningsResultsController extends BaseController
                 ];
 
                 $parent_level_1_uuid = $level1_uid;
-
-            }elseif($row[0] != "" && $row[2] != "" && $row[4] != "" && $row[6] == ""){
+            } elseif ($row[0] != "" && $row[2] != "" && $row[4] != "" && $row[6] == "") {
 
                 $level2_uid = generate_uuid();
 
@@ -422,8 +409,7 @@ class CompetencesLearningsResultsController extends BaseController
                 ];
 
                 $parent_level_2_uuid = $level2_uid;
-
-            }elseif($row[0] != "" && $row[2] != "" && $row[4] != "" && $row[6] != ""){
+            } elseif ($row[0] != "" && $row[2] != "" && $row[4] != "" && $row[6] != "") {
 
                 $level3_uid = generate_uuid();
 
@@ -435,15 +421,14 @@ class CompetencesLearningsResultsController extends BaseController
                     'is_multi_select' => '0',
                     'origin_code' => $row[6]
                 ];
-
             }
-
         }
 
         return $hierarchy;
     }
 
-    function isUuid($string) {
+    function isUuid($string)
+    {
         return preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $string) === 1;
     }
 
@@ -452,7 +437,7 @@ class CompetencesLearningsResultsController extends BaseController
         $values = array_column($competences, $field);
         $index = array_search($value, $values);
 
-        if($index) return $competences[$index];
+        if ($index) return $competences[$index];
         else return false;
     }
 
@@ -506,17 +491,18 @@ class CompetencesLearningsResultsController extends BaseController
         return $data;
     }
 
-    private function buildHierarchyCompetences($broader_relation, $skill){
+    private function buildHierarchyCompetences($broader_relation, $skill)
+    {
 
         $hierarchyCompetences = [];
 
         $parent_uid = DB::table('competences')
-        ->where('origin_code', $broader_relation)
-        ->pluck('uid')->toArray();
+            ->where('origin_code', $broader_relation)
+            ->pluck('uid')->toArray();
 
         //dd($broader_relations, $skill, $parent_uid);
 
-        foreach($parent_uid as $new_competence){
+        foreach ($parent_uid as $new_competence) {
 
             $level4_uid = generate_uuid();
 
@@ -531,17 +517,18 @@ class CompetencesLearningsResultsController extends BaseController
         }
         return $hierarchyCompetences;
     }
-    private function buildHierarchySkills($broader_relation, $skill){
+    private function buildHierarchySkills($broader_relation, $skill)
+    {
 
         $hierarchySkills = [];
 
         $parent_uid = DB::table('competences')
-        ->where('origin_code', $broader_relation)
-        ->pluck('uid')->toArray();
+            ->where('origin_code', $broader_relation)
+            ->pluck('uid')->toArray();
 
         //dd($broader_relations, $skill, $parent_uid);
 
-        foreach($parent_uid as $new_competence){
+        foreach ($parent_uid as $new_competence) {
 
             $level5_uid = generate_uuid();
 
@@ -556,15 +543,16 @@ class CompetencesLearningsResultsController extends BaseController
         }
         return $hierarchySkills;
     }
-    private function hasChildren($broader_relations, $skill) {
+    private function hasChildren($broader_relations, $skill)
+    {
 
         $has_children = false;
 
-        foreach($broader_relations as $broader_relations_2) {
-            if(!isset($broader_relations_2[3])) {
+        foreach ($broader_relations as $broader_relations_2) {
+            if (!isset($broader_relations_2[3])) {
                 continue;
             }
-            if ($broader_relations_2[3] == $skill){
+            if ($broader_relations_2[3] == $skill) {
 
                 $has_children = true;
                 break;
@@ -574,7 +562,8 @@ class CompetencesLearningsResultsController extends BaseController
     }
 
 
-    function getSkillsWithChildren($broader_relations) {
+    function getSkillsWithChildren($broader_relations)
+    {
         $resultados = [];
 
         foreach ($broader_relations as $subarray) {
@@ -586,7 +575,8 @@ class CompetencesLearningsResultsController extends BaseController
         return $resultados;
     }
 
-    function getSkillsWithoutChildren($broader_relations) {
+    function getSkillsWithoutChildren($broader_relations)
+    {
         $posicion1 = [];
         $posicion3 = [];
 
@@ -601,7 +591,7 @@ class CompetencesLearningsResultsController extends BaseController
         }
 
         // Filtra los valores de posición 1 que no están en posición 3
-        $resultado = array_filter($posicion1, function($valor) use ($posicion3) {
+        $resultado = array_filter($posicion1, function ($valor) use ($posicion3) {
             return !in_array($valor, $posicion3);
         });
 
@@ -611,28 +601,112 @@ class CompetencesLearningsResultsController extends BaseController
         return $resultado;
     }
 
-    function searchSkillFathers($broader_relations, $skill_uri) {
+    function searchSkillFathers($broader_relations, $skill_uri)
+    {
         $fathers = [];
-        foreach($broader_relations as $relation) {
-            if(!isset($relation[3])) {
+        foreach ($broader_relations as $relation) {
+            if (!isset($relation[3])) {
                 continue;
             }
-            if($relation[1] == $skill_uri) $fathers[] = $relation[3];
+            if ($relation[1] == $skill_uri) $fathers[] = $relation[3];
         }
 
         return $fathers;
     }
 
-    function searchInHierarchy($hierarchy, $uri) {
+    function searchInHierarchy($hierarchy, $uri)
+    {
         $hierarchy_found = false;
         $i = 0;
-        foreach($hierarchy as $h) {
-            if($h["origin_code"] == $uri) $hierarchy_found = $h;
+        foreach ($hierarchy as $h) {
+            if ($h["origin_code"] == $uri) $hierarchy_found = $h;
         }
 
-        if($i > 1) {
+        if ($i > 1) {
             throw new Exception("más de un padre");
         }
         return $hierarchy_found;
+    }
+
+    public function exportCSV()
+    {
+        $competences_anidated = CompetencesModel::whereNull('parent_competence_uid')
+            ->with(['subcompetences'])
+            ->orderBy('name', 'ASC')
+            ->get()->toArray();
+
+        return response()->json($competences_anidated, 200);
+    }
+
+    public function importCSV(Request $request)
+    {
+
+        $messages = [
+            'data-json-import.required' => 'El fichero es obligatorio',
+        ];
+
+        $rules = [
+            'data-json-import' => 'required|file',
+        ];
+
+        $validator = Validator::make($request->all(), $rules, $messages);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'No ha seleccionado ningún fichero'], 422);
+        }
+
+
+        $file = $request->file('data-json-import');
+
+        $jsonContent = file_get_contents($file->getRealPath());
+
+        $data = json_decode($jsonContent, true);
+
+
+        DB::beginTransaction();
+        try {
+            foreach ($data as $item) {
+                $this->importCompetence(null, $item);
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+
+        return response()->json(['message' => 'Importación realizada']);
+    }
+
+    private function importCompetence($parentUid, $item)
+    {
+        $competence = CompetencesModel::create([
+            'uid' => $item['uid'],
+            'name' => $item['name'],
+            'description' => $item['description'],
+            'is_multi_select' => $item['is_multi_select'],
+            'parent_competence_uid' => $parentUid,
+            'origin_code' => $item['origin_code'],
+            'created_at' => $item['created_at'],
+            'updated_at' => $item['updated_at'],
+        ]);
+
+        foreach ($item['subcompetences'] as $sub) {
+            $this->importCompetence($item['uid'], $sub);
+        }
+
+        if (isset($item['learning_results']) && $item['learning_results'] != null) {
+
+            foreach ($item['learning_results'] as $result) {
+                LearningResultsModel::create([
+                    'uid' => $result['uid'],
+                    'name' => $result['name'],
+                    'description' => $result['description'],
+                    'competence_uid' => $item['uid'],
+                    'origin_code' => $result['origin_code'],
+                    'created_at' => $result['created_at'],
+                    'updated_at' => $result['updated_at'],
+                ]);
+            }
+        }
     }
 }

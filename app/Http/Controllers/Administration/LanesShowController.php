@@ -25,6 +25,7 @@ class LanesShowController extends BaseController
                 "resources" => [
                     "resources/js/administration_module/lanes_show.js"
                 ],
+                "submenuselected" => "lanes-show",
             ]
         );
     }

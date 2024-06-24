@@ -4,6 +4,6 @@
 
 <ul>
     @foreach ($parameters['courses'] as $course)
-        <li>{{$course->name}}</li>
+        <li>{{$course->title}}</li>
     @endforeach
 </ul>

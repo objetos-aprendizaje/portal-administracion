@@ -20,6 +20,7 @@ import {
     getFlatpickrDateRange,
     getFlatpickrDateRangeSql,
     getOptionsSelectedTomSelectInstance,
+    getLiveSearchTomSelectInstance,
 } from "../app.js";
 import { showToast } from "../toast.js";
 
@@ -33,6 +34,8 @@ let selectedEmailNotifications = [];
 let flatpickrNotificationDate;
 let tomSelectNotificationTypesFilter;
 let filters = [];
+let tomSelectRolesFilter;
+let tomSelectUsersFilter;
 
 document.addEventListener("DOMContentLoaded", function () {
     initHandlers();
@@ -48,6 +51,32 @@ document.addEventListener("DOMContentLoaded", function () {
     tomSelectNotificationTypesFilter = getMultipleTomSelectInstance(
         "#notification_types"
     );
+    tomSelectRolesFilter = getMultipleTomSelectInstance("#roles-filter");
+    tomSelectUsersFilter = getLiveSearchTomSelectInstance(
+        "#users-filter",
+        "/users/list_users/search_users/",
+        function (entry) {
+            return {
+                value: entry.uid,
+                text: `${entry.first_name} ${entry.last_name}`,
+            };
+        }
+    );
+    apiFetch({
+        url: "/users/list_users/get_user_roles",
+        method: "GET",
+    }).then((data) => {
+        data.forEach((rol) => {
+            tomSelectRoles.addOption({
+                value: rol.uid,
+                text: rol.name,
+            });
+            tomSelectRolesFilter.addOption({
+                value: rol.uid,
+                text: rol.name,
+            });
+        });
+    });
 
     initTomSelectUsers();
 });
@@ -207,6 +236,41 @@ function collectFilters() {
                 "notifications"
             );
     }
+    if (tomSelectRolesFilter) {
+        const rolesFilter = tomSelectRolesFilter.getValue();
+
+        const selectedRolesFilterLabel =
+            getOptionsSelectedTomSelectInstance(
+                tomSelectRolesFilter
+            );
+
+        if (rolesFilter.length)
+            addFilter(
+                "Roles",
+                rolesFilter,
+                selectedRolesFilterLabel,
+                "roles-filter",
+                "roles"
+            );
+    }
+
+    if (tomSelectUsersFilter) {
+        const usersFilter = tomSelectUsersFilter.getValue();
+
+        const selectedUsersFilterLabel =
+            getOptionsSelectedTomSelectInstance(
+                tomSelectUsersFilter
+            );
+
+        if (usersFilter.length)
+            addFilter(
+                "usuarios",
+                usersFilter,
+                selectedUsersFilterLabel,
+                "users-filter",
+                "users"
+            );
+    }
 
 
     return selectedFilters;
@@ -268,6 +332,8 @@ function resetFilters() {
 
     flatpickrNotificationDate.clear();
     tomSelectNotificationTypesFilter.clear();
+    tomSelectRolesFilter.clear();
+    tomSelectUsersFilter.clear();
 
 }
 
@@ -282,12 +348,17 @@ function controlDeleteFilters(deleteBtn) {
         flatpickrNotificationDate.clear();
     }else if (filterKey == "notification_types"){
         tomSelectNotificationTypesFilter.clear();
+    }else if (filterKey == "roles-filter"){
+        tomSelectRolesFilter.clear();
+    }else if (filterKey == "users-filter"){
+        tomSelectUsersFilter.clear();
     } else {
         document.getElementById(filterKey).value = "";
     }
 
     filters = filters.filter((filter) => filter.filterKey !== filterKey);
     document.getElementById(filterKey).value = "";
+    document.getElementById('type-filter').value = "";
 
 
     showFilters();
@@ -600,6 +671,23 @@ function controlTypeDestination() {
             destinationUsers.classList.remove("no-visible");
         }
     });
+
+    const selectorFilter = document.getElementById("type-filter");
+    const destinationRolesFilter = document.getElementById("destination-roles-filter");
+    const destinationUsersFilter = document.getElementById("destination-users-filter");
+
+    selectorFilter.addEventListener("change", function () {
+        const selectedValueFilter = this.value;
+
+        destinationRolesFilter.classList.add("no-visible");
+        destinationUsersFilter.classList.add("no-visible");
+
+        if (selectedValueFilter === "ROLES") {
+            destinationRolesFilter.classList.remove("no-visible");
+        } else if (selectedValueFilter === "USERS") {
+            destinationUsersFilter.classList.remove("no-visible");
+        }
+    });
 }
 
 function switchSelectorDestination(type) {
@@ -612,6 +700,17 @@ function switchSelectorDestination(type) {
         destinationRoles.classList.remove("no-visible");
     } else if (type === "USERS") {
         destinationUsers.classList.remove("no-visible");
+    }
+
+    const destinationRolesFilter = document.getElementById("destination-roles-filter");
+    const destinationUsersFilter = document.getElementById("destination-users-filter");
+    destinationRolesFilter.classList.add("no-visible");
+    destinationUsersFilter.classList.add("no-visible");
+
+    if (type === "ROLES") {
+        destinationRolesFilter.classList.remove("no-visible");
+    } else if (type === "USERS") {
+        destinationUsersFilter.classList.remove("no-visible");
     }
 }
 

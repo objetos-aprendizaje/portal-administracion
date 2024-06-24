@@ -240,7 +240,10 @@ export function updateInputImage(maxSizeKb = false) {
             if (maxSizeKb) {
                 const maxSizeBytes = (maxSizeKb / 1024) * 1024 * 1024;
                 if (target.files[0].size > maxSizeBytes) {
-                    showToast("El archivo seleccionado es demasiado grande", "error");
+                    showToast(
+                        "El archivo seleccionado es demasiado grande",
+                        "error"
+                    );
                     return;
                 }
             }
@@ -761,16 +764,37 @@ export function apiFetch(params) {
         })
             .then((response) => {
                 if (params.loader) hideLoader();
-
-                return response.json().then((data) => {
-                    if (response.ok) {
-                        if (params.toast) showToast(data.message, "success");
-                        resolve(data);
-                    } else {
-                        if (params.toast) showToast(data.message, "error");
-                        reject(data);
-                    }
-                });
+                if (params.download) {
+                    return response.blob().then((blob) => {
+                        var url = window.URL.createObjectURL(blob);
+                        var a = document.createElement("a");
+                        a.href = url;
+                        a.download = params.filename || "download";
+                        a.style.display = "none";
+                        document.body.appendChild(a);
+                        var contentDisposition = response.headers.get(
+                            "Content-Disposition"
+                        );
+                        var filename = contentDisposition
+                            ? contentDisposition.split("=")[1]
+                            : "download";
+                        a.download = filename;
+                        a.click();
+                        a.remove();
+                        resolve();
+                    });
+                } else {
+                    return response.json().then((data) => {
+                        if (response.ok) {
+                            if (params.toast)
+                                showToast(data.message, "success");
+                            resolve(data);
+                        } else {
+                            if (params.toast) showToast(data.message, "error");
+                            reject(data);
+                        }
+                    });
+                }
             })
             .catch((error) => {
                 let errorMessage = "";
@@ -907,7 +931,11 @@ export function fillFormWithObject(obj, formId) {
     // Itera sobre las propiedades del objeto
     for (let key in obj) {
         // Si el objeto tiene la propiedad (no es heredada) y el valor no es null
-        if (obj.hasOwnProperty(key) && obj[key] !== null) {
+        if (
+            obj.hasOwnProperty(key) &&
+            obj[key] !== null &&
+            typeof obj[key] === "string"
+        ) {
             // Establece el valor en formData
             formData.set(key, obj[key]);
         }
@@ -917,7 +945,13 @@ export function fillFormWithObject(obj, formId) {
     for (let [name, value] of formData) {
         const input = form.elements[name];
         if (input) {
+            if (input.type === "file") continue;
             input.value = value;
         }
     }
+}
+
+export function showElement(element, show) {
+    if (show) element.classList.remove("hidden");
+    else element.classList.add("hidden");
 }

@@ -18,15 +18,24 @@ class CoursesModel extends Model
     public $incrementing = false;
 
     protected $fillable = [
-        'title', 'description', 'contact_information', 'course_type_uid', 'educational_program_type_uid',
+        'course_lms_uid', 'title', 'description', 'contact_information', 'course_type_uid', 'educational_program_type_uid',
         'call_uid', 'course_status_uid', 'min_required_students', 'center_uid',
         'inscription_start_date', 'inscription_finish_date', 'realization_start_date', 'realization_finish_date',
         'presentation_video_url', 'objectives', 'ects_workload', 'educational_program_uid',
-        'validate_student_registrations', 'lms_url', 'cost', 'featured_big_carrousel',
+        'validate_student_registrations', 'lms_url', 'lms_system_uid', 'cost', 'featured_big_carrousel',
         'featured_big_carrousel_title', 'featured_big_carrousel_description', 'featured_small_carrousel', 'structure',
-        'calification_type'
+        'calification_type', 'belongs_to_educational_program', 'enrolling_start_date', 'enrolling_finish_date', 'evaluation_criteria'
     ];
 
+    public function call()
+    {
+        return $this->belongsTo(CallsModel::class, 'call_uid', 'uid');
+    }
+
+    public function course_type()
+    {
+        return $this->belongsTo(CourseTypesModel::class, 'course_type_uid', 'uid');
+    }
 
     public function status()
     {
@@ -55,7 +64,7 @@ class CoursesModel extends Model
             'courses_students',
             'course_uid',
             'user_uid'
-        )->withPivot(['approved', 'uid'])->as('course_student_info');
+        )->withPivot(['acceptance_status', 'uid'])->as('course_student_info');
     }
 
     public function courseDocuments()
@@ -91,6 +100,10 @@ class CoursesModel extends Model
                 ]);
             }
         }
+    }
+
+    public function deleteDocuments() {
+        $this->courseDocuments()->delete();
     }
 
     public function categories()
@@ -136,6 +149,14 @@ class CoursesModel extends Model
         );
     }
 
+    public function educational_program_type() {
+        return $this->belongsTo(
+            EducationalProgramTypesModel::class,
+            'educational_program_type_uid',
+            'uid'
+        );
+    }
+
     public function student_documents()
     {
         return $this->belongsToMany(
@@ -157,6 +178,7 @@ class CoursesModel extends Model
             'user_uid'
         )->wherePivot('type', '<>', 'coordinator');
     }
+
     public function teachers_coordinate()
     {
         return $this->belongsToMany(
@@ -165,6 +187,14 @@ class CoursesModel extends Model
             'course_uid',
             'user_uid'
         )->wherePivot('type', '=', 'coordinator');
+    }
+
+    public function lmsSystem() {
+        return $this->belongsTo(
+            LmsSystemsModel::class,
+            'lms_system_uid',
+            'uid'
+        );
     }
 
 }

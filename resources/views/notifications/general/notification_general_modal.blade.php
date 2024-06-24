@@ -38,7 +38,7 @@
                     </div>
                     <div class="content-container">
                         <select class="poa-select w-full" id="notification_type_uid" name="notification_type_uid">
-                            <option value="">Selecciona el tipo de notificación</option>
+                            <option value="">Ninguna</option>
                             @foreach ($notification_types as $notification_type)
                                 <option value="{{ $notification_type->uid }}">
                                     {{ $notification_type->name }}

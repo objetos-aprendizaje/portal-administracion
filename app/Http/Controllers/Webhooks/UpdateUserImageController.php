@@ -9,7 +9,7 @@ class UpdateUserImageController extends BaseController
 {
     public function index(Request $request)
     {
-        $image = $request->file('image');
+        $image = $request->file('file');
 
         $photo_path = $this->saveUserImage($image);
 

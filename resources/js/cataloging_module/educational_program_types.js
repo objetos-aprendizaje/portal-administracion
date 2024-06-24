@@ -198,10 +198,10 @@ function fillFormEducationalProgramTypeModal(educational_program_type) {
         educational_program_type.uid;
 
     document.getElementById("managers_can_emit_credentials").checked =
-        educational_program_type.managers_can_emit_credentials ? true : false;
+        educational_program_type.managers_can_emit_credentials ? 1 : 0;
 
     document.getElementById("teachers_can_emit_credentials").checked =
-        educational_program_type.teachers_can_emit_credentials ? true : false;
+        educational_program_type.teachers_can_emit_credentials ? 1 : 0;
 }
 
 /**
@@ -215,11 +215,12 @@ function submitFormEducationalProgramTypeModal() {
 
     formData.append(
         "managers_can_emit_credentials",
-        managers_can_emit_credentials.checked
+        managers_can_emit_credentials.checked ? 1 : 0
     );
+
     formData.append(
         "teachers_can_emit_credentials",
-        teachers_can_emit_credentials.checked
+        teachers_can_emit_credentials.checked ? 1 : 0
     );
 
     const params = {

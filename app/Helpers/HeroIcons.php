@@ -1,17 +1,17 @@
 <?php
 
-function e_heroicon($icon, $type = "outline")
+function e_heroicon($icon, $type = "outline", $class = null)
 {
 
-    echo heroicon($icon, $type);
+    echo heroicon($icon, $type, $class);
 }
 
-function heroicon($icon, $type = "outline")
+function heroicon($icon, $type = "outline", $class)
 {
 
     if ($type == "outline") {
         $d = get_heroicon_d_outline($icon);
-        $heroicon = heroicon_outline($d);
+        $heroicon = heroicon_outline($d, $class);
     } elseif ($type == "solid") {
         $d = get_heroicon_d_solid($icon);
         $heroicon = heroicon_solid($d);
@@ -22,10 +22,10 @@ function heroicon($icon, $type = "outline")
     return $heroicon;
 }
 
-function heroicon_outline($icons)
+function heroicon_outline($icons, $class)
 {
 
-    $svg = "<svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='currentColor'>";
+    $svg = "<svg xmlns='http://www.w3.org/2000/svg' class='".$class."' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='currentColor'>";
 
     if (is_array($icons)) {
         foreach ($icons as $d) {
@@ -145,6 +145,8 @@ function get_heroicon_d_outline($icon)
             return "M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5";
         case "chevron-down":
             return "M19.5 8.25l-7.5 7.5-7.5-7.5";
+        case "chevron-up":
+            return "m4.5 15.75 7.5-7.5 7.5 7.5";
         case "arrow-up-right":
             return "m4.5 19.5 15-15m0 0H8.25m11.25 0v11.25";
         case "user-group":
@@ -153,8 +155,12 @@ function get_heroicon_d_outline($icon)
             return "M12 4.5v15m7.5-7.5h-15";
         case "folder-plus":
             return "M12 10.5v6m3-3H9m4.06-7.19-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z";
+        case "arrow-down-tray":
+            return "M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3";
+        case "arrows-up-down":
+            return "M3 7.5 7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5";
         default: // Error icon
-        return "M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z";
+            return "M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z";
     }
 }
 
@@ -214,6 +220,7 @@ function get_heroicon_d_solid($icon)
             return "M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z";
         case "plus":
             return "M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z";
+
             default: // Error icon
             return "M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z";
     }

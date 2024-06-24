@@ -5,7 +5,7 @@
         <h2>Claves API</h2>
 
         <div class="table-control-header">
-            @include('partials.table-search', ['table' => 'redirection-queries-table'])
+            @include('partials.table-search', ['table' => 'api-keys-table'])
 
             <div>
                 <button type="button" class="btn-icon" id="new-api-key-btn">

@@ -34,6 +34,12 @@ node_modules
 /public/images/resources-images/*
 !/public/images/resources-images/index
 
+/public/images/previsualizations-sliders/*
+!/public/images/previsualizations-sliders/index
+
+/public/downloads_temps/*
+!/public/downloads_temps/index
+
 /public/fonts/*
 !/public/fonts/index
 

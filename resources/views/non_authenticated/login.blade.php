@@ -22,13 +22,15 @@
                                 <label class="px-3 mb-[8px]">Correo</label>
                                 <input
                                     class="border-[1.5px] border-solid border-primary rounded-full p-3 focus:border-primary h-[60px]"
-                                    type="text" name="email" value="{{env('USER_DEVELOPMENT') ? 'admin@admin.com' : ''}}"/>
+                                    type="text" name="email"
+                                    value="" />
                             </div>
 
                             <div class="flex flex-col mb-[8px]">
                                 <label class="px-3 mb-[8px]">Contraseña</label>
                                 <input class="border-[1.5px] border-solid border-primary rounded-full h-[60px] p-3"
-                                    name="password" type="password" value="{{env('USER_DEVELOPMENT') ? 'admin-poa-2024' : ''}}"/>
+                                    name="password" type="password"
+                                     />
                             </div>
 
                             <a href="{{ route('recover-password') }}" id="recover-password"
@@ -41,53 +43,84 @@
 
                         </div>
 
-                        <div class="flex items-center justify-center space-x-2 mb-[25px]">
-                            <div class="border-t w-full"></div>
-                            <div>O</div>
-                            <div class="border-t w-full"></div>
-                        </div>
-
-                        <div class="flex justify-center mb-[25px]">
-                            <div
-                                class="inline-flex border rounded-full items-center justify-center pl-[6px] pr-[14px] py-[6px] gap-2 cursor-pointer">
-                                <div>
-                                    <img src="{{ asset('/data/images/logo_min_boton_login.png') }}"
-                                        class="w-[40px] h-[40px] mx-auto rounded-full  block" />
-                                </div>
-
-                                <div class="border-l h-10"></div>
-
-                                <div>
-                                    <p class="font-roboto-bold">ACCESO UNIVERSIDAD</p>
-                                </div>
+                        @if (
+                            $urlCas ||
+                                $urlRediris ||
+                                $parameters_login_systems['facebook_login_active'] ||
+                                $parameters_login_systems['twitter_login_active'] ||
+                                $parameters_login_systems['linkedin_login_active'] ||
+                                $parameters_login_systems['google_login_active']
+                        )
+                            <div class="flex items-center justify-center space-x-2 mb-[25px]">
+                                <div class="border-t w-full"></div>
+                                <div>O</div>
+                                <div class="border-t w-full"></div>
                             </div>
-                        </div>
+                        @endif
+
+
+                        @if ($urlCas)
+                            <a href="{{ $urlCas }}">
+                                <div class="flex justify-center mb-[25px]">
+                                    <div
+                                        class="inline-flex border rounded-full hover:border-primary items-center justify-center pl-[6px] pr-[14px] py-[6px] gap-2">
+                                        <div>
+                                            <img src="{{ asset('/data/images/logo_min_boton_login.png') }}"
+                                                class="w-[40px] h-[40px] mx-auto rounded-full  block" />
+                                        </div>
+
+                                        <div class="border-l h-10"></div>
+
+                                        <div class="cursor-pointer">
+                                            <p class="font-roboto-bold text-black">ACCESO UNIVERSIDAD</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        @endif
+
 
                         <div class="flex justify-center gap-[32px]">
-                            @php
-                                $parameters_login_systems = Cache::get('parameters_login_systems');
-                            @endphp
-
                             @if ($parameters_login_systems)
                                 @if ($parameters_login_systems['facebook_login_active'])
-                                    <a href="/auth/facebook">
-                                        <img class="w-[60px] h-[60px]" src="data/images/login_icons/facebook.png" />
-                                    </a>
+                                    <button type="button"
+                                        class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
+                                        <a href="/auth/facebook">
+                                            <img class="w-[45px] h-[45px]" src="data/images/login_icons/facebook.png" />
+                                        </a>
+                                    </button>
                                 @endif
 
                                 @if ($parameters_login_systems['twitter_login_active'])
-                                    <a href="/auth/twitter"><img class="w-[60px] h-[60px]"
-                                            src="data/images/login_icons/twitter_icon.png" /></a>
+                                    <button type="button"
+                                        class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
+                                        <a href="/auth/twitter"><img class="w-[32px] h-[32px]"
+                                                src="data/images/login_icons/x_icon.png" /></a>
+                                    </button>
                                 @endif
 
                                 @if ($parameters_login_systems['linkedin_login_active'])
-                                    <a href="/auth/linkedin"><img class="w-[60px] h-[60px]"
-                                            src="data/images/login_icons/linkedin_icon.png" /></a>
+                                    <button type="button"
+                                        class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
+                                        <a href="/auth/linkedin"><img class="w-[32px] h-[32px]"
+                                                src="data/images/login_icons/linkedin_icon.png" /></a>
+                                    </button>
                                 @endif
 
                                 @if ($parameters_login_systems['google_login_active'])
-                                    <a href="/auth/google"><img class="w-[60px] h-[60px]"
-                                            src="data/images/login_icons/google_icon.png" /></a>
+                                    <button type="button"
+                                        class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
+                                        <a href="/auth/google"><img class="w-[32px] h-[32px]"
+                                                src="data/images/login_icons/google_icon.png" /></a>
+                                    </button>
+                                @endif
+
+                                @if ($urlRediris)
+                                    <button type="button"
+                                        class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
+                                        <a href="{{ $urlRediris }}"><img class="w-[32px] h-[32px]"
+                                                src="data/images/login_icons/rediris.png" /></a>
+                                    </button>
                                 @endif
                             @endif
 
@@ -95,8 +128,10 @@
 
                     </form>
 
-                    @if ($cert_login != "")
-                        <div class="text-center p-4"><a href="https://{{ env('DOMINIO_CERTIFICADO') }}/certificate-access">Acceso mediante Certificado Digital</a></div>
+                    @if ($cert_login != '')
+                        <div class="text-center p-4"><a href="{{ env('DOMINIO_CERTIFICADO') }}/certificate-access">Acceso
+                                mediante
+                                Certificado Digital</a></div>
                     @endif
 
                 </div>
@@ -138,25 +173,41 @@
             </form>
         </div>
 
-        <div class="flex items-center justify-center space-x-2 mb-[25px]">
-            <div class="border-t w-full"></div>
-            <div>O</div>
-            <div class="border-t w-full"></div>
-        </div>
+        @if (
+            $urlCas ||
+                $urlRediris ||
+                $parameters_login_systems['facebook_login_active'] ||
+                $parameters_login_systems['twitter_login_active'] ||
+                $parameters_login_systems['linkedin_login_active'] ||
+                $parameters_login_systems['google_login_active']
+        )
+            <div class="flex items-center justify-center space-x-2 mb-[25px]">
+                <div class="border-t w-full"></div>
+                <div>O</div>
+                <div class="border-t w-full"></div>
+            </div>
+        @endif
 
         <div class="flex justify-center mb-[25px]">
-            <div class="inline-flex border rounded-full items-center justify-center pl-[6px] pr-[14px] py-[6px] gap-2">
-                <div>
-                    <img src="{{ asset('data/images/logo_min_boton_login.png') }}"
-                        class="w-[40px] h-[40px] mx-auto rounded-full  block" />
-                </div>
 
-                <div class="border-l h-10"></div>
+            @if ($urlCas)
+                <a href="{{ $urlCas }}">
+                    <div
+                        class="inline-flex border cursor-pointer hover:border-primary rounded-full items-center justify-center pl-[6px] pr-[14px] py-[6px] gap-2">
+                        <div>
+                            <img src="{{ asset('data/images/logo_min_boton_login.png') }}"
+                                class="w-[40px] h-[40px] mx-auto rounded-full  block" />
+                        </div>
 
-                <div>
-                    <p class="font-roboto-bold">ACCESO UNIVERSIDAD</p>
-                </div>
-            </div>
+                        <div class="border-l h-10"></div>
+
+                        <div>
+                            <p class="font-roboto-bold text-black">ACCESO UNIVERSIDAD</p>
+                        </div>
+                    </div>
+                </a>
+            @endif
+
         </div>
 
         <div class="flex justify-center gap-[32px] flex-wrap">
@@ -166,24 +217,36 @@
 
             @if ($parameters_login_systems)
                 @if ($parameters_login_systems['facebook_login_active'])
-                    <a href="/auth/facebook">
-                        <img class="max-w-[60px] max-h-[60px]" src="data/images/login_icons/facebook.png" />
-                    </a>
+                    <button type="button"
+                        class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
+                        <a href="/auth/facebook">
+                            <img class="max-w-[45px] max-h-[45px]" src="data/images/login_icons/facebook.png" />
+                        </a>
+                    </button>
                 @endif
 
                 @if ($parameters_login_systems['twitter_login_active'])
-                    <a href="/auth/twitter"><img class="max-w-[60px] max-h-[60px]"
-                            src="data/images/login_icons/twitter_icon.png" /></a>
+                    <button type="button"
+                        class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
+                        <a href="/auth/twitter"><img class="max-w-[32px] max-h-[32px]"
+                                src="data/images/login_icons/x_icon.png" /></a>
+                    </button>
                 @endif
 
                 @if ($parameters_login_systems['linkedin_login_active'])
-                    <a href="/auth/linkedin"><img class="max-w-[60px] max-h-[60px]"
-                            src="data/images/login_icons/linkedin_icon.png" /></a>
+                    <button type="button"
+                        class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
+                        <a href="/auth/linkedin"><img class="max-w-[32px] max-h-[32px]"
+                                src="data/images/login_icons/linkedin_icon.png" /></a>
+                    </button>
                 @endif
 
                 @if ($parameters_login_systems['google_login_active'])
-                    <a href="/auth/google"><img class="max-w-[60px] max-h-[60px]"
-                            src="data/images/login_icons/google_icon.png" /></a>
+                    <button type="button"
+                        class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
+                        <a href="/auth/google"><img class="max-w-[32px] max-h-[32px]"
+                                src="data/images/login_icons/google_icon.png" /></a>
+                    </button>
                 @endif
             @endif
 

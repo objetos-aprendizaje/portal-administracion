@@ -14,7 +14,12 @@ class EducationalProgramsModel extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'name', 'description', 'educational_program_type_uid', 'call_uid', 'inscription_start_date', 'inscription_finish_date', 'image_path', 'is_modular'
+        'name', 'description', 'educational_program_type_uid', 'call_uid',
+        'inscription_start_date', 'inscription_finish_date', 'image_path',
+        'enrolling_start_date', 'enrolling_finish_date', 'min_required_students', 'validate_student_registrations',
+        'evaluation_criteria', 'cost', 'featured_slider', 'featured_slider_title', 'featured_slider_description',
+        'featured_slider_color_font', 'featured_slider_image_path', 'featured_main_carrousel',
+        'educational_program_status_uid', 'realization_start_date', 'realization_finish_date'
     ];
 
     public $incrementing = false;
@@ -22,6 +27,11 @@ class EducationalProgramsModel extends Model
     protected $casts = [
         'uid' => 'string',
     ];
+
+    public function status()
+    {
+        return $this->belongsTo(EducationalProgramStatusesModel::class, 'educational_program_status_uid', 'uid');
+    }
 
     public function educationalProgramType()
     {
@@ -32,4 +42,76 @@ class EducationalProgramsModel extends Model
     {
         return $this->hasMany(CoursesModel::class, 'educational_program_uid', 'uid');
     }
+
+    public function tags()
+    {
+        return $this->hasMany(
+            EducationalProgramTagsModel::class,
+            'educational_program_uid',
+            'uid'
+        );
+    }
+
+    public function categories()
+    {
+        return $this->belongsToMany(
+            CategoriesModel::class,
+            'educationals_programs_categories',
+            'educational_program_uid',
+            'category_uid'
+        );
+    }
+
+    public function EducationalProgramDocuments()
+    {
+        return $this->hasMany(EducationalProgramsDocumentsModel::class, 'educational_program_uid', 'uid');
+    }
+
+    public function updateDocuments($documentsArray)
+    {
+        $existingUids = array_filter(array_column($documentsArray, 'uid'));
+        $this->EducationalProgramDocuments()->whereNotIn('uid', $existingUids)->delete();
+
+        foreach ($documentsArray as $document) {
+            if ($document['uid']) {
+                EducationalProgramsDocumentsModel::where('uid', $document['uid'])
+                    ->update([
+                        'document_name' => $document['document_name'],
+                    ]);
+            } else {
+                $this->EducationalProgramDocuments()->create([
+                    'uid' => generate_uuid(),
+                    'educational_program_uid' => $this->uid,
+                    'document_name' => $document['document_name'],
+                ]);
+            }
+        }
+    }
+
+    public function deleteDocuments() {
+        $this->EducationalProgramDocuments()->delete();
+    }
+
+    public function students()
+    {
+        return $this->belongsToMany(
+            UsersModel::class,
+            'educational_programs_students',
+            'educational_program_uid',
+            'user_uid'
+        )->withPivot(['acceptance_status', 'uid'])->as('educational_program_student_info');
+    }
+
+    public function student_documents()
+    {
+        return $this->belongsToMany(
+            EducationalProgramsDocumentsModel::class,
+            'educational_programs_students_documents',
+            'educational_program_document_uid',
+            'uid',
+            'uid',
+            'educational_program_uid'
+        )->withPivot('user_uid', 'document_path');
+    }
+
 }

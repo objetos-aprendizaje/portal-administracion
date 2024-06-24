@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('content')
     <div class="poa-container mb-8">
-        <h2>Aprobación de carrouseles grandes</h2>
+        <h2>Aprobación de cursos en el slider principal</h2>
 
         <form id="big-courses-carrousels-form">
             @csrf
@@ -26,7 +26,7 @@
     </div>
 
     <div class="poa-container">
-        <h2>Aprobación de carrouseles pequeños</h2>
+        <h2>Aprobación de cursos en el carrousel principal</h2>
         <form id="small-courses-carrousels-form">
             @csrf
 

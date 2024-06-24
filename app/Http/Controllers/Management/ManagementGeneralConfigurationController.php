@@ -37,7 +37,8 @@ class ManagementGeneralConfigurationController extends BaseController
                 ],
                 "tomselect" => true,
                 "teachers" => $teachers,
-                "uids_teachers_automatic_aproval_resources" => $uids_teachers_automatic_aproval_resources
+                "uids_teachers_automatic_aproval_resources" => $uids_teachers_automatic_aproval_resources,
+                "submenuselected" => "management-general-configuration",
             ]
         );
     }

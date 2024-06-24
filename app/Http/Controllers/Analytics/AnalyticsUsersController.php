@@ -32,6 +32,7 @@ class AnalyticsUsersController extends BaseController
                 "roles_with_user_count" => "roles_with_user_count",
                 "total_users" => $total_users,
                 "tabulator" => true,
+                "submenuselected" => "analytics-users",
             ]
         );
     }

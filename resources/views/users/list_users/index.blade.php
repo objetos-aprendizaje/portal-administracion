@@ -14,6 +14,7 @@
             <div>
                 <button id="add-user-btn" type="button" class="btn btn-icon mb-4">{{e_heroicon('plus', 'outline')}}</button>
                 <button id="delete-user-btn" type="button" class="btn btn-icon mb-4">{{e_heroicon('trash', 'outline')}}</button>
+                <button id="export-users-btn" type="button" class="btn btn-icon mb-4">{{e_heroicon('arrow-down-tray', 'outline')}}</button>
             </div>
 
         </div>

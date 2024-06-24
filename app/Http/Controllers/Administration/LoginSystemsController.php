@@ -10,6 +10,7 @@ use App\Models\GeneralOptionsModel;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Logs\LogsController;
+use App\Models\Saml2TenantsModel;
 
 class LoginSystemsController extends BaseController
 {
@@ -17,6 +18,11 @@ class LoginSystemsController extends BaseController
 
     public function index()
     {
+
+        $cas = Saml2TenantsModel::where('key', 'cas')->first();
+        $cas_active = GeneralOptionsModel::where('option_name', 'cas_active')->where('option_value', 1)->first();
+        $rediris = Saml2TenantsModel::where('key', 'rediris')->first();
+        $rediris_active = GeneralOptionsModel::where('option_name', 'rediris_active')->where('option_value', 1)->first();
 
         return view(
             'administration.login_systems',
@@ -26,6 +32,11 @@ class LoginSystemsController extends BaseController
                 "resources" => [
                     "resources/js/administration_module/login_systems.js"
                 ],
+                'cas' => $cas,
+                'rediris' => $rediris,
+                'cas_active' => $cas_active,
+                'rediris_active' => $rediris_active,
+                "submenuselected" => "login-systems",
             ]
         );
     }
@@ -120,6 +131,119 @@ class LoginSystemsController extends BaseController
         });
 
         return response()->json(['message' => 'Login de Linkedin guardado correctamente']);
+    }
+
+    public function submitCasForm(Request $request)
+    {
+
+        $active = intval($request->input('cas_login_active'));
+
+        if($active){
+            GeneralOptionsModel::where('option_name', 'cas_active')->update(['option_value' => $active]);
+        }else{
+            GeneralOptionsModel::where('option_name', 'cas_active')->update(['option_value' => $active]);
+        }
+
+
+        $cas = Saml2TenantsModel::where('key', 'cas')->first();
+
+        if ($cas){
+
+            DB::transaction(function () use ($cas, $request) {
+
+                $cas->idp_entity_id = $request->input('cas_entity_id');
+                $cas->idp_login_url = $request->input('cas_login_url');
+                $cas->idp_logout_url = $request->input('cas_logout_url');
+                $cas->idp_x509_cert = $request->input('cas_certificate');
+                $cas->metadata = '[]';
+                $cas->name_id_format = 'persistent';
+
+                $cas->save();
+
+                LogsController::createLog('Actualización de inicio de sesión en CAS', 'Sistemas de inicio de sesión', auth()->user()->uid);
+            });
+            return response()->json(['message' => 'Login de CAS guardado correctamente']);
+
+        }else{
+
+            DB::transaction(function () use ($request) {
+                $uid = generate_uuid();
+
+                $new_data = new Saml2TenantsModel();
+                $new_data->uuid = $uid;
+                $new_data->key = 'cas';
+                $new_data->idp_entity_id = $request->input('cas_entity_id');
+                $new_data->idp_login_url = $request->input('cas_login_url');
+                $new_data->idp_logout_url = $request->input('cas_logout_url');
+                $new_data->idp_x509_cert = $request->input('cas_certificate');
+                $new_data->metadata = '[]';
+                $new_data->name_id_format = 'persistent';
+
+                $new_data->save();
+
+                LogsController::createLog('Actualización de inicio de sesión en CAS', 'Sistemas de inicio de sesión', auth()->user()->uid);
+            });
+
+
+
+            return response()->json(['message' => 'Login de CAS guardado correctamente']);
+        }
+
+    }
+
+    public function submitRedirisForm(Request $request)
+    {
+
+        $active = intval($request->input('rediris_login_active'));
+
+        if($active){
+            GeneralOptionsModel::where('option_name', 'rediris_active')->update(['option_value' => $active]);
+        }else{
+            GeneralOptionsModel::where('option_name', 'rediris_active')->update(['option_value' => $active]);
+        }
+
+        $rediris = Saml2TenantsModel::where('key', 'rediris')->first();
+
+        if ($rediris){
+
+            DB::transaction(function () use ($rediris, $request) {
+
+                $rediris->idp_entity_id = $request->input('rediris_entity_id');
+                $rediris->idp_login_url = $request->input('rediris_login_url');
+                $rediris->idp_logout_url = $request->input('rediris_logout_url');
+                $rediris->idp_x509_cert = $request->input('rediris_certificate');
+                $rediris->metadata = '[]';
+                $rediris->name_id_format = 'persistent';
+
+                $rediris->save();
+
+                LogsController::createLog('Actualización de inicio de sesión en REDIRIS', 'Sistemas de inicio de sesión', auth()->user()->uid);
+            });
+            return response()->json(['message' => 'Login de REDIRIS guardado correctamente']);
+
+        }else{
+
+            DB::transaction(function () use ($request) {
+                $uid = generate_uuid();
+
+                $new_data = new Saml2TenantsModel();
+                $new_data->uuid = $uid;
+                $new_data->key = 'rediris';
+                $new_data->idp_entity_id = $request->input('rediris_entity_id');
+                $new_data->idp_login_url = $request->input('rediris_login_url');
+                $new_data->idp_logout_url = $request->input('rediris_logout_url');
+                $new_data->idp_x509_cert = $request->input('rediris_certificate');
+                $new_data->metadata = '[]';
+                $new_data->name_id_format = 'persistent';
+
+                $new_data->save();
+
+                LogsController::createLog('Actualización de inicio de sesión en REDIRIS', 'Sistemas de inicio de sesión', auth()->user()->uid);
+            });
+
+            return response()->json(['message' => 'Login de REDIRIS guardado correctamente']);
+        }
+
     }
 
     // Actualiza la caché con los parámetros de inicio de sesión

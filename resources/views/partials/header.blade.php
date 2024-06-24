@@ -1,4 +1,4 @@
-<header id="poa-header" class="p-8 border-t-4 border-gray border-b-4 w-full fixed bg-white z-50 top-0">
+<header id="poa-header" class="h-[120px] p-8 border-t-4 border-gray border-b-4 w-full fixed bg-white z-50 top-0">
 
     <div class="flex justify-between">
 
@@ -36,12 +36,11 @@
             <div class="border-l border-gray-300"></div>
             <div>
                 <p class="test">{{ Auth::user()->first_name }} {{ Auth::user()->last_name }}</p>
-                <p class="text-gray-400 text-">Administrador</p>
-
+                <p class="text-gray-400">{{ Auth::user()->roles->pluck("name")->implode(', ') }}</p>
             </div>
 
             <div class="flex items-center" title="Cerrar sesión">
-                <a href="https://{{ env('DOMINIO_PRINCIPAL') }}/logout">
+                <a href="{{ env('APP_URL') }}/logout">
                     <button type="button" class="btn btn-primary btn-close-session">Cerrar sesión
                         {{ e_heroicon('arrow-left-on-rectangle', 'outline') }}
                     </button>

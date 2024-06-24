@@ -26,7 +26,8 @@ class NotificationsTypesController extends BaseController
                     "resources/js/notifications_module/notifications_types.js"
                 ],
                 "notifications_types" => $notifications_types,
-                "tabulator" => true
+                "tabulator" => true,
+                "submenuselected" => "notifications-types",
             ]
         );
     }
