@@ -152,7 +152,7 @@ function initializeTooltipTextsTable() {
 
 function newTooltipText() {
     resetModal();
-    showModal("tooltip-texts-modal", "Añade un texto");
+    showModal("tooltip-texts-modal", "Añade un tooltip");
 }
 
 async function loadTooltipTextsModal(tooltipTextUid) {

@@ -537,7 +537,7 @@
                     <div class="hidden" id="big-carrousel-info">
                         <div class="field mt-2">
                             <div class="label-container label-center">
-                                <label for="featured_big_carrousel_title">Título en el carrousel grande</label>
+                                <label for="featured_big_carrousel_title">Título en el slider principal</label>
                             </div>
                             <div class="content-container mt-1">
                                 <input maxlength="255" type="text" placeholder="Curso en bellasartes"
@@ -548,8 +548,7 @@
 
                         <div class="field mt-2">
                             <div class="label-container">
-                                <label for="featured_big_carrousel_description">Descripción en el carrousel
-                                    grande</label>
+                                <label for="featured_big_carrousel_description">Descripción en el slider principal</label>
                             </div>
 
                             <div class="content-container mt-1">
@@ -576,7 +575,7 @@
 
                         <div class="field mt-2">
                             <div class="label-container">
-                                <label for="featured_big_carrousel_image_path">Imagen en el carrousel grande</label>
+                                <label for="featured_big_carrousel_image_path">Imagen en el slider grande</label>
                             </div>
                             <div class="content-container mt-1">
                                 <div class="poa-input-image mb-2">
@@ -608,7 +607,7 @@
                 <section id="feature-main-carrousel-container">
                     <div class="field mt-2">
                         <div class="label-container label-center">
-                            <label for="featured_small_carrousel">Destacar en el carrousel pequeño</label>
+                            <label for="featured_small_carrousel">Destacar en el carrousel principal</label>
                         </div>
 
                         <div class="content-container mt-1">

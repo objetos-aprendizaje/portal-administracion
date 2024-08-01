@@ -6,7 +6,7 @@ function e_heroicon($icon, $type = "outline", $class = null)
     echo heroicon($icon, $type, $class);
 }
 
-function heroicon($icon, $type = "outline", $class)
+function heroicon($icon, $type = "outline", $class=null)
 {
 
     if ($type == "outline") {

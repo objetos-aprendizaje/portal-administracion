@@ -137,20 +137,6 @@ function initializeLegalTextsPagesTable() {
         { title: "Slug", field: "slug", widthGrow: 4 },
         { title: "Orden", field: "order", widthGrow: 2 },
         {
-            title: "Padre",
-            field: "parent",
-            formatter: function (cell, formatterParams, onRendered) {
-                if (cell.getRow().getData().parent_page_name != null){
-                    const dateCreation = cell.getRow().getData().parent_page_name.name;
-
-                    if (dateCreation) return dateCreation;
-                    else return "";
-                }
-
-            },
-            widthGrow: 2,
-        },
-        {
             title: "Fecha de creación",
             field: "created_at",
             formatter: function (cell, formatterParams, onRendered) {
