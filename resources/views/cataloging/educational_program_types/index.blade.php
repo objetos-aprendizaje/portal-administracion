@@ -3,7 +3,7 @@
 @section('content')
 
     <div class="poa-container mb-8">
-        <h2>Listado de tipos de programa educativo</h2>
+        <h2>Listado de tipos de programa formativos</h2>
 
         <div class="table-control-header">
             @include('partials.table-search', ['table' => 'educational-program-types-table'])

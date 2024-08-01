@@ -14,6 +14,11 @@ class ResetPasswordTokensModel extends Authenticatable
 
     protected $keyType = 'string';
 
-    protected $fillable = ['token', 'uid_user', 'token'];
+    protected $fillable = ['token', 'uid_user', 'email'];
+
+    protected $casts = [
+        'uid' => 'string',
+    ];
+    public $incrementing = false;
 
 }

@@ -23,8 +23,8 @@
                         <label for="name">Nombre <span class="text-red-500">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input class="required poa-input" placeholder="Programa formativo de..." type="text"
-                            id="name" name="name" />
+                        <input maxlength="255" class="required poa-input" placeholder="Programa formativo de..."
+                            type="text" id="name" name="name" />
                     </div>
                 </div>
 
@@ -57,6 +57,10 @@
                     <div class="content-container mt-1" id="tags-container">
                         <input id="tags" name="tags" autocomplete="off" name="tags"
                             placeholder="Introduce etiquetas" />
+
+                        @if ($general_options['openai_key'])
+                            <a href="javascript:void(0)" id="generate-tags-btn">Generar etiquetas</a>
+                        @endif
                     </div>
 
                 </div>
@@ -185,11 +189,36 @@
 
                 <div class="field mt-2">
                     <div class="label-container label-center">
+                        <label for="payment_mode">Forma de pago (€)</label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <select class="poa-select w-full" id="payment_mode" name="payment_mode">
+                            <option value="SINGLE_PAYMENT">Pago único</option>
+                            <option value="INSTALLMENT_PAYMENT">Pago fraccionado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field mt-2">
+                    <div class="label-container label-center" id="label-container-cost">
                         <label for="cost">Coste (€)</label>
                     </div>
                     <div class="content-container mt-1">
                         <input type="number" placeholder="100€" step="any" class="poa-input" id="cost"
                             name="cost" value="0" />
+                        <div id="payment_terms" class="hidden">
+                            <div id="payment-terms-list">
+
+                            </div>
+
+                            <div class="flex justify-end">
+                                <div>
+                                    <button type="button" class="btn-icon" id="btn-add-payment">
+                                        {{ e_heroicon('plus', 'outline') }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -242,11 +271,11 @@
 
                 <div class="field">
                     <div class="label-container">
-                        <label for="select-courses">Cursos</label>
+                        <label for="courses">Cursos</label>
                     </div>
 
                     <div class="content-container">
-                        <select id="select-courses" class="mb-4" name="courses[]" multiple
+                        <select id="courses" class="mb-4" name="courses[]" multiple
                             placeholder="Selecciona uno o varios cursos" autocomplete="off">
                         </select>
                     </div>
@@ -302,8 +331,8 @@
                                 <label for="featured_slider_title">Título en el slider</label>
                             </div>
                             <div class="content-container mt-1">
-                                <input type="text" placeholder="Curso en bellasartes" class="poa-input"
-                                    id="featured_slider_title" name="featured_slider_title" />
+                                <input maxlength="255" type="text" placeholder="Curso en bellasartes"
+                                    class="poa-input" id="featured_slider_title" name="featured_slider_title" />
                             </div>
                         </div>
 
@@ -384,6 +413,16 @@
                     </div>
                 </section>
 
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="contact_emails">Emails de contacto</label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <input id="contact_emails" autocomplete="off" name="contact_emails"
+                            placeholder="Introduce emails de contacto" />
+                    </div>
+                </div>
+
                 <div class="btn-block" id="btns-save">
                     <div id="draft-button-container" class="hidden">
                         <button type="submit" value="draft" id="draft-button" class="btn btn-secondary">
@@ -407,12 +446,38 @@
 <template id="document-template">
     <div class="document" data-document-uid="">
         <div class="flex gap-2 mb-2">
-            <input type="text" class="poa-input document-name" placeholder="Nombre" />
+            <input maxlength="255" type="text" class="poa-input document-name" placeholder="Nombre" />
             <div class="flex-none">
                 <button type="button" class="btn-icon btn-remove-document">
                     {{ e_heroicon('trash', 'outline') }}
                 </button>
             </div>
+        </div>
+    </div>
+</template>
+
+<template id="payment-term-template">
+    <div class="payment-term">
+        <input type="text" class="poa-input payment-term-name" placeholder="Información del plazo" />
+
+        <div class="flex gap-2 my-2">
+
+            <div class="flex-grow">
+                <input type="datetime-local" class="poa-input w-full payment-term-start-date" name="payment_date" />
+            </div>
+
+            <div class="flex-grow">
+                <input type="datetime-local" class="poa-input w-full payment-term-finish-date" name="payment_date" />
+            </div>
+
+            <div class="flex-grow">
+                <input type="number" placeholder="100€" step="any" class="poa-input w-full payment-term-cost"
+                    value="" />
+            </div>
+
+            <button class="w-[32px] h-[32px] btn-icon btn-remove-payment-term" type="button">
+                {{ e_heroicon('trash', 'outline') }}
+            </button>
         </div>
     </div>
 </template>

@@ -261,7 +261,7 @@ function resetModal() {
     const form = document.getElementById("call-form");
     form.reset();
     document.getElementById("call_uid").value = "";
-    resetFormErrors();
+    resetFormErrors("call-form");
     tomSelectCallsEducationalProgramTypes.clear();
     document.getElementById("attachment-download").classList.add("hidden");
     document.getElementById("file-name").innerText =

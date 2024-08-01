@@ -23,7 +23,7 @@
                         <label for="first_name">Nombre <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input placeholder="Manuel" type="text" id="first_name" name="first_name"
+                        <input maxlength="100" placeholder="Manuel" type="text" id="first_name" name="first_name"
                             class="poa-input" />
                     </div>
                 </div>
@@ -33,7 +33,7 @@
                         <label for="last_name">Apellidos <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input placeholder="Pérez Martínez" type="text" id="last_name" name="last_name"
+                        <input maxlength="255" placeholder="Pérez Martínez" type="text" id="last_name" name="last_name"
                             class="poa-input" />
                     </div>
                 </div>
@@ -43,7 +43,7 @@
                         <label for="nif">NIF <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input placeholder="12345678X" type="text" id="nif" name="nif" class="poa-input" />
+                        <input maxlength="255" placeholder="12345678X" type="text" id="nif" name="nif" class="poa-input" />
                     </div>
                 </div>
 
@@ -52,7 +52,7 @@
                         <label for="email">Email <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input placeholder="email@email.com" type="text" id="email" name="email"
+                        <input maxlength="150" placeholder="email@email.com" type="text" id="email" name="email"
                             class="poa-input" />
                     </div>
                 </div>
@@ -63,6 +63,15 @@
                     </div>
                     <div class="content-container">
                         <input id="roles" name="roles" autocomplete="off" placeholder="Introduce roles" />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="department_uid">Departamento <span class="text-danger">*</span></label>
+                    </div>
+                    <div class="content-container">
+                        <select id="department_uid" class="poa-select w-full"></select>
                     </div>
                 </div>
 

@@ -89,28 +89,31 @@ class GeneralAdministrationController extends BaseController
         if (!isset($_FILES["logoPoaFile"])) return response()->json(['message' => env('ERROR_MESSAGE'), 400]);
 
         $loga_poa_image = $request->file('logoPoaFile');
+        $logoId = $request->input('logoId');
+
         $targetFile = saveFile($loga_poa_image, "images/custom-logos", null, true);
 
         if (!$targetFile) {
             return response()->json(['message' => 'Error al guardar la imagen', 405]);
         }
 
-        DB::transaction(function () use ($targetFile) {
-            GeneralOptionsModel::where('option_name', 'poa_logo')->update(['option_value' => $targetFile]);
+        DB::transaction(function () use ($targetFile, $logoId) {
+            GeneralOptionsModel::where('option_name', $logoId)->update(['option_value' => $targetFile]);
             LogsController::createLog('Actualización del logo', 'Configuración general', auth()->user()->uid);
         });
 
         return response()->json(['message' => 'Logo actualizado correctamente', 'route' => $targetFile]);
     }
 
-    public function restoreLogoImage()
+    public function restoreLogoImage(Request $request)
     {
-        DB::transaction(function () {
-            GeneralOptionsModel::where('option_name', 'poa_logo')->update(['option_value' => null]);
+        $logoId = $request->input('logoId');
+        DB::transaction(function () use($logoId) {
+            GeneralOptionsModel::where('option_name', $logoId)->update(['option_value' => null]);
             LogsController::createLog('Eliminación del logo', 'Configuración general', auth()->user()->uid);
         });
 
-        return response()->json(['message' => 'Logo restaurado correctamente']);
+        return response()->json(['message' => 'Logo eliminado correctamente']);
     }
 
     public function changeColors(Request $request)
@@ -165,7 +168,6 @@ class GeneralAdministrationController extends BaseController
         DB::transaction(function () use ($request) {
             $updateData = [
                 'learning_objects_appraisals' => $request->input('learning_objects_appraisals'),
-                'payment_gateway' => $request->input('payment_gateway'),
                 'operation_by_calls' => $request->input('operation_by_calls'),
             ];
 
@@ -286,5 +288,13 @@ class GeneralAdministrationController extends BaseController
         });
 
         return response()->json(['message' => 'Fuente eliminada correctamente']);
+    }
+
+    public function saveOpenai(Request $request) {
+        $openAiKey = $request->input('openai_key');
+
+        GeneralOptionsModel::where('option_name', 'openai_key')->update(['option_value' => $openAiKey]);
+
+        return response()->json(['message' => 'Clave de OpenAI guardada correctamente']);
     }
 }

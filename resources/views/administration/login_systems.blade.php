@@ -29,7 +29,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="google_client_id">ID Cliente</label>
+                        <label for="google_client_id">ID Cliente <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['google_client_id'] }}" placeholder=".apps.googleusercontent.com"
@@ -39,7 +39,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="google_client_secret">Clave secreta de cliente</label>
+                        <label for="google_client_secret">Clave secreta de cliente <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['google_client_secret'] }}" class="poa-input" type="text"
@@ -84,7 +84,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="facebook_client_id">ID Cliente</label>
+                        <label for="facebook_client_id">ID Cliente <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['facebook_client_id'] }}"
@@ -96,7 +96,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="linkedin_url">Clave secreta de cliente</label>
+                        <label for="linkedin_url">Clave secreta de cliente <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['facebook_client_secret'] }}" class="poa-input" type="text"
@@ -141,7 +141,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="twitter_client_id">ID Cliente</label>
+                        <label for="twitter_client_id">ID Cliente <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['twitter_client_id'] }}" placeholder=".apps.twitter.com"
@@ -152,7 +152,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="twitter_client_secret">Clave secreta de cliente</label>
+                        <label for="twitter_client_secret">Clave secreta de cliente <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['twitter_client_secret'] }}" class="poa-input" type="text"
@@ -199,7 +199,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="linkedin_client_id">ID Cliente</label>
+                        <label for="linkedin_client_id">ID Cliente <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['linkedin_client_id'] }}" placeholder=".apps.linkedin.com"
@@ -210,7 +210,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="linkedin_client_secret">Clave secreta de cliente</label>
+                        <label for="linkedin_client_secret">Clave secreta de cliente <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['linkedin_client_secret'] }}" class="poa-input" type="text"
@@ -256,30 +256,30 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="cas_entity_id">Entity ID</label>
+                        <label for="cas_entity_id">Entity ID <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
-                        <input value="{{ $cas ? $cas['idp_entity_id'] : '' }}" placeholder="Entity ID"
+                        <input maxlength="255" value="{{ $cas ? $cas['idp_entity_id'] : '' }}" placeholder="Entity ID"
                             class="poa-input" type="text" id="cas_entity_id" name="cas_entity_id" />
                     </div>
                 </div>
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="cas_login_url">Login URL</label>
+                        <label for="cas_login_url">Login URL <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
-                        <input value="{{ $cas ? $cas['idp_login_url'] : '' }}" placeholder="Login URL"
+                        <input maxlength="255" value="{{ $cas ? $cas['idp_login_url'] : '' }}" placeholder="Login URL"
                             class="poa-input" type="text" id="cas_login_url" name="cas_login_url" />
                     </div>
                 </div>
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="cas_logout_url">Logout URL</label>
+                        <label for="cas_logout_url">Logout URL <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
-                        <input value="{{ $cas ? $cas['idp_logout_url'] : '' }}" placeholder="Logout URL"
+                        <input maxlength="255" value="{{ $cas ? $cas['idp_logout_url'] : '' }}" placeholder="Logout URL"
                             class="poa-input" type="text" id="cas_logout_url" name="cas_logout_url" />
                     </div>
                 </div>
@@ -287,7 +287,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="cas_certificate">Certificado x509</label>
+                        <label for="cas_certificate">Certificado x509 <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $cas ? $cas['idp_x509_cert'] : '' }}" class="poa-input" type="text"
@@ -333,38 +333,37 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="rediris_entity_id">Entity ID</label>
+                        <label for="rediris_entity_id">Entity ID <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
-                        <input value="{{ $rediris ? $rediris['idp_entity_id'] : '' }}" placeholder="Entity ID"
+                        <input maxlength="255" value="{{ $rediris ? $rediris['idp_entity_id'] : '' }}" placeholder="Entity ID"
                             class="poa-input" type="text" id="rediris_entity_id" name="rediris_entity_id" />
                     </div>
                 </div>
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="rediris_login_url">Login URL</label>
+                        <label for="rediris_login_url">Login URL <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
-                        <input value="{{ $rediris ? $rediris['idp_login_url'] : '' }}" placeholder="Login URL"
+                        <input maxlength="255" value="{{ $rediris ? $rediris['idp_login_url'] : '' }}" placeholder="Login URL"
                             class="poa-input" type="text" id="rediris_login_url" name="rediris_login_url" />
                     </div>
                 </div>
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="rediris_logout_url">Logout URL</label>
+                        <label for="rediris_logout_url">Logout URL <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
-                        <input value="{{ $rediris ? $rediris['idp_logout_url'] : '' }}" placeholder="Logout URL"
+                        <input maxlength="255" value="{{ $rediris ? $rediris['idp_logout_url'] : '' }}" placeholder="Logout URL"
                             class="poa-input" type="text" id="rediris_logout_url" name="rediris_logout_url" />
                     </div>
                 </div>
 
-
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="rediris_certificate">Certificado x509</label>
+                        <label for="rediris_certificate">Certificado x509 <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $rediris ? $rediris['idp_x509_cert'] : '' }}" class="poa-input" type="text"

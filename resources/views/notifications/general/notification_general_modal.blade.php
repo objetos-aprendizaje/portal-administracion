@@ -72,7 +72,7 @@
                         <label for="title">Titulo <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input type="text" id="title" name="title" class="poa-input" />
+                        <input maxlength="100" type="text" id="title" name="title" class="poa-input" />
                     </div>
                 </div>
 

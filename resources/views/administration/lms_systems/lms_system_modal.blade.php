@@ -25,7 +25,7 @@
                         <label for="name">Nombre <span class="text-red-500">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input class="required poa-input" placeholder="Moodle" type="text" id="name"
+                        <input maxlength="255" class="required poa-input" placeholder="Moodle" type="text" id="name"
                             name="name" />
                     </div>
                 </div>
@@ -35,7 +35,7 @@
                         <label for="name">Identificador <span class="text-red-500">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input class="required poa-input" placeholder="moodle" type="text" id="identifier"
+                        <input maxlength="255" class="required poa-input" placeholder="moodle" type="text" id="identifier"
                             name="identifier" />
                     </div>
                 </div>

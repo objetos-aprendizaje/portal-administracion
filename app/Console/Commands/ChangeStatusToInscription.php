@@ -2,9 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\SendEmailJob;
+use App\Models\AutomaticNotificationTypesModel;
 use App\Models\CoursesModel;
 use App\Models\CourseStatusesModel;
-use App\Models\EmailNotificationsAutomaticModel;
 use App\Models\GeneralNotificationsAutomaticModel;
 use App\Models\GeneralNotificationsAutomaticUsersModel;
 use App\Models\UsersModel;
@@ -36,7 +37,7 @@ class ChangeStatusToInscription extends Command
         // fecha de inicio de inscripción inferior a la actual
         $courses = CoursesModel::where('inscription_start_date', '<=', now())
             ->where('inscription_finish_date', '>=', now())
-            ->with(['status', 'categories', 'tags'])
+            ->with(['status', 'categories', 'tags', 'blocks', 'blocks.learningResults'])
             ->whereHas('status', function ($query) {
                 $query->where('code', 'ACCEPTED_PUBLICATION');
             })
@@ -44,17 +45,17 @@ class ChangeStatusToInscription extends Command
 
         if ($courses->count()) {
             $developmentStatus = CourseStatusesModel::where('code', 'INSCRIPTION')->first();
-            $coursesUids = $courses->pluck('uid');
-
             $studentsUsers = $this->getAllStudents();
 
-            DB::transaction(function () use ($coursesUids, $developmentStatus, $studentsUsers, $courses) {
-                // Cambiamos el estado de los cursos a DEVELOPMENT
-                CoursesModel::whereIn('uid', $coursesUids)->update(['course_status_uid' => $developmentStatus->uid]);
+            DB::transaction(function () use ($developmentStatus, $studentsUsers, $courses) {
 
-                // Notificaciones a los usuarios que están interesados en categorías de los cursos
-                $this->sendEmailsNotificationsUsersInterested($studentsUsers, $courses);
-                $this->sendGeneralNotificationsUsersInterested($studentsUsers, $courses);
+                foreach ($courses as $course) {
+                    $course->status()->associate($developmentStatus);
+                    $course->save();
+
+                    $this->sendGeneralNotificationsUsersInterested($studentsUsers, $course);
+                    $this->sendEmailsNotificationsUsersInterested($studentsUsers, $course);
+                }
 
                 // Enviamos los cursos a la api de búsqueda para posteriormente poder buscarlos desde el front
                 if (env('ENABLED_API_SEARCH')) {
@@ -64,88 +65,44 @@ class ChangeStatusToInscription extends Command
         }
     }
 
-    private function sendGeneralNotificationsUsersInterested($studentsUsers, $courses)
+    private function sendGeneralNotificationsUsersInterested($studentsUsers, $course)
     {
+        $automaticNotificationType = AutomaticNotificationTypesModel::where('code', 'NEW_COURSES_NOTIFICATIONS')->first();
+
+        $generalNotificationAutomaticUid = generate_uuid();
+        $generalNotificationAutomatic = new GeneralNotificationsAutomaticModel();
+        $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
+        $generalNotificationAutomatic->title = "Disponible nuevo curso";
+        $generalNotificationAutomatic->description = "El curso <b>" . $course->title . "</b> que podría interesarte, está disponible para inscripción";
+        $generalNotificationAutomatic->entity_uid = $course->uid;
+        $generalNotificationAutomatic->automatic_notification_type_uid = $automaticNotificationType->uid;
+        $generalNotificationAutomatic->created_at = now();
+        $generalNotificationAutomatic->save();
+
         // Filtramos los usuarios por los que tienen desactivadas las notificaciones de nuevos cursos
-        $studentsUsersFiltered = $studentsUsers->filter(function ($user) {
-            return !$user->automaticGeneralNotificationsTypesDisabled->contains(function ($value) {
-                return $value->code === 'NEW_COURSES_NOTIFICATIONS';
-            });
-        });
+        $studentsFiltered = $this->filterUsersInterestedCourse($course, $studentsUsers, "general");
 
-        foreach ($studentsUsersFiltered as $user) {
-            $uidsCategories = $user->categories->pluck('uid')->toArray();
-
-            // Buscamos en el array de cursos los que tengan alguna categoría en común con el usuario
-            $coursesFiltered = $this->filterUsersInterested($courses, $uidsCategories);
-
-            if ($coursesFiltered->count()) {
-                foreach ($coursesFiltered as $course) {
-                    $generalNotificationAutomaticUid = generate_uuid();
-                    $generalNotificationAutomatic = new GeneralNotificationsAutomaticModel();
-                    $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
-                    $generalNotificationAutomatic->title = "Disponible nuevo curso";
-                    $generalNotificationAutomatic->description = "El curso " . $course->title . " que podría interesarte, está disponible para inscripción";
-                    $generalNotificationAutomatic->entity = "course_status_change_inscription";
-                    $generalNotificationAutomatic->entity_uid = $course->uid;
-                    $generalNotificationAutomatic->created_at = now();
-                    $generalNotificationAutomatic->save();
-
-                    $generalNotificationAutomaticUser = new GeneralNotificationsAutomaticUsersModel();
-                    $generalNotificationAutomaticUser->uid = generate_uuid();
-                    $generalNotificationAutomaticUser->general_notifications_automatic_uid = $generalNotificationAutomaticUid;
-                    $generalNotificationAutomaticUser->user_uid = $user->uid;
-                    $generalNotificationAutomaticUser->save();
-                }
-            }
+        foreach ($studentsFiltered as $student) {
+            $generalNotificationAutomaticUser = new GeneralNotificationsAutomaticUsersModel();
+            $generalNotificationAutomaticUser->uid = generate_uuid();
+            $generalNotificationAutomaticUser->general_notifications_automatic_uid = $generalNotificationAutomaticUid;
+            $generalNotificationAutomaticUser->user_uid = $student->uid;
+            $generalNotificationAutomaticUser->save();
         }
     }
 
-    private function sendEmailsNotificationsUsersInterested($studentsUsers, $courses)
+    private function sendEmailsNotificationsUsersInterested($studentsUsers, $course)
     {
-        // Filtramos los usuarios por los que tienen desactivadas las notificaciones de nuevos cursos
-        $studentsUsersFiltered = $studentsUsers->filter(function ($user) {
-            return !$user->automaticEmailNotificationsTypesDisabled->contains(function ($value) {
-                return $value->code === 'NEW_COURSES_NOTIFICATIONS';
-            });
-        });
+        $parameters = [
+            'course_title' => $course->title,
+            'course_description' => $course->description,
+        ];
 
-        // Recorremos los usuarios y le buscamos los cursos en los que está interesado
-        foreach ($studentsUsersFiltered as $user) {
-            $uidsCategories = $user->categories->pluck('uid')->toArray();
+        $studentsUsers = $this->filterUsersInterestedCourse($course, $studentsUsers, "email");
 
-            // Buscamos en el array de cursos los que tengan alguna categoría en común con el usuario
-            $coursesFiltered = $this->filterUsersInterested($courses, $uidsCategories);
-
-            // Si hay cursos que coinciden con las categorías del usuario, se envía la notificación
-            if ($coursesFiltered->count()) {
-                $coursesTemplate = array_map(function ($course) {
-                    return [
-                        'title' => $course['title'],
-                        'description' => $course['description'],
-                    ];
-                }, $coursesFiltered->toArray());
-
-                $emailNotificationAutomatic = new EmailNotificationsAutomaticModel();
-                $emailNotificationAutomatic->uid = generate_uuid();
-                $emailNotificationAutomatic->subject = 'Nuevos cursos disponibles';
-                $emailNotificationAutomatic->user_uid = $user->uid;
-                $emailNotificationAutomatic->parameters = json_encode(['courses' => $coursesTemplate]);
-                $emailNotificationAutomatic->template = 'recommended_courses_user';
-                $emailNotificationAutomatic->save();
-            }
+        foreach ($studentsUsers as $user) {
+            dispatch(new SendEmailJob($user->email, 'Nuevo curso disponible', $parameters, 'emails.recommended_courses_user'));
         }
-    }
-
-    private function filterUsersInterested($courses, $uidsUserCategories)
-    {
-        $coursesFiltered = $courses->filter(function ($course) use ($uidsUserCategories) {
-            return $course->categories->pluck('uid')->contains(function ($value) use ($uidsUserCategories) {
-                return in_array($value, $uidsUserCategories);
-            });
-        });
-
-        return $coursesFiltered;
     }
 
     private function getAllStudents()
@@ -153,8 +110,41 @@ class ChangeStatusToInscription extends Command
         return UsersModel::whereHas('roles', function ($query) {
             $query->where('code', 'STUDENT');
         })
-            ->with('categories', 'automaticGeneralNotificationsTypesDisabled', 'automaticEmailNotificationsTypesDisabled')
+            ->with('categories', 'automaticGeneralNotificationsTypesDisabled', 'automaticEmailNotificationsTypesDisabled', 'learningResultsPreferences')
             ->get();
+    }
+
+    private function filterUsersInterestedCourse($course, $users, $typeNotification)
+    {
+        if ($typeNotification === "general") {
+            $usersFiltered = $users->filter(function ($user) {
+                return !$user->automaticGeneralNotificationsTypesDisabled->contains(function ($value) {
+                    return $value->code === 'NEW_COURSES_NOTIFICATIONS';
+                });
+            });
+        } else {
+            $usersFiltered = $users->filter(function ($user) {
+                return !$user->automaticEmailNotificationsTypesDisabled->contains(function ($value) {
+                    return $value->code === 'NEW_COURSES_NOTIFICATIONS';
+                });
+            });
+        }
+
+        // Comprobamos si tiene categorías en común con el curso
+        $usersFilteredCategories = $usersFiltered->filter(function ($user) use ($course) {
+            return $user->categories->contains(function ($value) use ($course) {
+                return $course->categories->contains('uid', $value->uid);
+            });
+        });
+
+        $usersFilteredLearningResults = $usersFiltered->filter(function ($user) use ($course) {
+            return $user->learningResultsPreferences->contains(function ($value) use ($course) {
+                return $course->blocks->pluck('learningResults')->flatten()->contains('uid', $value->uid);
+            });
+        });
+
+        // Mergeamos de manera única
+        return $usersFilteredCategories->merge($usersFilteredLearningResults)->unique('uid');
     }
 
     private function sendCoursesToApiSearch($courses)

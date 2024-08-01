@@ -4,7 +4,7 @@ import {
     tabulatorBaseConfig,
     updatePaginationInfo,
     controlsSearch,
-    controlsPagination
+    controlsPagination,
 } from "../tabulator_handler";
 import { heroicon } from "../heroicons";
 import {
@@ -13,7 +13,9 @@ import {
     resetFormFields,
     apiFetch,
 } from "../app.js";
-import { showModal, hideModal } from "../modal_handler";
+import { showToast } from "../toast.js";
+
+import { showModal, hideModal, showModalConfirmation } from "../modal_handler";
 
 let apiKeyTable;
 let selectedApiKeys = [];
@@ -29,6 +31,31 @@ function initHandlers() {
     document.getElementById("new-api-key-btn").addEventListener("click", () => {
         newApiKey();
     });
+
+    document
+        .getElementById("delete-api-keys-btn")
+        .addEventListener("click", () => {
+            if (selectedApiKeys.length) {
+                showModalConfirmation(
+                    "Eliminar páginas de API",
+                    "¿Está seguro que desea eliminar las páginas de API seleccionadas?",
+                    "delete_api_keys"
+                ).then((result) => {
+                    if (result) deleteApiKeys();
+                });
+            } else {
+                showToast(
+                    "Debe seleccionar al menos una clave de API",
+                    "error"
+                );
+            }
+        });
+
+    document
+        .getElementById("btn-reload-table")
+        .addEventListener("click", () => {
+            reloadTable();
+        });
 
     document
         .getElementById("api-key-form")
@@ -148,6 +175,25 @@ function fillApiKeyModal(apiKey) {
 }
 
 /**
+ * Elimina las páginas de footer seleccionadas.
+ * Realiza una petición DELETE al servidor y actualiza la tabla si tiene éxito.
+ */
+async function deleteApiKeys() {
+    const params = {
+        url: "/administration/api_keys/delete_api_key",
+        method: "DELETE",
+        body: { uids: selectedApiKeys.map((apiKey) => apiKey.uid) },
+        toast: true,
+        loader: true,
+        stringify: true,
+    };
+
+    apiFetch(params).then(() => {
+        reloadTable();
+    });
+}
+
+/**
  * Este bloque maneja la presentación del formulario para una nueva redirección.
  * Recopila los datos y los envía a un endpoint específico.
  * Si la operación tiene éxito, actualiza la tabla y muestra un toast.
@@ -172,4 +218,8 @@ function submitNewApiKey() {
         .catch((data) => {
             showFormErrors(data.errors);
         });
+}
+
+function reloadTable() {
+    apiKeyTable.replaceData(endPointTable);
 }

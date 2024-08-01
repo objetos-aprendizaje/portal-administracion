@@ -32,7 +32,7 @@ a {
 
 .input-with-button {
     input {
-        @apply rounded-lg border-gray-200 border-2 pl-2 h-10 pr-12 outline-[#C7C7C7]
+        @apply rounded-lg border-gray-200 border-2 pl-2 h-10 pr-20 outline-[#C7C7C7]
     }
 
     button {
@@ -283,6 +283,18 @@ a {
     @apply text-base
 }
 
+.tabulator-menu-item {
+    svg {
+        @apply w-[16px] h-[16px];
+    }
+
+    @apply flex gap-2 items-center;
+}
+
+.table-container .tabulator .tabulator-tableholder{
+    @apply overflow-x-scroll
+}
+
 .table-container .tabulator-placeholder-contents  {
     .no-records-message {
         svg {
@@ -398,7 +410,7 @@ a {
 
 .checkbox {
     .checkbox-switch {
-        @apply w-11 h-6 min-w-[35px] relative top-0 bg-gray-200 rounded-full dark:bg-gray-700 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600
+        @apply min-w-[44px] w-11 h-6 relative top-0 bg-gray-200 rounded-full dark:bg-gray-700 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600
     }
     .checkbox-name {
         @apply ml-3
@@ -965,6 +977,10 @@ body.modal-open {
     input {
         @apply p-2 border-primary focus:outline-none focus:shadow-none rounded-none
     }
+
+    .search-tree {
+        @apply border-[#EAEDF2] w-full rounded-[11px] bg-[#F7F8FA] border mb-[12px];
+    }
     textarea {
         @apply border-t-0 border-x border-b border-primary p-2 rounded-b-[8px] focus:ring-0 focus:border-primary focus:outline-none focus:shadow-none rounded-t-none
     }
@@ -1077,4 +1093,22 @@ body.modal-open {
 }
 .columns-selector{
     @apply text-white rounded-2xl block w-[32px] h-[32px] p-[6px] bg-primary
+}
+.input-with-button button.clear-table-btn{
+    @apply right-[45px] h-5 w-5 rounded-full p-[1px]
+}
+.container-logo-general .btn.btn-primary{
+    @apply min-w-0 w-full;
+}
+.tooltip-i{
+    @apply rounded-full text-white bg-primary w-[30px] h-[30px] left-[10px] px-[13px] py-[4px] cursor-pointer relative
+}
+.tooltip-i svg{
+    @apply w-[30px] h-[30px] relative top-[-3px] left-[-12px]
+}
+.tooltip-i svg path{
+    @apply pointer-events-none
+}
+.tooltip-texts{
+    @apply h-auto absolute bg-white rounded-[4px] w-[300px] z-10 pt-[16px] pr-[16px] pb-[12px] pl-[22px] shadow-lg before:content-[''] before:bg-white before:w-[19px] before:h-[19px] before:rotate-45 before:block before:absolute before:left-[-10px] before:top-[40px]
 }

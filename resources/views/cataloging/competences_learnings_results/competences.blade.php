@@ -13,9 +13,6 @@
                 @endif
             </div>
 
-            @if ($competence['description'])
-                <p>{{ $competence['description'] }}</p>
-            @endif
 
             @if (!empty($competence['subcompetences']))
                 @include('cataloging.competences_learnings_results.competences', [

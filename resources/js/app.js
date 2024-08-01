@@ -5,6 +5,7 @@ window.defaultErrorMessageFetch = "Ha ocurrido un error";
 import TomSelect from "tom-select";
 import { Spanish } from "flatpickr/dist/l10n/es.js";
 import flatpickr from "flatpickr";
+import tag from "html5-tag";
 
 import { showToast } from "./toast";
 import { heroicon } from "./heroicons";
@@ -13,6 +14,8 @@ document.addEventListener("DOMContentLoaded", function () {
     adjustPadding();
     controlClickOutsideMoreOptionsTable();
     applyPreventDefaultForms();
+
+    getAllLabelsOfPage()
 });
 
 window.addEventListener("resize", function () {
@@ -24,18 +27,19 @@ export function accordionControls() {
 
     accordionHeaders.forEach(function (header) {
         header.addEventListener("click", function () {
-            // Encuentra el contenido del acordeón relacionado
             var content = this.nextElementSibling;
 
-            // Comprueba si el contenido del acordeón está actualmente oculto
+            // Alternar la clase del contenido del acordeón
+            content.classList.toggle("accordion-collapsed");
+            content.classList.toggle("accordion-uncollapsed");
+
+            var rotateIcon = this.querySelector(".rotate-icon");
+
+            // Alternar la rotación del ícono
             if (content.classList.contains("accordion-collapsed")) {
-                // Si está oculto, ábrelo
-                content.classList.remove("accordion-collapsed");
-                content.classList.add("accordion-uncollapsed");
+                rotateIcon.style.transform = "rotate(0deg)";
             } else {
-                // Si está abierto, ciérralo
-                content.classList.remove("accordion-uncollapsed");
-                content.classList.add("accordion-collapsed");
+                rotateIcon.style.transform = "rotate(180deg)";
             }
         });
     });
@@ -178,7 +182,7 @@ export function showFormErrors(errors) {
                     );
                 }
             } else if (
-                ["INPUT", "TEXTAREA", "SELECT"].includes(element.tagName)
+                ["INPUT", "TEXTAREA", "SELECT", 'DIV'].includes(element.tagName)
             ) {
                 element.classList.add("error-border");
                 element.parentNode.appendChild(errorContainer);
@@ -637,6 +641,7 @@ export function setDisabledSpecificDivFields(ids, isDisabled) {
         // Busca el div con el id
         const div = document.getElementById(id);
 
+        div.dataset.disabled = isDisabled ? 1 : 0;
         // Si el div no existe, salta a la siguiente iteración
         if (!div) return;
 
@@ -955,3 +960,59 @@ export function showElement(element, show) {
     if (show) element.classList.remove("hidden");
     else element.classList.add("hidden");
 }
+
+function getAllLabelsOfPage(){
+    const labels = document.querySelectorAll('label');
+    labels.forEach((label, index) => {
+        if (label.htmlFor != ""){
+            let findElement = findByInputId(tooltiptexts, label.htmlFor)
+            if (findElement){
+                const div_tooltp_i = tag("div",{
+                    'class': 'tooltip-i',
+                    'data-tooltip': findElement.uid,
+                },`${heroicon("tooltip-i","outline")}`);
+                const div_tooltip_text = tag("div",{
+                    'class': 'tooltip-texts hidden',
+                    'data-tooltip-text': findElement.uid,
+                },findElement.description);
+                label.insertAdjacentHTML('afterend', div_tooltp_i+div_tooltip_text);
+            }
+        }
+    });
+    addEventsToTooltipTexts();
+}
+
+function findByInputId(array, inputId) {
+    const item = array.find(item => item.input_id === inputId);
+    return item ? { uid: item.uid, description: item.description } : null;
+}
+
+function addEventsToTooltipTexts(){
+    const tooltips = document.getElementsByClassName('tooltip-i');
+    Array.from(tooltips).forEach(tooltip => {
+        tooltip.addEventListener('mouseover', (event) => {
+            const uid = event.target.parentNode.getAttribute('data-tooltip');
+            const element = document.querySelector(`[data-tooltip-text="${uid}"]`);
+            element.classList.remove('hidden');
+            const xPosition = tooltip.offsetLeft + 75;
+            element.style.left = `${xPosition}px`;
+            element.classList.add("tooltip-before");
+            setPseudoElementTop(element, "tooltip-before");
+        });
+        tooltip.addEventListener('mouseout', () => {
+            const uid = event.target.parentNode.getAttribute('data-tooltip');
+            const element = document.querySelector(`[data-tooltip-text="${uid}"]`);
+            element.classList.add('hidden');
+            element.classList.remove("tooltip-before");
+        });
+    });
+}
+function setPseudoElementTop(element, uid) {
+    const height = (element.offsetHeight/2)-10;
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    const css = `.${uid}::before { top: ${height}px; }`;
+    style.appendChild(document.createTextNode(css));
+    document.head.appendChild(style);
+}
+

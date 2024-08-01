@@ -50,7 +50,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="send_date">Fecha de envío <span class="text-danger">*</span></label>
+                        <label for="send_date">Fecha de envío</label>
                     </div>
                     <div class="content-container">
                         <input type="datetime-local" id="send_date" name="send_date" class="poa-input" />
@@ -81,7 +81,7 @@
                         <label for="subject">Asunto <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input type="text" id="subject" name="subject" class="poa-input" />
+                        <input maxlength="255" type="text" id="subject" name="subject" class="poa-input" />
                     </div>
                 </div>
 

@@ -1,6 +1,6 @@
 version: '3'
 services:
-    laravel.test:
+    admin.poa:
         build:
             context: ./
             dockerfile: Dockerfile
@@ -14,14 +14,22 @@ services:
             XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
             IGNITION_LOCAL_SITES_PATH: '${PWD}'
         volumes:
-            #- '.:/var/www/html'
             - '/var/www/vhost/admin.portalobjetosaprendizaje.devmainjobs.com/docker_volumes/images:/var/www/html/public/images'
         ports:
             - '${APP_PORT:-80}:80'
             - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
-        # networks:
-        #     - sail
-    # Add other services if applicable
+    laravel_worker:
+        build:
+            context: ./
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP}'
+        image: sail-8.2/app
+        command: php artisan queue:work
+        volumes:
+            - '/var/www/vhost/admin.portalobjetosaprendizaje.devmainjobs.com/docker_volumes/images:/var/www/html/public/images'
+        depends_on:
+            - admin.poa
     kafka:
         image: 'bitnami/kafka:latest'
         ports:
@@ -38,9 +46,6 @@ services:
             - "zookeeper_data:/bitnami"
         environment:
             - ALLOW_ANONYMOUS_LOGIN=yes
-# networks:
-#     sail:
-#         driver: bridge
 
 volumes:
   zookeeper_data:

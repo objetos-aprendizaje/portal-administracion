@@ -121,17 +121,23 @@ class CategoriesController extends BaseController
             'image_path.required' => 'Debes añadir una imagen'
         ];
 
-        $validator = Validator::make($request->all(), [
+
+        $rules = [
             'name' => 'required|max:255',
             'description' => 'nullable',
             'parent_category_uid' => 'nullable|exists:categories,uid',
             'color' => 'required',
-            'image_path' => $request->get('category_uid') ? 'image' : 'required|image',
             'image_path' => 'max:6144'
-        ], $messages);
+        ];
+
+        if(!$request->input("category_uid")) {
+            $rules['image_path'] = 'required|file|max:6144';
+        }
+
+        $validator = Validator::make($request->all(), $rules, $messages);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validator->errors()], 422);
         }
 
         $category_uid = $request->get('category_uid');

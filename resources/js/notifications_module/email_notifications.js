@@ -335,6 +335,12 @@ function resetFilters() {
     tomSelectRolesFilter.clear();
     tomSelectUsersFilter.clear();
 
+    document.getElementById("type-filter").value = "";
+    document.getElementById("state_email_notification").value = "";
+
+    document.querySelector("#destination-roles-filter").classList.add("no-visible");
+    document.querySelector("#destination-users-filter").classList.add("no-visible");
+
 }
 
 function controlDeleteFilters(deleteBtn) {

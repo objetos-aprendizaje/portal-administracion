@@ -2,10 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\SendEmailJob;
+use App\Models\AutomaticNotificationTypesModel;
 use Illuminate\Console\Command;
 use App\Models\CoursesModel;
 use App\Models\CourseStatusesModel;
-use App\Models\EmailNotificationsAutomaticModel;
 use App\Models\GeneralNotificationsAutomaticModel;
 use App\Models\GeneralNotificationsAutomaticUsersModel;
 use App\Services\KafkaService;
@@ -45,138 +46,106 @@ class ChangeStatusToDevelopment extends Command
             })
             ->get();
 
-        if ($courses->count()) {
-            DB::transaction(function () use ($courses) {
+        if (!$courses->count()) return;
 
-                // Los cursos previamente deben haber sido completados con su ID de LMS y URL
-                $coursesAchieveCriteriaStudents = $courses->filter(function ($course) {
-                    return $course->min_required_students <= $course->students->count() && $course->lmsSystem && $course->course_lms_uid && $course->lms_url;
-                });
+        DB::transaction(function () use ($courses) {
+            $statusesCourse = CourseStatusesModel::whereIn('code', ['DEVELOPMENT', 'PENDING_DECISION'])->get()->keyBy('code');
 
-                if ($coursesAchieveCriteriaStudents->count()) {
-                    $this->changeStatusCoursesToDevelopment($coursesAchieveCriteriaStudents);
-                    $this->sendEnrollingsToKafka($coursesAchieveCriteriaStudents);
+            foreach ($courses as $course) {
+                // Si no se llega al mínimo de estudiantes, se pasa a pendiente de decisión y no se envía notificación
+                if ($course->students->count() < $course->min_required_students) {
+                    $course->status()->associate($statusesCourse['PENDING_DECISION']);
+                    $course->save();
+                } else {
+                    $course->status()->associate($statusesCourse['DEVELOPMENT']);
+                    $course->save();
+
+                    $this->sendEmailsNotificationsUsersEnrolled($course);
+                    $this->saveGeneralNotificationsUsers($course);
+
+                    $this->sendEnrollingsToKafka($course);
                 }
-
-                // Si no se alcanza el mínimo de estudiantes, se cambia el estado a PENDING_DECISION.
-                // Posteriormente el docente o gestor tendrá que decidir
-                $coursesNotReachMinStudents = $courses->filter(function ($course) {
-                    return $course->min_required_students > $course->students->count();
-                });
-
-                if ($coursesNotReachMinStudents->count()) {
-                    $this->changeStatusCoursesToPendingDecision($coursesNotReachMinStudents);
-                }
-            });
-        }
+            }
+        });
     }
 
-    private function changeStatusCoursesToDevelopment($courses)
-    {
-        $statusDevelopment = CourseStatusesModel::where('code', 'DEVELOPMENT')->first();
-        $coursesUids = $courses->pluck('uid');
-
-        CoursesModel::whereIn('uid', $coursesUids)->update(['course_status_uid' => $statusDevelopment->uid]);
-
-        $this->saveGeneralNotificationsUsers($courses);
-        $this->saveEmailsNotificationsUsersEnrolled($courses);
-    }
-
-    private function sendEnrollingsToKafka($courses)
+    private function sendEnrollingsToKafka($course)
     {
         $kafkaService = new KafkaService();
-        $coursesToSend = [];
 
-        foreach ($courses as $course) {
-            $coursesToSend[] = [
-                'topic' => $course->lmsSystem->identifier,
-                'key' => 'course_enrollings',
-                'value' => [
-                    'course_lms_uid' => $course->course_lms_uid,
-                    'course_poa_uid' => $course->uid,
-                    'students' => $course->students->pluck('email')->toArray()
-                ]
-            ];
-        }
+        $courseToSend[] = [
+            'topic' => $course->lmsSystem->identifier,
+            'key' => 'course_enrollings',
+            'value' => [
+                'course_lms_uid' => $course->course_lms_uid,
+                'course_poa_uid' => $course->uid,
+                'students' => $course->students->pluck('email')->toArray()
+            ]
+        ];
 
-        $kafkaService->sendMessages($coursesToSend);
-    }
-
-    private function changeStatusCoursesToPendingDecision($courses)
-    {
-        $coursesNotReachMinStudents = $courses->filter(function ($course) {
-            return $course->min_required_students > $course->students->count();
-        });
-
-        if ($coursesNotReachMinStudents->count()) {
-            $statusPendingDecision = CourseStatusesModel::where('code', 'PENDING_DECISION')->first();
-
-            foreach ($coursesNotReachMinStudents as $course) {
-                $course->course_status_uid = $statusPendingDecision->uid;
-            }
-
-            $course->save();
-        }
+        $kafkaService->sendMessages($courseToSend);
     }
 
     // Prepara todos los emails de los usuarios inscritos en los cursos
-    private function saveEmailsNotificationsUsersEnrolled($courses)
+    private function sendEmailsNotificationsUsersEnrolled($course)
     {
-        $emailNotificationsAutomaticData = [];
-        foreach ($courses as $course) {
-            foreach ($course->students as $student) {
-                $realizationFinishDateFormatted = formatDatetimeUser($course->realization_finish_date);
-                $emailNotificationsAutomaticData[] = [
-                    'uid' => generate_uuid(),
-                    'subject' => 'El curso ' . $course->title . ' ya está en período de realización',
-                    'user_uid' => $student->uid,
-                    'parameters' => json_encode(['courseName' => $course->title, 'realizationFinishDate' => $realizationFinishDateFormatted]),
-                    'template' => 'course_started_enrolling'
-                ];
-            }
-        }
+        $realizationFinishDateFormatted = formatDatetimeUser($course->realization_finish_date);
 
-        $emailNotificationsAutomaticDataChunks = array_chunk($emailNotificationsAutomaticData, 500); // Divide los datos en chunks de 500 registros
-        foreach ($emailNotificationsAutomaticDataChunks as $chunk) {
-            EmailNotificationsAutomaticModel::insert($chunk);
+        $parameters = [
+            'course_title' => $course->title,
+            'realization_finish_date' => $realizationFinishDateFormatted
+        ];
+
+        $studentsUsers = $this->filterUsersNotification($course->students, "email");
+
+        foreach ($studentsUsers as $user) {
+            dispatch(new SendEmailJob($user->email, 'El curso ' . $course->title . ' ya está en período de realización', $parameters, 'emails.course_started_development'));
         }
     }
 
-    private function saveGeneralNotificationsUsers($courses)
+    private function saveGeneralNotificationsUsers($course)
     {
+        $automaticNotificationType = AutomaticNotificationTypesModel::where('code', 'COURSE_ENROLLMENT_COMMUNICATIONS')->first();
 
-        $generalNotificationAutomatics = [];
-        $generalNotificationAutomaticUsers = [];
+        $generalNotificationAutomaticUid = generate_uuid();
+        $generalNotificationAutomatic = new GeneralNotificationsAutomaticModel();
+        $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
+        $generalNotificationAutomatic->title = "El curso " . $course->title . " ya está en período de realización";
+        $generalNotificationAutomatic->description = "El curso " . $course->title . " ya está en período de realización hasta el " . formatDatetimeUser($course->realization_finish_date);
+        $generalNotificationAutomatic->entity_uid = $course->uid;
+        $generalNotificationAutomatic->automatic_notification_type_uid = $automaticNotificationType->uid;
+        $generalNotificationAutomatic->created_at = now();
+        $generalNotificationAutomatic->save();
 
-        foreach ($courses as $course) {
-            $generalNotificationAutomaticUid = generate_uuid();
-            $generalNotificationAutomatics[] = [
-                'uid' => $generalNotificationAutomaticUid,
-                'title' => "El curso " . $course->title . " ya está en período de realización",
-                'description' => "El curso " . $course->title . " ya está en período de realización hasta el " . formatDatetimeUser($course->realization_finish_date),
-                'entity' => 'course_status_change_realization',
-                'entity_uid' => $course->uid,
-                'created_at' => now(),
-            ];
+        $studentsFiltered = $this->filterUsersNotification($course->students, "general");
 
-            foreach ($course->students as $user) {
-                $generalNotificationAutomaticUsers[] = [
-                    'uid' => generate_uuid(),
-                    'general_notifications_automatic_uid' => $generalNotificationAutomaticUid,
-                    'user_uid' => $user->uid,
-                    'created_at' => now(),
-                ];
-            }
+        foreach ($studentsFiltered as $student) {
+            $generalNotificationAutomaticUser = new GeneralNotificationsAutomaticUsersModel();
+            $generalNotificationAutomaticUser->uid = generate_uuid();
+            $generalNotificationAutomaticUser->general_notifications_automatic_uid = $generalNotificationAutomaticUid;
+            $generalNotificationAutomaticUser->user_uid = $student->uid;
+            $generalNotificationAutomaticUser->save();
+        }
+    }
+
+    private function filterUsersNotification($users, $typeNotification)
+    {
+        $usersFiltered = [];
+
+        if ($typeNotification == "general") {
+            $usersFiltered = $users->filter(function ($user) {
+                return !$user->automaticGeneralNotificationsTypesDisabled->contains(function ($value) {
+                    return $value->code === 'COURSE_ENROLLMENT_COMMUNICATIONS';
+                });
+            });
+        } else {
+            $usersFiltered = $users->filter(function ($user) {
+                return !$user->automaticEmailNotificationsTypesDisabled->contains(function ($value) {
+                    return $value->code === 'COURSE_ENROLLMENT_COMMUNICATIONS';
+                });
+            });
         }
 
-        $generalNotificationAutomaticsChunk = array_chunk($generalNotificationAutomatics, 500);
-        foreach ($generalNotificationAutomaticsChunk as $chunk) {
-            GeneralNotificationsAutomaticModel::insert($chunk);
-        }
-
-        $generalNotificationAutomaticUsersChunk = array_chunk($generalNotificationAutomaticUsers, 500);
-        foreach ($generalNotificationAutomaticUsersChunk as $chunk) {
-            GeneralNotificationsAutomaticUsersModel::insert($chunk);
-        }
+        return $usersFiltered;
     }
 }

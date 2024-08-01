@@ -25,7 +25,7 @@
                         <label for="name">Nombre <span class="text-red-500">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input class="required poa-input" placeholder="Convocatoria 2023" type="text" id="name"
+                        <input maxlength="255" class="required poa-input" placeholder="Convocatoria 2023" type="text" id="name"
                             name="name" />
                     </div>
                 </div>

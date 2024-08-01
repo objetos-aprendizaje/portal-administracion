@@ -23,7 +23,7 @@
             <div class="poa-form">
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="name">Nombre <span class="text-red-500">*</span></label>
+                        <label maxlength="255" for="name">Nombre <span class="text-red-500">*</span></label>
                     </div>
                     <div class="content-container">
                         <input class="required poa-input" placeholder="Aviso legal" type="text" id="name"
@@ -33,10 +33,44 @@
 
                 <div class="field">
                     <div class="label-container label-center">
+                        <label for="slug">Slug <span class="text-red-500">*</span></label>
+                    </div>
+                    <div class="content-container">
+                        <input maxlength="255" class="required poa-input" placeholder="aviso-legal" type="text" id="slug"
+                            name="slug" />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="label-container label-center">
                         <label for="name">Contenido <span class="text-red-500">*</span></label>
                     </div>
                     <div class="content-container">
                         <textarea id="footer-page-content">Hello, World!</textarea>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="father_category">Página padre</label>
+                    </div>
+
+                    <div class="content-container">
+                        <select id="parent_page_uid" name="parent_page_uid" class="poa-select w-full">
+                            <option value="" selected>Ninguna</option>
+                            @foreach ($pages as $page)
+                                <option value="{{ $page['uid'] }}">{{ $page['name'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="order">Orden <span class="text-danger">*</span></label>
+                    </div>
+                    <div class="content-container">
+                        <input placeholder="1" type="number" id="order" name="order" class="poa-input" />
                     </div>
                 </div>
 

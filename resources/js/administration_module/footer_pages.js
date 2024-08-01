@@ -87,6 +87,9 @@ function resetModal() {
     document.getElementById("footer_page_uid").value = "";
     document.getElementById("name").value = "";
     tinymce.get("footer-page-content").setContent("");
+    document.getElementById("slug").value = "";
+    document.getElementById("order").value = "";
+    getAllParentPages();
 }
 
 function initializeLegalTextsPagesTable() {
@@ -130,7 +133,23 @@ function initializeLegalTextsPagesTable() {
             headerSort: false,
             width: 60,
         },
-        { title: "Nombre", field: "name", widthGrow: 8 },
+        { title: "Nombre", field: "name", widthGrow: 4 },
+        { title: "Slug", field: "slug", widthGrow: 4 },
+        { title: "Orden", field: "order", widthGrow: 2 },
+        {
+            title: "Padre",
+            field: "parent",
+            formatter: function (cell, formatterParams, onRendered) {
+                if (cell.getRow().getData().parent_page_name != null){
+                    const dateCreation = cell.getRow().getData().parent_page_name.name;
+
+                    if (dateCreation) return dateCreation;
+                    else return "";
+                }
+
+            },
+            widthGrow: 2,
+        },
         {
             title: "Fecha de creación",
             field: "created_at",
@@ -237,6 +256,9 @@ function fillFormFooterPage(footerPage) {
     document.getElementById("footer_page_uid").value = footerPage.uid;
     document.getElementById("name").value = footerPage.name;
     tinymce.get("footer-page-content").setContent(footerPage.content);
+    document.getElementById("slug").value = footerPage.slug;
+    document.getElementById("order").value = footerPage.order;
+    getAllParentPages(footerPage.footer_page_uid);
 }
 
 /**
@@ -260,4 +282,48 @@ async function deleteFooterPages() {
 
 function reloadTable() {
     footerPagesTable.replaceData(endPointTable);
+}
+
+function getAllParentPages(uid = null){
+
+    const params = {
+        url: "/administration/footer_pages/get_footer_pages_select/",
+        method: "GET",
+    };
+
+    apiFetch(params).then((data) => {
+        fillSelectParentPages(data, uid);
+    });
+
+}
+
+function fillSelectParentPages(data, uid){
+
+    const selectCombo = document.getElementById("parent_page_uid");
+
+    selectCombo.innerHTML = "";
+
+    const emptyOption = document.createElement('option');
+    emptyOption.value = ''; // Valor vacío
+    emptyOption.textContent = 'Selecciona una opción si va a crear una subpágina'; // Texto que se mostrará como opción vacía
+
+    // Agregar opción vacía al select
+    selectCombo.appendChild(emptyOption);
+
+    data.forEach(page => {
+        // Crear opción
+        const option = document.createElement('option');
+        option.value = page.uid; // Valor del option es el uid
+        option.textContent = page.name; // Texto del option es el nombre
+
+        // Agregar opción al select
+        selectCombo.appendChild(option);
+    });
+
+    if (uid){
+        selectCombo.value = uid;
+    }else{
+        selectCombo.value = "";
+    }
+
 }

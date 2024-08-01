@@ -140,3 +140,7 @@ function addEmail() {
         document.getElementById("email-input").value = "";
     });
 }
+
+function updateTable() {
+    table.setData(endPointTable);
+}

@@ -38,10 +38,11 @@ class PaymentsController extends BaseController {
         $errorMessages = $this->validatePaymentForm($request);
 
         if($errorMessages->any()) {
-            return response()->json(['errors' => $errorMessages], 422);
+            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $errorMessages], 422);
         }
 
         $updateData = [
+            'payment_gateway' => $request->input('payment_gateway'),
             'redsys_commerce_code' => $request->input('redsys_commerce_code'),
             'redsys_terminal' => $request->input('redsys_terminal'),
             'redsys_currency' => $request->input('redsys_currency'),

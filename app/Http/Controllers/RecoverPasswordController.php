@@ -2,35 +2,28 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\GeneralOptionsModel;
+use App\Jobs\SendEmailJob;
 use App\Models\ResetPasswordTokensModel;
 use App\Models\UsersModel;
 use App\Services\MailService;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class RecoverPasswordController extends BaseController
 {
-    protected $mailService;
 
-    public function __construct(MailService $mailService)
+    public function __construct()
     {
-        $this->mailService = $mailService;
     }
 
     public function index()
     {
-
-        $logo_bd = GeneralOptionsModel::where('option_name', 'poa_logo')->first();
-
-        if ($logo_bd != null) $logo = $logo_bd['option_value'];
-        else $logo = null;
-
         return view('non_authenticated.recover_password', [
             "page_name" => "Restablecer contraseña",
             "page_title" => "Restablecer contraseña",
-            "logo" => $logo,
             "resources" => [
                 "resources/js/recover_password.js",
             ]
@@ -43,67 +36,38 @@ class RecoverPasswordController extends BaseController
 
         $user = UsersModel::where('email', $email)->first();
 
-        if ($user) {
-            $minutes_expiration_token = env('PWRES_TOKEN_EXPIRATION_MIN', 60);
-            $expiration_date = date("Y-m-d H:i:s", strtotime("+$minutes_expiration_token minutes"));
+        if ($user) $this->sendEmailRecoverPassword($user);
 
-            // invalidamos todos los tokens que estén en vigor para este usuario
-            ResetPasswordTokensModel::where('uid_user', $user->uid)->where('expiration_date', '<', $expiration_date)->update(['expiration_date' => date("Y-m-d H:i:s")]);
-
-            $reset_password_token = new ResetPasswordTokensModel();
-            $reset_password_token->uid = generate_uuid();
-            $reset_password_token->uid_user = $user->uid;
-            $token = md5(uniqid(rand(), true));
-            $reset_password_token->token = $token;
-            $reset_password_token->expiration_date = $expiration_date;
-            $reset_password_token->save();
-
-            $this->sendEmailResetPassword($user, $token);
-        }
-
-        return response()->json(['reset' => true, 'message' => 'Se ha enviado un email para restablecer la contraseña']);
+        return redirect()->route('login')->with([
+            'success' => ['Se ha enviado un email para reestablecer la contraseña'],
+        ]);
     }
 
-    public function resetPassword($token) {
-
-        $reset_password_token = ResetPasswordTokensModel::where('token', $token)->first();
-
-        // Comprobamos si ha expirado
-        $date_expiration_token = $reset_password_token->expiration_date;
-        $actual_date = date("Y-m-d H:i:s");
-
-
-        $logo_bd = GeneralOptionsModel::where('option_name', 'poa_logo')->first();
-
-        if ($logo_bd != null) $logo = $logo_bd['option_value'];
-        else $logo = null;
-
-
-        if($date_expiration_token > $actual_date) {
-
-            return view('non_authenticated.reset_password', [
-                "page_name" => "Restablecer contraseña",
-                "page_title" => "Restablecer contraseña",
-                "token" => $token,
-                "logo" => $logo,
-                "resources" => [
-                    "resources/js/reset_password.js",
-                ]
-            ]);
-        }
-
-    }
-
-    private function sendEmailResetPassword($user, $token)
+    private function sendEmailRecoverPassword($user)
     {
-        $url = env('APP_URL') . '/reset_password/' . $token;
+        $token = md5(uniqid(rand(), true));
+        $minutes_expiration_token = env('PWRES_TOKEN_EXPIRATION_MIN', 60);
+        $expiration_date = date("Y-m-d H:i:s", strtotime("+$minutes_expiration_token minutes"));
 
-        $data = [
-            'name' => $user->first_name . ' ' . $user->last_name,
-            'url' => $url,
+        // Insertar el token en la tabla password_reset_tokens
+        $resetPasswordToken = new ResetPasswordTokensModel();
+        $resetPasswordToken->uid = generate_uuid();
+        $resetPasswordToken->uid_user = $user->uid;
+        $resetPasswordToken->email = $user->email;
+        $resetPasswordToken->token = $token;
+        $resetPasswordToken->expiration_date = $expiration_date;
+        $resetPasswordToken->save();
+
+        $url = URL::temporarySignedRoute(
+            'password.reset',
+            Carbon::now()->addMinutes(config('auth.passwords.users.expire')),
+            ['token' => $token, 'email' => $user->email]
+        );
+
+        $parameters = [
+            'url' => $url
         ];
 
-        $this->mailService->sendResetPasswordMail($user, $data);
-
+        dispatch(new SendEmailJob($user->email, 'Restablecer contraseña', $parameters, 'emails.reset_password_new'));
     }
 }

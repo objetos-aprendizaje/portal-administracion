@@ -23,7 +23,7 @@ class CertificationTypesController extends BaseController
     {
         $certification_types = CertificationTypesModel::get()->toArray();
 
-        $categories = CategoriesModel::get()->toArray();
+        $categories = CategoriesModel::whereNull('parent_category_uid')->with('subcategories')->get()->toArray();
 
         return view(
             'cataloging.certification_types.index',
@@ -116,7 +116,7 @@ class CertificationTypesController extends BaseController
         ], $messages);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json(['message'=> 'Hay errores en el formulario', 'errors' => $validator->errors()], 422);
         }
 
         $isNew = true;

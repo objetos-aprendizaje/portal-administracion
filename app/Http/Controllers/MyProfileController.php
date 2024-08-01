@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Logs\LogsController;
 use App\Models\AutomaticNotificationTypesModel;
+use App\Models\DepartmentsModel;
 use App\Rules\NifNie;
 use Illuminate\Support\Facades\Validator;
 
@@ -22,7 +23,15 @@ class MyProfileController extends BaseController
     {
 
         $notification_types = NotificationsTypesModel::all();
-        $automaticNotificationTypes = AutomaticNotificationTypesModel::all();
+
+        $rolesUser = Auth::user()->roles()->get();
+        $automaticNotificationTypes = AutomaticNotificationTypesModel::with('roles')
+            ->whereHas('roles', function ($query) use ($rolesUser) {
+                $query->whereIn('uid', $rolesUser->pluck("uid"));
+            })
+            ->get();
+
+        $departments = DepartmentsModel::all();
 
         $user = Auth::user();
         $userGeneralNotificationsDisabled = $user->generalNotificationsTypesDisabled()->get()->toArray();
@@ -47,7 +56,8 @@ class MyProfileController extends BaseController
                 "userEmailNotificationsDisabled" => $userEmailNotificationsDisabled,
                 "automaticNotificationTypes" => $automaticNotificationTypes,
                 "userAutomaticGeneralNotificationsDisabled" => $userAutomaticGeneralNotificationsDisabled,
-                "userAutomaticEmailNotificationsDisabled" => $userAutomaticEmailNotificationsDisabled
+                "userAutomaticEmailNotificationsDisabled" => $userAutomaticEmailNotificationsDisabled,
+                "departments" => $departments
             ]
         );
     }
@@ -67,7 +77,7 @@ class MyProfileController extends BaseController
         ], $messages);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validator->errors()], 422);
         }
 
         $user->first_name = $request->input('first_name');
@@ -76,6 +86,7 @@ class MyProfileController extends BaseController
         $user->curriculum = $request->input('curriculum');
         $user->general_notifications_allowed = $request->input('general_notifications_allowed');
         $user->email_notifications_allowed = $request->input('email_notifications_allowed');
+        $user->department_uid = $request->input('department_uid');
 
         DB::transaction(function () use ($user, $request) {
 

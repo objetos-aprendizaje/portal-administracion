@@ -13,4 +13,8 @@ class AutomaticNotificationTypesModel extends Model
 
     protected $keyType = 'string';
 
+    public function roles() {
+        return $this->belongsToMany(UserRolesModel::class, 'automatic_notification_types_roles_relationship', 'automatic_notification_type_uid', 'user_role_uid');
+    }
+
 }

@@ -13,6 +13,16 @@ class HeaderPagesModel extends Authenticatable
     protected $primaryKey = 'uid';
     protected $keyType = 'string';
 
-    protected $fillable = ['name', 'content'];
+    protected $fillable = ['name', 'content', 'order', 'slug', 'header_page_uid'];
+
+    public function parentPage()
+    {
+        return $this->belongsTo(HeaderPagesModel::class, 'header_page_uid')->with('parentPage')->whereNull('header_page_uid');
+    }
+
+    public function parentPageName()
+    {
+        return $this->belongsTo(HeaderPagesModel::class, 'header_page_uid')->whereNull('header_pages.header_page_uid');
+    }
 
 }

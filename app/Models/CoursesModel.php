@@ -19,12 +19,13 @@ class CoursesModel extends Model
 
     protected $fillable = [
         'course_lms_uid', 'title', 'description', 'contact_information', 'course_type_uid', 'educational_program_type_uid',
-        'call_uid', 'course_status_uid', 'min_required_students', 'center_uid',
+        'call_uid', 'course_status_uid', 'min_required_students', 'center_uid', 'featured_slider_color_font',
         'inscription_start_date', 'inscription_finish_date', 'realization_start_date', 'realization_finish_date',
         'presentation_video_url', 'objectives', 'ects_workload', 'educational_program_uid',
         'validate_student_registrations', 'lms_url', 'lms_system_uid', 'cost', 'featured_big_carrousel',
         'featured_big_carrousel_title', 'featured_big_carrousel_description', 'featured_small_carrousel', 'structure',
-        'calification_type', 'belongs_to_educational_program', 'enrolling_start_date', 'enrolling_finish_date', 'evaluation_criteria'
+        'calification_type', 'belongs_to_educational_program', 'enrolling_start_date', 'enrolling_finish_date', 'evaluation_criteria',
+        'payment_mode'
     ];
 
     public function call()
@@ -64,7 +65,7 @@ class CoursesModel extends Model
             'courses_students',
             'course_uid',
             'user_uid'
-        )->withPivot(['acceptance_status', 'uid'])->as('course_student_info');
+        )->withPivot(['acceptance_status', 'status', 'uid'])->as('course_student_info');
     }
 
     public function courseDocuments()
@@ -193,6 +194,14 @@ class CoursesModel extends Model
         return $this->belongsTo(
             LmsSystemsModel::class,
             'lms_system_uid',
+            'uid'
+        );
+    }
+
+    public function paymentTerms() {
+        return $this->hasMany(
+            CoursesPaymentTermsModel::class,
+            'course_uid',
             'uid'
         );
     }

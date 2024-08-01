@@ -7,12 +7,18 @@ import {
 
 document.addEventListener("DOMContentLoaded", function () {
     initHandlers();
+    isCheckboxChecked();
 });
 
 function initHandlers() {
     document
         .getElementById("payments-form")
         .addEventListener("submit", submitFormPayments);
+
+    document
+        .getElementById("payment_gateway")
+        .addEventListener('change', isCheckboxChecked);
+
 }
 
 function submitFormPayments() {
@@ -34,3 +40,15 @@ function submitFormPayments() {
 
     resetFormErrors();
 }
+
+function isCheckboxChecked(){
+    const checkbox = document.getElementById('payment_gateway');
+    const div = document.getElementById('payment_redsys');
+
+    if (checkbox.checked){
+        div.classList.remove('hidden');
+    }else{
+        div.classList.add('hidden');
+    }
+}
+

@@ -11,11 +11,17 @@ use App\Models\DestinationsEmailNotificationsUsersModel;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use App\Models\NotificationsTypesModel;
-
+use App\Services\EmailNotificationsService;
 use Illuminate\Http\Request;
 
 class EmailNotificationsController extends BaseController
 {
+    protected $emailNotificationsService;
+
+    public function __construct(EmailNotificationsService $emailNotificationsService)
+    {
+        $this->emailNotificationsService = $emailNotificationsService;
+    }
 
     use AuthorizesRequests, ValidatesRequests;
 
@@ -112,7 +118,7 @@ class EmailNotificationsController extends BaseController
             'notification_general_uid' => 'nullable|exists:email_notifications,uid',
             'type' => 'required',
             'body' => 'required',
-            'send_date' => 'required|date|after_or_equal:now',
+            'send_date' => 'nullable|date|after_or_equal:now',
         ];
 
         $validator = Validator::make($request->all(), $validator_rules, $messages);
@@ -136,7 +142,7 @@ class EmailNotificationsController extends BaseController
         $validatorErrors = $this->validateEmailNotification($request);
 
         if ($validatorErrors->any()) {
-            return response()->json(['errors' => $validatorErrors], 400);
+            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validatorErrors], 400);
         }
 
         $notification_email_uid = $request->get('notification_email_uid');
@@ -158,7 +164,15 @@ class EmailNotificationsController extends BaseController
             'subject', 'body', 'type', 'end_date', 'send_date', 'notification_type_uid'
         ]));
 
-        DB::transaction(function () use ($request, $notification_email, $isNew) {
+        $sendDate = $request->get('send_date');
+
+        if($sendDate){
+            $notification_email->send_date = $sendDate;
+        } else {
+            $notification_email->send_date = now();
+        }
+
+        DB::transaction(function () use ($request, $notification_email, $isNew, $sendDate) {
 
             $notification_email->save();
 
@@ -178,6 +192,11 @@ class EmailNotificationsController extends BaseController
             } elseif ($type === 'USERS') {
                 $users = $request->get('users');
                 $this->handleUsers($users, $notification_email);
+            }
+
+            // Si no hay fecha de envío, se envía la notificación inmediatamente
+            if(!$sendDate) {
+                $this->emailNotificationsService->processNotification($notification_email);
             }
         }, 5);
 

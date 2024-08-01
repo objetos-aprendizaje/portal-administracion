@@ -24,7 +24,7 @@
                         <label for="name">Nombre <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input type="text" id="name" name="name" class="poa-input" />
+                        <input maxlength="255" type="text" id="name" name="name" class="poa-input" />
                     </div>
                 </div>
 
@@ -33,12 +33,9 @@
                         <label for="category_uid">Categoría <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container mt-1">
-                        <select id="category_uid" name="category_uid">
+                        <select class="poa-select w-full" id="category_uid" name="category_uid">
                             <option value="" selected>Ninguna</option>
-                            @foreach ($categories as $category)
-                                <option value="{{ $category['uid'] }}">
-                                    {{ $category['name'] }}</option>
-                            @endforeach
+                            @include('cataloging.certification_types.categories_options', ['categories' => $categories, 'level' => 0])
                         </select>
                     </div>
                 </div>
@@ -55,7 +52,9 @@
                 <input type="hidden" id="certification_type_uid" name="certification_type_uid" value="" />
 
                 <div class="btn-block">
-                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <button type="submit" class="btn btn-primary">Guardar
+                        {{ e_heroicon('paper-airplane', 'outline') }}
+                    </button>
 
                     <button data-modal-id="certification-type-modal" type="button"
                         class="btn btn-secondary close-modal-btn">Cancelar

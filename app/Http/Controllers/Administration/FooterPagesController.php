@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\Administration;
 
+use App\Exceptions\OperationFailedException;
 use App\Models\FooterPagesModel;
+use App\Models\HeaderPagesModel;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
 use App\Models\GeneralOptionsModel;
+use App\Rules\ValidSlugRule;
+use Illuminate\Support\Facades\Validator;
 
 class FooterPagesController extends BaseController
 {
@@ -15,6 +19,9 @@ class FooterPagesController extends BaseController
 
     public function index()
     {
+
+        $pages = FooterPagesModel::whereNull('footer_page_uid')->with('parentPage')->get();
+
         return view(
             'administration.footer_pages.index',
             [
@@ -26,6 +33,7 @@ class FooterPagesController extends BaseController
                 "tinymce" => true,
                 "tabulator" => true,
                 "submenuselected" => "footer-pages",
+                "pages" => $pages,
             ]
         );
     }
@@ -50,6 +58,8 @@ class FooterPagesController extends BaseController
         $sort = $request->get('sort');
 
         $query = FooterPagesModel::query();
+
+        $query = $query->with('parentPageName');
 
         if ($search) {
             $query->where(function ($subQuery) use ($search) {
@@ -78,6 +88,36 @@ class FooterPagesController extends BaseController
 
     public function saveFooterPage(Request $request)
     {
+
+        $exist = false;
+        if (HeaderPagesModel::where('slug', $request->input('slug'))->first()){
+            $exist = true;
+        }
+        if (FooterPagesModel::where('slug', $request->input('slug'))->first()){
+            $exist = true;
+        }
+
+        if ($exist){
+            throw new OperationFailedException("El slug intriducido ya existe", 406);
+        }
+
+        $messages = [
+            'order.numeric' => 'El campo Orden debe ser numérico.',
+            'slug.regex' => 'El campo Slug solo puede contener letras minúsculas, números, guiones y guiones bajos.'
+        ];
+
+        $validator_rules = [
+            'order' => 'required|numeric',
+            'slug' => ['required', 'regex:/^[a-z0-9_-]+$/i', 'max:255'],
+        ];
+
+        $validator = Validator::make($request->all(), $validator_rules, $messages);
+
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Hay campos incorrectos', 'errors' => $validator->errors()], 422);
+        }
+
         $footer_page_uid = $request->input('footer_page_uid');
 
         if (!$footer_page_uid) {
@@ -91,6 +131,9 @@ class FooterPagesController extends BaseController
 
         $footer_page->name = $request->input('name');
         $footer_page->content = $request->input('content');
+        $footer_page->slug = $request->input('slug');
+        $footer_page->order = $request->input('order');
+        $footer_page->footer_page_uid = $request->input('parent_page_uid');
         $footer_page->save();
 
         return response()->json(['message' => $isNew ? 'Página de footer creada correctamente' : 'Página de footer actualizada correctamente']);
@@ -103,5 +146,12 @@ class FooterPagesController extends BaseController
         FooterPagesModel::destroy($uids);
 
         return response()->json(['message' => 'Páginas de footer eliminadas correctamente']);
+    }
+    public function getFooterPagesSelect(){
+
+        $pages = FooterPagesModel::whereNull('footer_page_uid')->with('parentPage')->get();
+
+        return response()->json($pages, 200);
+
     }
 }

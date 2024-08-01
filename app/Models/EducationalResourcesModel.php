@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use CreateEducationalResourcesEmailContactsTable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+
 
 class EducationalResourcesModel extends Model
 {
@@ -89,5 +91,27 @@ class EducationalResourcesModel extends Model
     public function creatorUser()
     {
         return $this->belongsTo(UsersModel::class, 'creator_user_uid', 'uid');
+    }
+
+    public function contact_emails() {
+        return $this->hasMany(
+            EducationalResourcesEmailContactsModel::class,
+            'educational_resource_uid',
+            'uid'
+        );
+    }
+    public function license_type()
+    {
+        return $this->belongsTo(LicenseTypesModel::class, 'license_type_uid', 'uid');
+    }
+
+    public function learningResults()
+    {
+        return $this->belongsToMany(
+            LearningResultsModel::class,
+            'educational_resources_learning_results',
+            'educational_resource_uid',
+            'learning_result_uid'
+        );
     }
 }

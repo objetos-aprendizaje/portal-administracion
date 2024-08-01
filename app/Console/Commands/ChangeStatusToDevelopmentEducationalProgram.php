@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\SendEmailJob;
+use App\Models\AutomaticNotificationTypesModel;
 use Illuminate\Console\Command;
 use App\Models\EducationalProgramsModel;
 use App\Models\EducationalProgramStatusesModel;
@@ -47,144 +49,106 @@ class ChangeStatusToDevelopmentEducationalProgram extends Command
         if (!$educationalPrograms->count()) return;
 
         DB::transaction(function () use ($educationalPrograms) {
-            $educationalProgramsWithValidCourses = $this->filterEducationalProgramsWithValidCourses($educationalPrograms);
-            if ($educationalProgramsWithValidCourses->count()) {
-                $this->changeStatusEducationalProgramsToDevelopment($educationalProgramsWithValidCourses);
-                $this->sendEnrollingsToKafka($educationalPrograms);
+
+            $statusesEducationalProgram = EducationalProgramStatusesModel::whereIn('code', ['DEVELOPMENT', 'PENDING_DECISION'])->get()->keyBy('code');
+            foreach ($educationalPrograms as $educationalProgram) {
+
+                // Si no se llega al mínimo de estudiantes, se pasa a pendiente de decisión y no se envía notificación
+                if ($educationalProgram->students->count() < $educationalProgram->min_required_students) {
+                    $educationalProgram->status()->associate($statusesEducationalProgram['PENDING_DECISION']);
+                    $educationalProgram->save();
+                } else {
+                    $educationalProgram->status()->associate($statusesEducationalProgram['DEVELOPMENT']);
+                    $educationalProgram->save();
+
+                    $this->saveGeneralNotificationsUsers($educationalProgram);
+                    $this->saveEmailsNotificationsUsersEnrolled($educationalProgram);
+                    $this->sendEnrollingsToKafka($educationalProgram);
+                }
             }
-
-            $educationalProgramsNotReachMinStudents = $this->filterEducationalProgramsNotReachMinStudents($educationalPrograms);
-            if ($educationalProgramsNotReachMinStudents->count()) {
-                $this->changeStatusEducationalProgramsToPendingDecision($educationalProgramsNotReachMinStudents);
-            }
         });
     }
 
-    /**
-     * @param $educationalPrograms
-     * filtramos los programas educativos que tengan cursos que tengan lms_url, lms_system_uid, course_lms_uid y
-     * que tengan el mínimo de estudiantes requeridos
-     */
-    private function filterEducationalProgramsWithValidCourses($educationalPrograms)
-    {
-        return $educationalPrograms->filter(function ($educationalProgram) {
-            return $educationalProgram->min_required_students <= $educationalProgram->students->count() &&
-                $educationalProgram->courses->filter(function ($course) {
-                    return $course->lms_url && $course->lms_system_uid && $course->course_lms_uid;
-                })->count() === $educationalProgram->courses->count();
-        });
-    }
-
-    private function filterEducationalProgramsNotReachMinStudents($educationalPrograms)
-    {
-        return $educationalPrograms->filter(function ($educationalProgram) {
-            return $educationalProgram->min_required_students > $educationalProgram->students->count();
-        });
-    }
-
-    private function sendEnrollingsToKafka($educationalPrograms)
+    private function sendEnrollingsToKafka($educationalProgram)
     {
         $kafkaService = new KafkaService();
         $coursesToSend = [];
 
-        foreach ($educationalPrograms as $educationalProgram) {
-            foreach ($educationalProgram->courses as $course) {
-                $coursesToSend[] = [
-                    'topic' => $course->lmsSystem->identifier,
-                    'key' => 'course_enrollings',
-                    'value' => [
-                        'course_lms_uid' => $course->course_lms_uid,
-                        'course_poa_uid' => $course->uid,
-                        'students' => $educationalProgram->students->pluck('email')->toArray()
-                    ]
-                ];
-            }
+        foreach ($educationalProgram->courses as $course) {
+            $coursesToSend[] = [
+                'topic' => $course->lmsSystem->identifier,
+                'key' => 'course_enrollings',
+                'value' => [
+                    'course_lms_uid' => $course->course_lms_uid,
+                    'course_poa_uid' => $course->uid,
+                    'students' => $educationalProgram->students->pluck('email')->toArray()
+                ]
+            ];
         }
 
         $kafkaService->sendMessages($coursesToSend);
     }
 
-    private function changeStatusEducationalProgramsToDevelopment($educationalPrograms)
-    {
-        $statusDevelopment = EducationalProgramStatusesModel::where('code', 'DEVELOPMENT')->first();
-        $educationalProgramsUids = $educationalPrograms->pluck('uid');
-
-        EducationalProgramsModel::whereIn('uid', $educationalProgramsUids)->update(['educational_program_status_uid' => $statusDevelopment->uid]);
-
-        $this->saveGeneralNotificationsUsers($educationalPrograms);
-        $this->saveEmailsNotificationsUsersEnrolled($educationalPrograms);
-    }
-
-    private function changeStatusEducationalProgramsToPendingDecision($educationalPrograms)
-    {
-        $statusPendingDecision = EducationalProgramStatusesModel::where('code', 'PENDING_DECISION')->first();
-
-        foreach ($educationalPrograms as $educationalProgram) {
-            $educationalProgram->educational_program_status_uid = $statusPendingDecision->uid;
-        }
-
-        $educationalProgram->save();
-    }
-
     // Prepara todos los emails de los usuarios inscritos en los programas formativos
-    private function saveEmailsNotificationsUsersEnrolled($educationalPrograms)
+    private function saveEmailsNotificationsUsersEnrolled($educationalProgram)
     {
-        $emailNotificationsAutomaticData = [];
-        foreach ($educationalPrograms as $educationalProgram) {
-            foreach ($educationalProgram->students as $student) {
-                $realizationFinishDateFormatted = formatDatetimeUser($educationalProgram->realization_finish_date);
-                $emailNotificationsAutomaticData[] = [
-                    'uid' => generate_uuid(),
-                    'subject' => 'El programa formativo ' . $educationalProgram->name . ' ya está en período de realización',
-                    'user_uid' => $student->uid,
-                    'parameters' => json_encode(['educationalProgramName' => $educationalProgram->name, 'realizationFinishDate' => $realizationFinishDateFormatted]),
-                    'template' => 'educational_program_started_development',
-                    'created_at' => now(),
-                ];
-            }
-        }
+        $realizationFinishDateFormatted = formatDatetimeUser($educationalProgram->realization_finish_date);
 
-        $emailNotificationsAutomaticDataChunks = array_chunk($emailNotificationsAutomaticData, 500); // Divide los datos en chunks de 500 registros
-        foreach ($emailNotificationsAutomaticDataChunks as $chunk) {
-            EmailNotificationsAutomaticModel::insert($chunk);
+        $parameters = [
+            'educationalProgramName' => $educationalProgram->name,
+            'realizationFinishDate' => $realizationFinishDateFormatted
+        ];
+
+        $studentsUsers = $this->filterUsersNotification($educationalProgram->students, "email");
+
+        foreach ($studentsUsers as $user) {
+            dispatch(new SendEmailJob($user->email, 'El programa formativo ' . $educationalProgram->name . ' ya está en período de realización', $parameters, 'emails.educational_program_started_development'));
         }
     }
 
-    private function saveGeneralNotificationsUsers($educationalPrograms)
+    private function saveGeneralNotificationsUsers($educationalProgram)
     {
+        $automaticNotificationType = AutomaticNotificationTypesModel::where('code', 'EDUCATIONAL_PROGRAMS_ENROLLMENT_COMMUNICATIONS')->first();
 
-        $generalNotificationAutomatics = [];
-        $generalNotificationAutomaticUsers = [];
+        $generalNotificationAutomaticUid = generate_uuid();
+        $generalNotificationAutomatic = new GeneralNotificationsAutomaticModel();
+        $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
+        $generalNotificationAutomatic->title = "El programa formativo " . $educationalProgram->name . " ya está en período de realización";
+        $generalNotificationAutomatic->description = "El programa formativo " . $educationalProgram->name . " ya está en período de realización hasta el " . formatDatetimeUser($educationalProgram->realization_finish_date);
+        $generalNotificationAutomatic->entity_uid = $educationalProgram->uid;
+        $generalNotificationAutomatic->automatic_notification_type_uid = $automaticNotificationType->uid;
+        $generalNotificationAutomatic->created_at = now();
+        $generalNotificationAutomatic->save();
 
-        foreach ($educationalPrograms as $educationalProgram) {
-            $generalNotificationAutomaticUid = generate_uuid();
-            $generalNotificationAutomatics[] = [
-                'uid' => $generalNotificationAutomaticUid,
-                'title' => "El programa formativo " . $educationalProgram->name . " ya está en período de realización",
-                'description' => "El programa formativo " . $educationalProgram->name . " ya está en período de realización hasta el " . formatDatetimeUser($educationalProgram->realization_finish_date),
-                'entity' => 'educational_program_started_development',
-                'entity_uid' => $educationalProgram->uid,
-                'created_at' => now(),
-            ];
+        $studentsFiltered = $this->filterUsersNotification($educationalProgram->students, "general");
 
-            foreach ($educationalProgram->students as $user) {
-                $generalNotificationAutomaticUsers[] = [
-                    'uid' => generate_uuid(),
-                    'general_notifications_automatic_uid' => $generalNotificationAutomaticUid,
-                    'user_uid' => $user->uid,
-                    'created_at' => now(),
-                ];
-            }
+        foreach ($studentsFiltered as $student) {
+            $generalNotificationAutomaticUser = new GeneralNotificationsAutomaticUsersModel();
+            $generalNotificationAutomaticUser->uid = generate_uuid();
+            $generalNotificationAutomaticUser->general_notifications_automatic_uid = $generalNotificationAutomaticUid;
+            $generalNotificationAutomaticUser->user_uid = $student->uid;
+            $generalNotificationAutomaticUser->save();
+        }
+    }
+
+    private function filterUsersNotification($users, $typeNotification)
+    {
+        $usersFiltered = [];
+
+        if ($typeNotification == "general") {
+            $usersFiltered = $users->filter(function ($user) {
+                return !$user->automaticGeneralNotificationsTypesDisabled->contains(function ($value) {
+                    return $value->code === 'EDUCATIONAL_PROGRAMS_ENROLLMENT_COMMUNICATIONS';
+                });
+            });
+        } else {
+            $usersFiltered = $users->filter(function ($user) {
+                return !$user->automaticEmailNotificationsTypesDisabled->contains(function ($value) {
+                    return $value->code === 'EDUCATIONAL_PROGRAMS_ENROLLMENT_COMMUNICATIONS';
+                });
+            });
         }
 
-        $generalNotificationAutomaticsChunk = array_chunk($generalNotificationAutomatics, 500);
-        foreach ($generalNotificationAutomaticsChunk as $chunk) {
-            GeneralNotificationsAutomaticModel::insert($chunk);
-        }
-
-        $generalNotificationAutomaticUsersChunk = array_chunk($generalNotificationAutomaticUsers, 500);
-        foreach ($generalNotificationAutomaticUsersChunk as $chunk) {
-            GeneralNotificationsAutomaticUsersModel::insert($chunk);
-        }
+        return $usersFiltered;
     }
 }
