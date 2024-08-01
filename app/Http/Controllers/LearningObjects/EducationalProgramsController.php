@@ -76,8 +76,7 @@ class EducationalProgramsController extends BaseController
 
         $query = EducationalProgramsModel::join("educational_program_types as educational_program_type", "educational_program_type.uid", "=", "educational_programs.educational_program_type_uid", "left")
             ->join("calls", "educational_programs.call_uid", "=", "calls.uid", "left")
-            ->join("educational_program_statuses", "educational_programs.educational_program_status_uid", "=", "educational_program_statuses.uid", "left")
-            ->where("creator_user_uid", auth()->user()->uid);
+            ->join("educational_program_statuses", "educational_programs.educational_program_status_uid", "=", "educational_program_statuses.uid", "left");
 
             // Si no es gestor, sólo puede ver los programas formativos que ha creado
             if(!auth()->user()->hasAnyRole(['MANAGEMENT'])) {

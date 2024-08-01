@@ -1,0 +1,69 @@
+// <reference types="cypress" />
+Cypress.on('uncaught:exception', () => false),
+describe('1.Login', () => {
+  beforeEach(() => {
+    cy.visit(Cypress.env('login_url'), {
+      auth: {
+        username: Cypress.env('nombre_auth'),
+        password: Cypress.env('pass_auth')
+      }
+    });
+  })
+
+  afterEach(() => {
+    cy.wait(1000)
+    cy.get('body').screenshot({ overwrite: true })
+  })
+
+  it('1.Login Correcto', () => {
+    
+
+    cy.get('input[id="edit-name"]').type(Cypress.env('autor'));
+    cy.get('input[id="edit-pass"]').type(Cypress.env('pass'));
+
+    cy.get('button[id="edit-submit"]').click();
+
+    cy.url().should('include', Cypress.env('correct_login')); 
+
+  });
+
+  it('2.Login Incorrecto', () => {
+   
+    cy.get('input[id="edit-name"]').type('autor');
+    cy.get('input[id="edit-pass"]').type('pass');
+
+    cy.get('button[id="edit-submit"]').click();
+
+    cy.contains('Usuario o contraseña no reconocidos. ¿Olvidaste tu contraseña?'); 
+
+  });
+
+  it('3.Username vacío', () => {
+    
+    cy.get('input[id="edit-name"]').should('be.empty');
+    cy.get('input[id="edit-pass"]').type('pass');
+
+    cy.get('button[id="edit-submit"]').click();
+
+    cy.get('input[id="edit-name"]').invoke('prop', 'validationMessage').should('not.be.empty');
+
+  });
+
+  it('4.Contraseña vacía', () => {
+    
+
+    cy.get('input[id="edit-name"]').type('autor');
+    cy.get('input[id="edit-pass"]').should('be.empty');
+
+    cy.get('button[id="edit-submit"]').click();
+
+    cy.get('input[id="edit-pass"]').invoke('prop', 'validationMessage').should('not.be.empty');
+
+  });
+
+  it('5.Olvidé la contraseña', () => {
+   
+    cy.get('a[href="/user/password"]').click();
+
+  });
+})

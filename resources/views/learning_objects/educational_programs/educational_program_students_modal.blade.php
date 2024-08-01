@@ -18,7 +18,7 @@
                 @include('partials.table-search', ['table' => 'educational-program-students-table'])
 
 
-                <div class="flex gap-2">
+                <div class="flex gap-1">
                     <div>
                         <button id="approve-students-btn" type="button" class="btn-icon"
                             data-educational-program-uid="">{{ e_heroicon('check', 'outline') }}</button>

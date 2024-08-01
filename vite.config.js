@@ -70,7 +70,8 @@ export default defineConfig({
                 'node_modules/infinite-tree/dist/infinite-tree.css',
                 "resources/js/trees.js",
                 "resources/js/administration_module/certidigital_configuration.js",
-                "resources/js/administration_module/licenses.js"
+                "resources/js/administration_module/licenses.js",
+                "resources/js/administration_module/tooltip_texts.js"
             ],
             refresh: true,
         }),

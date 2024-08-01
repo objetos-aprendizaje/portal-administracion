@@ -1,0 +1,21 @@
+{
+  "name": "poa",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "html-report": "cypress run --browser chrome --spec cypress/e2e/1.NavegacionyVisualizacion/navegacion-y-visualizacion.cy.ts --headed"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@percy/cli": "^1.28.9",
+    "cypress": "^13.9.0",
+    "cypress-file-upload": "^5.0.8",
+    "cypress-mochawesome-reporter": "^3.8.2",
+    "imagemin-webpack-plugin": "^2.4.2",
+    "typescript": "^5.4.5"
+  }
+}

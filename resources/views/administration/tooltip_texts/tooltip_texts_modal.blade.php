@@ -31,12 +31,12 @@
                 </div>
 
                 <div class="field">
-                    <div class="label-container label-center">
+                    <div class="label-container">
                         <label for="description">Descripción <span class="text-red-500">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input class="required poa-input" placeholder="Campo destinado al nombre de la empresa." type="text" id="description"
-                            name="description" />
+                        <textarea class="required poa-input" rows="4" placeholder="Campo destinado al nombre de la empresa." type="text" id="description"
+                            name="description"></textarea>
                     </div>
                 </div>
 

@@ -52,28 +52,12 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="father_category">Página padre</label>
-                    </div>
-
-                    <div class="content-container">
-                        <select id="parent_page_uid" name="parent_page_uid" class="poa-select w-full">
-                            <option value="" selected>Ninguna</option>
-                            @foreach ($pages as $page)
-                                <option value="{{ $page['uid'] }}">{{ $page['name'] }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <div class="label-container label-center">
                         <label for="order">Orden <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
                         <input placeholder="1" type="number" id="order" name="order" class="poa-input" />
                     </div>
                 </div>
-
 
                 <div class="flex justify-center mt-8 gap-4">
 

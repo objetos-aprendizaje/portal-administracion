@@ -18,7 +18,7 @@
             <div class="grid grid-cols-1  gap-4">
 
                 </div class="flex">
-                    <span>Descargue un CSV de ejemplo mediante este enlace:</span> <a href="/csv/data.csv" target="_blank">DESCARGAR</a>
+                    <span>Descargue un CSV de ejemplo mediante este enlace:</span> <a href="/csv/data.csv" target="_blank">Descargar</a>
                 </div>
 
                 <div class="content-container w-full">

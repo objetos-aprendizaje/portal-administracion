@@ -2,7 +2,7 @@
     <div class="modal-body w-full md:max-w-[800px]">
         <div class="modal-header">
             <div>
-                <h2 id="enroll-educational-program-modal-title">Asignar alumnos al curso</h2>
+                <h2 id="enroll-educational-program-modal-title">Asignar alumnos al programa</h2>
             </div>
 
             <div>

@@ -2,7 +2,7 @@
     <div class="modal-body w-full md:max-w-[800px]">
         <div class="modal-header">
             <div>
-                <h2 id="enroll-educational-program-modal-title">Asignar alumnos al curso mediante CSV</h2>
+                <h2 id="enroll-educational-program-modal-title">Asignar alumnos al programa mediante CSV</h2>
             </div>
 
             <div>
@@ -18,7 +18,7 @@
             <div class="grid grid-cols-1  gap-4">
 
                 </div class="flex">
-                    <span>Descargue un CSV de ejemplo mediante este enlace:</span> <a href="/csv/data.csv" target="_blank">DESCARGAR</a>
+                    <span>Descargue un CSV de ejemplo mediante este enlace:</span> <a href="/csv/data.csv" target="_blank">Descargar</a>
                 </div>
 
                 <div class="content-container w-full">
