@@ -25,10 +25,11 @@ class CompetencesModel extends Model
         return $this->hasMany(CompetencesModel::class, 'parent_competence_uid', 'uid')
             ->orderBy('created_at', 'ASC')
             ->with(['subcompetences' => function ($query) {
-                $query->orderBy('name', 'ASC')
+
+                $query->select('uid', 'name', 'parent_competence_uid', 'is_multi_select', 'description')
                       ->with(['learningResults' => function ($query) {
-                          $query->orderBy('created_at', 'ASC');
-                      }]);
+                          $query->select('uid', 'name', 'competence_uid', 'description');
+                      }])->orderBy('created_at', 'ASC');
             }]);
     }
 

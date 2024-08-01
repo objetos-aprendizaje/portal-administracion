@@ -22,11 +22,15 @@
                         {{ e_heroicon('arrow-path', 'outline') }}
                     </button>
                 </div>
-                <div>
-                    <button type="button" class="btn-icon" id="change-statuses-btn">
-                        {{ e_heroicon('arrows-right-left', 'outline') }}
-                    </button>
-                </div>
+
+                @if (Auth::user()->hasAnyRole(['MANAGEMENT']))
+                    <div>
+                        <button type="button" class="btn-icon" id="change-statuses-btn">
+                            {{ e_heroicon('arrows-right-left', 'outline') }}
+                        </button>
+                    </div>
+                @endif
+
             </div>
         </div>
 
@@ -34,7 +38,7 @@
             <div id="educational-programs-table"></div>
         </div>
 
-        @include("partials.table-pagination", ['table' => 'educational-resource-types-table'])
+        @include('partials.table-pagination', ['table' => 'educational-resource-types-table'])
 
     </div>
 
@@ -44,5 +48,4 @@
     @include('learning_objects.educational_programs.enroll_educational_program_modal')
     @include('learning_objects.educational_programs.enroll_educational_program_csv_modal')
     @include('partials.modal-confirmation')
-
 @endsection

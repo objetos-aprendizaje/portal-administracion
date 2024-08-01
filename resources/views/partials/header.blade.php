@@ -19,16 +19,19 @@
             </h1>
         </div>
         <div class="flex gap-4">
-            <div class="notifications">
-                <div class="bell" id="bell-btn">
-                    {{ e_heroicon('bell', 'solid') }}
-                    <div id="notification-dot"
-                        class="notification-dot {{ $unread_notifications ? 'block' : 'hidden' }}"></div>
+            @if (Auth::user()->general_notifications_allowed)
+                <div class="notifications">
+                    <div class="bell" id="bell-btn">
+                        {{ e_heroicon('bell', 'solid') }}
+                        <div id="notification-dot"
+                            class="notification-dot {{ $unread_notifications ? 'block' : 'hidden' }}"></div>
+                    </div>
+
+                    @include('partials.notifications')
+
                 </div>
+            @endif
 
-                @include('partials.notifications')
-
-            </div>
             <div>
                 <img src="{{ asset(Auth::user()->photo_path ?? 'data/images/default_images/no-user.svg') }}"
                     class="rounded-full h-12 w-12" />
@@ -36,7 +39,7 @@
             <div class="border-l border-gray-300"></div>
             <div>
                 <p class="test">{{ Auth::user()->first_name }} {{ Auth::user()->last_name }}</p>
-                <p class="text-gray-400">{{ Auth::user()->roles->pluck("name")->implode(', ') }}</p>
+                <p class="text-gray-400">{{ Auth::user()->roles->pluck('name')->implode(', ') }}</p>
             </div>
 
             <div class="flex items-center" title="Cerrar sesión">

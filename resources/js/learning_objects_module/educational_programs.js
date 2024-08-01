@@ -21,6 +21,8 @@ import {
     setDisabledSpecificFormFields,
     setDisabledSpecificDivFields,
     changeColorColoris,
+    getMultipleFreeEmailsTomSelectInstance,
+    updateInputFile,
 } from "../app";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
 import { showToast } from "../toast.js";
@@ -33,6 +35,7 @@ let tomSelectTags;
 let tomSelectCategories;
 let selectedEducationalProgramUid = null;
 let educationalProgramStudentsTable;
+let tomSelectContactEmails;
 
 let tomSelectUsersToEnroll;
 
@@ -52,6 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
     controlCriteriaArea();
     controlEnrollingDates();
     controlChecksSliders();
+    updateInputFile();
 });
 
 function initHandlers() {
@@ -106,11 +110,15 @@ function initHandlers() {
             previsualizeSlider();
         });
 
-    document
-        .getElementById("change-statuses-btn")
-        .addEventListener("click", function () {
-            changeStatusesEducationalPrograms();
-        });
+    const changeStatusesBtn = document.getElementById("change-statuses-btn");
+
+    if (changeStatusesBtn) {
+        document
+            .getElementById("change-statuses-btn")
+            .addEventListener("click", function () {
+                changeStatusesEducationalPrograms();
+            });
+    }
 
     document
         .getElementById("confirm-change-statuses-btn")
@@ -179,6 +187,31 @@ function initHandlers() {
         .addEventListener("click", function () {
             enrollStudentsCsv();
         });
+
+    const generateTagsBtn = document.getElementById("generate-tags-btn");
+
+    if (generateTagsBtn) {
+        generateTagsBtn.addEventListener("click", function () {
+            generateTags();
+        });
+    }
+
+    document
+        .getElementById("payment_mode")
+        .addEventListener("change", function (e) {
+            const paymentMode = e.target.value;
+            updatePaymentMode(paymentMode);
+        });
+
+    document
+        .getElementById("btn-add-payment")
+        .addEventListener("click", function () {
+            addPaymentTerm();
+        });
+
+    document
+        .getElementById("payment-terms-list")
+        .addEventListener("click", removePaymentTerm);
 }
 
 function controlCriteriaArea() {
@@ -211,7 +244,7 @@ function showEnrollingDateArea(show) {
 
 function initializeTomSelect() {
     tomSelectCourses = getLiveSearchTomSelectInstance(
-        "#select-courses",
+        "#courses",
         "/learning_objects/educational_programs/search_courses_without_educational_program/",
         function (entry) {
             return {
@@ -223,6 +256,8 @@ function initializeTomSelect() {
 
     tomSelectTags = getMultipleFreeTomSelectInstance("#tags");
     tomSelectCategories = getMultipleTomSelectInstance("#select-categories");
+    tomSelectContactEmails =
+        getMultipleFreeEmailsTomSelectInstance("#contact_emails");
 }
 
 /**
@@ -270,7 +305,8 @@ function initializeEducationalProgramsTable() {
             width: 60,
             headerSort: false,
         },
-        { title: "Nombre", field: "name" },
+        { title: "Identificador", field: "identifier", widthGrow: 1 },
+        { title: "Nombre", field: "name", widthGrow: 3 },
         {
             title: "Estado",
             field: "status_name",
@@ -286,15 +322,17 @@ function initializeEducationalProgramsTable() {
                 }</div>
                 `;
             },
-            width: 200,
+            widthGrow: 2,
         },
         {
             title: "Tipo de programa educativo",
             field: "educational_program_type_name",
+            widthGrow: 2,
         },
         {
             title: "Convocatoria",
             field: "call_name",
+            widthGrow: 2,
         },
         {
             title: "",
@@ -343,7 +381,11 @@ function initializeEducationalProgramsTable() {
                         icon: "document-duplicate",
                         type: "outline",
                         tooltip: "Duplicar programa formativo",
-                        action: (educational_program) => {},
+                        action: (educational_program) => {
+                            handleDuplicationEducationalProgram(
+                                educational_program
+                            );
+                        },
                     },
                 ];
 
@@ -363,14 +405,14 @@ function initializeEducationalProgramsTable() {
         ...tabulatorBaseConfig,
         rowContextMenu: [
             {
-                label: "Editar",
+                label: `${heroicon("pencil-square")} Editar`,
                 action: function (e, column) {
                     const educationalProgramClicked = column.getData();
                     loadEducationalProgramModal(educationalProgramClicked.uid);
                 },
             },
             {
-                label: "Ver alumnos del programa",
+                label: `${heroicon("user-group")} Ver alumnos del programa`,
                 action: function (e, column) {
                     const educationalProgramClicked = column.getData();
                     loadEducationalProgramsStudentsModal(
@@ -379,7 +421,9 @@ function initializeEducationalProgramsTable() {
                 },
             },
             {
-                label: "Duplicar programa formativo",
+                label: `${heroicon(
+                    "document-duplicate"
+                )} Duplicar programa formativo`,
                 action: function (e, column) {
                     const educationalProgramClicked = column.getData();
                     handleDuplicationEducationalProgram(
@@ -388,7 +432,7 @@ function initializeEducationalProgramsTable() {
                 },
             },
             {
-                label: "Crear nueva edición",
+                label: `${heroicon("folder-plus")} Crear nueva edición`,
                 action: function (e, column) {
                     const educationalProgramClicked = column.getData();
                     handleNewEditionEducationalProgram(
@@ -566,7 +610,18 @@ function fillEducationalProgramModal(educationalProgram) {
         showEnrollingDateArea(true);
     }
 
-    if (educationalProgram.status.code === "INTRODUCTION") {
+    document.getElementById("payment_mode").value =
+        educationalProgram.payment_mode;
+
+    updatePaymentMode(educationalProgram.payment_mode);
+
+    if (educationalProgram.payment_mode === "INSTALLMENT_PAYMENT") {
+        loadPaymentTerms(educationalProgram.payment_terms);
+    }
+
+    if (window.rolesUser.includes("MANAGEMENT")) {
+        toggleFieldAccessibility(true);
+    } else if (educationalProgram.status.code === "INTRODUCTION") {
         toggleFieldAccessibility(true);
         if (educationalProgram.educational_program_origin_uid) {
             setFieldsEdition();
@@ -579,6 +634,15 @@ function fillEducationalProgramModal(educationalProgram) {
         toggleFieldAccessibility(false);
     } else {
         toggleFieldAccessibility(true);
+    }
+    if (educationalProgram.contact_emails) {
+        educationalProgram.contact_emails.forEach((contact_email) => {
+            tomSelectContactEmails.addOption({
+                value: contact_email.email,
+                text: contact_email.email,
+            });
+            tomSelectContactEmails.addItem(contact_email.email);
+        });
     }
 }
 
@@ -594,7 +658,6 @@ function setFieldsEdition() {
 
     const idsDisable = [
         "educational_program_type_uid",
-        "call_uid",
         "featured_slider_color_font",
         "featured_slider_image_path",
     ];
@@ -631,6 +694,7 @@ function toggleFieldAccessibility(shouldEnable) {
     const fieldsToToggleDisabled = [
         "educational_program_type_uid",
         "call_uid",
+        "payment_mode",
         "featured_slider",
         "featured_main_carrousel",
         "featured_slider_color_font",
@@ -647,8 +711,17 @@ function toggleFieldAccessibility(shouldEnable) {
     );
 
     // Cambia la propiedad disabled de divs específicos
-    const divsToToggleDisabled = ["document-list", "btns-save"];
+    const divsToToggleDisabled = [
+        "document-list",
+        "payment_terms",
+        "btns-save",
+        "generate-tags-btn",
+    ];
     setDisabledSpecificDivFields(divsToToggleDisabled, !shouldEnable);
+
+    document
+        .getElementById("generate-tags-btn")
+        .classList.toggle("hidden", !shouldEnable);
 
     // Habilita o deshabilita los selectores TomSelect
     shouldEnable ? tomSelectCourses.enable() : tomSelectCourses.disable();
@@ -727,6 +800,12 @@ function submitFormEducationalProgram() {
         document.getElementById("featured_slider_color_font").value
     );
 
+    const contactEmails = tomSelectContactEmails.items;
+    formData.append("contact_emails", JSON.stringify(contactEmails));
+
+    const paymentTerms = getPaymentTerms();
+    formData.append("payment_terms", JSON.stringify(paymentTerms));
+
     const params = {
         url: "/learning_objects/educational_programs/save_educational_program",
         method: "POST",
@@ -769,11 +848,14 @@ function resetModal() {
     tomSelectTags.clear();
     tomSelectTags.clearOptions();
     tomSelectCategories.clear();
+    tomSelectContactEmails.clear();
 
     resetFormErrors();
     document.getElementById("educational_program_uid").value = "";
     document.getElementById("document-list").innerHTML = "";
     showEnrollingDateArea(false);
+
+    updatePaymentMode("SINGLE_PAYMENT");
 }
 
 /**
@@ -921,23 +1003,23 @@ function previsualizeSlider() {
  * @returns Color de fondo que le coresponde a la etiqueta del estado
  */
 function getStatusCourseColor(statusCode) {
-    let color;
+    const statusColors = {
+        INTRODUCTION: "#EBEBF4",
+        PENDING_APPROVAL: "#F0F4EB",
+        ACCEPTED: "#EBF3F4",
+        REJECTED: "#F4EBF0",
+        UNDER_CORRECTION_APPROVAL: "#F0F4EB",
+        PENDING_PUBLICATION: "#F4EFEB",
+        ACCEPTED_PUBLICATION: "#F4F3EB",
+        UNDER_CORRECTION_PUBLICATION: "#F4EBEB",
+        INSCRIPTION: "#EBEFF4",
+        PENDING_INSCRIPTION: "#FBEDED",
+        DEVELOPMENT: "#EDF4FB",
+        FINISHED: "#FBF4ED",
+        RETIRED: "#FDF5FE",
+    };
 
-    if (statusCode === "INTRODUCTION") color = "#EBEBF4";
-    else if (statusCode === "PENDING_APPROVAL") color = "#F0F4EB";
-    else if (statusCode === "ACCEPTED") color = "#EBF3F4";
-    else if (statusCode === "REJECTED") color = "#F4EBF0";
-    else if (statusCode === "UNDER_CORRECTION_APPROVAL") color = "#F0F4EB";
-    else if (statusCode === "PENDING_PUBLICATION") color = "#F4EFEB";
-    else if (statusCode === "ACCEPTED_PUBLICATION") color = "#F4F3EB";
-    else if (statusCode === "UNDER_CORRECTION_PUBLICATION") color = "#F4EBEB";
-    else if (statusCode === "INSCRIPTION") color = "#EBEFF4";
-    else if (statusCode === "PENDING_INSCRIPTION") color = "#FBEDED";
-    else if (statusCode === "DEVELOPMENT") color = "#EDF4FB";
-    else if (statusCode === "FINISHED") color = "#FBF4ED";
-    else if (statusCode === "RETIRED") color = "#FDF5FE";
-
-    return color;
+    return statusColors[statusCode];
 }
 
 /**
@@ -1001,6 +1083,13 @@ function changeStatusesEducationalPrograms() {
             optionsStatuses = optionsStatuses.filter(
                 (option) => option.value !== status
             );
+        } else if (edu.status_code === "PENDING_DECISION") {
+            optionsStatuses = [
+                {
+                    label: "En inscripción",
+                    value: "INSCRIPTION",
+                },
+            ];
         }
 
         // Se podrá retirar un curso en cualquier estado
@@ -1440,4 +1529,123 @@ function downloadDocument(uidDocument) {
     };
 
     apiFetch(params);
+}
+
+function generateTags() {
+    const text = document.getElementById("description").value;
+
+    if (!text) {
+        showToast("No hay descripción para generar etiquetas", "error");
+        return;
+    }
+
+    const params = {
+        url: "/learning_objects/generate_tags",
+        method: "POST",
+        body: { text },
+        loader: true,
+        stringify: true,
+    };
+
+    apiFetch(params)
+        .then((data) => {
+            data.forEach((tag) => {
+                tomSelectTags.addOption({ value: tag, text: tag });
+                tomSelectTags.addItem(tag);
+            });
+        })
+        .catch(() => {
+            showToast("No se han podido generar las etiquetas", "error");
+        });
+}
+
+function updatePaymentMode(paymentMode) {
+    if (paymentMode == "SINGLE_PAYMENT") {
+        document.getElementById("cost").classList.remove("hidden");
+        document.getElementById("payment_terms").classList.add("hidden");
+        document
+            .getElementById("label-container-cost")
+            .classList.add("label-center");
+    } else {
+        document.getElementById("cost").classList.add("hidden");
+        document
+            .getElementById("label-container-cost")
+            .classList.remove("label-center");
+        document.getElementById("payment_terms").classList.remove("hidden");
+    }
+}
+
+function addPaymentTerm() {
+    const template = document
+        .getElementById("payment-term-template")
+        .content.cloneNode(true);
+    document.getElementById("payment-terms-list").appendChild(template);
+}
+
+function removePaymentTerm(event) {
+    let target = event.target;
+
+    if (!target.classList.contains(".btn-remove-payment-term")) {
+        target = target.closest(".btn-remove-payment-term");
+    }
+
+    if (target) {
+        target.closest(".payment-term").remove();
+    }
+}
+
+function getPaymentTerms() {
+    const coursePaymentTerms = document
+        .getElementById("payment-terms-list")
+        .querySelectorAll(".payment-term");
+
+    const paymentTermsData = [];
+
+    coursePaymentTerms.forEach((coursePaymentTerm) => {
+        let paymentTermData = {
+            uid: coursePaymentTerm.dataset.paymentTermUid ?? null,
+            name: coursePaymentTerm.querySelector(".payment-term-name").value,
+            start_date: coursePaymentTerm.querySelector(
+                ".payment-term-start-date"
+            ).value,
+            finish_date: coursePaymentTerm.querySelector(
+                ".payment-term-finish-date"
+            ).value,
+            cost: coursePaymentTerm.querySelector(".payment-term-cost").value,
+        };
+
+        paymentTermsData.push(paymentTermData);
+    });
+
+    return paymentTermsData;
+}
+
+function loadPaymentTerms(paymentTerms) {
+    console.log(paymentTerms);
+    // Limpiar el contenedor de términos de pago
+    const containerPaymentTerms = document.getElementById("payment-terms-list");
+    containerPaymentTerms.innerHTML = "";
+
+    // Añadir cada término de pago al contenedor
+    paymentTerms.forEach((paymentTerm) => {
+        const paymentTermTemplate = document
+            .getElementById("payment-term-template")
+            .content.cloneNode(true);
+
+        paymentTermTemplate.querySelector(
+            ".payment-term"
+        ).dataset.paymentTermUid = paymentTerm.uid;
+        paymentTermTemplate.querySelector(
+            ".payment-term"
+        ).dataset.paymentTermUid = paymentTerm.uid;
+        paymentTermTemplate.querySelector(".payment-term-name").value =
+            paymentTerm.name;
+        paymentTermTemplate.querySelector(".payment-term-start-date").value =
+            paymentTerm.start_date;
+        paymentTermTemplate.querySelector(".payment-term-finish-date").value =
+            paymentTerm.finish_date;
+        paymentTermTemplate.querySelector(".payment-term-cost").value =
+            paymentTerm.cost;
+        containerPaymentTerms.appendChild(paymentTermTemplate);
+    });
 }

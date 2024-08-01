@@ -8,6 +8,9 @@
 
             <div class="input-with-button control-search">
                 <input class="w-full" type="text" id="search-competences-input" placeholder="Buscar...">
+                <button type="button" id="clean-search" class="clear-table-btn">
+                    {{ e_heroicon('x-mark', 'solid') }}
+                </button>
                 <button type="button" id="search-competences-btn">
                     {{ e_heroicon('magnifying-glass', 'solid') }}
                 </button>
@@ -21,7 +24,7 @@
                     {{ e_heroicon('folder-plus', 'outline') }}
                 </button>
 
-                <button id="new-competence-btn" type="button" class="btn btn-icon">
+                <button id="new-competence-framework-btn" type="button" class="btn btn-icon">
                     {{ e_heroicon('plus', 'outline') }}
                 </button>
 
@@ -32,16 +35,13 @@
 
         </div>
 
-        <div id="list-competences">
-            @include('cataloging.competences_learnings_results.competences', [
-                'competences' => $competences_anidated,
-                'first_loop' => true,
-            ])
+        <div id="tree-competences-learning-results">
         </div>
 
     </div>
 
     @include('cataloging.competences_learnings_results.competence_modal')
+    @include('cataloging.competences_learnings_results.competence_framework_modal')
     @include('cataloging.competences_learnings_results.learning_result_modal')
     @include('cataloging.competences.import_competence_framework')
     @include('cataloging.competences.import_esco_framework')

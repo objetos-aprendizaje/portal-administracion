@@ -4,6 +4,7 @@ use App\Http\Controllers\Administration\ApiKeysController;
 use App\Http\Controllers\Administration\AuthenticationConfigurationController;
 use App\Http\Controllers\Administration\CarrouselsController;
 use App\Http\Controllers\Administration\CentersController;
+use App\Http\Controllers\Administration\CertidigitalConfigurationController;
 use App\Http\Controllers\Administration\FooterPagesController;
 use App\Http\Controllers\Administration\GeneralAdministrationController;
 use App\Http\Controllers\Administration\HeaderPagesController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Administration\LanesShowController;
 use App\Http\Controllers\Administration\LmsSystemsController;
 use App\Http\Controllers\Administration\LoginSystemsController;
 use App\Http\Controllers\Administration\PaymentsController;
+use App\Http\Controllers\Administration\LicensesController;
 use App\Http\Controllers\Management\ManagementCoursesController;
 use App\Http\Controllers\Management\ManagementGeneralConfigurationController;
 use App\Http\Controllers\Management\CallsController;
@@ -28,7 +30,9 @@ use App\Http\Controllers\LearningObjects\EducationalResourcesController;
 use App\Http\Controllers\Logs\LogsController;
 use App\Http\Controllers\Users\ListUsersController;
 use App\Http\Controllers\Analytics\AnalyticsUsersController;
+use App\Http\Controllers\Api\AddDepartmentsController;
 use App\Http\Controllers\Api\ConfirmCourseCreationController;
+use App\Http\Controllers\Api\GetCourseController;
 use App\Http\Controllers\Api\RegisterUserController;
 use App\Http\Controllers\Api\UpdateCourseController;
 use App\Http\Controllers\Api\UpdateUserController;
@@ -50,6 +54,9 @@ use Illuminate\Support\Facades\Response;
 use App\Http\Controllers\Notifications\NotificationsPerUsersController;
 use App\Http\Controllers\Webhooks\FileController;
 use App\Http\Controllers\CertificateAccessController;
+use App\Http\Controllers\LearningObjects\LearningObjetsController;
+use App\Http\Controllers\Administration\TooltipTextsController;
+use App\Http\Controllers\Api\DepartmentsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -81,7 +88,12 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/administration/authentication_configuration', [AuthenticationConfigurationController::class, 'index'])->name('administration-authentication');
         Route::get('/administration/lms_systems', [LmsSystemsController::class, 'index'])->name('lms-systems');
 
+        Route::get('/administration/certidigital_configuration', [CertidigitalConfigurationController::class, 'index'])->name('certidigital-configuration');
+        Route::post('/administration/certidigital/save_certidigital_form', [CertidigitalConfigurationController::class, 'saveCertidigitalForm']);
+
         Route::get('/administration/centres', [CentersController::class, 'index'])->name('centres');
+
+        Route::get('/administration/licenses', [LicensesController::class, 'index'])->name('licenses');
 
         Route::get('/administration/api_keys', [ApiKeysController::class, 'index'])->name('api-keys');
 
@@ -101,6 +113,7 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/administration/api_keys/get_api_keys', [ApiKeysController::class, 'getApiKeys']);
         Route::get('/administration/api_keys/get_api_key/{api_key_uid}', [ApiKeysController::class, 'getApiKey']);
         Route::post('/administration/api_keys/save_api_key', [ApiKeysController::class, 'saveApiKey']);
+        Route::delete('/administration/api_keys/delete_api_key', [ApiKeysController::class, 'deleteApiKey']);
 
         Route::post('/administration/login_systems/save_google_login', [LoginSystemsController::class, 'submitGoogleForm'])->name('google-login');
         Route::post('/administration/login_systems/save_facebook_login', [LoginSystemsController::class, 'submitFacebookForm'])->name('facebook-login');
@@ -134,6 +147,11 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/administration/centers/get_centers', [CentersController::class, 'getCenters']);
         Route::delete('/administration/centers/delete_centers', [CentersController::class, 'deleteCenters']);
 
+        Route::post('/administration/licenses/save_license', [LicensesController::class, 'saveLicense']);
+        Route::get('/administration/licenses/get_license/{license_uid}', [LicensesController::class, 'getLicense']);
+        Route::get('/administration/licenses/get_licenses', [LicensesController::class, 'getLicenses']);
+        Route::delete('/administration/licenses/delete_licenses', [LicensesController::class, 'deleteLicenses']);
+
         Route::get('/administration/carrousels', [CarrouselsController::class, 'index'])->name('carrousels');
         Route::post('/administration/carrousels/save_big_carrousels_approvals', [CarrouselsController::class, 'save_big_carrousels_approvals']);
         Route::post('/administration/carrousels/save_small_carrousels_approvals', [CarrouselsController::class, 'save_small_carrousels_approvals']);
@@ -148,6 +166,17 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/notifications/notifications_per_users', [NotificationsPerUsersController::class, 'index'])->name('notifications-per-users');
         Route::get('/notifications/notifications_per_users/get_list_users', [NotificationsPerUsersController::class, 'getNotificationsPerUsers']);
         Route::get('/notifications/notifications_per_users/get_notifications/{user_uid}', [NotificationsPerUsersController::class, 'getNotificationsPerUser']);
+
+        Route::post('/administration/save_openai_form', [GeneralAdministrationController::class, 'saveOpenai']);
+
+
+        Route::get('/administration/tooltip_texts/tooltip_texts', [TooltipTextsController::class, 'index'])->name('tooltip-texts');
+        Route::post('/administration/tooltip_texts/save_tooltip_text', [TooltipTextsController::class, 'saveTooltipText']);
+        Route::get('/administration/tooltip_texts/get_tooltip_text/{license_uid}', [TooltipTextsController::class, 'getTooltipText']);
+        Route::get('/administration/tooltip_texts/get_tooltip_texts', [TooltipTextsController::class, 'getTooltipTexts']);
+        Route::delete('/administration/tooltip_texts/delete_tooltip_texts', [TooltipTextsController::class, 'deleteTooltipTexts']);
+        Route::get('/administration/tooltip_texts/get_all_tooltip_texts', [TooltipTextsController::class, 'getAllTooltipTexts']);
+
     });
 
     Route::middleware(['role:ADMINISTRATOR,MANAGEMENT'])->group(function () {
@@ -164,11 +193,14 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/administration/footer_pages/get_footer_page/{footer_page_uid}', [FooterPagesController::class, 'getFooterPage']);
         Route::post('/administration/footer_pages/save_footer_page', [FooterPagesController::class, 'saveFooterPage']);
         Route::delete('/administration/footer_pages/delete_footer_pages', [FooterPagesController::class, 'deleteFooterPages']);
+        Route::get('/administration/footer_pages/get_footer_pages_select', [FooterPagesController::class, 'getFooterPagesSelect']);
+
 
         Route::post('/administration/header_pages/get_header_pages', [HeaderPagesController::class, 'getHeaderPages']);
         Route::get('/administration/header_pages/get_header_page/{footer_page_uid}', [HeaderPagesController::class, 'getHeaderPage']);
         Route::post('/administration/header_pages/save_header_page', [HeaderPagesController::class, 'saveHeaderPage']);
         Route::delete('/administration/header_pages/delete_header_pages', [HeaderPagesController::class, 'deleteHeaderPages']);
+        Route::get('/administration/header_pages/get_header_pages_select', [HeaderPagesController::class, 'getHeaderPagesSelect']);
 
         Route::get('/cataloging/categories/get_categories', [CategoriesController::class, 'getCategories']);
         Route::post('/cataloging/categories/save_category', [CategoriesController::class, 'saveCategory']);
@@ -226,6 +258,8 @@ Route::middleware(['combined.auth'])->group(function () {
 
         Route::get('/notifications/notifications_statuses_courses/get_notifications_statuses_courses/{status_notification_uid}', [NotificationsChangesStatusesCoursesController::class, 'getNotificationsChangesStatusesCoursesController']);
 
+        Route::get('/notifications/notifications_statuses_courses/get_general_notification_automatic/{uid}', [GeneralNotificationsController::class, 'getGeneralAutomaticNotificationUser']);
+
         Route::post('/notifications/general/save_general_notifications', [GeneralNotificationsController::class, 'saveGeneralNotification']);
         Route::delete('/notifications/general/delete_general_notifications', [GeneralNotificationsController::class, 'deleteGeneralNotifications']);
         Route::get('/notifications/general/get_users_views_general_notification/{notification_general_uid}', [GeneralNotificationsController::class, 'getUserViewsGeneralNotification']);
@@ -260,6 +294,7 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/learning_objects/educational_resources_per_users/get_list_users', [EducationalResourcesPerUsersController::class, 'getEducationalResourcesPerUsers']);
         Route::get('/learning_objects/educational_resources_per_users/get_notifications/{user_uid}', [EducationalResourcesPerUsersController::class, 'getEducationalResourcesPerUser']);
 
+        Route::post('/learning_objects/generate_tags', [LearningObjetsController::class, 'generateTags']);
 
 
         Route::get('/learning_objects/educational_programs', [EducationalProgramsController::class, 'index'])->name('learning-objects-educational-programs');
@@ -278,7 +313,6 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::delete('/learning_objects/educational_resources/delete_resources', [EducationalResourcesController::class, 'deleteResources']);
         Route::post('/learning_objects/educational_resources/save_resource', [EducationalResourcesController::class, 'saveResource']);
         Route::get('/learning_objects/educational_resources/get_resources', [EducationalResourcesController::class, 'getResources']);
-        Route::post('/learning_objects/educational_resources/change_statuses_resources', [EducationalResourcesController::class, 'changeStatusesResources']);
         Route::get('/learning_objects/educational_programs/get_educational_programs', [EducationalProgramsController::class, 'getEducationalPrograms']);
         Route::post('/learning_objects/educational_programs/save_educational_program', [EducationalProgramsController::class, 'saveEducationalProgram']);
         Route::get('/learning_objects/educational_programs/get_educational_program/{educational_program_uid}', [EducationalProgramsController::class, 'getEducationalProgram']);
@@ -310,6 +344,8 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/logs/list_logs/get_logs', [LogsController::class, 'getLogs']);
 
         Route::get('/analytics/users/get_user_roles', [AnalyticsUsersController::class, 'getUsersRoles'])->name('analytics-users-roles');
+
+        Route::post('/learning_objects/educational_resources/change_statuses_resources', [EducationalResourcesController::class, 'changeStatusesResources']);
     });
 
 
@@ -324,6 +360,7 @@ Route::middleware(['combined.auth'])->group(function () {
     Route::get('/users/list_users/get_user/{user_uid}', [ListUsersController::class, 'getUser']);
     Route::post('/users/list_users/save_user', [ListUsersController::class, 'saveUser']);
     Route::post('/users/list_users/export_users', [ListUsersController::class, 'exportUsers']);
+    Route::get('/users/list_users/get_departments', [ListUsersController::class, 'getDepartments']);
 
     Route::delete('/users/list_users/delete_users', [ListUsersController::class, 'deleteUsers']);
 
@@ -370,7 +407,6 @@ Route::middleware('guest')->group(function () {
 
     Route::get('auth/facebook', [LoginController::class, 'redirectToFacebook']);
     Route::get('auth/facebook/callback', [LoginController::class, 'handleFacebookCallback']);
-
 });
 Route::get('/logout', [LoginController::class, 'logout']);
 
@@ -389,8 +425,19 @@ Route::middleware(['api_auth'])->group(function () {
     Route::post('/api/register_user', [RegisterUserController::class, 'index']);
     Route::post('/api/confirm_course_creation', [ConfirmCourseCreationController::class, 'index']);
     Route::post('/api/update_course', [UpdateCourseController::class, 'index']);
-    Route::post('/api/update_user', [UpdateUserController::class, 'index']);
+    Route::post('/api/update_user/{email_user}', [UpdateUserController::class, 'index']);
+    Route::get('/api/get_course/{course_lms_uid}', [GetCourseController::class, 'index']);
+
+    Route::post('/api/departments/add', [DepartmentsController::class, 'addDepartment']);
+    Route::get('/api/departments/get', [DepartmentsController::class, 'getDepartments']);
+    Route::put('/api/departments/update/{department_uid}', [DepartmentsController::class, 'updateDepartment']);
+    Route::delete('/api/departments/delete/{department_uid}', [DepartmentsController::class, 'deleteDepartment']);
 });
 
 Route::get('/certificate-access', [CertificateAccessController::class, 'index'])->name('certificate-access');
 Route::get('/token_login/{token}', [LoginController::class, 'tokenLogin']);
+
+// Ruta para mostrar el formulario de restablecimiento de contraseña
+Route::get('password/reset/{token}', [ResetPasswordController::class, 'index'])->name('password.reset');
+Route::post('password/reset', [ResetPasswordController::class, 'resetPassword'])->name('password.update');
+

@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\SendEmailJob;
+use App\Models\AutomaticNotificationTypesModel;
 use App\Models\EducationalProgramsModel;
 use App\Models\EducationalProgramStatusesModel;
 use App\Models\EmailNotificationsAutomaticModel;
@@ -25,7 +27,7 @@ class ChangeStatusToInscriptionEducationalProgram extends Command
      *
      * @var string
      */
-    protected $description = 'Cambia el estado de los programas formativos a "Inscripción" cuando entra en período de inscripción.';
+    protected $description = 'Cambia el estado de los programas formativos a "Inscripción" cuando entra en período de inscripción y envía notificación general y por email a los usuarios interesados.';
 
     /**
      * Execute the console command.
@@ -36,7 +38,7 @@ class ChangeStatusToInscriptionEducationalProgram extends Command
         // fecha de inicio de inscripción inferior a la actual
         $educationalPrograms = EducationalProgramsModel::where('inscription_start_date', '<=', now())
             ->where('inscription_finish_date', '>=', now())
-            ->with(['status', 'categories', 'tags'])
+            ->with(['status', 'categories', 'tags', 'courses'])
             ->whereHas('status', function ($query) {
                 $query->where('code', 'ACCEPTED_PUBLICATION');
             })
@@ -44,16 +46,16 @@ class ChangeStatusToInscriptionEducationalProgram extends Command
 
         if ($educationalPrograms->count()) {
             $developmentStatus = EducationalProgramStatusesModel::where('code', 'INSCRIPTION')->first();
-            $educationalProgramsUids = $educationalPrograms->pluck('uid');
             $studentsUsers = $this->getAllStudents();
 
-            DB::transaction(function () use ($educationalProgramsUids, $developmentStatus, $studentsUsers, $educationalPrograms) {
-                // Cambiamos el estado de los programas educativos a DEVELOPMENT
-                EducationalProgramsModel::whereIn('uid', $educationalProgramsUids)->update(['educational_program_status_uid' => $developmentStatus->uid]);
+            DB::transaction(function () use ($developmentStatus, $studentsUsers, $educationalPrograms) {
+                foreach ($educationalPrograms as $educationalProgram) {
+                    $educationalProgram->status()->associate($developmentStatus);
+                    $educationalProgram->save();
 
-                // Notificaciones a los usuarios que están interesados en categorías de los programas educativos
-                $this->sendEmailsNotificationsUsersInterested($studentsUsers, $educationalPrograms);
-                $this->sendGeneralNotificationsUsersInterested($studentsUsers, $educationalPrograms);
+                    $this->sendGeneralNotificationsUsersInterested($studentsUsers, $educationalProgram);
+                    $this->sendEmailsNotificationsUsersInterested($studentsUsers, $educationalProgram);
+                }
 
                 // Enviamos los programas educativos a la api de búsqueda para posteriormente poder buscarlos desde el front
                 if (env('ENABLED_API_SEARCH')) {
@@ -63,89 +65,44 @@ class ChangeStatusToInscriptionEducationalProgram extends Command
         }
     }
 
-    private function sendGeneralNotificationsUsersInterested($studentsUsers, $educationalPrograms)
+    private function sendGeneralNotificationsUsersInterested($studentsUsers, $educationalProgram)
     {
+        $automaticNotificationType = AutomaticNotificationTypesModel::where('code', 'NEW_EDUCATIONAL_PROGRAMS')->first();
 
-        $generalNotificationsAutomaticData = [];
-        $generalNotificationsAutomaticUsersData = [];
+        $generalNotificationAutomaticUid = generate_uuid();
+        $generalNotificationAutomatic = new GeneralNotificationsAutomaticModel();
+        $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
+        $generalNotificationAutomatic->title = "Disponible nuevo programa formativo";
+        $generalNotificationAutomatic->description = "El programa formativo <b>" . $educationalProgram->name . "</b> que podría interesarte, está disponible para inscripción";
+        $generalNotificationAutomatic->entity_uid = $educationalProgram->uid;
+        $generalNotificationAutomatic->automatic_notification_type_uid = $automaticNotificationType->uid;
+        $generalNotificationAutomatic->created_at = now();
+        $generalNotificationAutomatic->save();
 
+        // Filtramos los usuarios por los que tienen desactivadas las notificaciones de nuevos cursos
+        $studentsFiltered = $this->filterUsersInterestedEducationalProgram($educationalProgram, $studentsUsers, "general");
 
-        foreach($educationalPrograms as $educationalProgram) {
-            $generalNotificationAutomaticUid = generate_uuid();
-            $generalNotificationsAutomaticData[] = [
-                'uid' => $generalNotificationAutomaticUid,
-                'title' => "Disponible nuevo programa educativo",
-                'description' => "El programa educativo " . $educationalProgram->name . " que podría interesarte, está disponible para inscripción",
-                'entity' => "educational_program_status_change_inscription",
-                'entity_uid' => $educationalProgram->uid,
-                'created_at' => now(),
-            ];
-
-            $studentsUsersFiltered = $studentsUsers->filter(function ($student) use ($educationalProgram) {
-                return $student->categories->pluck('uid')->contains(function ($value) use ($educationalProgram) {
-                    return $educationalProgram->categories->pluck('uid')->contains($value);
-                });
-            });
-
-            foreach($studentsUsersFiltered as $student) {
-                $generalNotificationsAutomaticUsersData[] = [
-                    'uid' => generate_uuid(),
-                    'general_notifications_automatic_uid' => $generalNotificationAutomaticUid,
-                    'user_uid' => $student->uid,
-                ];
-            }
+        foreach ($studentsFiltered as $student) {
+            $generalNotificationAutomaticUser = new GeneralNotificationsAutomaticUsersModel();
+            $generalNotificationAutomaticUser->uid = generate_uuid();
+            $generalNotificationAutomaticUser->general_notifications_automatic_uid = $generalNotificationAutomaticUid;
+            $generalNotificationAutomaticUser->user_uid = $student->uid;
+            $generalNotificationAutomaticUser->save();
         }
-
-        $generalNotificationsAutomaticDataChunks = array_chunk($generalNotificationsAutomaticData, 500);
-        foreach ($generalNotificationsAutomaticDataChunks as $chunk) {
-            GeneralNotificationsAutomaticModel::insert($chunk);
-        }
-
-        $generalNotificationsAutomaticUsersDataChunks = array_chunk($generalNotificationsAutomaticUsersData, 500);
-        foreach ($generalNotificationsAutomaticUsersDataChunks as $chunk) {
-            GeneralNotificationsAutomaticUsersModel::insert($chunk);
-        }
-
     }
 
-    private function sendEmailsNotificationsUsersInterested($studentsUsers, $educationalPrograms)
+    private function sendEmailsNotificationsUsersInterested($studentsUsers, $educationalProgram)
     {
-        // Recorremos los usuarios y le buscamos los programas educativos en los que está interesado
+        $parameters = [
+            'educational_program_title' => $educationalProgram->name,
+            'educational_program_description' => $educationalProgram->description,
+        ];
+
+        $studentsUsers = $this->filterUsersInterestedEducationalProgram($educationalProgram, $studentsUsers, "email");
+
         foreach ($studentsUsers as $user) {
-            $uidsCategories = $user->categories->pluck('uid')->toArray();
-
-            // Buscamos en el array de programas educativos los que tengan alguna categoría en común con el usuario
-            $educationalProgramsFiltered = $this->filterUsersInterested($educationalPrograms, $uidsCategories);
-
-            // Si hay programas educativos que coinciden con las categorías del usuario, se envía la notificación
-            if ($educationalProgramsFiltered->count()) {
-                $parametersTemplate = array_map(function ($educationalProgram) {
-                    return [
-                        'title' => $educationalProgram['name'],
-                        'description' => $educationalProgram['description'],
-                    ];
-                }, $educationalProgramsFiltered->toArray());
-
-                $emailNotificationAutomatic = new EmailNotificationsAutomaticModel();
-                $emailNotificationAutomatic->uid = generate_uuid();
-                $emailNotificationAutomatic->subject = 'Nuevos programas formativos disponibles';
-                $emailNotificationAutomatic->user_uid = $user->uid;
-                $emailNotificationAutomatic->parameters = json_encode(['educational_programs' => $parametersTemplate]);
-                $emailNotificationAutomatic->template = 'recommended_educational_programs_user';
-                $emailNotificationAutomatic->save();
-            }
+            dispatch(new SendEmailJob($user->email, 'Nuevo programa formativo disponible', $parameters, 'emails.recommended_educational_programs_user'));
         }
-    }
-
-    private function filterUsersInterested($educationalPrograms, $uidsUserCategories)
-    {
-        $educationalProgramsFiltered = $educationalPrograms->filter(function ($educationalProgram) use ($uidsUserCategories) {
-            return $educationalProgram->categories->pluck('uid')->contains(function ($value) use ($uidsUserCategories) {
-                return in_array($value, $uidsUserCategories);
-            });
-        });
-
-        return $educationalProgramsFiltered;
     }
 
     private function getAllStudents()
@@ -177,5 +134,42 @@ class ChangeStatusToInscriptionEducationalProgram extends Command
         ];
 
         guzzle_call($endpoint, $data, $headers, 'POST');
+    }
+
+    private function filterUsersInterestedEducationalProgram($educationalProgram, $users, $typeNotification)
+    {
+        if ($typeNotification === "general") {
+            $usersFiltered = $users->filter(function ($user) {
+                return !$user->automaticGeneralNotificationsTypesDisabled->contains(function ($value) {
+                    return $value->code === 'NEW_EDUCATIONAL_PROGRAMS';
+                });
+            });
+        } else {
+            $usersFiltered = $users->filter(function ($user) {
+                return !$user->automaticEmailNotificationsTypesDisabled->contains(function ($value) {
+                    return $value->code === 'NEW_EDUCATIONAL_PROGRAMS';
+                });
+            });
+
+        }
+
+        // Comprobamos si tiene categorías en común con el curso
+        $usersFilteredCategories = $usersFiltered->filter(function ($user) use ($educationalProgram) {
+            return $user->categories->contains(function ($value) use ($educationalProgram) {
+                return $educationalProgram->categories->contains('uid', $value->uid);
+            });
+        });
+
+        // Resultados de aprendizaje
+        $usersFilteredLearningResults = $usersFiltered->filter(function ($user) use ($educationalProgram) {
+            return $user->learningResultsPreferences->contains(function ($value) use ($educationalProgram) {
+                return $educationalProgram->courses->contains(function ($course) use ($value) {
+                    return $course->blocks->pluck('learningResults')->flatten()->contains('uid', $value->uid);
+                });
+            });
+        });
+
+        // Mergeamos de manera única
+        return $usersFilteredCategories->merge($usersFilteredLearningResults)->unique('uid');
     }
 }

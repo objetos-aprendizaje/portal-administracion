@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Management;
 
 use App\Exceptions\OperationFailedException;
 use App\Http\Controllers\Logs\LogsController;
+use App\Jobs\SendChangeStatusCourseNotification;
+use App\Jobs\SendCourseNotificationToManagements;
+use App\Jobs\SendUpdateEnrollmentUserCourseNotification;
 use App\Models\BlocksModel;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
@@ -18,6 +21,7 @@ use App\Models\CentersModel;
 use App\Models\CompetencesModel;
 use App\Models\CourseCategoriesModel;
 use App\Models\CoursesEmailsContactsModel;
+use App\Models\CoursesPaymentTermsModel;
 use App\Models\CoursesStudentDocumentsModel;
 use App\Models\CoursesStudentsModel;
 use App\Models\CoursesTagsModel;
@@ -28,12 +32,8 @@ use App\Models\CourseStatusesModel;
 use App\Models\CoursesUsersModel;
 use App\Models\EducationalProgramsModel;
 use App\Models\ElementsModel;
-use App\Models\EmailNotificationsAutomaticModel;
-use App\Models\GeneralNotificationsAutomaticModel;
-use App\Models\GeneralNotificationsAutomaticUsersModel;
 use App\Models\GeneralOptionsModel;
 use App\Models\LmsSystemsModel;
-use App\Models\NotificationsChangesStatusesCoursesModel;
 use App\Models\SubblocksModel;
 use App\Models\SubelementsModel;
 use App\Models\UserRolesModel;
@@ -78,10 +78,12 @@ class ManagementCoursesController extends BaseController
 
         if (!empty($categories)) $categories = $this->buildNestedCategories($categories);
 
+        $rolesUser = Auth::user()['roles']->pluck("code")->toArray();
         $variables_js = [
             "operationByCalls" => GeneralOptionsModel::where(['option_name' => 'operation_by_calls'])->first()->option_value == 1,
             "competences" => $competences,
-            "frontUrl" => env('FRONT_URL')
+            "frontUrl" => env('FRONT_URL'),
+            "rolesUser" => $rolesUser
         ];
 
         return view(
@@ -110,6 +112,7 @@ class ManagementCoursesController extends BaseController
                 "centers" => $centers,
                 "coloris" => true,
                 "submenuselected" => "courses",
+                "infiniteTree" => true
             ]
         );
     }
@@ -165,7 +168,7 @@ class ManagementCoursesController extends BaseController
         $courses_bd = CoursesModel::whereIn('uid', array_column($changesCoursesStatuses, "uid"))->with('status')->get()->keyBy('uid');
 
         // Excluímos los estados a los que no se pueden cambiar manualmente.
-        $statuses_courses = CourseStatusesModel::whereNotIn('code', ['INSCRIPTION', 'DEVELOPMENT', 'PENDING_INSCRIPTION', 'FINISHED'])->get()->keyBy('code');
+        $statuses_courses = CourseStatusesModel::whereNotIn('code', ['DEVELOPMENT', 'PENDING_INSCRIPTION', 'FINISHED'])->get()->keyBy('code');
         // Aquí iremos almacenando los datos de los cursos que se van a actualizar
 
         DB::transaction(function () use ($changesCoursesStatuses, $courses_bd, $statuses_courses) {
@@ -174,6 +177,7 @@ class ManagementCoursesController extends BaseController
                 // Obtenemos el curso de la base de datos
                 $course = $courses_bd[$changeCourseStatus['uid']];
                 $status = $statuses_courses[$changeCourseStatus['status']];
+                $reason = $changeCourseStatus['reason'];
 
                 // Si no existe el curso en la base de datos, devolvemos un error
                 if (!$course) {
@@ -184,13 +188,13 @@ class ManagementCoursesController extends BaseController
                     throw new OperationFailedException("El estado es incorrecto", 406);
                 }
 
-                $this->updateStatusCourse($course, $status);
+                $this->updateStatusCourse($course, $status, $reason);
 
                 if ($status->code == "ACCEPTED_PUBLICATION" && !$course->lms_url) {
                     $this->sendNotificationCourseAcceptedPublicationToKafka($course);
                 }
 
-                $this->saveNotificationChangeStatusCourse($course, $status);
+                dispatch(new SendChangeStatusCourseNotification($course->toArray()));
             }
 
             LogsController::createLog('Cambio de estado de cursos', 'Cursos', auth()->user()->uid);
@@ -199,22 +203,11 @@ class ManagementCoursesController extends BaseController
         return response()->json(['message' => 'Se han actualizado los estados de los cursos correctamente'], 200);
     }
 
-    private function updateStatusCourse($course, $status)
+    private function updateStatusCourse($course, $status, $reason)
     {
         $course->course_status_uid = $status->uid;
+        $course->status_reason = $reason;
         $course->save();
-    }
-
-    private function saveNotificationChangeStatusCourse($course, $status)
-    {
-        $notification_change_status_course = new NotificationsChangesStatusesCoursesModel();
-        $notification_change_status_course->uid = generate_uuid();
-        $notification_change_status_course->user_uid = $course->creator_user_uid;
-        $notification_change_status_course->course_uid = $course->uid;
-        $notification_change_status_course->course_status_uid = $status->uid;
-        $notification_change_status_course->date = date('Y-m-d H:i:s');
-
-        $notification_change_status_course->save();
     }
 
     private function sendNotificationCourseAcceptedPublicationToKafka($course)
@@ -260,7 +253,8 @@ class ManagementCoursesController extends BaseController
 
         if ($search) {
             $query->where('title', 'LIKE', "%{$search}%")
-                ->orWhere('courses.uid', $search);
+                ->orWhere('courses.uid', $search)
+                ->orWhere('courses.identifier', $search);
         }
 
         if (isset($sort) && !empty($sort)) {
@@ -439,7 +433,8 @@ class ManagementCoursesController extends BaseController
                 $query->orderBy('order', 'asc');
             },
             'contact_emails',
-            'center'
+            'center',
+            'paymentTerms'
         ])
             ->first();
 
@@ -470,6 +465,9 @@ class ManagementCoursesController extends BaseController
             $isNew = true;
             $course_bd = new CoursesModel();
             $course_bd->uid = generate_uuid();
+
+            // Número de cursos existentes
+            $course_bd->identifier = $this->generateCourseIdentifier();
             $course_bd->creator_user_uid = Auth::user()['uid'];
         }
 
@@ -489,30 +487,25 @@ class ManagementCoursesController extends BaseController
             return response()->json(['message' => $validationCarrousel->message], 422);
         }
 
-        // Si el curso no es nuevo, el usuario sólo tiene el rol de docente y no es el creador del curso
-        $hasPermissions = $this->checkPermissions($course_bd, $isNew);
-        if (!$hasPermissions) {
-            return response()->json(['message' => 'No tienes permisos para editar este curso'], 403);
-        }
-
         $action = $request->input('action');
         $belongsEducationalProgram = $request->input('belongs_to_educational_program');
 
         // En función de si el curso pertenece o no a un programa formativo, le corresponderá un estado u otro
         if ($belongsEducationalProgram) {
             $newCourseStatus = $this->statusCourseBelongsEducationalProgram($action, $course_bd);
-        } else if ($course_bd->course_origin_uid) {
-            $newCourseStatus = $this->statusCourseEdition($action);
         } else {
-            $newCourseStatus = $this->statusCourseNotBelongsEducationalProgram($action, $isNew, $course_bd);
+            $newCourseStatus = $this->statusCourseNotBelongsEducationalProgram($action, $course_bd);
         }
 
-        if ($newCourseStatus) $course_bd->course_status_uid = $newCourseStatus->uid;
+        DB::transaction(function () use ($request, $course_bd, $belongsEducationalProgram, $isNew, $newCourseStatus) {
+            $isManagement = Auth::user()->hasAnyRole(['MANAGEMENT']);
 
-        DB::transaction(function () use ($request, $course_bd, $belongsEducationalProgram, $isNew) {
+            if ($newCourseStatus) {
+                $course_bd->course_status_uid = $newCourseStatus->uid;
+            }
 
-            // En función de si el curso pertenece a una nueva edición o no, se actualizarán o no ciertos campos
-            if ($course_bd->course_origin_uid) {
+            // En función de si el curso pertenece a una nueva edición o no y no es gestor, se actualizarán o no ciertos campos
+            if ($course_bd->course_origin_uid && !$isManagement) {
                 $this->updateCourseFieldsNewEdition($request, $course_bd);
                 $course_bd->save();
                 // Documentos
@@ -528,6 +521,10 @@ class ManagementCoursesController extends BaseController
 
             $image_file = $request->file('image_input_file');
             if ($image_file) $this->updateImageField($image_file, $course_bd);
+
+            if ($newCourseStatus && $newCourseStatus->code === "PENDING_APPROVAL") {
+                dispatch(new SendCourseNotificationToManagements($course_bd->toArray()));
+            }
 
             $course_bd->save();
 
@@ -552,6 +549,11 @@ class ManagementCoursesController extends BaseController
 
     private function checkStatusCourse($course_bd)
     {
+        $isUserManagement = Auth::user()->hasAnyRole(['MANAGEMENT']);
+
+        // Si es gestor, siempre podrá editar el curso
+        if ($isUserManagement) return;
+
         $statusesAllowEdit = ["INTRODUCTION", "UNDER_CORRECTION_APPROVAL", "UNDER_CORRECTION_PUBLICATION"];
         if (!in_array($course_bd->status->code, $statusesAllowEdit) && !$course_bd->belongs_to_educational_program) {
             throw new OperationFailedException('No puedes editar un curso que no esté en estado de introducción o subsanación', 422);
@@ -562,7 +564,7 @@ class ManagementCoursesController extends BaseController
         }
     }
 
-    private function statusCourseEdition($action)
+    private function statusCourseEdition($action, $course_bd)
     {
         $statuses = CourseStatusesModel::whereIn('code', [
             'INTRODUCTION',
@@ -570,13 +572,15 @@ class ManagementCoursesController extends BaseController
             'PENDING_APPROVAL'
         ])->get()->keyBy('code');
 
+        $actualStatusCourse = $course_bd->status->code ?? null;
+
         // Comprobamos si es necesario aprobar o no los cursos en función de la configuración
         // del gestor
-        if ($action === "draft") return $statuses['INTRODUCTION'];
-        else {
+        if ($action === "draft" && !$actualStatusCourse) return $statuses['INTRODUCTION'];
+        else if ($action === "submit") {
             $necessaryApprovalEditions = app('general_options')['necessary_approval_editions'];
             return $necessaryApprovalEditions ? $statuses['PENDING_APPROVAL'] : $statuses['ACCEPTED_PUBLICATION'];
-        }
+        } else return null;
     }
 
     private function updateAuxiliarDataCourse($course_bd, $request)
@@ -595,10 +599,19 @@ class ManagementCoursesController extends BaseController
             if ($validateStudentRegistrations) {
                 $this->updateDocumentsCourse($request, $course_bd);
             } else $course_bd->courseDocuments()->delete();
+
+            // Plazos de pago
+            $paymentMode = $request->input('payment_mode');
+            if ($paymentMode == "INSTALLMENT_PAYMENT") {
+                $this->updatePaymentTerms($request, $course_bd);
+            } else if ($paymentMode == "SINGLE_PAYMENT") {
+                $course_bd->paymentTerms()->delete();
+            }
         } else {
             $course_bd->categories()->detach();
             $course_bd->tags()->delete();
             $course_bd->courseDocuments()->delete();
+            $course_bd->paymentTerms()->delete();
         }
 
         // Guardado de profesores
@@ -612,6 +625,13 @@ class ManagementCoursesController extends BaseController
         // Emails de contacto
         $contact_emails = json_decode($request->input('contact_emails'), true);
         $this->syncItemsCourseEmails($contact_emails, $course_bd->uid);
+    }
+
+    private function updatePaymentTerms($request, $course_bd)
+    {
+        $paymentTerms = $request->input('payment_terms');
+        $paymentTerms = json_decode($paymentTerms, true);
+        $this->syncPaymentTerms($paymentTerms, $course_bd);
     }
 
     private function updateTagsCourse($request, $course_bd)
@@ -673,6 +693,10 @@ class ManagementCoursesController extends BaseController
             'min_required_students' => 'nullable|integer|min:0',
         ];
 
+        if (app('general_options')['operation_by_calls']) {
+            $rules['call_uid'] = 'required';
+        }
+
         $belongsToEducationalProgram = $request->input('belongs_to_educational_program');
 
         if ($belongsToEducationalProgram) {
@@ -690,14 +714,19 @@ class ManagementCoursesController extends BaseController
     {
 
         $rules = [
-            'inscription_start_date' => 'required|after_or_equal:now',
+            'inscription_start_date' => 'required',
             'inscription_finish_date' => 'required|after_or_equal:inscription_start_date',
             'min_required_students' => 'nullable|integer|min:0',
             'featured_big_carrousel_title' => 'required_if:featured_big_carrousel,1',
             'featured_big_carrousel_description' => 'required_if:featured_big_carrousel,1',
             'featured_big_carrousel_image_path' => 'required_if:featured_big_carrousel,1',
             'lms_system_uid' => 'required_with:lms_url',
+            'call_uid' => 'required_if'
         ];
+
+        if (app('general_options')['operation_by_calls']) {
+            $rules['call_uid'] = 'required';
+        }
 
         $validateStudentRegistrations = $request->input('validate_student_registrations');
         $cost = $request->input('cost');
@@ -764,11 +793,12 @@ class ManagementCoursesController extends BaseController
     private function addRulesIfNotBelongsEducationalProgram($request, &$rules)
     {
 
-        $rules['inscription_start_date'] = 'required|after_or_equal:now';
+        $rules['inscription_start_date'] = 'required';
         $rules['inscription_finish_date'] = 'required|after_or_equal:inscription_start_date';
 
         $cost = $request->input('cost');
         $validateStudentRegistrations = $request->input('validate_student_registrations');
+        $paymentMode = $request->input('payment_mode');
 
         if ($cost && $cost > 0 || $validateStudentRegistrations) {
             $rules['enrolling_start_date'] = 'required|after_or_equal:inscription_finish_date';
@@ -777,6 +807,37 @@ class ManagementCoursesController extends BaseController
             $rules['realization_start_date'] = 'required|after_or_equal:enrolling_finish_date';
             $rules['realization_finish_date'] = 'required|after_or_equal:realization_start_date';
         }
+
+        if ($paymentMode == "INSTALLMENT_PAYMENT") {
+            $rules['payment_terms'] = [
+                'required',
+                function ($attribute, $value, $fail) {
+                    $value = json_decode($value, true);
+                    $validation = $this->validatePaymentTerms($value);
+                    if ($validation !== true) $fail($validation);
+                },
+            ];
+        }
+    }
+
+    // Validación del bloque de plazos de pago
+    private function validatePaymentTerms($paymentTerms)
+    {
+        $fields = ['name', 'start_date', 'finish_date', 'cost'];
+
+        if (!count($paymentTerms)) return "Debes especificar al menos un plazo de pago";
+
+        foreach ($paymentTerms as $paymentTerm) {
+            if ($paymentTerm['cost'] <= 0) return "El coste de los plazos de pago no puede ser negativo";
+            else if (!$paymentTerm['name']) return "Debes especificar un nombre para el plazo de pago";
+
+            // Comprobamos si le falta algún campo
+            foreach ($fields as $field) {
+                if (!array_key_exists($field, $paymentTerm)) return false;
+            }
+        }
+
+        return true;
     }
 
     private function addRulesIfBelongsToEducationalProgram(&$rules)
@@ -827,21 +888,6 @@ class ManagementCoursesController extends BaseController
         ];
     }
 
-    private function checkPermissions($course_bd, $isNew)
-    {
-        $user_roles = array_column(Auth::user()['roles']->toArray(), "code");
-
-        // Si el curso no es nuevo, el usuario sólo tiene el rol de docente y no es el creador del curso
-        $isOnlyTeacher = count($user_roles) == 1 && in_array("TEACHER", $user_roles);
-        $isCourseCreator = $course_bd->creator_user_uid == Auth::user()['uid'];
-
-        if (!$isNew && $isOnlyTeacher && !$isCourseCreator) {
-            return false;
-        }
-
-        return true;
-    }
-
     private function statusCourseBelongsEducationalProgram($action, $course_bd)
     {
         $statuses = CourseStatusesModel::whereIn('code', [
@@ -856,16 +902,37 @@ class ManagementCoursesController extends BaseController
         }
     }
 
+    // En función de la acción y del estado actual del curso, se establece el nuevo estado
+    private function statusCourseNotBelongsEducationalProgram($action, $courseBd)
+    {
+        $isUserManagement = Auth::user()->hasAnyRole(['MANAGEMENT']);
 
-    /**
-     * Devuelve el estado del curso en función de la acción y el estado actual del curso
-     *
-     * @param string $action La acción a realizar
-     * @param bool $isNew Indica si el curso es nuevo
-     * @param CoursesModel $courseBd El curso de la base de datos
-     * @return CourseStatusesModel|null El estado del curso
-     */
-    private function statusCourseNotBelongsEducationalProgram($action, $isNew, $courseBd)
+        $actualStatusCourse = $courseBd->status->code ?? null;
+
+        $necessaryApprovalEditions = app('general_options')['necessary_approval_editions'];
+
+        if ($isUserManagement || ($courseBd->course_origin_uid && !$necessaryApprovalEditions)) {
+            return $this->statusCourseNotBelongsEducationalProgramUserManagementOrEdition($action, $actualStatusCourse);
+        } else {
+            return $this->statusCourseNotBelongsEducationalProgramUserTeacher($action, $actualStatusCourse);
+        }
+    }
+
+    private function statusCourseNotBelongsEducationalProgramUserManagementOrEdition($action, $actualStatusCourse)
+    {
+        $statuses = CourseStatusesModel::whereIn('code', [
+            'INTRODUCTION',
+            'ACCEPTED_PUBLICATION'
+        ])->get()->keyBy('code');
+
+        if ($action === "submit" && (!$actualStatusCourse || $actualStatusCourse === "INTRODUCTION")) {
+            return $statuses['ACCEPTED_PUBLICATION'];
+        } else if ($action === "draft" && (!$actualStatusCourse || $actualStatusCourse === "INTRODUCTION")) {
+            return $statuses['INTRODUCTION'];
+        } else return null;
+    }
+
+    private function statusCourseNotBelongsEducationalProgramUserTeacher($action, $actualStatusCourse)
     {
         $statuses = CourseStatusesModel::whereIn('code', [
             'INTRODUCTION',
@@ -875,21 +942,17 @@ class ManagementCoursesController extends BaseController
             'PENDING_PUBLICATION'
         ])->get()->keyBy('code');
 
-        if ($isNew) {
-            if ($action === "submit") return $statuses['PENDING_APPROVAL'];
-            else if ($action === "draft") return $statuses['INTRODUCTION'];
-        } else {
-            $actualCourseStatus = $courseBd->status->code;
-            if ($action === "submit") {
-                if (in_array($actualCourseStatus, ['UNDER_CORRECTION_APPROVAL', 'INTRODUCTION'])) {
-                    return $statuses['PENDING_APPROVAL'];
-                } else if ($actualCourseStatus === 'UNDER_CORRECTION_PUBLICATION') {
-                    return $statuses['PENDING_PUBLICATION'];
-                }
+        if ($action === "submit") {
+            if (!$actualStatusCourse || $actualStatusCourse === "INTRODUCTION") {
+                return $statuses['PENDING_APPROVAL'];
+            } else if ($actualStatusCourse === "UNDER_CORRECTION_APPROVAL") {
+                return $statuses['PENDING_APPROVAL'];
+            } else if ($actualStatusCourse === "UNDER_CORRECTION_PUBLICATION") {
+                return $statuses['PENDING_PUBLICATION'];
             }
-        }
-
-        return null;
+        } else if ($action === "draft" && (!$actualStatusCourse || $actualStatusCourse === "INTRODUCTION")) {
+            return $statuses['INTRODUCTION'];
+        } else return null;
     }
 
     private function checkIsEdition($course_bd)
@@ -939,11 +1002,10 @@ class ManagementCoursesController extends BaseController
             'call_uid', 'center_uid', 'objectives', 'ects_workload', 'lms_url', 'lms_system_uid', 'belongs_to_educational_program',
             'inscription_start_date', 'inscription_finish_date',
             'realization_start_date', 'realization_finish_date', 'featured_big_carrousel_description', 'featured_big_carrousel_title',
-            'presentation_video_url', 'cost', 'featured_big_carrousel',
+            'featured_slider_color_font', 'presentation_video_url', 'cost', 'featured_big_carrousel',
             'calification_type', 'enrolling_start_date', 'enrolling_finish_date', 'evaluation_criteria',
-            'min_required_students', 'validate_student_registrations', 'featured_big_carrousel_image_path', 'featured_small_carrousel',
+            'min_required_students', 'validate_student_registrations', 'featured_big_carrousel_image_path', 'featured_small_carrousel', 'payment_mode'
         ];
-
         if ($belongsToEducationalProgram) {
             $fields = [
                 'title', 'description', 'contact_information', 'course_type_uid', 'educational_program_type_uid',
@@ -954,14 +1016,26 @@ class ManagementCoursesController extends BaseController
             $fields = [
                 'inscription_start_date', 'inscription_finish_date',
                 'realization_start_date', 'realization_finish_date',
-                'presentation_video_url', 'cost', 'featured_big_carrousel', 'featured_big_carrousel_title', 'featured_big_carrousel_description',
-                'featured_slider_color', 'evaluation_criteria', 'featured_small_carrousel',
-                'calification_type', 'enrolling_start_date', 'enrolling_finish_date', 'belongs_to_educational_program',
+                'presentation_video_url', 'featured_big_carrousel', 'featured_big_carrousel_title', 'featured_big_carrousel_description',
+                'featured_slider_color', 'featured_slider_color_font', 'evaluation_criteria', 'featured_small_carrousel',
+                'calification_type', 'belongs_to_educational_program',
                 'title', 'description', 'contact_information', 'course_type_uid', 'educational_program_type_uid',
                 'call_uid', 'min_required_students', 'center_uid',
                 'objectives', 'ects_workload', 'featured_big_carrousel_image_path',
-                'validate_student_registrations', 'lms_url', 'lms_system_uid'
+                'validate_student_registrations', 'lms_url', 'lms_system_uid', 'payment_mode'
             ];
+
+            $paymentMode = $request->input('payment_mode');
+            $cost = $request->input('cost');
+            $validateStudentRegistrations = $request->input('validate_student_registrations');
+
+            if ($paymentMode == "SINGLE_PAYMENT") {
+                array_push($fields, 'cost');
+            }
+
+            if (($paymentMode == "SINGLE_PAYMENT" && $cost > 0) || $validateStudentRegistrations) {
+                array_push($fields, 'enrolling_start_date', 'enrolling_finish_date');
+            }
 
             $image_file_big_carrousel = $request->file('featured_big_carrousel_image_path');
 
@@ -1116,6 +1190,39 @@ class ManagementCoursesController extends BaseController
 
         // Insertar todos los nuevos items en una única operación de BD
         CoursesTagsModel::insert($insertData);
+    }
+
+    private function syncPaymentTerms($paymentTerms, $courseBd)
+    {
+        $existingUids = $courseBd->paymentTerms()->pluck('uid')->toArray();
+
+        $receivedUids = array_column($paymentTerms, 'uid');
+
+        foreach ($paymentTerms as $paymentTerm) {
+            if (in_array($paymentTerm['uid'], $existingUids)) {
+                CoursesPaymentTermsModel::where('uid', $paymentTerm['uid'])->update([
+                    'course_uid' => $courseBd->uid,
+                    'name' => $paymentTerm['name'],
+                    'start_date' => $paymentTerm['start_date'],
+                    'finish_date' => $paymentTerm['finish_date'],
+                    'cost' => $paymentTerm['cost'],
+                ]);
+            } else {
+                $courseBd->paymentTerms()->create([
+                    'uid' => generate_uuid(),
+                    'course_uid' => $courseBd->uid,
+                    'name' => $paymentTerm['name'],
+                    'start_date' => $paymentTerm['start_date'],
+                    'finish_date' => $paymentTerm['finish_date'],
+                    'cost' => $paymentTerm['cost'],
+                ]);
+            }
+        }
+
+        $uidsToDelete = array_diff($existingUids, $receivedUids);
+        if (!empty($uidsToDelete)) {
+            CoursesPaymentTermsModel::whereIn('uid', $uidsToDelete)->delete();
+        }
     }
 
     private function syncItemsCourseEmails($items, $course_uid)
@@ -1289,8 +1396,7 @@ class ManagementCoursesController extends BaseController
                 $courseStudent->acceptance_status = 'ACCEPTED';
                 $courseStudent->save();
 
-                $this->saveGeneralNotificationAutomatic($courseStudent->course, "ACCEPTED", $courseStudent->user_uid);
-                $this->saveEmailNotificationAutomatic($courseStudent->course, "ACCEPTED", $courseStudent->user_uid);
+                dispatch(new SendUpdateEnrollmentUserCourseNotification($courseStudent));
             }
 
             LogsController::createLog('Aprobación de cursos', 'Cursos', auth()->user()->uid);
@@ -1304,71 +1410,19 @@ class ManagementCoursesController extends BaseController
         $selectedCourseStudents = $request->input('uids');
 
         DB::transaction(function () use ($selectedCourseStudents) {
-            $coursesStudents = CoursesStudentsModel::whereIn('uid', $selectedCourseStudents)->with("course")->get();
+            $coursesStudents = CoursesStudentsModel::whereIn('uid', $selectedCourseStudents)->get();
 
             foreach ($coursesStudents as $courseStudent) {
                 $courseStudent->acceptance_status = 'REJECTED';
                 $courseStudent->save();
 
-                $this->saveGeneralNotificationAutomatic($courseStudent->course, "REJECTED", $courseStudent->user_uid);
-                $this->saveEmailNotificationAutomatic($courseStudent->course, "REJECTED", $courseStudent->user_uid);
+                dispatch(new SendUpdateEnrollmentUserCourseNotification($courseStudent));
             }
 
             LogsController::createLog('Rechazo de cursos', 'Cursos', auth()->user()->uid);
         });
 
         return response()->json(['message' => 'Inscripciones rechazadas correctamente'], 200);
-    }
-
-    private function saveEmailNotificationAutomatic($course, $status, $userUid)
-    {
-        $emailNotificationAutomatic = new EmailNotificationsAutomaticModel();
-        $emailNotificationAutomatic->uid = generate_uuid();
-
-        $emailParameters = [
-            'course_title' => $course->title,
-        ];
-
-        if ($status == "ACCEPTED") {
-            $emailNotificationAutomatic->subject = "Inscripción a curso aceptada";
-            $emailParameters["status"] = "ACCEPTED";
-        } else {
-            $emailNotificationAutomatic->subject = "Inscripción a curso rechazada";
-            $emailParameters["status"] = "REJECTED";
-        }
-
-
-        $emailNotificationAutomatic->template = "course_inscription_status";
-        $emailNotificationAutomatic->parameters = json_encode($emailParameters);
-        $emailNotificationAutomatic->user_uid = $userUid;
-
-        $emailNotificationAutomatic->save();
-    }
-
-    private function saveGeneralNotificationAutomatic($course, $status, $userUid)
-    {
-        $generalNotificationAutomatic = new GeneralNotificationsAutomaticModel();
-        $generalNotificationAutomaticUid = generate_uuid();
-        $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
-
-        if ($status == "ACCEPTED") {
-            $generalNotificationAutomatic->title = "Inscripción a curso aceptada";
-            $generalNotificationAutomatic->description = "Tu inscripción en el curso " . $course->title . " ha sido aceptada";
-        } else {
-            $generalNotificationAutomatic->title = "Inscripción a curso rechazada";
-            $generalNotificationAutomatic->description = "Tu inscripción en el curso " . $course->title . " ha sido rechazada";
-        }
-
-        $generalNotificationAutomatic->entity = "course";
-        $generalNotificationAutomatic->entity_uid = $course->uid;
-        $generalNotificationAutomatic->created_at = now();
-        $generalNotificationAutomatic->save();
-
-        $generalNotificationAutomaticUser = new GeneralNotificationsAutomaticUsersModel();
-        $generalNotificationAutomaticUser->uid = generate_uuid();
-        $generalNotificationAutomaticUser->general_notifications_automatic_uid = $generalNotificationAutomaticUid;
-        $generalNotificationAutomaticUser->user_uid = $userUid;
-        $generalNotificationAutomaticUser->save();
     }
 
     public function duplicateCourse($course_uid)
@@ -1386,7 +1440,8 @@ class ManagementCoursesController extends BaseController
         DB::transaction(function () use ($new_course, $course_bd) {
             $new_course_uid = generate_uuid();
             $new_course->uid = $new_course_uid;
-
+            $new_course->identifier = $this->generateCourseIdentifier();
+            $new_course->creator_user_uid = Auth::user()['uid'];
             $new_course->save();
 
             $this->duplicateCourseTeachers($course_bd, $new_course_uid, $new_course);
@@ -1469,7 +1524,9 @@ class ManagementCoursesController extends BaseController
         return DB::transaction(function () use ($new_course, $course_bd, $course_uid) {
             $new_course_uid = generate_uuid();
             $new_course->uid = $new_course_uid;
+            $new_course->identifier = $this->generateCourseIdentifier();
             $new_course->course_origin_uid = $course_uid;
+            $new_course->creator_user_uid = Auth::user()['uid'];
             $new_course->save();
 
             $teachers = $course_bd->teachers->pluck('uid')->toArray();
@@ -1588,15 +1645,6 @@ class ManagementCoursesController extends BaseController
             $blockModel = BlocksModel::where('uid', $block_uid)->first();
 
 
-            $competences_to_sync = [];
-            foreach ($blockData['competences'] as $competence_uid) {
-                $competences_to_sync[$competence_uid] = [
-                    'uid' => generate_uuid(),
-                    'course_block_uid' => $block_uid,
-                    'competence_uid' => $competence_uid
-                ];
-            }
-            $blockModel->competences()->sync($competences_to_sync);
 
             $learningResultsToSync = [];
             foreach ($blockData['learningResults'] as $learningResultUid) {
@@ -1691,12 +1739,10 @@ class ManagementCoursesController extends BaseController
 
     public function getAllCompetences()
     {
-        $competences = CompetencesModel::whereNull('parent_competence_uid')->with('subcompetences')->get()->toArray();
+        $competencesLearningResults = CompetencesModel::with('subcompetences')->whereNull('parent_competence_uid')
+            ->orderBy('created_at', 'DESC')->get();
 
-        return response()->json($competences, 200);
-        $competences = CompetencesModel::with('parentCompetence')->get()->toArray();
-
-        return response()->json($competences, 200);
+        return $competencesLearningResults;
     }
     public function enrollStudents(Request $request)
     {
@@ -1759,32 +1805,13 @@ class ManagementCoursesController extends BaseController
 
             if ($key > 0) {
 
-                $validatorNif = Validator::make(
-                    ['tu_dato' => $row[2]],
-                    ['tu_dato' => [new NifNie]] // Aplicar la regla NifNie al dato
-                );
-                if ($validatorNif->fails()) {
-                    continue;
-                }
-                $reglas = [
-                    'correo' => 'email', // La regla 'email' valida que sea un correo electrónico válido
-                ];
-                $validatorEmail = Validator::make(['correo' => $row[3]], $reglas);
-
-                if ($validatorEmail->fails()) {
-                    continue;
-                }
-
                 $existingUser = UsersModel::where('email', $row[3])
                     ->first();
 
-
-
                 if ($existingUser) {
-
                     $this->enrollUserCsv($row, $existingUser->uid, $course_uid);
                 } else {
-
+                    $this->validateUserCsv($row, $key);
                     $this->singUpUser($row, $course_uid);
                 }
             }
@@ -1794,6 +1821,29 @@ class ManagementCoursesController extends BaseController
 
         return response()->json(['message' => $message], 200);
     }
+
+    private function validateUserCsv($user, $index)
+    {
+        $validatorNif = Validator::make(
+            ['nif' => $user[2]],
+            ['nif' => [new NifNie]],
+            ['nif' => 'required|nif|unique:users,nif'],
+        );
+
+        if ($validatorNif->fails()) {
+            throw new OperationFailedException("El NIF/NIE de la línea " . $index . " no es válido");
+        }
+
+        $validatorEmailValid = Validator::make(
+            ['correo' => $user[3]],
+            ['correo' => 'email'],
+        );
+
+        if ($validatorEmailValid->fails()) {
+            throw new OperationFailedException("El correo de la línea " . $index . " no es válido");
+        }
+    }
+
     public function singUpUser($row, $course_uid)
     {
 
@@ -1838,5 +1888,12 @@ class ManagementCoursesController extends BaseController
                 LogsController::createLog($messageLog, 'Cursos', auth()->user()->uid);
             });
         }
+    }
+
+    private function generateCourseIdentifier()
+    {
+        $coursesCount = CoursesModel::count();
+        $identifier = 'CUR-' . str_pad($coursesCount + 1, 4, '0', STR_PAD_LEFT);
+        return $identifier;
     }
 }

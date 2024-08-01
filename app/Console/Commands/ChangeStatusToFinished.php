@@ -2,9 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\SendEmailJob;
+use App\Models\AutomaticNotificationTypesModel;
 use App\Models\CoursesModel;
 use App\Models\CourseStatusesModel;
-use App\Models\EmailNotificationsAutomaticModel;
 use App\Models\GeneralNotificationsAutomaticModel;
 use App\Models\GeneralNotificationsAutomaticUsersModel;
 use Illuminate\Console\Command;
@@ -44,87 +45,72 @@ class ChangeStatusToFinished extends Command
             })
             ->get();
 
-        if (!$courses->count()) return;
+            $enrollingStatus = CourseStatusesModel::where('code', 'ENROLLING')->first();
 
-        DB::transaction(function () use ($courses) {
-            $this->changeCourseStatusToFinished($courses);
-            $this->saveEmailNotificationsStudents($courses);
-            $this->saveGeneralNotificationsUsers($courses);
-        });
-    }
-
-    private function changeCourseStatusToFinished($courses)
-    {
-        $finishedStatus = CourseStatusesModel::where('code', 'FINISHED')->first();
-        $coursesUids = $courses->pluck('uid')->toArray();
-
-        CoursesModel::whereIn('uid', $coursesUids)->update(['course_status_uid' => $finishedStatus->uid]);
-    }
-
-    private function saveEmailNotificationsStudents($courses)
-    {
-
-        $emailNotificationsAutomaticData = [];
-
-        foreach ($courses as $course) {
-            foreach ($course->students as $student) {
-                $emailNotificationsAutomaticData[] = [
-                    'uid' => generate_uuid(),
-                    'subject' => 'Curso finalizado',
-                    'template' => 'course_status_change_finished',
-                    'user_uid' => $student->uid,
-                    'parameters' => json_encode([
-                        'course_title' => $course->title,
-                    ]),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
+            foreach($courses as $course) {
+                $course->status()->associate($enrollingStatus);
+                $course->save();
+                $this->sendEmailAutomaticNotification($course);
+                $this->sendGeneralAutomaticNotification($course);
             }
-        }
 
-        $emailNotificationsAutomaticDataChunks = array_chunk($emailNotificationsAutomaticData, 500);
+    }
 
-        foreach ($emailNotificationsAutomaticDataChunks as $chunk) {
-            EmailNotificationsAutomaticModel::insert($chunk);
+    private function sendEmailAutomaticNotification($course)
+    {
+        $parameters = [
+            'course_title' => $course->title,
+        ];
+
+        $studentsUsers = $this->filterUsersNotification($course->students, "email");
+
+        foreach ($studentsUsers as $user) {
+            dispatch(new SendEmailJob($user->email, 'El curso ' . $course->title . ' ha finalizado', $parameters, 'emails.course_status_change_finished'));
         }
     }
 
-    private function saveGeneralNotificationsUsers($courses)
+    private function sendGeneralAutomaticNotification($course) {
+        $automaticNotificationType = AutomaticNotificationTypesModel::where('code', 'COURSE_ENROLLMENT_COMMUNICATIONS')->first();
+
+        $generalNotificationAutomaticUid = generate_uuid();
+        $generalNotificationAutomatic = new GeneralNotificationsAutomaticModel();
+        $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
+        $generalNotificationAutomatic->title = "Curso finalizado";
+        $generalNotificationAutomatic->description = "El curso <b>" . $course->title . "</b> en el que estás inscrito, ha finalizado";
+        $generalNotificationAutomatic->entity_uid = $course->uid;
+        $generalNotificationAutomatic->automatic_notification_type_uid = $automaticNotificationType->uid;
+        $generalNotificationAutomatic->created_at = now();
+        $generalNotificationAutomatic->save();
+
+        $studentsFiltered = $this->filterUsersNotification($course->students, "general");
+
+        foreach ($studentsFiltered as $student) {
+            $generalNotificationAutomaticUser = new GeneralNotificationsAutomaticUsersModel();
+            $generalNotificationAutomaticUser->uid = generate_uuid();
+            $generalNotificationAutomaticUser->general_notifications_automatic_uid = $generalNotificationAutomaticUid;
+            $generalNotificationAutomaticUser->user_uid = $student->uid;
+            $generalNotificationAutomaticUser->save();
+        }
+    }
+
+    private function filterUsersNotification($users, $typeNotification)
     {
-        $generalNotificationAutomatics = [];
-        $generalNotificationAutomaticUsers = [];
+        $usersFiltered = [];
 
-        foreach ($courses as $course) {
-            $generalNotificationAutomaticUid = generate_uuid();
-
-            $generalNotificationAutomatics[] = [
-                'uid' => $generalNotificationAutomaticUid,
-                'title' => 'Curso finalizado',
-                'description' => 'El curso ' . $course->title . ' ha finalizado',
-                'entity' => 'course_status_change_finished',
-                'entity_uid' => $course->uid,
-                'created_at' => now()
-            ];
-
-            foreach ($course->students as $student) {
-                $generalNotificationAutomaticUsers[] = [
-                    'uid' => generate_uuid(),
-                    'general_notifications_automatic_uid' => $generalNotificationAutomaticUid,
-                    'user_uid' => $student->uid,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-            }
+        if ($typeNotification == "general") {
+            $usersFiltered = $users->filter(function ($user) {
+                return !$user->automaticGeneralNotificationsTypesDisabled->contains(function ($value) {
+                    return $value->code === 'COURSE_ENROLLMENT_COMMUNICATIONS';
+                });
+            });
+        } else {
+            $usersFiltered = $users->filter(function ($user) {
+                return !$user->automaticEmailNotificationsTypesDisabled->contains(function ($value) {
+                    return $value->code === 'COURSE_ENROLLMENT_COMMUNICATIONS';
+                });
+            });
         }
 
-        $generalNotificationAutomaticsChunk = array_chunk($generalNotificationAutomatics, 500);
-        foreach ($generalNotificationAutomaticsChunk as $chunk) {
-            GeneralNotificationsAutomaticModel::insert($chunk);
-        }
-
-        $generalNotificationAutomaticUsersChunk = array_chunk($generalNotificationAutomaticUsers, 500);
-        foreach ($generalNotificationAutomaticUsersChunk as $chunk) {
-            GeneralNotificationsAutomaticUsersModel::insert($chunk);
-        }
+        return $usersFiltered;
     }
 }

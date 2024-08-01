@@ -92,7 +92,7 @@ class CentersController extends BaseController
 
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validator->errors()], 422);
         }
 
         $center_uid = $request->input("center_uid");

@@ -2,10 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\SendEmailJob;
+use App\Models\AutomaticNotificationTypesModel;
 use Illuminate\Console\Command;
 use App\Models\EducationalProgramsModel;
 use App\Models\EducationalProgramStatusesModel;
-use App\Models\EmailNotificationsAutomaticModel;
 use App\Models\GeneralNotificationsAutomaticModel;
 use App\Models\GeneralNotificationsAutomaticUsersModel;
 use Illuminate\Support\Facades\DB;
@@ -43,78 +44,78 @@ class ChangeStatusToEnrollingEducationalProgram extends Command
             ->get();
 
         if ($educationalPrograms->count()) {
-            $enrollingStatus = EducationalProgramStatusesModel::where('code', 'ENROLLING')->first();
-            $educationalProgramsUids = $educationalPrograms->pluck('uid');
+            DB::transaction(function () use ($educationalPrograms) {
+                $enrollingStatus = EducationalProgramStatusesModel::where('code', 'ENROLLING')->first();
 
-            DB::transaction(function () use ($educationalProgramsUids, $enrollingStatus, $educationalPrograms) {
-                // Cambiamos el estado de los programas educativos a ENROLLING
-                EducationalProgramsModel::whereIn('uid', $educationalProgramsUids)->update(['educational_program_status_uid' => $enrollingStatus->uid]);
-
-                $this->sendEmailsNotifications($educationalPrograms);
-                $this->saveGeneralNotificationsUsers($educationalPrograms);
+                foreach ($educationalPrograms as $educationalProgram) {
+                    $educationalProgram->status()->associate($enrollingStatus);
+                    $educationalProgram->save();
+                    $this->sendGeneralAutomaticNotification($educationalProgram);
+                    $this->sendEmailsNotifications($educationalProgram);
+                }
             });
         }
     }
 
     // Prepara todos los emails de los usuarios inscritos en los programas educativos
-    private function sendEmailsNotifications($educationalPrograms)
+    private function sendEmailsNotifications($educationalProgram)
     {
-        $emailNotificationsAutomaticData = [];
-        foreach ($educationalPrograms as $educationalProgram) {
-            foreach ($educationalProgram->students as $student) {
-                $enrollingFinishDateFormatted = formatDatetimeUser($educationalProgram->enrolling_finish_date);
-                $emailNotificationsAutomaticData[] = [
-                    'uid' => generate_uuid(),
-                    'subject' => 'El programa formativo ' . $educationalProgram->name . ' ya está en matriculación',
-                    'user_uid' => $student->uid,
-                    'parameters' => json_encode(['educationalProgramName' => $educationalProgram->name, 'enrollingFinishDate' => $enrollingFinishDateFormatted]),
-                    'template' => 'educational_program_started_enrolling'
-                ];
-            }
-        }
+        $studentsUsers = $this->filterUsersNotification($educationalProgram->students, "email");
+        $enrollingFinishDateFormatted = formatDatetimeUser($educationalProgram->enrolling_finish_date);
 
-        // Enviamos email a los usuarios inscritos en los programas educativos
-        $emailNotificationsAutomaticDataChunks = array_chunk($emailNotificationsAutomaticData, 500);
-        foreach ($emailNotificationsAutomaticDataChunks as $chunk) {
-            EmailNotificationsAutomaticModel::insert($chunk);
-        }
+        $parameters = [
+            'educationalProgramName' => $educationalProgram->name,
+            'enrollingFinishDate' => $enrollingFinishDateFormatted
+        ];
 
+        foreach ($studentsUsers as $user) {
+            dispatch(new SendEmailJob($user->email, 'El programa formativo ' . $educationalProgram->name . ' ya está en matriculación', $parameters, 'emails.educational_program_started_enrolling'));
+        }
     }
 
-    private function saveGeneralNotificationsUsers($educationalPrograms)
+    private function sendGeneralAutomaticNotification($educationalProgram)
     {
-        $generalNotificationAutomatics = [];
-        $generalNotificationAutomaticUsers = [];
+        $automaticNotificationType = AutomaticNotificationTypesModel::where('code', 'EDUCATIONAL_PROGRAMS_ENROLLMENT_COMMUNICATIONS')->first();
 
-        foreach ($educationalPrograms as $educationalProgram) {
-            $generalNotificationAutomaticUid = generate_uuid();
-            $generalNotificationAutomatics[] = [
-                'uid' => $generalNotificationAutomaticUid,
-                'title' => "El programa formativo " . $educationalProgram->name . " ya está en período de realización",
-                'description' => "El programa educativo " . $educationalProgram->name . " ya está en período de matriculación hasta el " . formatDatetimeUser($educationalProgram->enrolling_finish_date),
-                'entity' => 'educational_program_status_change_realization',
-                'entity_uid' => $educationalProgram->uid,
-                'created_at' => now(),
-            ];
+        $generalNotificationAutomaticUid = generate_uuid();
+        $generalNotificationAutomatic = new GeneralNotificationsAutomaticModel();
+        $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
+        $generalNotificationAutomatic->title = "Programa formativo en matriculación";
+        $generalNotificationAutomatic->description = "El programa educativo <b>" . $educationalProgram->name . "</b> en el que estás inscrito, ya está en período de matriculación";
+        $generalNotificationAutomatic->entity_uid = $educationalProgram->uid;
+        $generalNotificationAutomatic->automatic_notification_type_uid = $automaticNotificationType->uid;
+        $generalNotificationAutomatic->created_at = now();
+        $generalNotificationAutomatic->save();
 
-            foreach ($educationalProgram->students as $student) {
-                $generalNotificationAutomaticUsers[] = [
-                    'uid' => generate_uuid(),
-                    'general_notifications_automatic_uid' => $generalNotificationAutomaticUid,
-                    'user_uid' => $student->uid,
-                    'created_at' => now(),
-                ];
-            }
+        $studentsFiltered = $this->filterUsersNotification($educationalProgram->students, "general");
+
+        foreach ($studentsFiltered as $student) {
+            $generalNotificationAutomaticUser = new GeneralNotificationsAutomaticUsersModel();
+            $generalNotificationAutomaticUser->uid = generate_uuid();
+            $generalNotificationAutomaticUser->general_notifications_automatic_uid = $generalNotificationAutomaticUid;
+            $generalNotificationAutomaticUser->user_uid = $student->uid;
+            $generalNotificationAutomaticUser->save();
+        }
+    }
+
+    private function filterUsersNotification($users, $typeNotification)
+    {
+        $usersFiltered = [];
+
+        if ($typeNotification == "general") {
+            $usersFiltered = $users->filter(function ($user) {
+                return !$user->automaticGeneralNotificationsTypesDisabled->contains(function ($value) {
+                    return $value->code === 'EDUCATIONAL_PROGRAMS_ENROLLMENT_COMMUNICATIONS';
+                });
+            });
+        } else {
+            $usersFiltered = $users->filter(function ($user) {
+                return !$user->automaticEmailNotificationsTypesDisabled->contains(function ($value) {
+                    return $value->code === 'EDUCATIONAL_PROGRAMS_ENROLLMENT_COMMUNICATIONS';
+                });
+            });
         }
 
-        $generalNotificationAutomaticsChunks = array_chunk($generalNotificationAutomatics, 500);
-        foreach ($generalNotificationAutomaticsChunks as $chunk) {
-            GeneralNotificationsAutomaticModel::insert($chunk);
-        }
-
-        $generalNotificationAutomaticUsersChunks = array_chunk($generalNotificationAutomaticUsers, 500);
-        foreach ($generalNotificationAutomaticUsersChunks as $chunk) {
-            GeneralNotificationsAutomaticUsersModel::insert($chunk);
-        }
+        return $usersFiltered;
     }
 }

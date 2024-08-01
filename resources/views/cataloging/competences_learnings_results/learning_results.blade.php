@@ -5,8 +5,5 @@
             <label for="{{ $learningResult['uid'] }}" class="element-label"><span class="font-bold">Resultado Aprendizaje: </span>{{ $learningResult['name'] }}</label>
             <button class="edit-learning-result-btn" data-uid="{{ $learningResult['uid'] }}">{{ e_heroicon('pencil-square', 'solid') }}</button>
         </div>
-        @if ($learningResult['description'])
-            <p>{{ $learningResult['description'] }}</p>
-        @endif
     </div>
 @endforeach

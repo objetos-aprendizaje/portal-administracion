@@ -24,6 +24,10 @@
                         <option value="" selected>Selecciona la forma del recurso</option>
                         <option value="FILE">Fichero</option>
                         <option value="URL">URL</option>
+                        <option value="IMAGEN">Imagen</option>
+                        <option value="PDF">PDF</option>
+                        <option value="VIDEO">Vídeo</option>
+                        <option value="AUDIO">Audio</option>
                     </select>
                 </div>
             </div>

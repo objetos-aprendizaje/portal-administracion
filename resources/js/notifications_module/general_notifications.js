@@ -144,6 +144,12 @@ function initHandlers() {
 
             initializeGeneralNotificationsTable();
         });
+
+    document
+        .getElementById("delete-all-filters")
+        .addEventListener("click", function () {
+            resetFilters();
+        });
 }
 
 function openFiltersModal() {
@@ -151,13 +157,39 @@ function openFiltersModal() {
 }
 
 function showFilters() {
-    let html = "";
+    // Eliminamos todos los filtros
+    var currentFilters = document.querySelectorAll(".filter");
 
-    filters.forEach((filter) => {
-        html += getFilterHtml(filter.filterKey, filter.name, filter.option);
+    // Recorre cada elemento y lo elimina
+    currentFilters.forEach(function (filter) {
+        filter.remove();
     });
 
-    document.getElementById("filters").innerHTML = html;
+    filters.forEach((filter) => {
+        // Crea un nuevo div
+        var newDiv = document.createElement("div");
+
+        // Agrega la clase 'filter' al div
+        newDiv.classList.add("filter");
+
+        // Establece el HTML del nuevo div
+        newDiv.innerHTML = `
+            <div>${filter.name}: ${filter.option}</div>
+            <button data-filter-key="${filter.filterKey
+            }" class="delete-filter-btn">${heroicon(
+                "x-mark",
+                "outline"
+            )}</button>
+        `;
+
+        // Agrega el nuevo div al div existente
+        document.getElementById("filters").prepend(newDiv);
+    });
+
+    const deleteAllFiltersBtn = document.getElementById("delete-all-filters");
+
+    if (filters.length == 0) deleteAllFiltersBtn.classList.add("hidden");
+    else deleteAllFiltersBtn.classList.remove("hidden");
 
     // Agregamos los listeners de eliminación a los filtros
     document.querySelectorAll(".delete-filter-btn").forEach((deleteFilter) => {
@@ -165,6 +197,22 @@ function showFilters() {
             controlDeleteFilters(event.currentTarget);
         });
     });
+}
+
+function resetFilters() {
+    filters = [];
+    showFilters();
+    initializeGeneralNotificationsTable()
+
+    tomSelectRolesFilter.clear();
+    tomSelectUsersFilter.clear();
+    tomSelectNotificationTypesFilter.clear();
+    document.getElementById("type-filter").value = "";
+    document.getElementById("start_date_filter").value = "";
+    document.getElementById("end_date_filter").value = "";
+    document.querySelector("#destination-roles-filter").classList.add("no-visible");
+    document.querySelector("#destination-users-filter").classList.add("no-visible");
+
 }
 
 /**
@@ -195,6 +243,17 @@ function collectFilters() {
             });
         }
     }
+
+    const typeNotification = document.getElementById("type-filter").value;
+    const typeNotificationLabel = document.getElementById("type-filter").selectedOptions[0].text;
+    addFilter(
+        "Para",
+        typeNotification,
+        typeNotificationLabel,
+        "type-filter",
+        "type",
+        "type"
+    );
 
     const startDateFilter = document.getElementById("start_date_filter").value;
     addFilter(

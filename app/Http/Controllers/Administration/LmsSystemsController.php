@@ -93,7 +93,7 @@ class LmsSystemsController extends BaseController
 
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validator->errors()], 422);
         }
 
         $lms_system_uid = $request->input("lms_system_uid");

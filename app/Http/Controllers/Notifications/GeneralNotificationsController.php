@@ -14,7 +14,7 @@ use App\Models\UserGeneralNotificationsModel;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Logs\LogsController;
-
+use App\Models\GeneralNotificationsAutomaticModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -87,6 +87,9 @@ class GeneralNotificationsController extends BaseController
                     $query->whereHas('users', function ($query) use ($filter) {
                         $query->whereIn('users.uid', $filter['value']);
                     });
+                }
+                else if($filter['database_field'] == "type"){
+                    $query->where('type', $filter['value']);
                 }
             }
         }
@@ -236,6 +239,20 @@ class GeneralNotificationsController extends BaseController
         }
 
         return response()->json($general_notification, 200);
+    }
+
+    public function getGeneralAutomaticNotificationUser($uid)
+    {
+        $user_uid = Auth::user()['uid'];
+
+        $generalNotificationAutomatic = GeneralNotificationsAutomaticModel::with(['automaticNotificationType', 'users'])->where('uid', $uid)
+            ->whereHas('users', function ($query) use ($user_uid) {
+                $query->where('users.uid', $user_uid);
+            })->first();
+
+        $generalNotificationAutomatic->users()->updateExistingPivot($user_uid, ['is_read' => true]);
+
+        return response()->json($generalNotificationAutomatic);
     }
 
     private function validateGeneralNotification($request)

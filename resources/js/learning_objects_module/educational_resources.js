@@ -21,19 +21,26 @@ import {
     toggleFormFields,
     apiFetch,
     getOptionsSelectedTomSelectInstance,
+    getMultipleFreeEmailsTomSelectInstance,
 } from "../app.js";
 import { heroicon } from "../heroicons.js";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
 import { showToast } from "../toast.js";
+import InfiniteTree from "infinite-tree";
+import renderer from "../renderer_infinite_tree.js";
 
 let resourcesTable;
 let selectedResources = [];
 let filters = [];
 const endPointTable = "/learning_objects/educational_resources/get_resources";
 let tomSelectTags;
+let tomSelectContactEmails;
 let tomSelectCategories;
 let tomFilterSelectCategories;
 let metadataCounter = 0;
+let treeCompetencesLearningResults = null;
+let selectedLearningResults = new Set();
+
 document.addEventListener("DOMContentLoaded", () => {
     initHandlers();
 
@@ -83,9 +90,11 @@ function initHandlers() {
         .getElementById("confirm-change-statuses-btn")
         .addEventListener("click", submitChangeStatusesResources);
 
-    document
-        .getElementById("change-statuses-btn")
-        .addEventListener("click", changeStatusesResources);
+    const changeStatusesBtn = document.getElementById("change-statuses-btn");
+
+    if (changeStatusesBtn) {
+        changeStatusesBtn.addEventListener("click", changeStatusesResources);
+    }
 
     document
         .getElementById("educational-resource-form")
@@ -117,6 +126,14 @@ function initHandlers() {
         .addEventListener("click", function () {
             resetFilters();
         });
+
+    const generateTagsBtn = document.getElementById("generate-tags-btn");
+
+    if (generateTagsBtn) {
+        generateTagsBtn.addEventListener("click", function () {
+            generateTags();
+        });
+    }
 }
 
 function addMetadataPair() {
@@ -204,8 +221,13 @@ function createMetadataElementMetadata(metadata, id) {
 
 function initializeTomSelect() {
     tomSelectTags = getCreateElementsTomSelectInstance("#tags");
+    //tomSelectEmails = getCreateElementsTomSelectInstance("#emails");
     tomSelectCategories = getMultipleTomSelectInstance("#select-categories");
-    tomFilterSelectCategories = getMultipleTomSelectInstance("#filter_select_categories");
+    tomFilterSelectCategories = getMultipleTomSelectInstance(
+        "#filter_select_categories"
+    );
+    tomSelectContactEmails =
+        getMultipleFreeEmailsTomSelectInstance("#contact_emails");
 }
 
 function controlShowHideResourcesWay() {
@@ -224,13 +246,32 @@ function showHideResourcesWay(value) {
         "resource_file_container"
     );
     const urlContainer = document.getElementById("url_container");
+    const acceptInput = document.getElementById("resource_input_file");
 
     if (value === "FILE") {
         resourceFileContainer.classList.remove("hidden");
         urlContainer.classList.add("hidden");
+        acceptInput.accept = "";
+    } else if (value === "IMAGE") {
+        resourceFileContainer.classList.remove("hidden");
+        urlContainer.classList.add("hidden");
+        acceptInput.accept = ".jpg, .jpeg, .png";
+    } else if (value === "PDF") {
+        resourceFileContainer.classList.remove("hidden");
+        urlContainer.classList.add("hidden");
+        acceptInput.accept = ".pdf";
+    } else if (value === "VIDEO") {
+        resourceFileContainer.classList.remove("hidden");
+        urlContainer.classList.add("hidden");
+        acceptInput.accept = ".mp4, .mkv";
+    } else if (value === "AUDIO") {
+        resourceFileContainer.classList.remove("hidden");
+        urlContainer.classList.add("hidden");
+        acceptInput.accept = ".mp3";
     } else if (value === "URL") {
         resourceFileContainer.classList.add("hidden");
         urlContainer.classList.remove("hidden");
+        acceptInput.accept = "";
     } else {
         urlContainer.classList.add("hidden");
         resourceFileContainer.classList.add("hidden");
@@ -296,12 +337,9 @@ function collectFilters() {
             });
         }
     }
-    let filter_resource_way = document.getElementById(
-        "filter_resource_way"
-    );
+    let filter_resource_way = document.getElementById("filter_resource_way");
 
     if (filter_resource_way.value) {
-
         addFilter(
             "Forma de recurso",
             filter_resource_way.value,
@@ -311,13 +349,14 @@ function collectFilters() {
         );
     }
 
-
     let filter_educational_resource_type_uid = document.getElementById(
         "filter_educational_resource_type_uid"
     );
     if (filter_educational_resource_type_uid.value) {
         let selectedFilterOptionText =
-            filter_educational_resource_type_uid.options[filter_educational_resource_type_uid.selectedIndex].text;
+            filter_educational_resource_type_uid.options[
+                filter_educational_resource_type_uid.selectedIndex
+            ].text;
 
         addFilter(
             "Tipo",
@@ -331,9 +370,8 @@ function collectFilters() {
     if (tomFilterSelectCategories) {
         const categoriesFilter = tomFilterSelectCategories.getValue();
 
-        const selectedFilterCategoriesLabel = getOptionsSelectedTomSelectInstance(
-            tomFilterSelectCategories
-        );
+        const selectedFilterCategoriesLabel =
+            getOptionsSelectedTomSelectInstance(tomFilterSelectCategories);
 
         if (categoriesFilter.length)
             addFilter(
@@ -373,11 +411,12 @@ function showFilters() {
         // Establece el HTML del nuevo div
         newDiv.innerHTML = `
             <div>${filter.name}: ${filter.option}</div>
-            <button data-filter-key="${filter.filterKey
+            <button data-filter-key="${
+                filter.filterKey
             }" class="delete-filter-btn">${heroicon(
-                "x-mark",
-                "outline"
-            )}</button>
+            "x-mark",
+            "outline"
+        )}</button>
         `;
 
         // Agrega el nuevo div al div existente
@@ -470,36 +509,20 @@ function initializeResourcesTable() {
             headerSort: false,
             width: 60,
         },
+        { title: "Identificador", field: "identifier", widthGrow: 1 },
         {
             title: "Estado",
             field: "status.name",
             widthGrow: 2,
             formatter: function (cell, formatterParams, onRendered) {
-                let color = "";
-                switch (cell.getRow().getData().status.code) {
-                    case "INTRODUCTION":
-                        color = "#EBEBF4";
-                        break;
-                    case "PENDING_APPROVAL":
-                        color = "#EDF4FB";
-                        break;
-                    case "UNDER_CORRECTION_APPROVAL":
-                        color = "#F4EBEB";
-                        break;
-                    case "PUBLISHED":
-                        color = "#EBF3F4";
-                        break;
-                    case "RETIRED":
-                        color = "#FDF5FE";
-                        break;
-                    case "REJECTED":
-                        color = "#F4EBF0";
-                        break;
-                }
+                let color = getStatusEducationalResourceColor(
+                    cell.getRow().getData().status.code
+                );
 
                 return `
-                <div class="label-status" style="background-color: ${color};">${cell.getRow().getData().status.name
-                    }</div>
+                <div class="label-status" style="background-color: ${color};">${
+                    cell.getRow().getData().status.name
+                }</div>
                 `;
             },
         },
@@ -612,7 +635,8 @@ function fillFormResourceModal(resource) {
     document.getElementById("description").value = resource.description;
     document.getElementById("educational_resource_type_uid").value =
         resource.educational_resource_type_uid;
-    document.getElementById("license_type").value = resource.license_type;
+    document.getElementById("license_type_uid").value =
+        resource.license_type_uid;
     document.getElementById("resource_way").value = resource.resource_way;
     document.getElementById("resource_url").value = resource.resource_url;
 
@@ -636,6 +660,10 @@ function fillFormResourceModal(resource) {
         });
     }
 
+    if (resource.learning_results) {
+        selectLearningResultsUser(resource.learning_results);
+    }
+
     // Mostramos u ocultamos el link de la imagen
     if (resource.image_path) {
         document.getElementById("image_path_preview").src =
@@ -644,7 +672,9 @@ function fillFormResourceModal(resource) {
         document.getElementById("image_path_preview").src = defaultImagePreview;
     }
 
-    if (
+    if (window.rolesUser.includes("MANAGEMENT")) {
+        toggleResourcesFields("educational-resource-form", false);
+    } else if (
         ["INTRODUCTION", "UNDER_CORRECTION_APPROVAL"].includes(
             resource.status.code
         )
@@ -653,6 +683,36 @@ function fillFormResourceModal(resource) {
     } else {
         toggleResourcesFields("educational-resource-form", true);
     }
+
+    if (resource.contact_emails) {
+        resource.contact_emails.forEach((contact_email) => {
+            tomSelectContactEmails.addOption({
+                value: contact_email.email,
+                text: contact_email.email,
+            });
+            tomSelectContactEmails.addItem(contact_email.email);
+        });
+    }
+}
+
+function selectLearningResultsUser(learningResultsUserSelected = []) {
+    function openNode(node) {
+        if (node.id) {
+            treeCompetencesLearningResults.openNode(node);
+            openNode(node.parent);
+        }
+    }
+
+    learningResultsUserSelected.forEach((learningResult) => {
+        const n = treeCompetencesLearningResults.getNodeById(
+            learningResult.uid
+        );
+
+        if (n) {
+            openNode(n);
+            treeCompetencesLearningResults.checkNode(n, true);
+        }
+    });
 }
 
 function toggleResourcesFields(formId, isDisabled) {
@@ -663,6 +723,10 @@ function toggleResourcesFields(formId, isDisabled) {
         tomSelectTags.enable();
         tomSelectCategories.enable();
     }
+
+    document.getElementById(
+        "tree-competences-learning-results-disabled"
+    ).value = isDisabled ? "1" : "0";
 
     toggleFormFields(formId, isDisabled);
 }
@@ -692,7 +756,6 @@ async function deleteResources() {
  * Si la operación tiene éxito, actualiza la tabla y muestra un toast.
  */
 function submitEducationalResource(event) {
-
     const action = event.submitter.value;
     resetFormErrors("educational-resource-form");
     const formData = new FormData(this);
@@ -708,6 +771,13 @@ function submitEducationalResource(event) {
 
     formData.append("action", action);
 
+    const contactEmails = tomSelectContactEmails.items;
+    formData.append("contact_emails", JSON.stringify(contactEmails));
+
+    formData.append(
+        "learning_results",
+        JSON.stringify([...selectedLearningResults])
+    );
     const params = {
         url: "/learning_objects/educational_resources/save_resource",
         method: "POST",
@@ -757,6 +827,9 @@ function resetModal() {
 
     tomSelectTags.clear();
     tomSelectCategories.clear();
+    tomSelectContactEmails.clear();
+    selectedLearningResults = new Set();
+    instanceTreeCompetencesLearningResults();
 }
 
 function changeStatusesResources() {
@@ -803,11 +876,43 @@ function changeStatusesResources() {
             optionsStatuses = [];
         }
 
+        optionsStatuses = [];
+
+        if (
+            [
+                "PUBLISHED",
+                "REJECTED",
+                "UNDER_CORRECTION_APPROVAL",
+                "PENDING_PUBLICATION",
+                "PENDING_APPROVAL",
+            ].includes(status)
+        ) {
+            optionsStatuses.push({
+                label: "Publicado",
+                value: "PUBLISHED",
+            });
+
+            optionsStatuses.push({
+                label: "Rechazado",
+                value: "REJECTED",
+            });
+
+            optionsStatuses.push({
+                label: "En subsanación para aprobación",
+                value: "UNDER_CORRECTION_APPROVAL",
+            });
+        }
+
         // Se podrá retirar un recurso en cualquier estado
         optionsStatuses.push({
             label: "Retirado",
             value: "RETIRED",
         });
+
+        // Excluímos el estado actual
+        optionsStatuses = optionsStatuses.filter(
+            (option) => option.value !== status
+        );
 
         resourcesList.innerHTML += `
                 <div class="mb-5 bg-gray-100 p-4 rounded-xl">
@@ -822,8 +927,8 @@ function changeStatusesResources() {
                     <select class="status-resource poa-select mb-2 min-w-[250px]">
                         <option value="" selected>Selecciona un estado</option>
                         ${optionsStatuses.map((option) => {
-            return `<option value="${option.value}">${option.label}</option>`;
-        })}
+                            return `<option value="${option.value}">${option.label}</option>`;
+                        })}
                     </select>
                     <div class="">
                         <h4>Indica un motivo</h4>
@@ -886,4 +991,163 @@ function getResourcesStatuses() {
     });
 
     return changesResourcesStatuses;
+}
+
+function generateTags() {
+    const text = document.getElementById("description").value;
+
+    if (!text) {
+        showToast("No hay descripción para generar etiquetas", "error");
+        return;
+    }
+
+    const params = {
+        url: "/learning_objects/generate_tags",
+        method: "POST",
+        body: { text },
+        loader: true,
+        stringify: true,
+    };
+
+    apiFetch(params)
+        .then((data) => {
+            data.forEach((tag) => {
+                tomSelectTags.addOption({ value: tag, text: tag });
+                tomSelectTags.addItem(tag);
+            });
+        })
+        .catch(() => {
+            showToast("No se han podido generar las etiquetas", "error");
+        });
+}
+
+function instanceTreeCompetencesLearningResults() {
+    const updateCheckboxState = (treeCompetencesLearningResults) => {
+        const checkboxes =
+            treeCompetencesLearningResults.contentElement.querySelectorAll(
+                'input[type="checkbox"]'
+            );
+
+        let treeDisabled =
+            document.getElementById(
+                "tree-competences-learning-results-disabled"
+            ).value === "1";
+
+        // Si el bloque está deshabilitado, deshabilitamos todos los checkboxes
+        for (let i = 0; i < checkboxes.length; ++i) {
+            const checkbox = checkboxes[i];
+            if (checkbox.hasAttribute("data-indeterminate")) {
+                checkbox.indeterminate = true;
+            } else {
+                checkbox.indeterminate = false;
+            }
+
+            if (treeDisabled) checkbox.disabled = true;
+        }
+    };
+
+    if (treeCompetencesLearningResults) treeCompetencesLearningResults.clear();
+    document.getElementById("tree-competences-learning-results").innerHTML = "";
+
+    treeCompetencesLearningResults = new InfiniteTree(
+        document.getElementById("tree-competences-learning-results"),
+        {
+            rowRenderer: renderer,
+            togglerClass: "infinite-tree-toggler-svg",
+            shouldSelectNode: (node) => {
+                return false;
+            },
+            noDataText: "No hay ningún marco de competencias",
+        }
+    );
+
+    treeCompetencesLearningResults.on("click", (event) => {
+        const currentNode = treeCompetencesLearningResults.getNodeFromPoint(
+            event.clientX,
+            event.clientY
+        );
+        if (!currentNode || event.target.className !== "checkbox") return;
+        event.stopPropagation();
+        treeCompetencesLearningResults.checkNode(currentNode);
+
+        // Llamada a la función con el nodo actual
+        updateSelectedCompetencesAndLearningResults(currentNode);
+    });
+
+    treeCompetencesLearningResults.on("contentDidUpdate", () => {
+        updateCheckboxState(treeCompetencesLearningResults);
+    });
+
+    treeCompetencesLearningResults.on("clusterDidChange", () => {
+        updateCheckboxState(treeCompetencesLearningResults);
+    });
+
+    let competencesLearningResultsCopy = JSON.parse(
+        JSON.stringify(window.competencesLearningResults)
+    );
+
+    treeCompetencesLearningResults.loadData(competencesLearningResultsCopy);
+}
+
+function updateSelectedCompetencesAndLearningResults(currentNode) {
+    function getChildNodesLearningResults(node, resultSet = new Set()) {
+        if (!node.children.length) return resultSet;
+
+        node.children.forEach((child) => {
+            if (child.type === "learningResult") {
+                resultSet.add(child.id);
+            }
+            getChildNodesLearningResults(child, resultSet);
+        });
+
+        return resultSet;
+    }
+
+    const { id, state } = currentNode;
+    const isSelected = state.checked;
+
+    function updateSet(set, items, add) {
+        if (add) {
+            set.add(id);
+            items.forEach((item) => set.add(item));
+        } else {
+            set.delete(id);
+            items.forEach((item) => set.delete(item));
+        }
+        return set;
+    }
+
+    const childLearningResults = getChildNodesLearningResults(currentNode);
+
+    // Convertir selectedLearningResults a Set si aún no lo es
+    if (!selectedLearningResults instanceof Set) {
+        selectedLearningResults = new Set(selectedLearningResults);
+    }
+
+    selectedLearningResults = updateSet(
+        selectedLearningResults,
+        Array.from(childLearningResults),
+        isSelected
+    );
+
+    if (currentNode.type === "learningResult") {
+        selectedLearningResults = updateSet(
+            selectedLearningResults,
+            [id],
+            isSelected
+        );
+    }
+}
+
+function getStatusEducationalResourceColor(statusCode) {
+    const statusColors = {
+        INTRODUCTION: "#EBEBF4",
+        PENDING_APPROVAL: "#EDF4FB",
+        UNDER_CORRECTION_APPROVAL: "#F4EBEB",
+        PUBLISHED: "#EBF3F4",
+        RETIRED: "#FDF5FE",
+        REJECTED: "#F4EBF0",
+    };
+
+    return statusColors[statusCode];
 }

@@ -39,8 +39,8 @@
                         <label for="first_name">Nombre</label>
                     </div>
                     <div class="content-container little">
-                        <input value="{{ $user->first_name }}" placeholder="Manuel" class="poa-input" type="text"
-                            id="first_name" name="first_name" />
+                        <input maxlength="100" value="{{ $user->first_name }}" placeholder="Manuel" class="poa-input"
+                            type="text" id="first_name" name="first_name" />
                     </div>
                 </div>
 
@@ -49,8 +49,8 @@
                         <label for="last_name">Apellidos</label>
                     </div>
                     <div class="content-container little">
-                        <input value="{{ $user->last_name }}" placeholder="Pérez Gutiérrez" type="text" id="last_name"
-                            name="last_name" class="poa-input" />
+                        <input maxlength="255" value="{{ $user->last_name }}" placeholder="Pérez Gutiérrez" type="text"
+                            id="last_name" name="last_name" class="poa-input" />
                     </div>
                 </div>
 
@@ -59,19 +59,23 @@
                         <label for="nif">NIF</label>
                     </div>
                     <div class="content-container little">
-                        <input value="{{ $user->nif }}" placeholder="12345678X" type="text" id="nif"
-                            class="poa-input" name="nif" />
+                        <input maxlength="255" value="{{ $user->nif }}" placeholder="12345678X" type="text"
+                            id="nif" class="poa-input" name="nif" />
                     </div>
                 </div>
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="department">Departamento</label>
+                        <label for="department_uid">Departamento</label>
                     </div>
-                    <div class="content-container little">
-                        <input value="{{ $user->department }}" class="poa-input" placeholder="Dirección" type="text"
-                            id="department" name="department" />
-                    </div>
+                    <select id="department_uid" class="poa-select content-container little" name="department_uid"
+                        autocomplete="off">
+                        <option value="">Selecciona departamento...</option>
+                        @foreach ($departments as $depart)
+                            <option value="{{ $depart['uid'] }}" @if ($user->department_uid == $depart['uid']) selected @endif>
+                                {{ $depart['name'] }}</option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <div class="field">
@@ -140,7 +144,10 @@
                                     <div
                                         class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
                                     </div>
-                                    <div class="checkbox-name">{{ $automaticNotificationType->name }}</div>
+                                    <div class="checkbox-name">
+                                        <div>{{ $automaticNotificationType->name }}</div>
+                                        <small class="italic">{{ $automaticNotificationType->description }}</small>
+                                    </div>
                                 </label>
                             </div>
                         @endforeach
@@ -185,6 +192,7 @@
                                         class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
                                     </div>
                                     <div class="checkbox-name">{{ $notification_type->name }}</div>
+
                                 </label>
                             </div>
                         @endforeach
@@ -192,7 +200,7 @@
                         @foreach ($automaticNotificationTypes as $automaticNotificationType)
                             <div class="checkbox mb-2 ml-4">
                                 <label for="automatic-email-{{ $automaticNotificationType->uid }}"
-                                    class="inline-flex relative items-center cursor-pointer">
+                                    class="inline-flex relative cursor-pointer">
 
                                     <input type="checkbox" id="automatic-email-{{ $automaticNotificationType->uid }}"
                                         class="sr-only peer automatic-email-notification-type"
@@ -202,7 +210,10 @@
                                     <div
                                         class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
                                     </div>
-                                    <div class="checkbox-name">{{ $automaticNotificationType->name }}</div>
+                                    <div class="checkbox-name">
+                                        <div>{{ $automaticNotificationType->name }}</div>
+                                        <small class="italic">{{ $automaticNotificationType->description }}</small>
+                                    </div>
                                 </label>
                             </div>
                         @endforeach

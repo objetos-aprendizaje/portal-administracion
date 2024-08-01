@@ -96,21 +96,23 @@ export function controlsPagination(table, tableId) {
     containerElement
         .querySelector(".btn-first-page")
         .addEventListener("click", function () {
-            table.setPage(1);
+            if (table.getPageMax() > 1){
+                table.setPage(1);
+            }
         });
 
     // Ir a la página anterior
     containerElement
         .querySelector(".btn-previous-page")
         .addEventListener("click", function () {
-            if (table.getPage() > 1) table.previousPage();
+            if (table.getPage() > 1 && table.getPageMax() > 1) table.previousPage();
         });
 
     // Ir a la página siguiente
     containerElement
         .querySelector(".btn-next-page")
         .addEventListener("click", function () {
-            if (table.getPage() < table.getPageMax()) {
+            if (table.getPage() < table.getPageMax() && table.getPageMax() > 1) {
                 table.nextPage();
             }
         });
@@ -119,7 +121,9 @@ export function controlsPagination(table, tableId) {
     containerElement
         .querySelector(".btn-last-page")
         .addEventListener("click", function () {
-            table.setPage(table.getPageMax());
+            if (table.getPageMax() > 1){
+                table.setPage(table.getPageMax());
+            }
         });
 
     // Actualizar la página actual desde el input
@@ -176,9 +180,16 @@ export function controlsSearch(tabulatorTable, endPointTable, tableId) {
 
     const searchButton = tableContainer.querySelector(".search-table-btn");
     const searchInput = tableContainer.querySelector(".search-table");
+    const clearButton = tableContainer.querySelector(".clear-table-btn");
 
     const triggerSearch = () => {
         const searchValue = searchInput ? searchInput.value : "";
+        tabulatorTable.replaceData(endPointTable, { search: searchValue });
+    };
+
+    const clearSearch = () => {
+        tableContainer.querySelector(".search-table").value = "";
+        const searchValue = "";
         tabulatorTable.replaceData(endPointTable, { search: searchValue });
     };
 
@@ -186,6 +197,12 @@ export function controlsSearch(tabulatorTable, endPointTable, tableId) {
         searchButton.addEventListener("click", triggerSearch);
     } else {
         console.warn("Botón de búsqueda no encontrado.");
+    }
+
+    if (clearButton) {
+        clearButton.addEventListener("click", clearSearch);
+    } else {
+        console.warn("Botón de limpiar búsqueda no encontrado.");
     }
 
     if (searchInput) {

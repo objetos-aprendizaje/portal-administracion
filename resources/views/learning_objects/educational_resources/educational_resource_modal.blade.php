@@ -31,8 +31,8 @@
                         <label for="title">Título <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input placeholder="Cronograma curso de inglés" class="poa-input" type="text" id="title"
-                            name="title" />
+                        <input maxlength="255" placeholder="Cronograma curso de inglés" class="poa-input" type="text"
+                            id="title" name="title" />
                     </div>
                 </div>
 
@@ -85,6 +85,10 @@
                             <option value="" selected>Selecciona la forma del recurso</option>
                             <option value="FILE">Fichero</option>
                             <option value="URL">URL</option>
+                            <option value="IMAGE">Imagen</option>
+                            <option value="PDF">PDF</option>
+                            <option value="VIDEO">Vídeo</option>
+                            <option value="AUDIO">Audio</option>
                         </select>
                     </div>
                 </div>
@@ -149,17 +153,25 @@
                     <div class="content-container">
                         <input id="tags" name="tags" autocomplete="off" name="tags"
                             placeholder="Introduce etiquetas" />
+
+                        @if ($general_options['openai_key'])
+                            <a href="javascript:void(0)" id="generate-tags-btn">Generar etiquetas</a>
+                        @endif
                     </div>
                 </div>
 
                 <div class="field">
-                    <div class="label-container">
-                        <label for="license_type">Tipo de licencia</label>
+                    <div class="label-container label-center">
+                        <label for="license_type_uid">Tipo de Licencia</label>
                     </div>
-
-                    <div class="content-container">
-                        <input type="text" class="poa-input" id="license_type" name="license_type" />
-                    </div>
+                    <select id="license_type_uid" class="poa-select content-container little" name="license_type_uid"
+                        autocomplete="off">
+                        <option value="">Selecciona tipo de licencia...</option>
+                        @foreach ($license_types as $license_type)
+                            <option value="{{ $license_type['uid'] }}">
+                                {{ $license_type['name'] }}</option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <div class="field">
@@ -197,6 +209,21 @@
 
                 </div>
 
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="contact_emails">Emails de contacto</label>
+                    </div>
+
+                    <div class="content-container mt-1">
+                        <input id="contact_emails" autocomplete="off" name="contact_emails"
+                            placeholder="Introduce emails de contacto" />
+                    </div>
+                </div>
+
+                <h3>Competencias y resultados de aprendizaje</h3>
+                <input type="hidden" id="tree-competences-learning-results-disabled"/>
+                <div class="p-[15px] border" id="tree-competences-learning-results"></div>
+
                 <input type="hidden" id="educational_resource_uid" name="educational_resource_uid"
                     value="" />
 
@@ -220,11 +247,12 @@
 <template id="metadata-pair-template">
     <div class="flex gap-2 mb-2 metadata-pair" data-metadata-uid="">
         <div class="flex-auto">
-            <input type="text" class="poa-input" name="metadata_key[]" id="" placeholder="Título" />
+            <input maxlength="255" type="text" class="poa-input" name="metadata_key[]" id=""
+                placeholder="Nombre" />
         </div>
         <div class="flex-auto">
             <input type="text" class="poa-input" name="metadata_value[]" id=""
-                placeholder="Instrucciones de uso" />
+                placeholder="Valor" />
         </div>
         <div class="flex-none">
             <button type="button" class="btn-icon btn-remove-metadata-pair">

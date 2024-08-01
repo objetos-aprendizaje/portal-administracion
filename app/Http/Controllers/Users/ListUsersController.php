@@ -7,12 +7,15 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use App\Models\UsersModel;
 use App\Models\UserRolesModel;
+use App\Models\DepartmentsModel;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Logs\LogsController;
+use App\Jobs\SendEmailJob;
 use App\Rules\NifNie;
-
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Carbon;
 
 class ListUsersController extends BaseController
 {
@@ -44,6 +47,12 @@ class ListUsersController extends BaseController
             ->toArray();
 
         return response()->json($user_roles, 200);
+    }
+    public function getDepartments()
+    {
+        $departments = DepartmentsModel::get()->toArray();
+
+        return response()->json($departments, 200);
     }
 
     public function searchUsers($search)
@@ -116,7 +125,7 @@ class ListUsersController extends BaseController
             return response()->json(['message' => env('ERROR_MESSAGE')], 400);
         }
 
-        $user = UsersModel::where('uid', $user_uid)->with('roles')->first();
+        $user = UsersModel::where('uid', $user_uid)->with('roles', 'department')->first();
 
         if (!$user) {
             return response()->json(['message' => 'El usuario no existe'], 406);
@@ -125,20 +134,63 @@ class ListUsersController extends BaseController
         return response()->json($user, 200);
     }
 
-
     public function saveUser(Request $request)
+    {
+
+        $validateErrors = $this->validateUser($request);
+
+        if ($validateErrors->any()) {
+            return response()->json(['errors' => $validateErrors], 400);
+        }
+
+        $user_uid = $request->input('user_uid');
+
+        if ($user_uid) {
+            $isNew = false;
+            $user = UsersModel::where('uid', $user_uid)->first();
+        } else {
+            $isNew = true;
+            $user = new UsersModel();
+            $user->uid = generate_uuid();
+        }
+
+        $user->fill($request->only([
+            'first_name', 'last_name', 'nif', 'email', 'curriculum', 'department_uid'
+        ]));
+
+        $photoFile = $request->file('photo_path');
+        if ($photoFile) $this->savePhotoUser($request->file('photo_path'), $user);
+
+        DB::transaction(function () use ($request, $user, $isNew) {
+
+            $user->save();
+            $this->syncUserRoles($request, $user);
+
+            $messageLog = $isNew ? 'Usuario añadido' : 'Usuario actualizado';
+            LogsController::createLog($messageLog, 'Usuarios', auth()->user()->uid);
+
+            // Enviar notificación de restablecimiento de contraseña si es un nuevo usuario
+            if ($isNew) {
+                $this->sendEmailResetPassword($user);
+            }
+        }, 5);
+
+        return response()->json(['message' => $isNew ? 'Se ha creado el usuario correctamente' : 'Se ha actualizado el usuario correctamente'], 200);
+    }
+
+    private function validateUser($request)
     {
 
         $messages = [
             'first_name.required' => 'Introduce el nombre del usuario.',
             'last_name.required' => 'Introduce los apellidos del usuario.',
             'nif.required' => 'Introduce el NIF del usuario.',
+            'nif.unique' => 'Este NIF ya está registrado.',
             'email.required' => 'Introduce el email del usuario.',
             'email.unique' => 'Este email ya está registrado.',
             'roles.required' => 'Debe seleccionar al menos un rol',
             'photo_path.max' => 'La imagen no puede superar los 6MB'
         ];
-
 
         $rules = [
             'first_name' => 'required|string',
@@ -159,71 +211,99 @@ class ListUsersController extends BaseController
 
         if ($user_uid) {
             $rules['email'] = 'required|email|unique:users,email,' . $user_uid . ',uid';
+            $rules['nif'] = 'required|unique:users,nif,' . $user_uid . ',uid';
         } else {
             $rules['email'] = 'required|email|unique:users,email';
+            $rules['nif'] = 'required|unique:users,nif';
         }
 
         $validator = Validator::make($request->all(), $rules, $messages);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        return $validator->errors();
+    }
+
+    private function syncUserRoles($request, $user) {
+        $roles = $request->input('roles');
+        $roles = json_decode($roles, true);
+
+        $roles_bd = UserRolesModel::whereIn('uid', $roles)->get()->pluck('uid');
+
+        $roles_to_sync = [];
+
+        foreach ($roles_bd as $rol_uid) {
+            $roles_to_sync[] = [
+                'uid' => generate_uuid(),
+                'user_uid' => $user->uid,
+                'user_role_uid' => $rol_uid
+            ];
         }
 
-        return DB::transaction(function () use ($request, $user_uid) {
+        $user->roles()->sync($roles_to_sync);
+    }
 
-            if ($user_uid) {
-                $isNew = false;
-                $user_bd = UsersModel::where('uid', $user_uid)->first();
-                $user_uuid = $user_bd->uid;
-            } else {
-                $isNew = true;
-                $user_bd = new UsersModel();
-                $user_uuid = generate_uuid();
-                $user_bd->uid = $user_uuid;
-            }
+    private function savePhotoUser($file, $user)
+    {
+        $path = 'images/users-images';
+        $destinationPath = public_path($path);
+        $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $extension = $file->getClientOriginalExtension();
+        $timestamp = time();
 
-            $user_bd->fill($request->only([
-                'first_name', 'last_name', 'nif', 'email', 'curriculum'
-            ]));
+        $filename = "{$originalName}-{$timestamp}.{$extension}";
 
-            if ($request->file('photo_path')) {
-                $file = $request->file('photo_path');
-                $path = 'images/users-images';
-                $destinationPath = public_path($path);
-                $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                $extension = $file->getClientOriginalExtension();
-                $timestamp = time();
+        $file->move($destinationPath, $filename);
 
-                $filename = "{$originalName}-{$timestamp}.{$extension}";
+        $user->photo_path = $path . "/" . $filename;
+    }
 
-                $file->move($destinationPath, $filename);
+    private function sendEmailResetPassword($user)
+    {
+        // Generar el token de restablecimiento de contraseña
+        $token = md5(uniqid(rand(), true));
+        $minutes_expiration_token = env('PWRES_TOKEN_EXPIRATION_MIN', 60);
+        $expiration_date = date("Y-m-d H:i:s", strtotime("+$minutes_expiration_token minutes"));
 
-                $user_bd->photo_path = $path . "/" . $filename;
-            }
+        // Insertar el token en la tabla password_reset_tokens
+        DB::table('reset_password_tokens')->insert([
+            'uid_user' => $user->uid, // Asegurarse de que se proporcione el uid del usuario
+            'email' => $user->email,
+            'token' => $token,
+            'created_at' => now(),
+            'expiration_date' => $expiration_date,
+        ]);
 
-            $user_bd->save();
+        $isStudent = $user->hasAnyRole(['STUDENT']);
 
-            $roles = $request->input('roles');
-            $roles = json_decode($roles, true);
+        $url = $this->generateUrlRestorePassword($isStudent, $token, $user);
 
-            $roles_bd = UserRolesModel::whereIn('uid', $roles)->get()->pluck('uid');
+        $parameters = [
+            'url' => $url
+        ];
 
-            $roles_to_sync = [];
-            foreach ($roles_bd as $rol_uid) {
-                $roles_to_sync[] = [
-                    'uid' => generate_uuid(),
-                    'user_uid' => $user_uuid,
-                    'user_role_uid' => $rol_uid
-                ];
-            }
+        dispatch(new SendEmailJob($user->email, 'Restablecer contraseña', $parameters, 'emails.set_password_new_account'));
+        dispatch(new SendEmailJob('ja.cabello@asesoresnt.com', 'Restablecer contraseña', $parameters, 'emails.set_password_new_account'));
 
-            $user_bd->roles()->sync($roles_to_sync);
 
-            $messageLog = $isNew ? 'Usuario añadido' : 'Usuario actualizado';
-            LogsController::createLog($messageLog, 'Usuarios', auth()->user()->uid);
+    }
 
-            return response()->json(['message' => $isNew ? 'Se ha creado el usuario correctamente' : 'Se ha actualizado el usuario correctamente'], 200);
-        }, 5);
+    // Si tiene el rol de estudiante, lo mandamos al front. Si no tiene estudiante lo mandamos al back
+    private function generateUrlRestorePassword($isStudent, $token, $user) {
+
+        $originalUrl = config('app.url');
+
+        if($isStudent) {
+            URL::forceRootUrl(env('FRONT_URL'));
+        }
+
+        $url = URL::temporarySignedRoute(
+            'password.reset',
+            Carbon::now()->addMinutes(config('auth.passwords.users.expire')),
+            ['token' => $token, 'email' => $user->email]
+        );
+
+        URL::forceRootUrl($originalUrl);
+
+        return $url;
     }
 
     public function exportUsers()

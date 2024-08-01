@@ -33,7 +33,8 @@ RUN rm -rf /var/lib/apt/lists/*
 # Añadir el php.ini de producción ofrecido por la imagen.
 #RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
-RUN echo "upload_max_filesize = 32M"  > /usr/local/etc/php/conf.d/custom.ini
+RUN echo "upload_max_filesize = 140M"  > /usr/local/etc/php/conf.d/custom.ini
+RUN echo "post_max_size = 140M"  >> /usr/local/etc/php/conf.d/custom.ini
 
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 

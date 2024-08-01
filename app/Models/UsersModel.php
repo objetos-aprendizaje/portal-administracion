@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
 class UsersModel extends Authenticatable
 {
-    use HasFactory;
+    use HasFactory, Notifiable;
     protected $table = 'users';
     protected $primaryKey = 'uid';
 
@@ -19,7 +20,7 @@ class UsersModel extends Authenticatable
 
     public $incrementing = false;
 
-    protected $fillable = ['first_name', 'last_name', 'nif', 'email', 'user_rol_uid', 'curriculum'];
+    protected $fillable = ['first_name', 'last_name', 'nif', 'email', 'user_rol_uid', 'curriculum', 'department_uid'];
 
     public function rol()
     {
@@ -146,5 +147,17 @@ class UsersModel extends Authenticatable
             'educational_program_uid'
         )->withPivot('calification_type', 'approved', 'credential')->select(['title']);
     }
+    public function department()
+    {
+        return $this->belongsTo(DepartmentsModel::class, 'department_uid');
+    }
 
+    public function learningResultsPreferences() {
+        return $this->belongsToMany(
+            LearningResultsModel::class,
+            'user_learning_results_preferences',
+            'user_uid',
+            'learning_result_uid'
+        );
+    }
 }

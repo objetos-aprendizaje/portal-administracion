@@ -28,6 +28,7 @@ import { showToast } from "../toast.js";
 const endPointTable = "/users/list_users/get_users";
 let usersTable;
 let tomSelectRoles;
+let tomSelectDepartments;
 
 let selectedUsers = [];
 
@@ -91,6 +92,14 @@ function initHandlers() {
         .addEventListener("click", () => {
             exportUsers();
         });
+
+    document
+        .getElementById("delete-all-filters")
+        .addEventListener("click", function () {
+            resetFilters();
+        });
+
+    tomSelectDepartments = document.getElementById("department_uid")
 }
 
 /**
@@ -119,6 +128,27 @@ function initializeTomSelect() {
                     value: rol.uid,
                     text: rol.name,
                 });
+            });
+        }
+    });
+    fetch("/users/list_users/get_departments", {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-TOKEN": getCsrfToken(),
+        },
+    }).then(async (response) => {
+        const data = await response.json();
+        if (response.status === 200) {
+            const emptyOption = document.createElement('option');
+            emptyOption.value = '';
+            emptyOption.textContent = '';
+            tomSelectDepartments.appendChild(emptyOption);
+            data.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.uid;
+                option.textContent = item.name;
+                tomSelectDepartments.appendChild(option);
             });
         }
     });
@@ -343,6 +373,12 @@ function fillFormUserModal(user) {
         tomSelectRoles.clear();
     }
 
+    if (user.department) {
+            tomSelectDepartments.value = user.department.uid;
+    } else {
+        tomSelectDepartments.value = "";
+    }
+
     const imgElement = document.getElementById("photo_path_preview");
 
     if (user.photo_path) {
@@ -360,6 +396,8 @@ function submitFormUserModal() {
     const formData = new FormData(this);
     const roles = tomSelectRoles.items;
     formData.append("roles", JSON.stringify(roles));
+
+    formData.append("department_uid", tomSelectDepartments.value);
 
     const params = {
         method: "POST",
@@ -391,6 +429,7 @@ function resetModal() {
     imgElement.src = defaultImagePreview;
 
     tomSelectRoles.clear();
+    tomSelectDepartments.value = '';
 
     document.getElementById("user_uid").value = "";
     document.getElementById("image-name").innerText =
@@ -469,13 +508,39 @@ function controlSaveHandlerFilters() {
 }
 
 function showFilters() {
-    let html = "";
+    // Eliminamos todos los filtros
+    var currentFilters = document.querySelectorAll(".filter");
 
-    filters.forEach((filter) => {
-        html += getFilterHtml(filter.filterKey, filter.name, filter.option);
+    // Recorre cada elemento y lo elimina
+    currentFilters.forEach(function (filter) {
+        filter.remove();
     });
 
-    document.getElementById("filters").innerHTML = html;
+    filters.forEach((filter) => {
+        // Crea un nuevo div
+        var newDiv = document.createElement("div");
+
+        // Agrega la clase 'filter' al div
+        newDiv.classList.add("filter");
+
+        // Establece el HTML del nuevo div
+        newDiv.innerHTML = `
+            <div>${filter.name}: ${filter.option}</div>
+            <button data-filter-key="${filter.filterKey
+            }" class="delete-filter-btn">${heroicon(
+                "x-mark",
+                "outline"
+            )}</button>
+        `;
+
+        // Agrega el nuevo div al div existente
+        document.getElementById("filters").prepend(newDiv);
+    });
+
+    const deleteAllFiltersBtn = document.getElementById("delete-all-filters");
+
+    if (filters.length == 0) deleteAllFiltersBtn.classList.add("hidden");
+    else deleteAllFiltersBtn.classList.remove("hidden");
 
     // Agregamos los listeners de eliminación a los filtros
     document.querySelectorAll(".delete-filter-btn").forEach((deleteFilter) => {
@@ -499,7 +564,6 @@ function controlDeleteFilters(deleteBtn) {
     );
 
     removedFilters.forEach((removedFilter) => {
-        document.getElementById(removedFilter.filterKey).value = "";
         if (removedFilter.filterKey === "roles") {
             tomSelectRolesFilter.clear();
         } else if (removedFilter.filterKey === "filter_creation_date") {
@@ -508,8 +572,15 @@ function controlDeleteFilters(deleteBtn) {
     });
 
     filters = filters.filter((filter) => filter.filterKey !== filterKey);
-    document.getElementById(filterKey).value = "";
 
     showFilters();
     initializeUsersTable();
+}
+function resetFilters() {
+    filters = [];
+    showFilters();
+    initializeUsersTable();
+
+    dateUsersFilterFlatpickr.clear();
+    tomSelectRolesFilter.clear();
 }

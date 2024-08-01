@@ -21,12 +21,12 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="educational_program_type_uid">Programa educativo <span class="text-red-500">*</span></label>
+                        <label for="educational_program_type_uid">Programa formativo <span class="text-red-500">*</span></label>
                     </div>
 
                     <div class="content-container">
                         <select id="educational_program_type_uid" name="educational_program_type_uid" class="poa-select w-full">
-                            <option value="" selected>Selecciona un tipo de programa educativo</option>
+                            <option value="" selected>Selecciona un tipo de programa formativo</option>
                             @foreach ($educational_program_types as $program_type)
                                 <option value="{{$program_type['uid']}}">{{$program_type['name']}}</option>
                             @endforeach

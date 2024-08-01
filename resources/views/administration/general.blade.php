@@ -1,116 +1,216 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="flex flex-col md:flex-row gap-12 mb-8">
+    <div class="flex flex-col md:flex-row gap-12 mb-8 h-[385px]">
         <div class="poa-container w-full md:w-1/2">
-            <div class="relative h-full flex justify-between flex-col gap-8">
+            <div class="relative h-full flex justify-between flex-col">
 
-                <h2>Logo</h2>
+                <h2 class="">Logo</h2>
 
-                <div class="flex justify-center relative h-full flex-col">
+                <div class="grow overflow-auto h-full">
 
-                    <div id="image-logo-poa-container"
-                        class=" w-full max-h-[140px] flex justify-center items-center {{ $general_options['poa_logo'] ? '' : 'hidden' }}">
-                        <img id="image-logo-poa"
-                            src="{{ $general_options['poa_logo'] ? asset($general_options['poa_logo']) : '' }}" alt="Logo POA"
-                            class="object-contain w-full h-full" />
-                    </div>
-                    <div id="no-image-logo-poa-container"
-                        class="bg-[#F5F6F4] w-full h-full flex justify-center items-center {{ $general_options['poa_logo'] ? 'hidden' : '' }}">
-                        <div>
-                            <svg width="80" height="80" viewBox="0 0 80 80" fill="none"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <g id="image">
-                                    <path id="Vector"
-                                        d="M70 63.3333V16.6667C70 13 67 10 63.3333 10H16.6667C13 10 10 13 10 16.6667V63.3333C10 67 13 70 16.6667 70H63.3333C67 70 70 67 70 63.3333ZM29.6667 46.6L36.6667 55.0333L47 41.7333C47.6667 40.8667 49 40.8667 49.6667 41.7667L61.3667 57.3667C62.2 58.4667 61.4 60.0333 60.0333 60.0333H20.0667C18.6667 60.0333 17.9 58.4333 18.7667 57.3333L27.0667 46.6667C27.7 45.8 28.9667 45.7667 29.6667 46.6Z"
-                                        fill="#CBD0C8" />
-                                </g>
-                            </svg>
+                    <div class="accordion">
+                        <div tabindex="1">
+                            <div
+                                class="accordion-header cursor-pointer px-[20px] py-[8px] bg-[#F5F6F4] rounded-[6px] flex justify-between items-center mb-[8px]">
+                                <h4 class="m-0">Logo 1</h4>
+                                <div class="w-[16px] rotate-icon">{{ e_heroicon('chevron-up', 'outline') }}</div>
+                            </div>
+
+                            <div class="accordion-uncollapsed container-logo-general">
+                                <div class="accordion-body">
+                                    <div class="flex gap-[32px] mb-[8px]">
+                                        <div class="w-1/2" id="logo_container_poa_logo_1">
+                                            @if ($general_options['poa_logo_1'])
+                                                <img src="{{ asset($general_options['poa_logo_1']) }}" />
+                                            @else
+                                                <div class="bg-[#F5F6F4] flex items-center justify-center h-full">
+                                                    <img
+                                                        src="{{ asset('data/images/default_images/no_logo_attached.svg') }}" />
+                                                </div>
+                                            @endif
+
+                                        </div>
+
+                                        <div class="w-1/2">
+                                            <button class="btn btn-primary mb-[14px] min-w-0 restore_poa_logo" data-field="poa_logo_1">Eliminar
+                                                {{ e_heroicon('trash', 'outline') }}</button>
+
+                                            <label for="poa_logo_1" class="btn btn-primary min-w-0">Subir
+                                                {{ e_heroicon('arrow-up-tray', 'outline') }}</label>
+
+                                            <input type="file" accept="image/*" name="poa_logo_1" id="poa_logo_1"
+                                                hidden />
+
+                                        </div>
+                                    </div>
+
+                                    <small class="text-center text-[#C7C7C7] mt-8">*Dimensiones recomendadas: Alto: 75px x Ancho: 215px.
+                                        Formato: PNG,
+                                        JPG. Tam. Máx.: 1MB</small>
+                                </div>
+                            </div>
                         </div>
 
+                        <div tabindex="2">
+                            <div
+                                class="accordion-header cursor-pointer px-[20px] py-[8px] bg-[#F5F6F4] rounded-[6px] flex justify-between items-center mb-[8px]">
+                                <h4 class="m-0">Logo 2</h4>
+                                <div class="w-[16px] rotate-icon">{{ e_heroicon('chevron-down', 'outline') }}</div>
+                            </div>
+
+                            <div class="accordion-collapsed container-logo-general">
+                                <div class="accordion-body">
+                                    <div class="flex gap-[32px] mb-[8px]">
+                                        <div class="w-1/2" id="logo_container_poa_logo_2">
+                                            @if ($general_options['poa_logo_2'])
+                                                <img src="{{ asset($general_options['poa_logo_2']) }}" />
+                                            @else
+                                                <div class="bg-[#F5F6F4] flex items-center justify-center h-full">
+                                                    <img
+                                                        src="{{ asset('data/images/default_images/no_logo_attached.svg') }}" />
+                                                </div>
+                                            @endif
+                                        </div>
+
+                                        <div class="w-1/2">
+                                            <button class="btn btn-primary mb-[14px] min-w-0 restore_poa_logo" data-field="poa_logo_2">Eliminar
+                                                {{ e_heroicon('trash', 'outline') }}</button>
+
+                                            <label for="poa_logo_2" class="btn btn-primary min-w-0">Subir
+                                                {{ e_heroicon('arrow-up-tray', 'outline') }}</label>
+
+                                            <input type="file" accept="image/*" name="poa_logo_2" id="poa_logo_2"
+                                                hidden />
+                                        </div>
+                                    </div>
+
+                                    <small class="text-center text-[#C7C7C7] mt-8">*Dimensiones recomendadas: Alto: 75px x Ancho: 215px.
+                                        Formato: PNG,
+                                        JPG. Tam. Máx.: 1MB</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div tabindex="3">
+                            <div
+                                class="accordion-header cursor-pointer px-[20px] py-[8px] bg-[#F5F6F4] rounded-[6px] flex justify-between items-center mb-[8px]">
+                                <h4 class="m-0">Logo 3</h4>
+                                <div class="w-[16px] rotate-icon">{{ e_heroicon('chevron-down', 'outline') }}</div>
+                            </div>
+
+                            <div class="accordion-collapsed container-logo-general">
+                                <div class="accordion-body">
+                                    <div class="flex gap-[32px] mb-[8px]">
+                                        <div class="w-1/2" id="logo_container_poa_logo_3">
+                                            @if ($general_options['poa_logo_3'])
+                                                <img src="{{ asset($general_options['poa_logo_3']) }}" />
+                                            @else
+                                                <div class="bg-[#F5F6F4] flex items-center justify-center h-full">
+                                                    <img
+                                                        src="{{ asset('data/images/default_images/no_logo_attached.svg') }}" />
+                                                </div>
+                                            @endif
+                                        </div>
+
+                                        <div class="w-1/2">
+                                            <button class="btn btn-primary mb-[14px] min-w-0 restore_poa_logo" data-field="poa_logo_3">Eliminar
+                                                {{ e_heroicon('trash', 'outline') }}</button>
+
+                                            <label for="poa_logo_3" class="btn btn-primary min-w-0">Subir
+                                                {{ e_heroicon('arrow-up-tray', 'outline') }}</label>
+
+                                            <input type="file" accept="image/*" name="poa_logo_3" id="poa_logo_3"
+                                                hidden />
+                                        </div>
+                                    </div>
+
+                                    <small class="text-center text-[#C7C7C7] mt-8">*Dimensiones recomendadas: Alto: 75px x Ancho: 215px.
+                                        Formato: PNG,
+                                        JPG. Tam. Máx.: 1MB</small>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <small class="text-center text-[#C7C7C7] mt-8">*Dimensiones: Alto: 300px x Ancho: 800px. Formato: PNG,
-                        JPG. Tam. Máx.: 1MB</small>
+
+
                 </div>
 
-                <div class="w-full">
-                    <div class="flex gap-6 justify-center">
-                        <button id="restore-logo-image-btn" class="btn btn-primary">Restaurar
-                            {{ e_heroicon('arrow-path', 'outline') }}</button>
-                        <input type="file" accept="image/*" name="logo-poa" id="logo-poa" hidden />
-                        <label class="btn btn-primary" for="logo-poa">Subir
-                            {{ e_heroicon('arrow-up-tray', 'outline') }}</label>
-                    </div>
-                </div>
             </div>
+
+            <template id="no-logo-attached">
+                <div class="bg-[#F5F6F4] flex items-center justify-center h-full">
+                    <img src="{{ asset('data/images/default_images/no_logo_attached.svg') }}" />
+                </div>
+            </template>
         </div>
 
-        <div class="poa-container w-full md:w-1/2">
-            <div class="relative h-full flex flex-col">
-                <h2>Paleta de colores</h2>
+        <div class="poa-container w-full md:w-1/2 flex flex-col">
+            <h2>Paleta de colores</h2>
 
-                <div class="h-full">
-                    <div class="color-definition">
-                        <div class="coloris-button">
-                            <input value="{{ $general_options['color_1'] }}" id="color-1" class="coloris cursor-pointer"
-                                type="text" data-coloris>
-                        </div>
-                        <div>
-                            <label for="color-1" class="text-primary font-roboto-bold">Color Primario (Títulos y
-                                Botones):</label> Este color
-                            se utiliza para los títulos principales (h1, h2, h3, h4) y el fondo de los botones. Modifica la
-                            apariencia de los elementos más destacados y llamativos de la interfaz.
-                        </div>
+            <div class="grow overflow-auto mb-4">
+                <div class="color-definition">
+                    <div class="coloris-button">
+                        <input value="{{ $general_options['color_1'] }}" id="color-1" class="coloris cursor-pointer"
+                            type="text" data-coloris>
                     </div>
-
-                    <div class="color-definition">
-                        <div class="coloris-button">
-                            <input value="{{ $general_options['color_2'] }}" id="color-2" class="coloris" type="text"
-                                data-coloris>
-                        </div>
-                        <div>
-                            <label for="color-2" class="text-primary font-roboto-bold">Color Secundario (Subtítulos y
-                                Botones Hover):</label> Este color se utiliza para los títulos de nivel inferior (h5), el
-                            efecto hover del fondo de los botones principales y el fondo del bloque de categorías.
-                            Proporciona un contraste con el color primario y se utiliza en elementos interactivos y áreas de
-                            contenido destacado.
-                        </div>
-                    </div>
-
-                    <div class="color-definition">
-                        <div class="coloris-button">
-                            <input value="{{ $general_options['color_3'] }}" id="color-3" class="coloris" type="text"
-                                data-coloris>
-                        </div>
-                        <div>
-                            <label for="color-3" class="text-primary font-roboto-bold">Color Terciario (Textos
-                                Principales):</label> Este color
-                            se utiliza para los textos principales, incluyendo los párrafos (p) y las etiquetas (label).
-                            Define la apariencia de la mayoría del texto en la interfaz
-                        </div>
-                    </div>
-
-                    <div class="color-definition">
-                        <div class="coloris-button">
-                            <input value="{{ $general_options['color_4'] }}" id="color-4" class="coloris" type="text"
-                                data-coloris>
-                        </div>
-                        <div>
-                            <label for="color-4" class="text-primary font-roboto-bold">Color Cuaternario (Textos
-                                Secundarios):</label>
-                            Este color se utiliza para los textos secundarios que son más pequeños que los párrafos y menos
-                            destacados. Se utiliza para proporcionar información adicional o secundaria, y para elementos de
-                            la interfaz que no necesitan destacar tanto como los elementos principales.
-                        </div>
+                    <div>
+                        <label for="color-1" class="text-primary font-roboto-bold">Color Primario (Títulos y
+                            Botones):</label> Este color
+                        se utiliza para los títulos principales (h1, h2, h3, h4) y el fondo de los botones. Modifica la
+                        apariencia de los elementos más destacados y llamativos de la interfaz.
                     </div>
                 </div>
 
-                <div class="flex justify-center">
-                    <button id="update-colors-btn" class="btn btn-primary w-48">Guardar
-                        {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                <div class="color-definition">
+                    <div class="coloris-button">
+                        <input value="{{ $general_options['color_2'] }}" id="color-2" class="coloris" type="text"
+                            data-coloris>
+                    </div>
+                    <div>
+                        <label for="color-2" class="text-primary font-roboto-bold">Color Secundario (Subtítulos y
+                            Botones Hover):</label> Este color se utiliza para los títulos de nivel inferior (h5), el
+                        efecto hover del fondo de los botones principales y el fondo del bloque de categorías.
+                        Proporciona un contraste con el color primario y se utiliza en elementos interactivos y áreas de
+                        contenido destacado.
+                    </div>
                 </div>
+
+                <div class="color-definition">
+                    <div class="coloris-button">
+                        <input value="{{ $general_options['color_3'] }}" id="color-3" class="coloris" type="text"
+                            data-coloris>
+                    </div>
+                    <div>
+                        <label for="color-3" class="text-primary font-roboto-bold">Color Terciario (Textos
+                            Principales):</label> Este color
+                        se utiliza para los textos principales, incluyendo los párrafos (p) y las etiquetas (label).
+                        Define la apariencia de la mayoría del texto en la interfaz
+                    </div>
+                </div>
+
+                <div class="color-definition">
+                    <div class="coloris-button">
+                        <input value="{{ $general_options['color_4'] }}" id="color-4" class="coloris" type="text"
+                            data-coloris>
+                    </div>
+                    <div>
+                        <label for="color-4" class="text-primary font-roboto-bold">Color Cuaternario (Textos
+                            Secundarios):</label>
+                        Este color se utiliza para los textos secundarios que son más pequeños que los párrafos y menos
+                        destacados. Se utiliza para proporcionar información adicional o secundaria, y para elementos de
+                        la interfaz que no necesitan destacar tanto como los elementos principales.
+                    </div>
+                </div>
+
 
             </div>
+
+            <div class="flex justify-center">
+                <button id="update-colors-btn" class="btn btn-primary w-48">Guardar
+                    {{ e_heroicon('paper-airplane', 'outline') }}</button>
+            </div>
+
 
         </div>
     </div>
@@ -129,17 +229,6 @@
                         class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
                     </div>
                     <div class="checkbox-name">Activar valoraciones de objetos de aprendizaje</div>
-                </label>
-            </div>
-
-            <div class="checkbox mb-2">
-                <label for="payment_gateway" class="inline-flex relative items-center cursor-pointer">
-                    <input {{ $general_options['payment_gateway'] ? 'checked' : '' }} type="checkbox" id="payment_gateway"
-                        name="payment_gateway" class="sr-only peer">
-                    <div
-                        class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
-                    </div>
-                    <div class="checkbox-name">Activar pagos</div>
                 </label>
             </div>
 
@@ -294,9 +383,9 @@
 
                     <div class="content-container little">
                         <select id="smtp_encryption" name="smtp_encryption" class="poa-select w-full">
-                            <option value="" selected>Ninguna</option>
-                            <option value="TLS">TLS</option>
-                            <option value="SSL">SSL</option>
+                            <option value="" @if ($general_options['smtp_encryption'] == '') selected @endif>Ninguna</option>
+                            <option value="TLS" @if ($general_options['smtp_encryption'] == 'TLS') selected @endif>TLS</option>
+                            <option value="SSL" @if ($general_options['smtp_encryption'] == 'SSL') selected @endif>SSL</option>
                         </select>
                     </div>
                 </div>
@@ -511,7 +600,7 @@
                 <div class="accordion-item group" tabindex="1">
                     <div class="accordion-header">
                         <h3>Tipografía regular</h3>
-                        <div class="">
+                        <div class="rotate-icon">
                             {{ e_heroicon('chevron-down', 'outline') }}
                         </div>
                     </div>
@@ -736,7 +825,7 @@
                 <div class="accordion-item group" tabindex="1">
                     <div class="accordion-header">
                         <h3>Tipografía medium</h3>
-                        <div class="group transition-all duration-500 group-focus:-rotate-180">
+                        <div class="rotate-icon">
                             {{ e_heroicon('chevron-down', 'outline') }}
                         </div>
                     </div>
@@ -956,7 +1045,7 @@
                 <div class="accordion-item group" tabindex="1">
                     <div class="accordion-header">
                         <h3>Tipografía bold</h3>
-                        <div class="">
+                        <div class="rotate-icon">
                             {{ e_heroicon('chevron-down', 'outline') }}
                         </div>
                     </div>
@@ -1180,6 +1269,33 @@
 
         </div>
 
+    </div>
+
+    <div class="poa-container mb-8">
+        <h2>Configuración de API de OpenAI</h2>
+
+        <p class="mt-2 mb-4">
+            Se usará la API de OpenAI para la generación de etiquetas
+        </p>
+
+        <form id="openai-form">
+            @csrf
+            <div class="poa-form">
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="openai_key">Clave API<span class="text-danger">*</span></label>
+                    </div>
+                    <div class="content-container little">
+                        <input placeholder="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" class="poa-input"
+                            type="text" id="openai_key" value="{{ $general_options['openai_key'] }}"
+                            name="openai_key" />
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="save-openai-btn">Guardar
+                {{ e_heroicon('paper-airplane', 'outline') }}</button>
+        </form>
 
     </div>
 @endsection

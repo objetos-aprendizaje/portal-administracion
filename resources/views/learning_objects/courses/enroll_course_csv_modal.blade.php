@@ -23,7 +23,7 @@
 
                 <div class="content-container w-full">
 
-                    <span>Suba el archivo con los datos:</span>
+                    <p class="mb-2">Suba el archivo con los datos:</p>
                     <div class="poa-input-file">
                         <div class="flex-none">
                             <input type="file" id="attachment" class="hidden" name="attachment">

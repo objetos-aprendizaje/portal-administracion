@@ -131,6 +131,8 @@ function submitFormCategory() {
  * Inicializa el botón para crear una nueva categoría y abre el modal correspondiente.
  */
 function newCategory() {
+    resetFormErrors("category-form");
+    resetForm();
     loadCategoryModal();
     showModal("category-modal", "Añadir categoría");
 }
@@ -200,15 +202,19 @@ async function loadCategoryModal(categoryUid = null) {
         fillCategoryModal(category);
     } else {
         // Resetear el formulario
-        document.getElementById("name").value = "";
-        document.getElementById("description").value = "";
-        document.getElementById("category_uid").value = "";
-        document.getElementById("image_path_preview").src = defaultImagePreview;
-        document.getElementById("image-name").innerText =
-            "Ningún archivo seleccionado";
-        changeColorColoris(document.getElementById("color"), "#fff");
-        selectParentCategory.value = "";
+        resetForm();
     }
+}
+
+function resetForm() {
+    document.getElementById("name").value = "";
+    document.getElementById("description").value = "";
+    document.getElementById("category_uid").value = "";
+    document.getElementById("image_path_preview").src = defaultImagePreview;
+    document.getElementById("image-name").innerText =
+        "Ningún archivo seleccionado";
+    changeColorColoris(document.getElementById("color"), "#fff");
+    document.getElementById("parent_category_uid").value = "";
 }
 
 function fillCategoryModal(category) {
@@ -218,7 +224,7 @@ function fillCategoryModal(category) {
     document.getElementById("category_uid").value = category.uid || "";
     changeColorColoris(document.getElementById("color"), category.color);
     if (category.parent_category_uid)
-        selectParentCategory.value = category.parent_category_uid;
+        document.getElementById("parent_category_uid").value = category.parent_category_uid;
 
     if (category.image_path)
         document.getElementById("image_path_preview").src =

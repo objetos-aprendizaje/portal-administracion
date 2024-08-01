@@ -4,8 +4,9 @@ import {
     accordionControls,
     apiFetch,
     showFormErrors,
-    resetFormErrors
+    resetFormErrors,
 } from "../app.js";
+import tag from "html5-tag";
 
 document.addEventListener("DOMContentLoaded", function () {
     initHandlers();
@@ -18,12 +19,21 @@ function initHandlers() {
     document
         .getElementById("email-server-form")
         .addEventListener("submit", submitEmailServerForm);
-    document
-        .getElementById("restore-logo-image-btn")
-        .addEventListener("click", submitRestoreLogoImage);
-    document
-        .getElementById("logo-poa")
-        .addEventListener("change", saveLogoImage);
+
+    const logoIds = ["poa_logo_1", "poa_logo_2", "poa_logo_3"];
+
+    logoIds.forEach((id) => {
+        document
+            .getElementById(id)
+            .addEventListener("change", (event) => saveLogoImage(event, id));
+    });
+
+    document.querySelectorAll(".restore_poa_logo").forEach((element) => {
+        element.addEventListener("click", () => {
+            submitRestoreLogoImage(element.dataset.field);
+        });
+    });
+
     document
         .getElementById("update-colors-btn")
         .addEventListener("click", saveColors);
@@ -52,6 +62,10 @@ function initHandlers() {
             addFont(event);
         });
     });
+
+    document
+        .getElementById("openai-form")
+        .addEventListener("submit", submitOpenaiForm);
 }
 
 function saveScripts() {
@@ -83,30 +97,33 @@ function submitEmailServerForm() {
     apiFetch(params);
 }
 
-async function submitRestoreLogoImage() {
+async function submitRestoreLogoImage(logoId) {
     const params = {
         url: "/administration/restore_logo_image",
         method: "POST",
         loader: true,
         toast: true,
+        body: { logoId },
+        stringify: true,
     };
 
     apiFetch(params).then(() => {
-        document
-            .getElementById("image-logo-poa-container")
-            .classList.add("hidden");
-        document
-            .getElementById("no-image-logo-poa-container")
-            .classList.remove("hidden");
-        document.getElementById("image-logo-poa").src = "";
+        const templateNoLogoAttached =
+            document.getElementById("no-logo-attached");
+
+        document.getElementById(`logo_container_${logoId}`).innerHTML =
+            templateNoLogoAttached.innerHTML;
+
+        document.getElementById(logoId).value = "";
     });
 }
 
-function saveLogoImage(event) {
+function saveLogoImage(event, logoId) {
     const file = event.target.files[0];
 
     const formData = new FormData();
     formData.append("logoPoaFile", file);
+    formData.append("logoId", logoId);
 
     const params = {
         url: "/administration/save_logo_image",
@@ -118,14 +135,11 @@ function saveLogoImage(event) {
 
     apiFetch(params).then((data) => {
         const route = "/" + data.route;
+        const img = tag("img", { src: route });
+        document.getElementById(`${"logo_container_" + logoId}`).innerHTML =
+            img;
 
-        document
-            .getElementById("image-logo-poa-container")
-            .classList.remove("hidden");
-        document
-            .getElementById("no-image-logo-poa-container")
-            .classList.add("hidden");
-        document.getElementById("image-logo-poa").src = route;
+        document.getElementById(logoId).value = "";
     });
 }
 
@@ -221,11 +235,10 @@ function submitCarrouselDefaultForm() {
 
     apiFetch(params).catch((data) => {
         showFormErrors(data.errors);
-    });;
+    });
 }
 
 function deleteFont(fontKey) {
-    console.log(fontKey)
     const params = {
         url: "/administration/delete_font",
         method: "DELETE",
@@ -278,8 +291,7 @@ function addFont(event) {
 
         document.querySelector(`.${fontKey}_buttons`).innerHTML =
             downloadLink + deleteLink;
-
-        });
+    });
 }
 
 function controlDeleteFonts() {
@@ -290,4 +302,18 @@ function controlDeleteFonts() {
             deleteFont(fontKey);
         }
     });
+}
+
+function submitOpenaiForm() {
+    const formData = new FormData(this);
+
+    const params = {
+        url: "/administration/save_openai_form",
+        method: "POST",
+        body: formData,
+        loader: true,
+        toast: true,
+    };
+
+    apiFetch(params);
 }

@@ -74,6 +74,7 @@ function newRedirectionQuery() {
 
 function resetForm() {
     const form = document.getElementById("redirection-query-form");
+    resetFormErrors("redirection-query-form");
     form.reset();
     document.getElementById("redirection_query_uid").value = "";
 }
@@ -184,6 +185,7 @@ async function loadRedirectionQueryModal(redirectionQueryUid) {
         loader: true,
     };
 
+    resetFormErrors("redirection-query-form");
     apiFetch(params).then((data) => {
         fillRedirectionQueryModal(data);
         showModal("redirection-query-modal", "Edita una redirección");
@@ -241,7 +243,6 @@ async function deleteRedirectionQueries() {
  * Si la operación tiene éxito, actualiza la tabla y muestra un toast.
  */
 function submitNewRedirectionQuery() {
-    resetFormErrors();
 
     const formData = new FormData(this);
 
@@ -253,6 +254,8 @@ function submitNewRedirectionQuery() {
         loader: true,
     };
 
+    resetFormErrors("redirection-query-form");
+
     apiFetch(params)
         .then(() => {
             redirectionQueriesTable.replaceData(endPointTable);
@@ -262,5 +265,4 @@ function submitNewRedirectionQuery() {
             showFormErrors(data.errors);
         });
 
-    resetFormErrors();
 }

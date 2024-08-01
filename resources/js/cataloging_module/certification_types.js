@@ -15,19 +15,15 @@ import {
 import { TabulatorFull as Tabulator } from "tabulator-tables";
 import { showToast } from "../toast.js";
 
-import Choices from "choices.js";
 const endPointTable =
     "/cataloging/certification_types/get_list_certification_types";
 let certificationTypesTable;
 
 let selectedCourseTypes = [];
-let categoryChoices;
 
 document.addEventListener("DOMContentLoaded", function () {
     initHandlers();
-    instanceCategoryChoices();
     initializeCourseTypesTable();
-
 });
 
 function initHandlers() {
@@ -63,19 +59,9 @@ function initHandlers() {
         });
 }
 
-function instanceCategoryChoices() {
-    const categorySelect = document.getElementById("category_uid");
-
-    categoryChoices = new Choices(categorySelect, {
-        removeItemButton: false,
-        searchEnabled: true,
-        itemSelectText: "",
-        allowHTML: true,
-    });
-}
-
 function newCertificationType() {
     resetModal();
+    resetFormErrors("certification-type-form");
     showModal(
         "certification-type-modal",
         "Añade un nuevo tipo de certificación"
@@ -201,7 +187,6 @@ function fillFormCourseTypeModal(certification_type) {
     document.getElementById("description").value =
         certification_type.description;
 
-    categoryChoices.setChoiceByValue(certification_type.category_uid);
     document.getElementById("certification_type_uid").value =
         certification_type.uid;
 }
@@ -243,7 +228,6 @@ function resetModal() {
 
     document.getElementById("name").value = "";
     document.getElementById("description").value = "";
-    categoryChoices.setChoiceByValue("");
     resetFormErrors();
 }
 

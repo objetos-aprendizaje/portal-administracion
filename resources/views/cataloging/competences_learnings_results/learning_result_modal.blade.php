@@ -23,7 +23,7 @@
                         <label for="name">Nombre <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input placeholder="Resultado de aprendizaje" type="text" id="name" name="name"
+                        <input maxlength="255" placeholder="Resultado de aprendizaje" type="text" id="name" name="name"
                             class="poa-input" />
                     </div>
                 </div>

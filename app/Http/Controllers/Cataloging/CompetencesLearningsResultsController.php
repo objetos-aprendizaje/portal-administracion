@@ -20,8 +20,6 @@ class CompetencesLearningsResultsController extends BaseController
 
     public function index()
     {
-        $competences_anidated = $this->getCompetencesLearningResultsAnidated();
-
         return view(
             'cataloging.competences_learnings_results.index',
             [
@@ -30,35 +28,18 @@ class CompetencesLearningsResultsController extends BaseController
                 "resources" => [
                     "resources/js/cataloging_module/competences_learnings_results.js"
                 ],
-                "competences_anidated" => $competences_anidated->toArray(),
                 "coloris" => true,
                 "submenuselected" => "cataloging-competences-learning-results",
+                "infiniteTree" => true
             ]
         );
     }
 
     public function getAllCompetences()
     {
-        $competences = $this->getCompetencesLearningResultsAnidated();
+        $competencesLearningResults = CompetencesModel::whereNull('parent_competence_uid')->with(['subcompetences', 'learningResults'])->orderBy('created_at', 'ASC')->get(['uid', 'name', 'description']);
 
-        return response()->json($competences, 200);
-    }
-
-    private function getCompetencesLearningResultsAnidated($search = null)
-    {
-        $competencesLearningResultsQuery = CompetencesModel::with('subcompetences')->whereNull('parent_competence_uid')
-            ->orderBy('created_at', 'DESC');
-
-        // Si se proporcionó un término de búsqueda, lo aplicamos
-        if ($search) {
-            $competencesLearningResultsQuery->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('description', 'like', '%' . $search . '%');
-            });
-        }
-
-        $competencesLearningResults = $competencesLearningResultsQuery->get();
-        return $competencesLearningResults;
+        return response()->json($competencesLearningResults, 200);
     }
 
     public function getCompetence($competence_uid)
@@ -113,20 +94,20 @@ class CompetencesLearningsResultsController extends BaseController
         $messages = [
             'name.required' => 'El nombre es obligatorio.',
             'name.max' => 'El nombre no puede tener más de 255 caracteres.',
-            'is_multi_select.required' => 'Este campo es obligatorio.',
+            'is_multi_select.required_if' => 'Debes seleccionar si es multi seleccionable',
         ];
 
         $rules = [
             'name' => 'required|max:255',
             'description' => 'nullable',
             'parent_competence_uid' => 'nullable|exists:competences,uid',
-            'is_multi_select' => 'required|boolean',
+            'is_multi_select' => 'required_if:parent_competence_uid,null|boolean'
         ];
 
         $validator = Validator::make($request->all(), $rules, $messages);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validator->errors()], 422);
         }
 
         $competence_uid = $request->get('competence_uid');
@@ -215,7 +196,7 @@ class CompetencesLearningsResultsController extends BaseController
         $validator = Validator::make($request->all(), $rules, $messages);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validator->errors()], 422);
         }
     }
 
@@ -376,7 +357,6 @@ class CompetencesLearningsResultsController extends BaseController
                     "name" => $row[1],
                     "description" => $row[8],
                     "parent_competence_uid" => $uid_esco,
-                    'is_multi_select' => '1',
                     'origin_code' => $row[0]
                 ];
 
@@ -390,7 +370,6 @@ class CompetencesLearningsResultsController extends BaseController
                     "name" => $row[3],
                     "description" => $row[8],
                     "parent_competence_uid" => $parent_level_0_uuid,
-                    'is_multi_select' => '1',
                     'origin_code' => $row[2],
                 ];
 
@@ -404,7 +383,6 @@ class CompetencesLearningsResultsController extends BaseController
                     "name" => $row[5],
                     "description" => $row[8],
                     "parent_competence_uid" => $parent_level_1_uuid,
-                    'is_multi_select' => '1',
                     'origin_code' => $row[4]
                 ];
 
@@ -418,7 +396,6 @@ class CompetencesLearningsResultsController extends BaseController
                     "name" => $row[7],
                     "description" => $row[8],
                     "parent_competence_uid" => $parent_level_2_uuid,
-                    'is_multi_select' => '0',
                     'origin_code' => $row[6]
                 ];
             }
@@ -511,7 +488,6 @@ class CompetencesLearningsResultsController extends BaseController
                 "name" => $skill[4],
                 "description" => $skill[12],
                 "parent_competence_uid" => $new_competence,
-                'is_multi_select' => '1',
                 'origin_code' => $skill[1]
             ];
         }
@@ -526,8 +502,6 @@ class CompetencesLearningsResultsController extends BaseController
             ->where('origin_code', $broader_relation)
             ->pluck('uid')->toArray();
 
-        //dd($broader_relations, $skill, $parent_uid);
-
         foreach ($parent_uid as $new_competence) {
 
             $level5_uid = generate_uuid();
@@ -537,7 +511,6 @@ class CompetencesLearningsResultsController extends BaseController
                 "name" => $skill[4],
                 "description" => $skill[12],
                 "competence_uid" => $new_competence,
-                'is_multi_select' => '1',
                 'origin_code' => $skill[1]
             ];
         }
@@ -672,6 +645,7 @@ class CompetencesLearningsResultsController extends BaseController
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
+            dd($item);
         }
 
         return response()->json(['message' => 'Importación realizada']);
@@ -679,32 +653,34 @@ class CompetencesLearningsResultsController extends BaseController
 
     private function importCompetence($parentUid, $item)
     {
+
+        $first_uid = generate_uuid();
+
         $competence = CompetencesModel::create([
-            'uid' => $item['uid'],
+            'uid' => $first_uid,
             'name' => $item['name'],
-            'description' => $item['description'],
+            'description' => $item['description'] ?? '',
             'is_multi_select' => $item['is_multi_select'],
             'parent_competence_uid' => $parentUid,
-            'origin_code' => $item['origin_code'],
-            'created_at' => $item['created_at'],
-            'updated_at' => $item['updated_at'],
+            'origin_code' => $item['origin_code'] ?? '',
         ]);
 
         foreach ($item['subcompetences'] as $sub) {
-            $this->importCompetence($item['uid'], $sub);
+            $this->importCompetence($first_uid, $sub);
         }
 
         if (isset($item['learning_results']) && $item['learning_results'] != null) {
 
             foreach ($item['learning_results'] as $result) {
+
+                $second_uid = generate_uuid();
+
                 LearningResultsModel::create([
-                    'uid' => $result['uid'],
+                    'uid' => $second_uid,
                     'name' => $result['name'],
-                    'description' => $result['description'],
-                    'competence_uid' => $item['uid'],
-                    'origin_code' => $result['origin_code'],
-                    'created_at' => $result['created_at'],
-                    'updated_at' => $result['updated_at'],
+                    'description' => $item['description'] ?? '',
+                    'competence_uid' => $first_uid,
+                    'origin_code' => $item['origin_code'] ?? '',
                 ]);
             }
         }

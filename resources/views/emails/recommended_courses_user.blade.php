@@ -1,9 +1,11 @@
 <h1>Nuevos cursos que te podrían interesar</h1>
 
-<p>Hola, se han dado de alta unos nuevos cursos que podrían interesarte en base a tus preferencias</p>
+<p>Hola, se ha dado de alta un curso que podría interesarte</p>
 
-<ul>
-    @foreach ($parameters['courses'] as $course)
-        <li>{{$course->title}}</li>
-    @endforeach
-</ul>
+<p>
+    <b>Título: </b>{{$parameters['course_title']}}
+</p>
+
+<p>
+    <b>Descripción:</b> {{$parameters['course_description']}}
+</p>

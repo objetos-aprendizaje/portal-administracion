@@ -66,7 +66,11 @@ export default defineConfig({
                 "resources/js/administration_module/centers.js",
                 "resources/js/administration_module/carrousels.js",
                 "resources/js/notifications_module/notifications_per_users.js",
-                "resources/js/learning_objects_module/educational_resources_per_users.js"
+                "resources/js/learning_objects_module/educational_resources_per_users.js",
+                'node_modules/infinite-tree/dist/infinite-tree.css',
+                "resources/js/trees.js",
+                "resources/js/administration_module/certidigital_configuration.js",
+                "resources/js/administration_module/licenses.js"
             ],
             refresh: true,
         }),

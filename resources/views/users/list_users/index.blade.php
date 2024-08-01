@@ -19,7 +19,11 @@
 
         </div>
 
-        <div id="filters" class="filters flex flex-wrap gap-x-3 gap-y-2 mb-4"></div>
+        <div id="filters" class="filters flex flex-wrap gap-x-3 gap-y-2 mb-4">
+
+            <button id="delete-all-filters" class="delete-filters-btn hidden">Limpiar filtros</button>
+
+        </div>
 
         <div class="table-container">
             <div id="users-table"></div>

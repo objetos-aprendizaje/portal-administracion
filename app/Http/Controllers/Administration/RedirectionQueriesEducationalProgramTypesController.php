@@ -92,10 +92,12 @@ class RedirectionQueriesEducationalProgramTypesController extends BaseController
     {
 
         $messages = [
-            'educational_program_type_uid.required' => 'El tipo de programa educativo es obligatorio.',
+            'educational_program_type_uid.required' => 'El tipo de programa educativo es obligatorio',
             'type' => 'required|string|in:web,email',
-            'contact.required' => 'El contacto es obligatorio.',
-            'contact.max' => 'El contacto es demasiado largo.',
+            'contact.required' => 'El contacto es obligatorio',
+            'contact.max' => 'El contacto es demasiado largo',
+            'type.in' => 'El tipo de contacto no es válido',
+            'type.required' => 'El tipo de contacto es obligatorio'
         ];
 
         $validator = Validator::make($request->all(), [
@@ -114,7 +116,7 @@ class RedirectionQueriesEducationalProgramTypesController extends BaseController
         });
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json(['message' => 'Hay campos incorrectos', 'errors' => $validator->errors()], 422);
         }
 
         $uid_redirection_query = $request->input('redirection_query_uid');

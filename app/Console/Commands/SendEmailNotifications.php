@@ -115,9 +115,7 @@ class SendEmailNotifications extends Command
 
     private function processUsersNotification($notification)
     {
-        $users = $notification['users'];
-
-        $users = $this->filterUsersNotInterestedNotificationType($users, $notification);
+        $users = $this->filterUsersNotInterestedNotificationType($notification->users, $notification);
 
         foreach ($users as $user) {
             try {
@@ -136,7 +134,7 @@ class SendEmailNotifications extends Command
 
     private function getEmailNotifications()
     {
-        $email_notifications = EmailNotificationsModel::where('sent', 0)->with("emailNotificationType")->get();
+        $email_notifications = EmailNotificationsModel::where('sent', 0)->with(["emailNotificationType", "users"])->get();
 
         return $email_notifications;
     }
@@ -158,14 +156,16 @@ class SendEmailNotifications extends Command
     private function filterUsersNotInterestedNotificationType($users, $notification)
     {
 
-        $usersEnabledNotificationsEmail = $users->filter(function ($user) {
+        $usersInterested = $users->filter(function ($user) {
             return $user->email_notifications_allowed;
         });
 
-        $usersInterestedCategory = $usersEnabledNotificationsEmail->filter(function ($user) use ($notification) {
-            return $notification->notification_type_uid || !$user->emailNotificationsTypesDisabled->contains('uid', $notification->notification_type_uid);
-        });
+        if($notification->notification_type_uid) {
+            $usersInterested = $usersInterested->filter(function ($user) use ($notification) {
+                return $notification->notification_type_uid || !$user->emailNotificationsTypesDisabled->contains('uid', $notification->notification_type_uid);
+            });
+        }
 
-        return $usersInterestedCategory;
+        return $usersInterested;
     }
 }

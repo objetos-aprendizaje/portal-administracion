@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 use Closure;
 use App\Models\GeneralOptionsModel;
+use App\Models\TooltipTextsModel;
 use Illuminate\Support\Facades\View;
 
 /**
@@ -22,6 +23,12 @@ class GeneralOptionsMiddleware
 
         View::share('general_options', $general_options);
 
+        $tooltip_texts = TooltipTextsModel::get();
+
+        View::share('tooltip_texts', $tooltip_texts);
+
         return $next($request);
+
+
     }
 }

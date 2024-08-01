@@ -80,7 +80,7 @@ class CallsController extends BaseController
         return response()->json($call);
     }
 
-    private function validateCall($request)
+    private function validateCall($request, $isNew)
     {
         $messages = [
             'name.required' => 'El nombre es obligatorio.',
@@ -90,15 +90,24 @@ class CallsController extends BaseController
             'end_date.date_format' => 'La fecha de fin debe tener el formato correcto.',
             'program_types.required' => 'Debe seleccionar al menos un tipo de programa formativo.',
             'program_types.required' => 'Debe seleccionar al menos un tipo de programa formativo.',
+            'start_date.after_or_equal' => 'La fecha de inicio debe ser igual o posterior a la fecha actual',
+            'end_date.after_or_equal' => 'La fecha de fin debe ser igual o posterior a la fecha de inicio',
         ];
 
-
-        $validator = Validator::make($request->all(), [
+        $rules = [
             'name' => 'required',
             'start_date' => 'required|date_format:Y-m-d\TH:i',
             'end_date' => 'required|date_format:Y-m-d\TH:i',
             'program_types' => 'required|array',
-        ], $messages);
+            'start_date' => 'required|date_format:Y-m-d\TH:i',
+            'end_date' => 'required|after_or_equal:start_date|date_format:Y-m-d\TH:i'
+        ];
+
+        if($isNew) {
+            $rules['start_date'] = 'required|after_or_equal:now|date_format:Y-m-d\TH:i';
+        }
+
+        $validator = Validator::make($request->all(), $rules, $messages);
 
         $errorsValidator = $validator->errors();
 
@@ -113,13 +122,6 @@ class CallsController extends BaseController
      */
     public function saveCall(Request $request)
     {
-
-        $errorsValidator = $this->validateCall($request);
-
-        if ($errorsValidator->any()) {
-            return response()->json(['errors' => $errorsValidator], 422);
-        }
-
         $call_uid = $request->input("call_uid");
 
         if (!$call_uid) {
@@ -131,6 +133,13 @@ class CallsController extends BaseController
             $call = CallsModel::find($call_uid);
             $isNew = false;
         }
+
+        $errorsValidator = $this->validateCall($request, $isNew);
+
+        if ($errorsValidator->any()) {
+            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $errorsValidator], 422);
+        }
+
 
         return DB::transaction(function () use ($request, $isNew, $call) {
 

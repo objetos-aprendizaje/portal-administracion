@@ -30,7 +30,6 @@ import {
     setReadOnlyForSpecificFields,
     setDisabledSpecificFormFields,
     updateInputValuesSelects,
-    initializeHiddenInputs,
     getLiveSearchTomSelectInstance,
     getOptionsSelectedTomSelectInstance,
     checkParamInUrl,
@@ -38,11 +37,15 @@ import {
     getMultipleFreeEmailsTomSelectInstance,
     getMultipleFreeTomSelectInstance,
     fillFormWithObject,
+    changeColorColoris,
+    updateInputFile,
 } from "../app.js";
 import { heroicon } from "../heroicons.js";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
 import { showToast } from "../toast.js";
 import Treeselect from "treeselectjs";
+import InfiniteTree from "infinite-tree";
+import renderer from "../renderer_infinite_tree.js";
 
 let selectedCourses = [];
 let selectedCourseStudents = [];
@@ -76,7 +79,6 @@ let flatpickrInscriptionDate;
 let flatpickrRealizationDate;
 
 let filters = [];
-let competences = [];
 
 let selectedCompetencesFilter = [];
 let competencesTreeSelect;
@@ -85,8 +87,89 @@ let selectedCourseUid = null;
 
 let tomSelectUsersToEnroll;
 
+let competencesLearningResults = [];
+
+class Trees {
+    constructor(order, tree, selectedNodes = []) {
+        this.order = order;
+        this.tree = tree;
+        this.selectedNodes = new Set(selectedNodes);
+    }
+
+    // Mapa estático para almacenar instancias
+    static instances = new Map();
+
+    // Método estático para crear y almacenar una instancia
+    static storeInstance(order, tree, selectedNodes = []) {
+        const instance = new Trees(order, tree, selectedNodes);
+        Trees.instances.set(order, instance); // Corregido: eliminar el tercer argumento
+        return instance;
+    }
+
+    // Método estático para obtener una instancia por su order
+    static getInstance(order) {
+        return Trees.instances.get(order);
+    }
+
+    // Método para agregar un nodo seleccionado
+    addSelectedNode(node) {
+        this.selectedNodes.add(node);
+    }
+
+    // Método para obtener todos los nodos seleccionados
+    getSelectedNodes() {
+        return Array.from(this.selectedNodes);
+    }
+
+    // Método estático para agregar un nodo seleccionado por order
+    static addSelectedNodeByOrder(order, node) {
+        const instance = Trees.getInstance(order);
+        if (instance) {
+            instance.addSelectedNode(node);
+        }
+    }
+
+    static addNodesSelectedByOrder(order, nodes) {
+        const instance = Trees.getInstance(order);
+        if (instance) {
+            nodes.forEach((node) => instance.addSelectedNode(node));
+        }
+    }
+
+    // Método estático para obtener nodos seleccionados por order
+    static getSelectedNodesByOrder(order) {
+        const instance = Trees.getInstance(order);
+        if (instance) {
+            return instance.getSelectedNodes();
+        }
+        return []; // Devolver un array vacío si no se encuentra la instancia
+    }
+
+    // Método para eliminar un nodo seleccionado
+    deleteSelectedNode(node) {
+        this.selectedNodes.delete(node);
+    }
+
+    // Método estático para eliminar un nodo seleccionado por order
+    static deleteSelectedNodeByOrder(order, node) {
+        const instance = Trees.getInstance(order);
+        if (instance) {
+            instance.deleteSelectedNode(node);
+        }
+    }
+
+    // Método estático para eliminar varios nodos seleccionados por order
+    static deleteSelectedNodesByOrder(order, nodes) {
+        const instance = Trees.getInstance(order);
+        if (instance) {
+            nodes.forEach((node) => instance.deleteSelectedNode(node));
+        }
+    }
+}
+
 document.addEventListener("DOMContentLoaded", async function () {
     initHandlers();
+    updateInputFile();
     initializeCoursesTable();
     controlsHandlerModalCourse();
     initializeTomSelect();
@@ -100,14 +183,244 @@ document.addEventListener("DOMContentLoaded", async function () {
     controlsCompositionCourse();
     updateInputValuesSelects();
 
-    getAllCompetences();
     syncTomSelectsTeachers();
 
     // Si recibimos un uid en la URL, cargamos el curso
     const courseUid = checkParamInUrl("uid");
     wipeParamsInUrl();
     if (courseUid) loadCourseModal(courseUid);
+
+    await loadCompetencesLearningResults();
 });
+
+async function loadCompetencesLearningResults() {
+    if (competencesLearningResults.length) return;
+
+    const params = {
+        url: "/learning_objects/courses/get_all_competences",
+        method: "GET",
+        loader: true,
+    };
+
+    function mapStructure(obj, isMultiSelect) {
+        // Crear un nuevo objeto con los campos necesarios
+        const mappedObj = {
+            id: obj.uid,
+            name: obj.name,
+            isMultiSelect: isMultiSelect ? true : false,
+            children: [],
+            type: "competence",
+            showCheckbox: true,
+            disabled: isMultiSelect ? false : true,
+        };
+
+        // Si hay subcompetencias, recursivamente mapéalas
+        if (obj.subcompetences && obj.subcompetences.length > 0) {
+            obj.subcompetences.forEach((sub) => {
+                mappedObj.children.push(mapStructure(sub, isMultiSelect));
+            });
+        }
+
+        // Si hay resultados de aprendizaje, agrégalos también
+        if (obj.learning_results && obj.learning_results.length > 0) {
+            obj.learning_results.forEach((lr) => {
+                mappedObj.children.push({
+                    id: lr.uid,
+                    name: lr.name,
+                    type: "learning_result",
+                    showCheckbox: true,
+                    isMultiSelect: isMultiSelect,
+                    disabled: false,
+                });
+            });
+        }
+
+        // Devuelve el objeto mapeado
+        return mappedObj;
+    }
+
+    const data = await apiFetch(params);
+
+    const structure = [];
+
+    data.forEach((competenceFramework) => {
+        structure.push(
+            mapStructure(
+                competenceFramework,
+                competenceFramework.is_multi_select
+            )
+        );
+    });
+
+    competencesLearningResults = structure;
+}
+
+async function filterTree(textToSearch, orderTree) {
+    const treeToFilter = Trees.getInstance(Number(orderTree)).tree;
+
+    closeAllNodes(treeToFilter.getRootNode());
+
+    treeToFilter.filter((node) => {
+        const name = node.name || "";
+        const matchesSearch = name
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .includes(
+                textToSearch
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "")
+                    .toLowerCase()
+            );
+        if (matchesSearch) {
+            openNode(node);
+        }
+
+        return matchesSearch;
+    });
+
+    function openNode(node) {
+        if (node.id) {
+            treeToFilter.openNode(node);
+            openNode(node.parent);
+        }
+    }
+
+    function closeAllNodes(node) {
+        node.children.forEach((child) => {
+            closeAllNodes(child);
+            if (child.state.open) treeToFilter.closeNode(child);
+        });
+    }
+}
+
+async function instanceTreeCompetences(order, selectedNodes = []) {
+    const updateCheckboxState = (tree) => {
+        const checkboxes = tree.contentElement.querySelectorAll(
+            'input[type="checkbox"]'
+        );
+
+        // Si el bloque está deshabilitado, deshabilitamos todos los checkboxes
+        const treeDisabled = document
+            .getElementById("course-composition-block")
+            .getAttribute("data-disabled");
+
+        for (let i = 0; i < checkboxes.length; ++i) {
+            const checkbox = checkboxes[i];
+            if (checkbox.hasAttribute("data-indeterminate")) {
+                checkbox.indeterminate = true;
+            } else {
+                checkbox.indeterminate = false;
+            }
+
+            if (treeDisabled === "1") checkbox.disabled = true;
+        }
+    };
+
+    var tree = new InfiniteTree(
+        document.querySelector(`.competences-section[data-order="${order}"]`),
+        {
+            rowRenderer: renderer,
+            selectable: false,
+            noDataText:
+                "No se ha encontrado ninguna competencia ni resultado de aprendizaje",
+        }
+    );
+
+    tree.on("click", (event) => {
+        const currentNode = tree.getNodeFromPoint(event.clientX, event.clientY);
+        if (!currentNode || event.target.className !== "checkbox") return;
+        event.stopPropagation();
+        tree.checkNode(currentNode);
+
+        // si el padre NO es multiselect, desseleccionamos el resto de sus hermanos
+        if (!currentNode.parent.isMultiSelect) {
+            currentNode.parent.children.forEach((child) => {
+                if (
+                    child !== currentNode &&
+                    child.state.checked &&
+                    !child.children.length
+                ) {
+                    tree.checkNode(child);
+                }
+            });
+        }
+
+        function getChildNodesLearningResults(node) {
+            let resultArray = [];
+
+            if (!node.children.length) return resultArray;
+
+            node.children.forEach((child) => {
+                // Si el nodo cumple con la condición, añadir al array
+                if (child.type === "learning_result") {
+                    resultArray.push(child.id);
+                }
+
+                resultArray = resultArray.concat(
+                    getChildNodesLearningResults(child)
+                );
+            });
+
+            return resultArray;
+        }
+
+        const childNodesLearningResults =
+            getChildNodesLearningResults(currentNode);
+
+        if (currentNode.state.checked) {
+            if (currentNode.isMultiSelect) {
+                Trees.addNodesSelectedByOrder(order, childNodesLearningResults);
+            }
+            // Si no es multi seleccionable, deseleccionamos el resto de nodos hermanos
+            else {
+                const parentNode = currentNode.parent;
+                parentNode.children.forEach((child) => {
+                    if (child !== currentNode) {
+                        tree.checkNode(child, false);
+                        Trees.deleteSelectedNodeByOrder(order, child.id);
+                    }
+                });
+            }
+
+            if (currentNode.type === "learning_result")
+                Trees.addSelectedNodeByOrder(order, currentNode.id);
+        } else {
+            childNodesLearningResults.push(currentNode.id);
+            Trees.deleteSelectedNodesByOrder(order, childNodesLearningResults);
+        }
+    });
+
+    tree.on("contentDidUpdate", () => {
+        updateCheckboxState(tree);
+    });
+
+    tree.on("clusterDidChange", () => {
+        updateCheckboxState(tree);
+    });
+
+    // Es importante pasarle una copia del array para que no se modifique el original
+    let competencesLearningResultsCopy = JSON.parse(
+        JSON.stringify(competencesLearningResults)
+    );
+    tree.loadData(competencesLearningResultsCopy);
+    function openNode(node) {
+        if (node.id) {
+            tree.openNode(node);
+            openNode(node.parent);
+        }
+    }
+
+    selectedNodes.forEach((node) => {
+        const n = tree.getNodeById(node);
+        if (n) {
+            openNode(n);
+            tree.checkNode(n, true);
+        }
+    });
+
+    return tree;
+}
 
 function initializeTreeSelect() {
     const optionsCompetencesTreeSelect = convertCompetencesToOptions(
@@ -135,18 +448,6 @@ function convertCompetencesToOptions(competences) {
         value: competence.uid,
         children: convertCompetencesToOptions(competence.subcompetences),
     }));
-}
-
-function getAllCompetences() {
-    const params = {
-        url: "/learning_objects/courses/get_all_competences",
-        method: "GET",
-        loader: true,
-    };
-
-    apiFetch(params).then((data) => {
-        competences = data;
-    });
 }
 
 function initHandlers() {
@@ -192,6 +493,13 @@ function initHandlers() {
         .getElementById("course-form")
         .addEventListener("submit", submitFormCourseModal);
 
+    document
+        .getElementById("payment_mode")
+        .addEventListener("change", function (e) {
+            const paymentMode = e.target.value;
+            updatePaymentMode(paymentMode);
+        });
+
     const changeStatusesBtn = document.getElementById("change-statuses-btn");
 
     if (changeStatusesBtn) {
@@ -207,8 +515,18 @@ function initHandlers() {
         });
 
     document
+        .getElementById("btn-add-payment")
+        .addEventListener("click", function () {
+            addPaymentTerm();
+        });
+
+    document
         .querySelector(".document-list")
         .addEventListener("click", removeDocument);
+
+    document
+        .getElementById("payment-terms-list")
+        .addEventListener("click", removePaymentTerm);
 
     document
         .getElementById("delete-all-filters")
@@ -279,6 +597,35 @@ function initHandlers() {
         .addEventListener("click", function () {
             reloadTableCourses();
         });
+
+    // TODO
+    document
+        .getElementById("send-credentials-students-btn")
+        .addEventListener("click", function () {
+            showModalConfirmation(
+                "Envío de credenciales",
+                "¿Estás seguro de que quieres enviar las credenciales a los estudiantes seleccionados?"
+            ).then((result) => {});
+        });
+
+    let typingTimer; // Almacena el temporizador de espera
+    const doneTypingInterval = 500;
+
+    document.addEventListener("input", function (e) {
+        if (e.target.matches('input[type="text"].search-tree')) {
+            clearTimeout(typingTimer); // Limpia el temporizador anterior para reiniciar el retraso
+            typingTimer = setTimeout(function () {
+                filterTree(e.target.value, e.target.dataset.order); // Ejecuta después del retraso
+            }, doneTypingInterval);
+        }
+    });
+    const generateTagsBtn = document.getElementById("generate-tags-btn");
+
+    if (generateTagsBtn) {
+        generateTagsBtn.addEventListener("click", function () {
+            generateTags();
+        });
+    }
 }
 
 /**
@@ -304,8 +651,10 @@ function previsualizeSlider() {
     );
     formData.append(
         "color",
-        document.getElementById("featured_slider_color").value
+        document.getElementById("featured_slider_color_font").value
     );
+
+    formData.append("course_uid", document.getElementById("course_uid").value);
 
     const params = {
         url: "/sliders/save_previsualization",
@@ -368,7 +717,7 @@ function controlsCompositionCourse() {
             }
         });
 
-    function addBlock() {
+    async function addBlock() {
         const blockTemplate = document.getElementById("block-template").content;
         const newBlock = blockTemplate.cloneNode(true);
 
@@ -384,13 +733,13 @@ function controlsCompositionCourse() {
 
         newBlockElement.dataset.order = blockOrder;
 
-        const competencesHtml = renderCompetencesHtml(competences, blockOrder);
-        newBlockElement.querySelector(".competences-section").innerHTML =
-            competencesHtml;
         newBlockElement.querySelector(".competences-section").dataset.order =
             blockOrder;
 
-        addListenersCompetencesCheckboxs(blockOrder);
+        newBlockElement.querySelector(".search-tree").dataset.order =
+            blockOrder;
+        let tree = await instanceTreeCompetences(blockOrder);
+        Trees.storeInstance(blockOrder, tree, []);
 
         return composition.querySelector("button.removeBlock");
     }
@@ -473,14 +822,14 @@ function getStructureCourseJSON() {
     const blocks = document.querySelectorAll("#course-composition .block");
 
     blocks.forEach((block) => {
+        const blockOrder = parseInt(block.dataset.order);
         const blockObj = {
             type: block.querySelector(".block-type").value,
             name: block.querySelector(".block-name").value,
             description: block.querySelector(".block-description").value,
             uid: block.dataset.uid ?? null,
-            order: block.dataset.order,
-            competences: getSelectedCompetences(block.dataset.order),
-            learningResults: getSelectedLearningResults(block.dataset.order),
+            order: blockOrder,
+            learningResults: Trees.getSelectedNodesByOrder(blockOrder),
         };
 
         const subBlocks = block.querySelectorAll(".sub-block");
@@ -584,6 +933,8 @@ function resetFilters() {
     tomSelectNoCoordinatorsTeachersFilter.clear();
     tomSelectCoordinatorsTeachersFilter.clear();
     competencesTreeSelect.updateValue([]);
+    tomSelectCategoriesFilter.clear();
+    tomSelectEducationalProgramsFilter.clear();
 
     document.getElementById("filter_min_ects_workload").value = "";
     document.getElementById("filter_max_ects_workload").value = "";
@@ -1116,7 +1467,14 @@ function initializeCoursesTable() {
             headerSort: false,
             width: 60,
         },
-        { title: "Título", field: "title", resizable: true, width: 600 },
+        { title: "Título", field: "title", resizable: true, widthgrow: 3 },
+        {
+            title: "Identificador",
+            field: "identifier",
+            visible: false,
+            resizable: true,
+            widthgrow: 2,
+        },
         {
             title: "Estado",
             field: "status_name",
@@ -1130,7 +1488,7 @@ function initializeCoursesTable() {
                 }</div>
                 `;
             },
-            width: 200,
+            widthgrow: 2,
         },
         {
             title: "Fecha de inicio de realización",
@@ -1140,7 +1498,7 @@ function initializeCoursesTable() {
                 if (!isoDate) return "";
                 return formatDateTime(isoDate);
             },
-            width: 200,
+            widthgrow: 2,
         },
         {
             title: "Fecha de fin de realización",
@@ -1150,7 +1508,7 @@ function initializeCoursesTable() {
                 if (!isoDate) return "";
                 return formatDateTime(isoDate);
             },
-            width: 200,
+            widthgrow: 2,
         },
         {
             title: "Convocatoria",
@@ -1159,7 +1517,7 @@ function initializeCoursesTable() {
                 const data = cell.getValue();
                 return data;
             },
-            width: 200,
+            widthgrow: 2,
         },
         {
             title: "Programa educativo",
@@ -1168,7 +1526,7 @@ function initializeCoursesTable() {
                 const data = cell.getValue();
                 return data;
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
         },
         {
@@ -1178,7 +1536,7 @@ function initializeCoursesTable() {
                 const data = cell.getValue();
                 return data;
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
         },
         {
@@ -1188,7 +1546,7 @@ function initializeCoursesTable() {
                 const data = cell.getValue();
                 return data;
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
         },
         {
@@ -1198,7 +1556,7 @@ function initializeCoursesTable() {
                 const data = cell.getValue();
                 return data;
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
         },
         {
@@ -1208,7 +1566,7 @@ function initializeCoursesTable() {
                 const data = cell.getValue();
                 return data;
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
         },
         {
@@ -1219,7 +1577,7 @@ function initializeCoursesTable() {
                 if (!isoDate) return "";
                 return formatDateTime(isoDate);
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
         },
         {
@@ -1230,7 +1588,7 @@ function initializeCoursesTable() {
                 if (!isoDate) return "";
                 return formatDateTime(isoDate);
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
         },
         {
@@ -1241,7 +1599,7 @@ function initializeCoursesTable() {
                 if (!isoDate) return "";
                 return formatDateTime(isoDate);
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
         },
         {
@@ -1252,7 +1610,7 @@ function initializeCoursesTable() {
                 if (!isoDate) return "";
                 return formatDateTime(isoDate);
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
         },
         {
@@ -1266,7 +1624,7 @@ function initializeCoursesTable() {
                     return "Textual";
                 }
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
         },
         {
@@ -1278,7 +1636,7 @@ function initializeCoursesTable() {
                     return "<a href='" + data + "' target='_blank'>Enlace</a>";
                 }
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
         },
         {
@@ -1288,7 +1646,7 @@ function initializeCoursesTable() {
                 const data = cell.getValue();
                 return data;
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
         },
         {
@@ -1298,7 +1656,7 @@ function initializeCoursesTable() {
                 const data = cell.getValue();
                 return data;
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
         },
         {
@@ -1312,7 +1670,7 @@ function initializeCoursesTable() {
                 });
                 return tagsArray.join(", ");
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
             headerSort: false,
         },
@@ -1327,7 +1685,7 @@ function initializeCoursesTable() {
                 });
                 return emailsArray.join(", ");
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
             headerSort: false,
         },
@@ -1340,7 +1698,7 @@ function initializeCoursesTable() {
                     return "<a href='" + data + "' target='_blank'>Enlace</a>";
                 }
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
         },
         {
@@ -1355,8 +1713,9 @@ function initializeCoursesTable() {
                 const concatenatedNames = fullNames.join(", ");
                 return concatenatedNames;
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
+            headerSort: false,
         },
         {
             title: "Docentes no coordinadores",
@@ -1370,10 +1729,10 @@ function initializeCoursesTable() {
                 const concatenatedNames = fullNames.join(", ");
                 return concatenatedNames;
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
+            headerSort: false,
         },
-
         {
             title: "Categorias",
             field: "categories",
@@ -1385,8 +1744,9 @@ function initializeCoursesTable() {
                 });
                 return categoriesArray.join(", ");
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
+            headerSort: false,
         },
         {
             title: "Coste",
@@ -1395,7 +1755,7 @@ function initializeCoursesTable() {
                 const data = cell.getValue();
                 return data + " €";
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
         },
         {
@@ -1409,7 +1769,7 @@ function initializeCoursesTable() {
                     return "Si";
                 }
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
         },
         {
@@ -1423,7 +1783,7 @@ function initializeCoursesTable() {
                     return "Si";
                 }
             },
-            width: 200,
+            widthgrow: 2,
             visible: false,
         },
         {
@@ -1538,6 +1898,45 @@ function initializeCoursesTable() {
     coursesTable = new Tabulator("#courses-table", {
         ...tabulatorBaseConfigOverrided,
         ajaxURL: endPointTable,
+        rowContextMenu: [
+            {
+                label: `${heroicon("pencil-square")} Editar`,
+                action: function (e, column) {
+                    const courseClicked = column.getData();
+                    loadCourseModal(courseClicked.uid);
+                },
+            },
+            {
+                label: `${heroicon("user-group")} Listado de alumnos`,
+                action: function (e, column) {
+                    const courseClicked = column.getData();
+                    loadCourseStudentsModal(courseClicked.uid);
+                },
+            },
+            {
+                label: `${heroicon("document-duplicate")} Duplicar curso`,
+                action: function (e, column) {
+                    const courseClicked = column.getData();
+                    loadCourseModal(courseClicked.uid);
+                },
+            },
+            {
+                label: `${heroicon(
+                    "folder-plus"
+                )} Crear nueva edición a partir de este curso`,
+                action: function (e, column) {
+                    const courseClicked = column.getData();
+                    loadCourseModal(courseClicked.uid);
+                },
+            },
+            {
+                label: `${heroicon("academic-cap")} Envío de credenciales`,
+                action: function (e, column) {
+                    const courseClicked = column.getData();
+                    loadCourseModal(courseClicked.uid);
+                },
+            },
+        ],
         ajaxConfig: {
             method: "POST",
             headers: {
@@ -1621,6 +2020,8 @@ function newEditionCourse(courseUid) {
 
 function reloadTableCourses() {
     coursesTable.replaceData(endPointTable);
+    const searchInput = document.querySelector(".search-table");
+    searchInput.value = "";
 }
 
 /**
@@ -1651,6 +2052,7 @@ function fillFormCourseModal(course) {
         "draft-button-container"
     );
 
+    // Si el estado del curso no es INTRODUCCIÓN, ocultamos el botón de borrador
     if (course.status.code == "INTRODUCTION")
         draftButtonContainer.classList.remove("hidden");
     else draftButtonContainer.classList.add("hidden");
@@ -1746,6 +2148,15 @@ function fillFormCourseModal(course) {
     document.getElementById("featured_small_carrousel").checked =
         course.featured_small_carrousel;
 
+    const featuredSliderColorFont = document.getElementById(
+        "featured_slider_color_font"
+    );
+
+    changeColorColoris(
+        featuredSliderColorFont,
+        course.featured_slider_color_font
+    );
+
     showBigCarrouselInfo(course.featured_big_carrousel);
 
     if (course.teachers) {
@@ -1809,6 +2220,11 @@ function fillFormCourseModal(course) {
     if (course.blocks) loadStructureCourse(course.blocks);
 
     loadDocuments(course.course_documents);
+    updatePaymentMode(course.payment_mode);
+
+    if (course.payment_mode === "INSTALLMENT_PAYMENT") {
+        loadPaymentTerms(course.payment_terms);
+    }
 
     const statusesAllowEdit = [
         "INTRODUCTION",
@@ -1816,23 +2232,27 @@ function fillFormCourseModal(course) {
         "UNDER_CORRECTION_PUBLICATION",
     ];
 
-    // Establecemos los campos que se van a poder editar
-    if (course.status.code === "INTRODUCTION" && course.course_origin_uid) {
+    // Si es gestor, podrá tocar todos los campos
+    if (window.rolesUser.includes("MANAGEMENT")) {
+        toggleFormFieldsAccessibility(false);
+    }
+    // Establecemos los campos que se van a poder editar si es una edición
+    else if (
+        course.status.code === "INTRODUCTION" &&
+        course.course_origin_uid
+    ) {
         setFieldsNewEdition();
     } else if (
         statusesAllowEdit.includes(course.status.code) ||
         (course.educational_program &&
             statusesAllowEdit.includes(course.educational_program.status.code))
     ) {
-        toggleCourseFields(false);
+        toggleFormFieldsAccessibility(false);
     } else {
-        toggleCourseFields(true);
+        toggleFormFieldsAccessibility(true);
     }
 
     setVisibilityFieldsCourse(course);
-
-    // Establece los valores predeterminados para los campos ocultos
-    initializeHiddenInputs();
 }
 
 function setVisibilityFieldsCourse(course) {
@@ -1919,8 +2339,16 @@ function submitFormCourseModal(event) {
     formData.append("structure", getStructureCourseJSON());
     formData.append("action", action);
 
+    const featuredSliderColor = document.getElementById(
+        "featured_slider_color_font"
+    ).value;
+    formData.append("featured_slider_color_font", featuredSliderColor);
+
     const documents = getDocuments();
     formData.append("documents", JSON.stringify(documents));
+
+    const paymentTerms = getPaymentTerms();
+    formData.append("payment_terms", JSON.stringify(paymentTerms));
 
     resetFormErrors("course-form");
 
@@ -2003,6 +2431,13 @@ function changeStatusesCourses() {
             optionsStatuses = optionsStatuses.filter(
                 (option) => option.value !== status
             );
+        } else if (status === "PENDING_DECISION") {
+            optionsStatuses = [
+                {
+                    label: "En inscripción",
+                    value: "INSCRIPTION",
+                },
+            ];
         }
 
         // Se podrá retirar un curso en cualquier estado
@@ -2135,7 +2570,8 @@ function newCourse() {
     resetModal();
     document.getElementById("course-composition").innerHTML = "";
     document.getElementById("document-list").innerHTML = "";
-    toggleCourseFields(false);
+    toggleFormFieldsAccessibility(false);
+    updatePaymentMode("SINGLE_PAYMENT");
     showModal("course-modal", "Añadir curso");
 }
 
@@ -2156,7 +2592,6 @@ function resetModal() {
     document.getElementById("featured_big_carrousel_image_path_preview").src =
         defaultImagePreview;
     document.getElementById("course-composition").innerHTML = "";
-    setVisibilityCourseFieldsBasedOnProgramMembership(false);
     document.getElementById("documents-container").classList.add("hidden");
     document
         .getElementById("enrolling-dates-container")
@@ -2174,6 +2609,14 @@ function resetModal() {
 
     let criteriaArea = document.getElementById("criteria-area");
     showArea(criteriaArea, false);
+
+    let enrollingArea = document.getElementById("enrolling-dates-container");
+    showArea(enrollingArea, false);
+
+    let validateStudentRegistration = document.getElementById(
+        "validate-student-registrations-container"
+    );
+    showArea(validateStudentRegistration, false);
 }
 
 /**
@@ -2414,24 +2857,26 @@ function getUidsStudentsInscriptions() {
  * @returns Color de fondo que le coresponde a la etiqueta del estado
  */
 function getStatusCourseColor(statusCode) {
-    let color;
+    const statusColors = {
+        INTRODUCTION: "#EBEBF4",
+        PENDING_APPROVAL: "#F0F4EB",
+        ACCEPTED: "#EBF3F4",
+        REJECTED: "#F4EBF0",
+        UNDER_CORRECTION_APPROVAL: "#F0F4EB",
+        PENDING_PUBLICATION: "#F4EFEB",
+        ACCEPTED_PUBLICATION: "#F4F3EB",
+        UNDER_CORRECTION_PUBLICATION: "#F4EBEB",
+        INSCRIPTION: "#EBEFF4",
+        PENDING_INSCRIPTION: "#FBEDED",
+        DEVELOPMENT: "#EDF4FB",
+        FINISHED: "#FBF4ED",
+        RETIRED: "#FDF5FE",
+        ENROLLING: "#F3F4FF",
+        READY_ADD_EDUCATIONAL_PROGRAM: "#F3FBED",
+        ADDED_EDUCATIONAL_PROGRAM: "#EDFBF6",
+    };
 
-    if (statusCode === "INTRODUCTION") color = "#EBEBF4";
-    else if (statusCode === "PENDING_APPROVAL") color = "#F0F4EB";
-    else if (statusCode === "ACCEPTED") color = "#EBF3F4";
-    else if (statusCode === "REJECTED") color = "#F4EBF0";
-    else if (statusCode === "UNDER_CORRECTION_APPROVAL") color = "#F0F4EB";
-    else if (statusCode === "PENDING_PUBLICATION") color = "#F4EFEB";
-    else if (statusCode === "ACCEPTED_PUBLICATION") color = "#F4F3EB";
-    else if (statusCode === "UNDER_CORRECTION_PUBLICATION") color = "#F4EBEB";
-    else if (statusCode === "INSCRIPTION") color = "#EBEFF4";
-    else if (statusCode === "PENDING_INSCRIPTION") color = "#FBEDED";
-    else if (statusCode === "DEVELOPMENT") color = "#EDF4FB";
-    else if (statusCode === "FINISHED") color = "#FBF4ED";
-    else if (statusCode === "RETIRED") color = "#FDF5FE";
-    else if (statusCode === "ENROLLING") color = "#EBF3F4";
-
-    return color;
+    return statusColors[statusCode];
 }
 
 /**
@@ -2465,15 +2910,18 @@ function controlEnrollingDates() {
         "validate_student_registrations"
     );
     const enrollingDates = document.getElementById("enrolling-dates-container");
+    const paymentMode = document.getElementById("payment_mode");
 
     function checkConditions() {
         const shouldShow =
-            costInput.value > 0 || checkboxValidateStudents.checked;
+            (costInput.value > 0 && paymentMode.value === "SINGLE_PAYMENT") ||
+            checkboxValidateStudents.checked;
         showArea(enrollingDates, shouldShow);
     }
 
     costInput.addEventListener("change", checkConditions);
     checkboxValidateStudents.addEventListener("change", checkConditions);
+    paymentMode.addEventListener("change", checkConditions);
 }
 
 function loadStructureCourse(blocks) {
@@ -2484,7 +2932,7 @@ function loadStructureCourse(blocks) {
     const subElementTemplate = document.getElementById("sub-element-template");
 
     // Recorre cada bloque en la estructura del curso
-    blocks.forEach((block) => {
+    blocks.forEach(async (block) => {
         // Clona la plantilla del bloque
         const blockHtml = blockTemplate.content.cloneNode(true);
 
@@ -2492,33 +2940,14 @@ function loadStructureCourse(blocks) {
         blockHtml.querySelector(".block-type").value = block.type;
         blockHtml.querySelector(".block-name").value = block.name;
         blockHtml.querySelector(".block-description").value = block.description;
+        blockHtml.querySelector(".search-tree").dataset.order = block.order;
         let blockHtmlElement = blockHtml.querySelector(".block");
         blockHtmlElement.dataset.uid = block.uid;
         blockHtmlElement.dataset.order = block.order;
 
         // Añade competencias
-        const competencesHtml = renderCompetencesHtml(competences, block.order);
-        blockHtmlElement.querySelector(".competences-section").innerHTML =
-            competencesHtml;
         blockHtmlElement.querySelector(".competences-section").dataset.order =
             block.order;
-
-        // Marcamos las opciones seleccionadas
-        const competencesSelected = block.competences;
-        competencesSelected.forEach((competence) => {
-            const competenceCheckbox = blockHtmlElement.querySelector(
-                `input[data-uid="${competence.uid}"]`
-            );
-            competenceCheckbox.checked = true;
-        });
-
-        const learningResultsSelected = block.learning_results;
-        learningResultsSelected.forEach((learningResult) => {
-            const learningResultCheckbox = blockHtmlElement.querySelector(
-                `input[data-uid="${learningResult.uid}"]`
-            );
-            learningResultCheckbox.checked = true;
-        });
 
         // Recorre cada sub-bloque en el bloque
         if (block.sub_blocks) {
@@ -2604,7 +3033,16 @@ function loadStructureCourse(blocks) {
         // Añade el bloque al curso en el HTML
         document.getElementById("course-composition").appendChild(blockHtml);
 
-        addListenersCompetencesCheckboxs(block.order);
+        const uidsLearningResults = block.learning_results.map(
+            (learningResult) => learningResult.uid
+        );
+
+        let tree = await instanceTreeCompetences(
+            block.order,
+            uidsLearningResults
+        );
+
+        Trees.storeInstance(block.order, tree, uidsLearningResults);
     });
 }
 
@@ -2613,7 +3051,7 @@ function loadStructureCourse(blocks) {
  * @param {*} formId
  * @param {*} isDisabled
  */
-function toggleCourseFields(isDisabled) {
+function toggleFormFieldsAccessibility(isDisabled) {
     const formId = "course-form";
     const idsReadOnly = [
         "title",
@@ -2649,6 +3087,7 @@ function toggleCourseFields(isDisabled) {
         "calification_type",
         "lms_system_uid",
         "featured_small_carrousel",
+        "payment_mode",
     ];
     setDisabledSpecificFormFields(formId, idsDisable, isDisabled);
 
@@ -2756,6 +3195,32 @@ function getDocuments() {
     return documentsData;
 }
 
+function getPaymentTerms() {
+    const coursePaymentTerms = document
+        .getElementById("payment-terms-list")
+        .querySelectorAll(".payment-term");
+
+    const paymentTermsData = [];
+
+    coursePaymentTerms.forEach((coursePaymentTerm) => {
+        let paymentTermData = {
+            uid: coursePaymentTerm.dataset.paymentTermUid ?? null,
+            name: coursePaymentTerm.querySelector(".payment-term-name").value,
+            start_date: coursePaymentTerm.querySelector(
+                ".payment-term-start-date"
+            ).value,
+            finish_date: coursePaymentTerm.querySelector(
+                ".payment-term-finish-date"
+            ).value,
+            cost: coursePaymentTerm.querySelector(".payment-term-cost").value,
+        };
+
+        paymentTermsData.push(paymentTermData);
+    });
+
+    return paymentTermsData;
+}
+
 function loadDocuments(courseDocuments) {
     // Limpiar el contenedor de documentos
     const containerDocuments = document.getElementById("document-list");
@@ -2775,115 +3240,33 @@ function loadDocuments(courseDocuments) {
     });
 }
 
+function loadPaymentTerms(paymentTerms) {
+    // Limpiar el contenedor de términos de pago
+    const containerPaymentTerms = document.getElementById("payment-terms-list");
+    containerPaymentTerms.innerHTML = "";
 
+    // Añadir cada término de pago al contenedor
+    paymentTerms.forEach((paymentTerm) => {
+        const paymentTermTemplate = document
+            .getElementById("payment-term-template")
+            .content.cloneNode(true);
 
-function addListenersCompetencesCheckboxs(order) {
-
-    // Selecciona todos los checkboxes
-    const checkboxes = document.querySelectorAll(
-        `.competences-section[data-order='${order}'] .element-checkbox`
-    );
-
-}
-
-/**
- * Renderización del html de competencias
- * @param {*} competences
- * @param {*} order
- * @param {*} level
- * @param {*} firstLoop
- * @returns
- */
-function renderCompetencesHtml(
-    competences,
-    order,
-    level = 1,
-    firstLoop = true
-) {
-    let html = "";
-
-    level = firstLoop ? 0 : level;
-    const cssClass = firstLoop ? "first" : "";
-    firstLoop = false;
-
-    competences.forEach((competence) => {
-        // Renderiza la competencia actual
-        html += `<div class='anidation-div ${cssClass}' style='margin-left:${level}em;'>`;
-        html += `<div class='flex'>`;
-        html += `<input type='checkbox' class='element-checkbox competence-checkbox' id='${competence.uid}-${order}' data-is_multi_select="${competence.is_multi_select}" data-uid="${competence.uid}"> `;
-        html += `<label for='${competence.uid}-${order}' class='element-label'>${competence.name}</label>`;
-        html += `</div>`;
-        if (competence.description) {
-            html += ` <p>${competence.description}</p>`;
-        }
-
-        if (
-            competence.learning_results &&
-            competence.learning_results.length > 0
-        ) {
-            competence.learning_results.forEach((learningResult) => {
-                html += `<div style='margin-left: ${level}em' class='anidation-div flex'>`;
-                html += `<input type='checkbox' class='element-checkbox learning-result-checkbox' id='${learningResult.uid}-${order}' data-uid="${learningResult.uid}"> `;
-                html += `<label for='${learningResult.uid}-${order}' class='element-label'>${learningResult.name}</label>`;
-                html += `</div>`;
-            });
-        }
-
-        // Verifica si hay subcompetencias y las renderiza recursivamente
-        if (competence.subcompetences && competence.subcompetences.length > 0) {
-            html += `<div>`;
-            html += renderCompetencesHtml(
-                competence.subcompetences,
-                order,
-                1,
-                false // Aquí pasamos false para que firstLoop sea false en las llamadas recursivas
-            );
-            html += `</div>`;
-        }
-
-        html += `</div>`;
+        paymentTermTemplate.querySelector(
+            ".payment-term"
+        ).dataset.paymentTermUid = paymentTerm.uid;
+        paymentTermTemplate.querySelector(
+            ".payment-term"
+        ).dataset.paymentTermUid = paymentTerm.uid;
+        paymentTermTemplate.querySelector(".payment-term-name").value =
+            paymentTerm.name;
+        paymentTermTemplate.querySelector(".payment-term-start-date").value =
+            paymentTerm.start_date;
+        paymentTermTemplate.querySelector(".payment-term-finish-date").value =
+            paymentTerm.finish_date;
+        paymentTermTemplate.querySelector(".payment-term-cost").value =
+            paymentTerm.cost;
+        containerPaymentTerms.appendChild(paymentTermTemplate);
     });
-
-    return html;
-}
-
-function getSelectedCompetences(order) {
-
-    const selectedCompetences = [];
-
-    // Selecciona todos los checkboxes seleccionados dentro de los divs con la clase 'competences-section' y un atributo 'data-order' igual a 'order'
-    const selectedCheckboxesCompetences = document.querySelectorAll(
-        `.competences-section[data-order='${order}'] .competence-checkbox:checked`
-    );
-
-    // Recorre cada checkbox seleccionado
-    selectedCheckboxesCompetences.forEach((checkbox) => {
-        // Obtiene el uid de la competencia del atributo 'data-uid'
-        const uid = checkbox.dataset.uid;
-
-        // Añade el uid al array
-        selectedCompetences.push(uid);
-    });
-
-    return selectedCompetences;
-}
-
-function getSelectedLearningResults(order) {
-
-    const selectedLearningResults = [];
-    const selectedCheckboxesLearningResults = document.querySelectorAll(
-        `.competences-section[data-order='${order}'] .learning-result-checkbox:checked`
-    );
-
-    selectedCheckboxesLearningResults.forEach((checkbox) => {
-        // Obtiene el uid de la competencia del atributo 'data-uid'
-        const uid = checkbox.dataset.uid;
-
-        // Añade el uid al array
-        selectedLearningResults.push(uid);
-    });
-
-    return selectedLearningResults;
 }
 
 // Controla que no se puedan seleccionar un docente como coordinador y no coordinador a la vez
@@ -2981,9 +3364,11 @@ function enrollStudentsCsv() {
         .then(() => {
             hideModal("enroll-course-csv-modal");
             reloadStudentsTable();
+            fileInput.value = "";
         })
         .catch((data) => {
             showFormErrors(data.errors);
+            fileInput.value = "";
         });
 }
 
@@ -3001,9 +3386,6 @@ function setVisibilityCourseFieldsBasedOnProgramMembership(isPartOfProgram) {
         "cost-container",
         "feature-main-slider-container",
         "feature-main-carrousel-container",
-        "documents-container",
-        "criteria-area",
-        "enrolling-dates-container",
     ];
 
     elementIds.forEach((id) => {
@@ -3024,4 +3406,67 @@ function setVisibilityCourseFieldsBasedOnProgramMembership(isPartOfProgram) {
 function showArea(area, show) {
     if (show) area.classList.remove("hidden");
     else area.classList.add("hidden");
+}
+
+function generateTags() {
+    const text = document.getElementById("description").value;
+
+    if (!text) {
+        showToast("No hay descripción para generar etiquetas", "error");
+        return;
+    }
+
+    const params = {
+        url: "/learning_objects/generate_tags",
+        method: "POST",
+        body: { text },
+        loader: true,
+        stringify: true,
+    };
+
+    apiFetch(params)
+        .then((data) => {
+            data.forEach((tag) => {
+                tomSelectTags.addOption({ value: tag, text: tag });
+                tomSelectTags.addItem(tag);
+            });
+        })
+        .catch(() => {
+            showToast("No se han podido generar las etiquetas", "error");
+        });
+}
+
+function updatePaymentMode(paymentMode) {
+    if (paymentMode == "SINGLE_PAYMENT") {
+        document.getElementById("cost").classList.remove("hidden");
+        document.getElementById("payment_terms").classList.add("hidden");
+        document
+            .getElementById("label-container-cost")
+            .classList.add("label-center");
+    } else {
+        document.getElementById("cost").classList.add("hidden");
+        document
+            .getElementById("label-container-cost")
+            .classList.remove("label-center");
+        document.getElementById("payment_terms").classList.remove("hidden");
+    }
+}
+
+function addPaymentTerm() {
+    const template = document
+        .getElementById("payment-term-template")
+        .content.cloneNode(true);
+    document.getElementById("payment-terms-list").appendChild(template);
+}
+
+function removePaymentTerm(event) {
+    let target = event.target;
+
+    if (!target.classList.contains(".btn-remove-payment-term")) {
+        target = target.closest(".btn-remove-payment-term");
+    }
+
+    if (target) {
+        target.closest(".payment-term").remove();
+    }
 }

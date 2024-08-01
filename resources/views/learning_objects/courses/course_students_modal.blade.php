@@ -18,23 +18,28 @@
                 @include('partials.table-search', ['table' => 'course-students-table'])
 
 
-                <div class="flex gap-2">
+                <div class="flex gap-1">
                     <div>
-                        <button id="approve-students-btn" type="button" class="btn-icon"
+                        <button id="approve-students-btn" type="button" class="btn-icon" title="Aprobar"
                             data-course-uid="">{{ e_heroicon('check', 'outline') }}</button>
                     </div>
 
                     <div>
-                        <button id="reject-students-btn" type="button" class="btn-icon"
+                        <button id="reject-students-btn" type="button" class="btn-icon" title="Rechazar"
                             data-course-uid="">{{ e_heroicon('x-mark', 'outline') }}</button>
                     </div>
                     <div>
-                        <button id="enroll-students-btn" type="button" class="btn-icon"
+                        <button id="enroll-students-btn" type="button" class="btn-icon" title="Añadir estudiante"
                             data-course-uid="">{{ e_heroicon('plus', 'outline') }}</button>
                     </div>
                     <div>
-                        <button id="enroll-students-csv-btn" type="button" class="btn-icon"
+                        <button id="enroll-students-csv-btn" type="button" class="btn-icon" title="Importar estudiantes"
                             data-course-uid="">{{ e_heroicon('arrow-up-tray', 'outline') }}</button>
+                    </div>
+
+                    <div>
+                        <button id="send-credentials-students-btn" type="button" class="btn-icon" title="Enviar credenciales"
+                            data-course-uid="">{{ e_heroicon('academic-cap', 'outline') }}</button>
                     </div>
                 </div>
             </div>

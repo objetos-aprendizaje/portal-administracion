@@ -26,7 +26,7 @@
                     </div>
 
                     <div class="content-container">
-                        <input type="text" id="name" name="name" class="poa-input"
+                        <input maxlength="255" type="text" id="name" name="name" class="poa-input"
                             placeholder="Nombre" />
                     </div>
                 </div>
@@ -37,7 +37,7 @@
                     </div>
 
                     <div class="content-container">
-                        <input type="text" id="api_key" name="api_key" class="poa-input"
+                        <input maxlength="50" type="text" id="api_key" name="api_key" class="poa-input"
                             placeholder="api_key" />
                     </div>
                 </div>

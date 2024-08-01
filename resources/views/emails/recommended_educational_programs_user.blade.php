@@ -1,9 +1,11 @@
-<h1>Nuevos programas educativos que te podrían interesar</h1>
+<h1>Nuevo programa formativo que te podría interesar</h1>
 
-<p>Hola, se han dado de alta unos nuevos programas educativos que podrían interesarte en base a tus preferencias</p>
+<p>Hola, se ha dado de alta un programa formativo que podría interesarte</p>
 
-<ul>
-    @foreach ($parameters['educational_programs'] as $educationalProgram)
-        <li>{{$educationalProgram["title"]}}</li>
-    @endforeach
-</ul>
+<p>
+    <b>Título: </b>{{$parameters['educational_program_title']}}
+</p>
+
+<p>
+    <b>Descripción:</b> {{$parameters['educational_program_description']}}
+</p>

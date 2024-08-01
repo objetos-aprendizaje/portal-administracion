@@ -67,6 +67,18 @@ class ApiKeysController extends BaseController
         return response()->json($api_key, 200);
     }
 
+    public function deleteApiKey(Request $request) {
+
+        $apiKeysUids = $request->input('uids');
+
+        DB::transaction(function () use ($apiKeysUids) {
+            ApiKeysModel::destroy($apiKeysUids);
+            LogsController::createLog('Eliminar claves de api', 'Claves API', auth()->user()->uid);
+        }, 5);
+
+        return response()->json(['message' => 'Claves de API eliminadas correctamente']);
+    }
+
 
     /**
      *

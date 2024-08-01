@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Logs\LogsController;
 use App\Models\Saml2TenantsModel;
+use Illuminate\Support\Facades\Validator;
 
 class LoginSystemsController extends BaseController
 {
@@ -44,6 +45,22 @@ class LoginSystemsController extends BaseController
     public function submitGoogleForm(Request $request)
     {
 
+        $messages = [
+            'google_client_id.required' => 'El ID de cliente es obligatorio',
+            'google_client_secret.required' => 'La clave secreta es obligatoria',
+        ];
+
+        $validator = Validator::make($request->all(), [
+            'google_client_id' => 'required|string',
+            'google_client_secret' => 'required|string',
+        ], $messages);
+
+        $validatorErrors = $validator->errors();
+
+        if (!$validator->errors()->isEmpty()) {
+            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validatorErrors], 422);
+        }
+
         $updateData = [
             'google_login_active' => $request->input('google_login_active'),
             'google_client_id' => $request->input('google_client_id'),
@@ -68,6 +85,22 @@ class LoginSystemsController extends BaseController
     public function submitFacebookForm(Request $request)
     {
 
+        $messages = [
+            'facebook_client_id.required' => 'El ID de cliente es obligatorio',
+            'facebook_client_secret.required' => 'La clave secreta es obligatoria',
+        ];
+
+        $validator = Validator::make($request->all(), [
+            'facebook_client_id' => 'required|string',
+            'facebook_client_secret' => 'required|string',
+        ], $messages);
+
+        $validatorErrors = $validator->errors();
+
+        if (!$validator->errors()->isEmpty()) {
+            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validatorErrors], 422);
+        }
+
         $updateData = [
             'facebook_login_active' => $request->input('facebook_login_active'),
             'facebook_client_id' => $request->input('facebook_client_id'),
@@ -90,6 +123,21 @@ class LoginSystemsController extends BaseController
 
     public function submitTwitterForm(Request $request)
     {
+        $messages = [
+            'twitter_client_id.required' => 'El ID de cliente es obligatorio',
+            'twitter_client_secret.required' => 'La clave secreta es obligatoria',
+        ];
+
+        $validator = Validator::make($request->all(), [
+            'twitter_client_id' => 'required|string',
+            'twitter_client_secret' => 'required|string',
+        ], $messages);
+
+        $validatorErrors = $validator->errors();
+
+        if (!$validator->errors()->isEmpty()) {
+            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validatorErrors], 422);
+        }
 
         $updateData = [
             'twitter_login_active' => $request->input('twitter_login_active'),
@@ -114,6 +162,22 @@ class LoginSystemsController extends BaseController
     public function submitLinkedinForm(Request $request)
     {
 
+        $messages = [
+            'linkedin_client_id.required' => 'El ID de cliente es obligatorio',
+            'linkedin_client_secret.required' => 'La clave secreta es obligatoria',
+        ];
+
+        $validator = Validator::make($request->all(), [
+            'linkedin_client_id' => 'required|string',
+            'linkedin_client_secret' => 'required|string',
+        ], $messages);
+
+        $validatorErrors = $validator->errors();
+
+        if (!$validator->errors()->isEmpty()) {
+            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validatorErrors], 422);
+        }
+
         $updateData = [
             'linkedin_login_active' => $request->input('linkedin_login_active'),
             'linkedin_client_id' => $request->input('linkedin_client_id'),
@@ -135,6 +199,26 @@ class LoginSystemsController extends BaseController
 
     public function submitCasForm(Request $request)
     {
+        $messages = [
+            'cas_entity_id.required' => 'El Entity ID es obligatorio',
+            'cas_login_url.required' => 'La url de login es obligatoria',
+            'cas_logout_url.required' => 'La url de logout es obligatoria',
+            'cas_certificate.required' => 'El certificado es obligatorio',
+        ];
+
+        $validator = Validator::make($request->all(), [
+            'cas_entity_id' => 'required|string',
+            'cas_login_url' => 'required|string',
+            'cas_logout_url' => 'required|string',
+            'cas_certificate' => 'required|string',
+
+        ], $messages);
+
+        $validatorErrors = $validator->errors();
+
+        if (!$validator->errors()->isEmpty()) {
+            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validatorErrors], 422);
+        }
 
         $active = intval($request->input('cas_login_active'));
 
@@ -193,6 +277,27 @@ class LoginSystemsController extends BaseController
 
     public function submitRedirisForm(Request $request)
     {
+
+        $messages = [
+            'rediris_entity_id.required' => 'El Entity ID es obligatorio',
+            'rediris_login_url.required' => 'La url de login es obligatoria',
+            'rediris_logout_url.required' => 'La url de logout es obligatoria',
+            'rediris_certificate.required' => 'El certificado es obligatorio',
+        ];
+
+        $validator = Validator::make($request->all(), [
+            'rediris_entity_id' => 'required|string',
+            'rediris_login_url' => 'required|string',
+            'rediris_logout_url' => 'required|string',
+            'rediris_certificate' => 'required|string',
+
+        ], $messages);
+
+        $validatorErrors = $validator->errors();
+
+        if (!$validator->errors()->isEmpty()) {
+            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validatorErrors], 422);
+        }
 
         $active = intval($request->input('rediris_login_active'));
 

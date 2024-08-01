@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Administration;
 
+use App\Exceptions\OperationFailedException;
 use App\Models\CoursesBigCarrouselsApprovalsModel;
 use App\Models\CoursesModel;
 use App\Models\CoursesSmallCarrouselsApprovalsModel;
@@ -45,17 +46,22 @@ class CarrouselsController extends BaseController
 
     public function previsualizeSlider(Request $request) {
 
+        $messages = [
+            'title.required' => 'Debes especificar un título',
+            'description.required' => 'Debes especificar una descripción',
+            'image.required' => 'Debes adjuntar una imagen',
+            'image.file' => 'Debes adjuntar una imagen válida',
+        ];
+
         $rules = [
             'title' => 'required',
             'description' => 'required',
             'image' => 'required',
         ];
 
-        $messages = [
-            'title.required' => 'Debes especificar un título',
-            'description.required' => 'Debes especificar una descripción',
-            'image.required' => 'Debes adjuntar una imagen',
-        ];
+        // Si el curso es nuevo, siempre deberemos requerir una imagen
+        $courseUid = $request->input('course_uid');
+        if(!$courseUid) $rules['image'] = 'required|file';
 
         $validator = Validator::make($request->all(), $rules, $messages);
 
@@ -66,10 +72,19 @@ class CarrouselsController extends BaseController
             ], 400);
         }
 
-        // Guardamos la imagen
         $image = $request->file('image');
 
-        $imagePath = saveFile($image, "images/previsualizations-sliders", null, true);
+        // Si no hay imagen, sacamos la que esté en BD
+        if(!$image) {
+            $course = CoursesModel::where('uid', $request->input('course_uid'))->first();
+            $imagePath = $course->featured_big_carrousel_image_path;
+        } else {
+            $imagePath = saveFile($image, "images/previsualizations-sliders", null, true);
+        }
+
+        if(!$imagePath) {
+            throw new OperationFailedException('Debes adjuntar una imagen', 422);
+        }
 
         $previsualizationSlider = new SlidersPrevisualizationsModel();
         $previsualizationSlider->uid = generate_uuid();
