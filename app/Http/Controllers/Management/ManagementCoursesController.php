@@ -481,12 +481,6 @@ class ManagementCoursesController extends BaseController
             return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $errors], 422);
         }
 
-        // Validamos si ha marcado el carrusel grande o pequeño y si hay más de 10 cursos destacados
-        $validationCarrousel = $this->validationCourseCarrousels($request);
-        if (!$validationCarrousel->result) {
-            return response()->json(['message' => $validationCarrousel->message], 422);
-        }
-
         $action = $request->input('action');
         $belongsEducationalProgram = $request->input('belongs_to_educational_program');
 
@@ -721,7 +715,7 @@ class ManagementCoursesController extends BaseController
             'featured_big_carrousel_description' => 'required_if:featured_big_carrousel,1',
             'featured_big_carrousel_image_path' => 'required_if:featured_big_carrousel,1',
             'lms_system_uid' => 'required_with:lms_url',
-            'call_uid' => 'required_if'
+            'call_uid' => 'required'
         ];
 
         if (app('general_options')['operation_by_calls']) {
@@ -854,40 +848,6 @@ class ManagementCoursesController extends BaseController
         else $rules['call_uid'] = 'nullable|string';
     }
 
-    private function validationCourseCarrousels($request)
-    {
-        $featured_big_carrousel = $request->input('featured_big_carrousel');
-
-        if ($featured_big_carrousel) {
-            // Comprobamos el número de cursos con el carrusel grande activado
-            $countCoursesFeaturedBigCarrousel = CoursesModel::where('featured_big_carrousel', 1)->count();
-            if ($countCoursesFeaturedBigCarrousel > 9) {
-                return (object) [
-                    "result" => false,
-                    "message" => "Ya hay destacados más de 10 cursos en el carrousel grande"
-                ];
-            }
-        }
-
-        $featured_small_carrousel = $request->input('featured_small_carrousel');
-
-        if ($featured_small_carrousel) {
-            // Comprobamos el número de cursos con el carrusel pequeño activado
-            $countCoursesFeaturedSmallCarrousel = CoursesModel::where('featured_small_carrousel', 1)->count();
-
-            if ($countCoursesFeaturedSmallCarrousel > 9) {
-                return (object) [
-                    "result" => false,
-                    "message" => "Ya hay destacados más de 10 cursos en el carrousel pequeño"
-                ];
-            }
-        }
-
-        return (object) [
-            "result" => true
-        ];
-    }
-
     private function statusCourseBelongsEducationalProgram($action, $course_bd)
     {
         $statuses = CourseStatusesModel::whereIn('code', [
@@ -965,7 +925,7 @@ class ManagementCoursesController extends BaseController
         $fields = [
             "inscription_start_date", "inscription_finish_date", "realization_start_date", "realization_finish_date", "min_required_students",
             "presentation_video_url", "lms_url", "lms_system_uid", "cost", "featured_big_carrousel", "featured_big_carrousel_title", "featured_big_carrousel_description",
-            "featured_slider_color", "featured_small_carrousel", "validate_student_registrations", "evaluation_criteria"
+            "featured_slider_color", "featured_small_carrousel", "validate_student_registrations", "evaluation_criteria", "call_uid"
         ];
 
         $conditionalFields = ["enrolling_start_date", "enrolling_finish_date"];
@@ -1338,50 +1298,6 @@ class ManagementCoursesController extends BaseController
         $students = $query->paginate($size);
 
         return response()->json($students, 200);
-    }
-
-    public function saveCourseStudents(Request $request, $course_uid)
-    {
-
-        $students = $request->input('students');
-        $students = json_decode($students, true);
-
-        DB::transaction(function () use ($students, $course_uid) {
-            foreach ($students as $student) {
-
-                $user = CoursesUsersModel::where('user_uid', $student)->where('course_uid', $course_uid)->first();
-
-                if ($user == null) {
-
-                    //Rol de estudiante
-                    $student_rol = UserRolesModel::where("code", "STUDENT")->first();
-
-                    $courseUser = new CoursesUsersModel();
-                    $courseUser->uid = generate_uuid();
-                    $courseUser->course_uid = $course_uid;
-                    $courseUser->user_uid = $student;
-                    $courseUser->user_rol_uid = $student_rol['uid'];
-                    $courseUser->save();
-                }
-            }
-
-            LogsController::createLog('Estudiantes añadidos al curso', 'Cursos', auth()->user()->uid);
-        });
-
-        return response()->json(['message' => 'Añadidos estudiantes al curso'], 200);
-    }
-
-    public function deleteCourseStudents(Request $request)
-    {
-
-        $uids = $request->input('uids');
-
-        DB::transaction(function () use ($uids) {
-            CoursesUsersModel::destroy($uids);
-            LogsController::createLog('Eliminar estudiantes de cursos', 'Cursos', auth()->user()->uid);
-        });
-
-        return response()->json(['message' => 'Estudiantes del curso eliminados correctamente'], 200);
     }
 
     public function approveInscriptionsCourse(Request $request)

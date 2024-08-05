@@ -619,11 +619,13 @@ function initHandlers() {
             }, doneTypingInterval);
         }
     });
-    const generateTagsBtn = document.getElementById("generate-tags-btn");
 
+    const generateTagsBtn = document.getElementById("generate-tags-btn");
     if (generateTagsBtn) {
-        generateTagsBtn.addEventListener("click", function () {
-            generateTags();
+        generateTagsBtn.addEventListener("click", () => {
+            if (!generateTagsBtn.classList.contains("element-disabled")) {
+                generateTags();
+            }
         });
     }
 }
@@ -1419,13 +1421,6 @@ function controlsHandlerModalCourse() {
         .addEventListener("click", function () {
             newCourse();
         });
-
-    const closeButtons = document.querySelectorAll(".close-modal-btn");
-    closeButtons.forEach(function (button) {
-        button.addEventListener("click", function () {
-            resetModal();
-        });
-    });
 }
 
 /**
@@ -1917,7 +1912,13 @@ function initializeCoursesTable() {
                 label: `${heroicon("document-duplicate")} Duplicar curso`,
                 action: function (e, column) {
                     const courseClicked = column.getData();
-                    loadCourseModal(courseClicked.uid);
+                    showModalConfirmation(
+                        "¿Deseas duplicar esta edición?",
+                        "Se creará una nueva edición del curso con los mismos datos que la edición actual.",
+                        "duplicateCourse"
+                    ).then((result) => {
+                        if (result) duplicateCourse(courseClicked.uid);
+                    });
                 },
             },
             {
@@ -1926,14 +1927,22 @@ function initializeCoursesTable() {
                 )} Crear nueva edición a partir de este curso`,
                 action: function (e, column) {
                     const courseClicked = column.getData();
-                    loadCourseModal(courseClicked.uid);
+                    showModalConfirmation(
+                        "¿Deseas crear una nueva edición?",
+                        "Se creará una nueva edición del curso con los mismos datos que la edición actual.",
+                        "newEdition"
+                    ).then((result) => {
+                        if (result) newEditionCourse(courseClicked.uid);
+                    });
                 },
             },
             {
                 label: `${heroicon("academic-cap")} Envío de credenciales`,
                 action: function (e, column) {
-                    const courseClicked = column.getData();
-                    loadCourseModal(courseClicked.uid);
+                    showModalConfirmation(
+                        "Envío de credenciales",
+                        "¿Estás seguro de que quieres enviar las credenciales a los estudiantes seleccionados?"
+                    ).then((result) => {});
                 },
             },
         ],
@@ -2578,6 +2587,7 @@ function newCourse() {
 /**
  * Resetea el formulario y otros elementos del modal de curso.
  * Limpia los campos del formulario, restablece los selectores TomSelect y elimina los errores mostrados.
+ * Deja visible todos los campos por defecto y oculta los campos específicos de la creación de un nuevo curso.
  */
 function resetModal() {
     const form = document.getElementById("course-form");
@@ -2616,7 +2626,38 @@ function resetModal() {
     let validateStudentRegistration = document.getElementById(
         "validate-student-registrations-container"
     );
-    showArea(validateStudentRegistration, false);
+    showArea(validateStudentRegistration, true);
+
+    let inscriptionDatesContainer = document.getElementById(
+        "inscription-dates-container"
+    );
+    showArea(inscriptionDatesContainer, true);
+
+    let minStudentsRequiredContainer = document.getElementById(
+        "min-required-students-container"
+    );
+    showArea(minStudentsRequiredContainer, true);
+
+    let costContainer = document.getElementById("cost-container");
+    showArea(costContainer, true);
+
+    let tagsContainer = document.getElementById("tags-container");
+    showArea(tagsContainer, true);
+
+    let categoriesContainer = document.getElementById("categories-container");
+    showArea(categoriesContainer, true);
+
+    let featureMainSliderContainer = document.getElementById(
+        "feature-main-slider-container"
+    );
+    showArea(featureMainSliderContainer, true);
+
+    let featureMainCarrouselContainer = document.getElementById(
+        "feature-main-carrousel-container"
+    );
+    showArea(featureMainCarrouselContainer, true);
+
+    document.getElementById("payment-terms-list").innerHTML = "";
 }
 
 /**
@@ -3073,6 +3114,7 @@ function toggleFormFieldsAccessibility(isDisabled) {
         "lms_url",
         "image_input_file",
         "featured_small_carrousel",
+        "generate-tags-btn",
     ];
     setReadOnlyForSpecificFields(formId, idsReadOnly, isDisabled);
 
@@ -3092,7 +3134,11 @@ function toggleFormFieldsAccessibility(isDisabled) {
     setDisabledSpecificFormFields(formId, idsDisable, isDisabled);
 
     // Desactivamos el div de composición del curso
-    const idsDivsBlock = ["course-composition-block", "document-container"];
+    const idsDivsBlock = [
+        "course-composition-block",
+        "document-container",
+        "payment_terms",
+    ];
 
     setDisabledSpecificDivFields(idsDivsBlock, isDisabled);
 
@@ -3152,7 +3198,6 @@ function setFieldsNewEdition() {
 
     // Desactivamos estos campos
     const idsDisable = [
-        "call_uid",
         "educational_program_type_uid",
         "course_type_uid",
         "belongs_to_educational_program",
@@ -3448,6 +3493,12 @@ function updatePaymentMode(paymentMode) {
         document
             .getElementById("label-container-cost")
             .classList.remove("label-center");
+
+        // Si no hay términos de pago, añadimos uno por defecto
+        if (!document.querySelector(".payment-term")) {
+            addPaymentTerm();
+        }
+
         document.getElementById("payment_terms").classList.remove("hidden");
     }
 }

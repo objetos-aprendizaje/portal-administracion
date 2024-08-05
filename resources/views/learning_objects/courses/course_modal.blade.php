@@ -69,7 +69,6 @@
                                         <option value="{{ $call['uid'] }}">{{ $call['name'] }}</option>
                                     @endforeach
                                 </select>
-                                <input type="hidden" name="call_uid" />
                             </div>
                         </div>
                     </div>
@@ -262,19 +261,17 @@
                             <input type="number" placeholder="100€" step="any" class="poa-input"
                                 id="cost" name="cost" value="" />
 
-                                <div id="payment_terms" class="hidden">
-                                    <div id="payment-terms-list">
+                            <div id="payment_terms" class="hidden">
+                                <div id="payment-terms-list"></div>
 
-                                    </div>
-
-                                    <div class="flex justify-end">
-                                        <div>
-                                            <button type="button" class="btn-icon" id="btn-add-payment">
-                                                {{ e_heroicon('plus', 'outline') }}
-                                            </button>
-                                        </div>
+                                <div class="flex justify-end">
+                                    <div>
+                                        <button type="button" class="btn-icon" id="btn-add-payment">
+                                            {{ e_heroicon('plus', 'outline') }}
+                                        </button>
                                     </div>
                                 </div>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -548,7 +545,8 @@
 
                         <div class="field mt-2">
                             <div class="label-container">
-                                <label for="featured_big_carrousel_description">Descripción en el slider principal</label>
+                                <label for="featured_big_carrousel_description">Descripción en el slider
+                                    principal</label>
                             </div>
 
                             <div class="content-container mt-1">
@@ -755,8 +753,12 @@
 </template>
 
 <template id="payment-term-template">
-    <div class="payment-term">
-        <input type="text" class="poa-input mb-2 payment-term-name" placeholder="Información del plazo" />
+    <div class="payment-term mb-2">
+
+        <div class="mb-2">
+            <input type="text" class="poa-input payment-term-name" placeholder="Información del plazo" />
+        </div>
+
         <div class="flex gap-2">
             <div class="flex-grow">
                 <input type="datetime-local" class="poa-input w-full payment-term-start-date" name="payment_date" />

@@ -282,8 +282,6 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::post('/learning_objects/courses/filter_courses', [ManagementCoursesController::class, 'filterCourses']);
         Route::get('/learning_objects/courses/get_course/{course_uid}', [ManagementCoursesController::class, 'getCourse']);
         Route::get('/learning_objects/courses/get_course_students/{course_uid}', [ManagementCoursesController::class, 'getCourseStudents']);
-        Route::post('/learning_objects/courses/save_course_students/{course_uid}', [ManagementCoursesController::class, 'saveCourseStudents']);
-        Route::delete('/learning_objects/courses/delete_course_students', [ManagementCoursesController::class, 'deleteCourseStudents']);
         Route::post('/learning_objects/courses/approve_inscriptions_course', [ManagementCoursesController::class, 'approveInscriptionsCourse']);
         Route::post('/learning_objects/courses/reject_inscriptions_course', [ManagementCoursesController::class, 'rejectInscriptionsCourse']);
         Route::post('/learning_objects/courses/duplicate_course/{course_uid}', [ManagementCoursesController::class, 'duplicateCourse']);
