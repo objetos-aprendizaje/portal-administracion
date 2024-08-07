@@ -2015,7 +2015,7 @@ function duplicateCourse(courseUid) {
 
 function newEditionCourse(courseUid) {
     const params = {
-        url: "/learning_objects/courses/new_edition_course/" + courseUid,
+        url: "/learning_objects/courses/create_edition",
         method: "POST",
         body: { course_uid: courseUid },
         toast: true,

@@ -24,16 +24,16 @@ class SendChangeStatusCourseNotification implements ShouldQueue
 
     public function handle()
     {
-        $userCreator = UsersModel::where('uid', $this->course['creator_user_uid'])->with([
+        $userCreator = $this->course->creatorUser->with([
             'automaticEmailNotificationsTypesDisabled',
             'automaticGeneralNotificationsTypesDisabled'
-            ])->first();
+        ])->first();
 
-        if(!$userCreator->automaticEmailNotificationsTypesDisabled->contains('code', 'CHANGE_STATUS_COURSE')) {
+        if (!$userCreator->automaticEmailNotificationsTypesDisabled->contains('code', 'CHANGE_STATUS_COURSE')) {
             $this->sendEmailChangeStatusCourse($this->course);
         }
 
-        if(!$userCreator->automaticGeneralNotificationsTypesDisabled->contains('code', 'CHANGE_STATUS_COURSE')) {
+        if (!$userCreator->automaticGeneralNotificationsTypesDisabled->contains('code', 'CHANGE_STATUS_COURSE')) {
             $this->saveNotificationChangeStatusCourse($this->course);
         }
     }
@@ -45,11 +45,11 @@ class SendChangeStatusCourseNotification implements ShouldQueue
         $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
         $generalNotificationAutomatic->title = "Cambio de estado de curso";
         $generalNotificationAutomatic->description = "<p>El estado del curso "
-            . $course['title'] . " ha cambiado a "
-            . $course['status']['name'] . ".</p>";
+            . $course->title . " ha cambiado a "
+            . $course->status->name . ".</p>";
 
         if ($course['status_reason']) {
-            $generalNotificationAutomatic->description .= "<p>Motivo: " . $course['status_reason'] . "</p>";
+            $generalNotificationAutomatic->description .= "<p>Motivo: " . $course->status_reason . "</p>";
         }
 
         $generalNotificationAutomatic->entity_uid = $course['uid'];
@@ -60,7 +60,7 @@ class SendChangeStatusCourseNotification implements ShouldQueue
 
         $userToSync[] = [
             "uid" => generate_uuid(),
-            "user_uid" => $course['creator_user_uid'],
+            "user_uid" => $course->creator_user_uid,
             "general_notifications_automatic_uid" => $generalNotificationAutomaticUid,
             "is_read" => 0
         ];
@@ -72,11 +72,11 @@ class SendChangeStatusCourseNotification implements ShouldQueue
     private function sendEmailChangeStatusCourse($course)
     {
         $parameters = [
-            "course_name" => $course['title'],
-            "course_status" => $course['status']['name'],
-            "reason" => $course['status_reason']
+            "course_name" => $course->title,
+            "course_status" => $course->status->name,
+            "reason" => $course->status_reason
         ];
 
-        dispatch(new SendEmailJob($course['creator_user']['email'], 'Cambio de estado de curso', $parameters, 'emails.course_change_status'));
+        dispatch(new SendEmailJob($course->creatorUser->email, 'Cambio de estado de curso', $parameters, 'emails.course_change_status'));
     }
 }

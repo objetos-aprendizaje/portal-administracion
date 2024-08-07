@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use Tests\TestCase;
 use App\Models\UsersModel;
+use Illuminate\Support\Str;
 use Illuminate\Http\Response;
 use App\Models\UserRolesModel;
 use App\Models\CategoriesModel;
@@ -535,10 +536,9 @@ class CatalogingTest extends TestCase
     }
 
 
-    /**
-     * @testdox Actualizar Marco de competencias */
-    public function testUpdateCompetences()
-    {
+/**
+ * @testdox Actualizar Marco de competencias */
+    public function testUpdateCompetences(){
         $admin = UsersModel::factory()->create();
         $roles_bd = UserRolesModel::get()->pluck('uid');
         $roles_to_sync = [];
@@ -564,7 +564,7 @@ class CatalogingTest extends TestCase
 
             // Verifica que la competencia se haya creado correctamente
             $response->assertStatus(200)
-                ->assertJson(['message' => 'Competencia añadida correctamente']);
+                    ->assertJson(['message' => 'Competencia añadida correctamente']);
 
             // Obtiene el uid de la competencia recién creada
             $uid_tc = '999-12499-123456-12345-12111';
@@ -582,37 +582,95 @@ class CatalogingTest extends TestCase
 
             // Respuesta que la competencia se haya actualizado correctamente
             $response->assertStatus(200);
-        }
+
+            }
     }
 
-    /**
-     * @test Validación campos requeridos Marco de competencias*/
-    public function testValidatesRequiredFieldsCompetences()
-    {
-        $data = [
-            'name' => '',
-            'is_multi_select' => null,
+/**
+ * @test Validación campos requeridos Marco de competencias*/
+public function testValidatesRequiredFieldsCompetences()
+{
+    $data = [
+        'name' => '',
+        'is_multi_select' => null,
+    ];
+
+    $response = $this->postJson('/cataloging/competences_learnings_results/save_competence', $data);
+
+    $response->assertStatus(422)
+             ->assertJsonStructure(['message', 'errors']);
+}
+
+/**
+ * @test Retorna error si la competencia padre no existe*/
+public function testErrorIfParentCompetenceDoesNotExist()
+{
+    $data = [
+        'name' => 'Competencia con padre inexistente',
+        'parent_competence_uid' => 'inexistente-uid',
+        'is_multi_select' => true,
+    ];
+
+    $response = $this->postJson('/cataloging/competences_learnings_results/save_competence', $data);
+
+    $response->assertStatus(422)
+             ->assertJson(['errors' => ['parent_competence_uid' => ['La competencia padre no existe']]]);
+}
+
+/**
+ * @test Verifica asociación de resultados de aprendizaje a competencias*/
+public function testCreateLearningResult()
+{
+    $admin = UsersModel::factory()->create();
+    $roles_bd = UserRolesModel::get()->pluck('uid');
+    $roles_to_sync = [];
+    foreach ($roles_bd as $rol_uid) {
+        $roles_to_sync[] = [
+            'uid' => generate_uuid(),
+            'user_uid' => $admin->uid,
+            'user_role_uid' => $rol_uid
         ];
-
-        $response = $this->postJson('/cataloging/competences_learnings_results/save_competence', $data);
-
-        $response->assertStatus(422)
-            ->assertJsonStructure(['message', 'errors']);
     }
 
-    /**
-     * @test Retorna error si la competencia padre no existe*/
-    public function testErrorIfParentCompetenceDoesNotExist()
-    {
+    $admin->roles()->sync($roles_to_sync);
+    $this->actingAs($admin);
+
+    if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
+        // Datos de prueba
+       // Crea una competencia para asociar el resultado de aprendizaje
+        $competence = new CompetencesModel();
+        $competence->uid = '555-12499-123456-12345-12111'; // Asigno el uid manualmente
+        $competence->name = 'Competencia para Resultados de Aprendizaje';
+        $competence->description = 'Descripción de la competencia';
+        $competence->is_multi_select = false;
+        $competence->save();
+        $competence = CompetencesModel::find('555-12499-123456-12345-12111');
+
+        // Datos para crear un nuevo resultado de aprendizaje
         $data = [
-            'name' => 'Competencia con padre inexistente',
-            'parent_competence_uid' => 'inexistente-uid',
-            'is_multi_select' => true,
+            'uid' => Str::uuid(),
+            'competence_uid' => $competence->uid,
+            'name' => 'Nuevo Resultado de Aprendizaje',
+            'description' => 'Descripción del nuevo resultado de aprendizaje',
         ];
 
-        $response = $this->postJson('/cataloging/competences_learnings_results/save_competence', $data);
+        // Realiza la solicitud para crear el resultado de aprendizaje
+        $response = $this->postJson('/cataloging/competences_learnings_results/save_learning_result', $data);
 
-        $response->assertStatus(422)
-            ->assertJson(['errors' => ['parent_competence_uid' => ['La competencia padre no existe']]]);
+        // Verifica la respuesta
+        $response->assertStatus(200);
+        $response->assertJson(['message' => 'Resultado de aprendizaje guardado correctamente']);
+
+        // Verifica que el resultado de aprendizaje ha sido guardado en la base de datos
+        $this->assertDatabaseHas('learning_results', [
+            'name' => 'Nuevo Resultado de Aprendizaje',
+            'competence_uid' => $competence->uid,
+        ]);
     }
 }
+
+}
+
+
+
+
