@@ -13,11 +13,6 @@
                     </button>
                 </div>
                 <div>
-                    <button type="button" class="btn-icon" id="btn-delete-educational-programs">
-                        {{ e_heroicon('trash', 'outline') }}
-                    </button>
-                </div>
-                <div>
                     <button type="button" class="btn-icon" id="btn-reload-table">
                         {{ e_heroicon('arrow-path', 'outline') }}
                     </button>

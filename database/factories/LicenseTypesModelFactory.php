@@ -6,9 +6,9 @@ use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\UsersModel>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\LicenseTypesModel>
  */
-class UsersModelFactory extends Factory
+class LicenseTypesModelFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -19,10 +19,9 @@ class UsersModelFactory extends Factory
     {
         return [
             'uid' => Str::uuid(),
-            'first_name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'password' => '$2y$10$vu2dWbPxPtGQeEVyjNiQtu0H.4zWzCPgJkuqXSPgHMWxhOAbhyTFC', // 1234
-
+            'name' => $this->faker->name(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ];
     }
 }

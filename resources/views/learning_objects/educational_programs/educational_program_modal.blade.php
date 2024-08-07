@@ -99,20 +99,22 @@
 
                 </div>
 
-                <div class="field">
-                    <div class="label-container label-center">
-                        <label for="call_uid">Convocatoria</label>
-                    </div>
+                @if ($general_options['operation_by_calls'])
+                    <div class="field">
+                        <div class="label-container label-center">
+                            <label for="call_uid">Convocatoria <span class="text-danger">*</span></label>
+                        </div>
 
-                    <div class="content-container">
-                        <select class="poa-select w-full" id="call_uid" name="call_uid">
-                            <option value="">Selecciona una convocatoria</option>
-                            @foreach ($calls as $call)
-                                <option value="{{ $call['uid'] }}">{{ $call['name'] }}</option>
-                            @endforeach
-                        </select>
+                        <div class="content-container">
+                            <select class="poa-select w-full" id="call_uid" name="call_uid">
+                                <option value="">Selecciona una convocatoria</option>
+                                @foreach ($calls as $call)
+                                    <option value="{{ $call['uid'] }}">{{ $call['name'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
-                </div>
+                @endif
 
                 <div class="field">
                     <div class="label-container label-center">
@@ -154,38 +156,41 @@
                     </div>
                 </div>
 
-                <div class="field mt-2 no-visible" id="criteria-area">
-                    <div class="label-container">
-                        <label for="evaluation_criteria">Criterio de validación <span
-                                class="text-danger">*</span></label>
-                    </div>
-
-                    <div class="content-container mt-1">
-                        <textarea placeholder="Los criterios de evaluación son los siguientes..." rows="5" class="poa-input"
-                            id="evaluation_criteria" name="evaluation_criteria"></textarea>
-                    </div>
-                </div>
-
-                <div class="field mt-2 no-visible" id="documents-container">
-
-                    <div class="label-container">
-                        <label>Documentos necesarios para el programa formativo</label>
-                    </div>
-
-                    <div class="content-container" id="document-container">
-                        <div class="document-list" id="document-list">
-
+                <section id="criteria-area">
+                    <div class="field mt-2">
+                        <div class="label-container">
+                            <label for="evaluation_criteria">Criterio de validación <span
+                                    class="text-danger">*</span></label>
                         </div>
 
-                        <div class="flex justify-end">
-                            <div>
-                                <button type="button" class="btn-icon" id="btn-add-document">
-                                    {{ e_heroicon('plus', 'outline') }}
-                                </button>
+                        <div class="content-container mt-1">
+                            <textarea placeholder="Los criterios de evaluación son los siguientes..." rows="5" class="poa-input"
+                                id="evaluation_criteria" name="evaluation_criteria"></textarea>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="documents-container">
+                    <div class="field mt-2">
+                        <div class="label-container">
+                            <label>Documentos necesarios para el programa formativo</label>
+                        </div>
+
+                        <div class="content-container" id="document-container">
+                            <div class="document-list" id="document-list">
+
+                            </div>
+
+                            <div class="flex justify-end">
+                                <div>
+                                    <button type="button" class="btn-icon" id="btn-add-document">
+                                        {{ e_heroicon('plus', 'outline') }}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </section>
 
                 <div class="field mt-2">
                     <div class="label-container label-center">
@@ -284,7 +289,7 @@
 
                 <div class="field">
                     <div class="label-container">
-                        <label for="image_path_preview">Imagen</label>
+                        <label for="image_path">Imagen</label>
                     </div>
                     <div class="content-container mt-1">
                         <div class="poa-input-image">
@@ -458,7 +463,9 @@
 
 <template id="payment-term-template">
     <div class="payment-term">
-        <input type="text" class="poa-input payment-term-name" placeholder="Información del plazo" />
+        <div class="mb-2">
+            <input type="text" class="poa-input payment-term-name" placeholder="Información del plazo" />
+        </div>
 
         <div class="flex gap-2 my-2">
 

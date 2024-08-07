@@ -39,8 +39,6 @@ class LoginController extends BaseController
             $urlRediris = url('saml2/' . $loginRedirisUrl->uuid . '/login');
         } else $urlRediris = false;
 
-        $parameters_login_systems = Cache::get('parameters_login_systems');
-
         return view('non_authenticated.login', [
             "page_name" => "Inicia sesión",
             "page_title" => "Inicia sesión",
@@ -51,7 +49,6 @@ class LoginController extends BaseController
             "cert_login" => env('DOMINIO_CERTIFICADO'),
             "urlCas" => $urlCas,
             "urlRediris" => $urlRediris,
-            "parameters_login_systems" => $parameters_login_systems
         ]);
     }
 

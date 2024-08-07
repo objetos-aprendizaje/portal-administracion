@@ -51,12 +51,14 @@ class CarrouselsController extends BaseController
             'description.required' => 'Debes especificar una descripción',
             'image.required' => 'Debes adjuntar una imagen',
             'image.file' => 'Debes adjuntar una imagen válida',
+            'color.required' => 'Debes especificar un color',
         ];
 
         $rules = [
             'title' => 'required',
             'description' => 'required',
             'image' => 'required',
+            'color' => 'required',
         ];
 
         // Si el curso es nuevo, siempre deberemos requerir una imagen

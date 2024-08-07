@@ -137,7 +137,7 @@ class CallsController extends BaseController
         $errorsValidator = $this->validateCall($request, $isNew);
 
         if ($errorsValidator->any()) {
-            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $errorsValidator], 422);
+            return response()->json(['errors' => $errorsValidator], 422);
         }
 
 

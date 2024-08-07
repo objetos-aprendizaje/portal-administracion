@@ -282,12 +282,11 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::post('/learning_objects/courses/filter_courses', [ManagementCoursesController::class, 'filterCourses']);
         Route::get('/learning_objects/courses/get_course/{course_uid}', [ManagementCoursesController::class, 'getCourse']);
         Route::get('/learning_objects/courses/get_course_students/{course_uid}', [ManagementCoursesController::class, 'getCourseStudents']);
-        Route::post('/learning_objects/courses/save_course_students/{course_uid}', [ManagementCoursesController::class, 'saveCourseStudents']);
-        Route::delete('/learning_objects/courses/delete_course_students', [ManagementCoursesController::class, 'deleteCourseStudents']);
         Route::post('/learning_objects/courses/approve_inscriptions_course', [ManagementCoursesController::class, 'approveInscriptionsCourse']);
         Route::post('/learning_objects/courses/reject_inscriptions_course', [ManagementCoursesController::class, 'rejectInscriptionsCourse']);
         Route::post('/learning_objects/courses/duplicate_course/{course_uid}', [ManagementCoursesController::class, 'duplicateCourse']);
-        Route::post('/learning_objects/courses/new_edition_course/{course_uid}', [ManagementCoursesController::class, 'newEditionCourse']);
+        Route::post('/learning_objects/courses/create_edition', [ManagementCoursesController::class, 'editionCourse']);
+
         Route::get('/learning_objects/educational_resources', [EducationalResourcesController::class, 'index'])->name('learning-objects-educational-resources');
 
         Route::get('/learning_objects/educational_resources_per_users', [EducationalResourcesPerUsersController::class, 'index'])->name('learning-objects-educational-resources-per-users');

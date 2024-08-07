@@ -12,9 +12,9 @@
             @include('partials.table-search', ['table' => 'users-table'])
 
             <div>
-                <button id="add-user-btn" type="button" class="btn btn-icon mb-4">{{e_heroicon('plus', 'outline')}}</button>
-                <button id="delete-user-btn" type="button" class="btn btn-icon mb-4">{{e_heroicon('trash', 'outline')}}</button>
-                <button id="export-users-btn" type="button" class="btn btn-icon mb-4">{{e_heroicon('arrow-down-tray', 'outline')}}</button>
+                <button id="add-user-btn" type="button" class="btn btn-icon mb-4" title="Añadir usuario">{{e_heroicon('plus', 'outline')}}</button>
+                <button id="delete-user-btn" type="button" class="btn btn-icon mb-4" title="Eliminar usuarios">{{e_heroicon('trash', 'outline')}}</button>
+                <button id="export-users-btn" type="button" class="btn btn-icon mb-4" title="Exportar usuarios">{{e_heroicon('arrow-down-tray', 'outline')}}</button>
             </div>
 
         </div>

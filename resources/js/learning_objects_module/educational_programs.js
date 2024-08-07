@@ -23,6 +23,7 @@ import {
     changeColorColoris,
     getMultipleFreeEmailsTomSelectInstance,
     updateInputFile,
+    fillFormWithObject,
 } from "../app";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
 import { showToast } from "../toast.js";
@@ -52,7 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initializeTomSelect();
 
     updateInputImage();
-    controlCriteriaArea();
+    controlValidationStudents();
     controlEnrollingDates();
     controlChecksSliders();
     updateInputFile();
@@ -68,25 +69,6 @@ function initHandlers() {
     document
         .getElementById("educational-program-form")
         .addEventListener("submit", submitFormEducationalProgram);
-
-    document
-        .getElementById("btn-delete-educational-programs")
-        .addEventListener("click", () => {
-            if (selectedEducationalPrograms.length) {
-                showModalConfirmation(
-                    "Eliminar programas formativos",
-                    "¿Está seguro que desea eliminar los programas formativos seleccionados?",
-                    "delete_educational_programs"
-                ).then((resultado) => {
-                    if (resultado) deleteEducationalPrograms();
-                });
-            } else {
-                showToast(
-                    "Debe seleccionar al menos una convocatoria",
-                    "error"
-                );
-            }
-        });
 
     document
         .getElementById("btn-reload-table")
@@ -214,32 +196,25 @@ function initHandlers() {
         .addEventListener("click", removePaymentTerm);
 }
 
-function controlCriteriaArea() {
+/**
+ * Muestra u oculta el área de criterios de evaluación y el selector de documentos
+ * en función de si el curso tiene validación de estudiantes.
+ */
+function controlValidationStudents() {
     var checkbox = document.getElementById("validate_student_registrations");
 
-    checkbox.addEventListener("change", function () {
-        if (checkbox.checked) showCriteriaArea(true);
-        else showCriteriaArea(false);
-    });
-}
-
-function showCriteriaArea(show) {
+    const documentsContainer = document.getElementById("documents-container");
     const criteriaArea = document.getElementById("criteria-area");
 
-    if (show) criteriaArea.classList.remove("no-visible");
-    else criteriaArea.classList.add("no-visible");
-
-    const documentsArea = document.getElementById("documents-container");
-
-    if (show) documentsArea.classList.remove("no-visible");
-    else documentsArea.classList.add("no-visible");
-}
-
-function showEnrollingDateArea(show) {
-    const enrollingDates = document.getElementById("enrolling-dates-container");
-
-    if (show) enrollingDates.classList.remove("hidden");
-    else enrollingDates.classList.add("hidden");
+    checkbox.addEventListener("change", function () {
+        if (checkbox.checked) {
+            showArea(documentsContainer, true);
+            showArea(criteriaArea, true);
+        } else {
+            showArea(documentsContainer, false);
+            showArea(criteriaArea, false);
+        }
+    });
 }
 
 function initializeTomSelect() {
@@ -485,13 +460,8 @@ async function loadEducationalProgramModal(educationalProgramUid) {
 function fillEducationalProgramModal(educationalProgram) {
     document.getElementById("educational_program_uid").value =
         educationalProgram.uid;
-    document.getElementById("name").value = educationalProgram.name;
-    document.getElementById("description").value =
-        educationalProgram.description;
-    document.getElementById("educational_program_type_uid").value =
-        educationalProgram.educational_program_type_uid ?? "";
-    document.getElementById("call_uid").value =
-        educationalProgram.call_uid ?? "";
+
+    fillFormWithObject(educationalProgram, "educational-program-form");
 
     document.getElementById("inscription_start_date").value =
         educationalProgram.inscription_start_date;
@@ -510,9 +480,6 @@ function fillEducationalProgramModal(educationalProgram) {
     document.getElementById("realization_finish_date").value =
         educationalProgram.realization_finish_date;
 
-    document.getElementById("min_required_students").value =
-        educationalProgram.min_required_students;
-
     document.getElementById("validate_student_registrations").value =
         educationalProgram.validate_student_registrations;
 
@@ -527,7 +494,23 @@ function fillEducationalProgramModal(educationalProgram) {
         educationalProgram.featured_slider_color_font
     );
 
-    showCriteriaArea(educationalProgram.validate_student_registrations);
+    if (educationalProgram.validate_student_registrations) {
+        let criteriaArea = document.getElementById("criteria-area");
+        showArea(criteriaArea, true);
+
+        let documentsContainer = document.getElementById("documents-container");
+        showArea(documentsContainer, true);
+    }
+
+    if (
+        educationalProgram.validate_student_registrations ||
+        (educationalProgram && educationalProgram.cost > 0)
+    ) {
+        const enrollingDates = document.getElementById(
+            "enrolling-dates-container"
+        );
+        showArea(enrollingDates, true);
+    }
 
     loadDocuments(educationalProgram.educational_program_documents);
 
@@ -573,11 +556,6 @@ function fillEducationalProgramModal(educationalProgram) {
         });
     }
 
-    document.getElementById("featured_slider_title").value =
-        educationalProgram.featured_slider_title;
-    document.getElementById("featured_slider_description").value =
-        educationalProgram.featured_slider_description;
-
     if (educationalProgram.featured_slider_image_path) {
         document.getElementById("featured_slider_image_path_preview").src =
             "/" + educationalProgram.featured_slider_image_path;
@@ -593,25 +571,21 @@ function fillEducationalProgramModal(educationalProgram) {
     document.getElementById("featured_main_carrousel").checked =
         educationalProgram.featured_main_carrousel;
 
+    if (educationalProgram.contact_emails) {
+        educationalProgram.contact_emails.forEach((contact_email) => {
+            tomSelectContactEmails.addOption({
+                value: contact_email.email,
+                text: contact_email.email,
+            });
+            tomSelectContactEmails.addItem(contact_email.email);
+        });
+    }
+
     if (educationalProgram.status.code === "INTRODUCTION") {
         document
             .getElementById("draft-button-container")
             .classList.remove("hidden");
     }
-
-    if (educationalProgram.validate_student_registrations) {
-        showCriteriaArea(true);
-    }
-
-    if (
-        educationalProgram.validate_student_registrations ||
-        (educationalProgram && educationalProgram.cost > 0)
-    ) {
-        showEnrollingDateArea(true);
-    }
-
-    document.getElementById("payment_mode").value =
-        educationalProgram.payment_mode;
 
     updatePaymentMode(educationalProgram.payment_mode);
 
@@ -634,15 +608,6 @@ function fillEducationalProgramModal(educationalProgram) {
         toggleFieldAccessibility(false);
     } else {
         toggleFieldAccessibility(true);
-    }
-    if (educationalProgram.contact_emails) {
-        educationalProgram.contact_emails.forEach((contact_email) => {
-            tomSelectContactEmails.addOption({
-                value: contact_email.email,
-                text: contact_email.email,
-            });
-            tomSelectContactEmails.addItem(contact_email.email);
-        });
     }
 }
 
@@ -677,6 +642,8 @@ function toggleFieldAccessibility(shouldEnable) {
         "inscription_finish_date",
         "evaluation_criteria",
         "cost",
+        "enrolling_start_date",
+        "enrolling_finish_date",
         "realization_start_date",
         "realization_finish_date",
         "featured_slider_title",
@@ -712,7 +679,7 @@ function toggleFieldAccessibility(shouldEnable) {
 
     // Cambia la propiedad disabled de divs específicos
     const divsToToggleDisabled = [
-        "document-list",
+        "document-container",
         "payment_terms",
         "btns-save",
         "generate-tags-btn",
@@ -727,6 +694,9 @@ function toggleFieldAccessibility(shouldEnable) {
     shouldEnable ? tomSelectCourses.enable() : tomSelectCourses.disable();
     shouldEnable ? tomSelectTags.enable() : tomSelectTags.disable();
     shouldEnable ? tomSelectCategories.enable() : tomSelectCategories.disable();
+    shouldEnable
+        ? tomSelectContactEmails.enable()
+        : tomSelectContactEmails.disable();
 }
 
 /**
@@ -838,11 +808,16 @@ function newEducationalProgram() {
 }
 
 function resetModal() {
-    const formEducationalProgram = document.getElementById(
-        "educational-program-form"
-    );
+    document.getElementById("educational-program-form").reset();
+    document.getElementById("educational_program_uid").value = "";
+    resetFormErrors();
 
-    formEducationalProgram.reset();
+    let documentsContainer = document.getElementById("documents-container");
+    showArea(documentsContainer, false);
+
+    document.getElementById("featured_slider_image_path_preview").src =
+        defaultImagePreview;
+
     tomSelectCourses.clear();
     tomSelectCourses.clearOptions();
     tomSelectTags.clear();
@@ -850,31 +825,15 @@ function resetModal() {
     tomSelectCategories.clear();
     tomSelectContactEmails.clear();
 
-    resetFormErrors();
-    document.getElementById("educational_program_uid").value = "";
     document.getElementById("document-list").innerHTML = "";
-    showEnrollingDateArea(false);
+    const enrollingDates = document.getElementById("enrolling-dates-container");
+    showArea(enrollingDates, false);
 
+    let criteriaArea = document.getElementById("criteria-area");
+    showArea(criteriaArea, false);
+
+    document.getElementById("payment-terms-list").innerHTML = "";
     updatePaymentMode("SINGLE_PAYMENT");
-}
-
-/**
- * Elimina programas formativos seleccionados.
- * Realiza una petición DELETE al servidor y actualiza la tabla si tiene éxito.
- */
-async function deleteEducationalPrograms() {
-    const params = {
-        url: "/learning_objects/educational_programs/delete_educational_programs",
-        method: "DELETE",
-        body: { uids: selectedEducationalPrograms.map((e) => e.uid) },
-        toast: true,
-        loader: true,
-        stringify: true,
-    };
-
-    apiFetch(params).then(() => {
-        reloadTable;
-    });
 }
 
 function reloadTable() {
@@ -1571,6 +1530,12 @@ function updatePaymentMode(paymentMode) {
         document
             .getElementById("label-container-cost")
             .classList.remove("label-center");
+
+        // Si no hay términos de pago, añadimos uno por defecto
+        if (!document.querySelector(".payment-term")) {
+            addPaymentTerm();
+        }
+
         document.getElementById("payment_terms").classList.remove("hidden");
     }
 }
@@ -1621,7 +1586,6 @@ function getPaymentTerms() {
 }
 
 function loadPaymentTerms(paymentTerms) {
-    console.log(paymentTerms);
     // Limpiar el contenedor de términos de pago
     const containerPaymentTerms = document.getElementById("payment-terms-list");
     containerPaymentTerms.innerHTML = "";
@@ -1648,4 +1612,9 @@ function loadPaymentTerms(paymentTerms) {
             paymentTerm.cost;
         containerPaymentTerms.appendChild(paymentTermTemplate);
     });
+}
+
+function showArea(area, show) {
+    if (show) area.classList.remove("hidden");
+    else area.classList.add("hidden");
 }

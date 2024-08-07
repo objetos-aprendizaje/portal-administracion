@@ -181,7 +181,12 @@ export function showFormErrors(errors) {
                         choicesContainer.nextSibling
                     );
                 }
-            } else if (
+            }
+            else if(element.classList.contains("coloris")) {
+                const contentContainer = element.closest(".content-container");
+                if (contentContainer) contentContainer.append(errorContainer)
+            }
+            else if (
                 ["INPUT", "TEXTAREA", "SELECT", 'DIV'].includes(element.tagName)
             ) {
                 element.classList.add("error-border");

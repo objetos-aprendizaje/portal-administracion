@@ -194,7 +194,7 @@ class ManagementCoursesController extends BaseController
                     $this->sendNotificationCourseAcceptedPublicationToKafka($course);
                 }
 
-                dispatch(new SendChangeStatusCourseNotification($course->toArray()));
+                dispatch(new SendChangeStatusCourseNotification($course));
             }
 
             LogsController::createLog('Cambio de estado de cursos', 'Cursos', auth()->user()->uid);
@@ -481,12 +481,6 @@ class ManagementCoursesController extends BaseController
             return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $errors], 422);
         }
 
-        // Validamos si ha marcado el carrusel grande o pequeño y si hay más de 10 cursos destacados
-        $validationCarrousel = $this->validationCourseCarrousels($request);
-        if (!$validationCarrousel->result) {
-            return response()->json(['message' => $validationCarrousel->message], 422);
-        }
-
         $action = $request->input('action');
         $belongsEducationalProgram = $request->input('belongs_to_educational_program');
 
@@ -677,6 +671,8 @@ class ManagementCoursesController extends BaseController
             'cost' => 'nullable|numeric',
             'featured_big_carrousel_title' => 'required_if:featured_big_carrousel,1',
             'featured_big_carrousel_description' => 'required_if:featured_big_carrousel,1',
+            'featured_big_carrousel_image_path' => 'required_if:featured_big_carrousel,1',
+            'featured_slider_color_font' => 'required_if:featured_big_carrousel,1',
             'center_uid' => 'required|string',
             'evaluation_criteria' => 'required_if:validate_student_registrations,1',
             'calification_type' => 'required|string',
@@ -720,8 +716,9 @@ class ManagementCoursesController extends BaseController
             'featured_big_carrousel_title' => 'required_if:featured_big_carrousel,1',
             'featured_big_carrousel_description' => 'required_if:featured_big_carrousel,1',
             'featured_big_carrousel_image_path' => 'required_if:featured_big_carrousel,1',
+            'featured_slider_color_font' => 'required_if:featured_big_carrousel,1',
             'lms_system_uid' => 'required_with:lms_url',
-            'call_uid' => 'required_if'
+            'call_uid' => 'required'
         ];
 
         if (app('general_options')['operation_by_calls']) {
@@ -854,40 +851,6 @@ class ManagementCoursesController extends BaseController
         else $rules['call_uid'] = 'nullable|string';
     }
 
-    private function validationCourseCarrousels($request)
-    {
-        $featured_big_carrousel = $request->input('featured_big_carrousel');
-
-        if ($featured_big_carrousel) {
-            // Comprobamos el número de cursos con el carrusel grande activado
-            $countCoursesFeaturedBigCarrousel = CoursesModel::where('featured_big_carrousel', 1)->count();
-            if ($countCoursesFeaturedBigCarrousel > 9) {
-                return (object) [
-                    "result" => false,
-                    "message" => "Ya hay destacados más de 10 cursos en el carrousel grande"
-                ];
-            }
-        }
-
-        $featured_small_carrousel = $request->input('featured_small_carrousel');
-
-        if ($featured_small_carrousel) {
-            // Comprobamos el número de cursos con el carrusel pequeño activado
-            $countCoursesFeaturedSmallCarrousel = CoursesModel::where('featured_small_carrousel', 1)->count();
-
-            if ($countCoursesFeaturedSmallCarrousel > 9) {
-                return (object) [
-                    "result" => false,
-                    "message" => "Ya hay destacados más de 10 cursos en el carrousel pequeño"
-                ];
-            }
-        }
-
-        return (object) [
-            "result" => true
-        ];
-    }
-
     private function statusCourseBelongsEducationalProgram($action, $course_bd)
     {
         $statuses = CourseStatusesModel::whereIn('code', [
@@ -965,7 +928,7 @@ class ManagementCoursesController extends BaseController
         $fields = [
             "inscription_start_date", "inscription_finish_date", "realization_start_date", "realization_finish_date", "min_required_students",
             "presentation_video_url", "lms_url", "lms_system_uid", "cost", "featured_big_carrousel", "featured_big_carrousel_title", "featured_big_carrousel_description",
-            "featured_slider_color", "featured_small_carrousel", "validate_student_registrations", "evaluation_criteria"
+            "featured_slider_color", "featured_small_carrousel", "validate_student_registrations", "evaluation_criteria", "call_uid"
         ];
 
         $conditionalFields = ["enrolling_start_date", "enrolling_finish_date"];
@@ -1340,50 +1303,6 @@ class ManagementCoursesController extends BaseController
         return response()->json($students, 200);
     }
 
-    public function saveCourseStudents(Request $request, $course_uid)
-    {
-
-        $students = $request->input('students');
-        $students = json_decode($students, true);
-
-        DB::transaction(function () use ($students, $course_uid) {
-            foreach ($students as $student) {
-
-                $user = CoursesUsersModel::where('user_uid', $student)->where('course_uid', $course_uid)->first();
-
-                if ($user == null) {
-
-                    //Rol de estudiante
-                    $student_rol = UserRolesModel::where("code", "STUDENT")->first();
-
-                    $courseUser = new CoursesUsersModel();
-                    $courseUser->uid = generate_uuid();
-                    $courseUser->course_uid = $course_uid;
-                    $courseUser->user_uid = $student;
-                    $courseUser->user_rol_uid = $student_rol['uid'];
-                    $courseUser->save();
-                }
-            }
-
-            LogsController::createLog('Estudiantes añadidos al curso', 'Cursos', auth()->user()->uid);
-        });
-
-        return response()->json(['message' => 'Añadidos estudiantes al curso'], 200);
-    }
-
-    public function deleteCourseStudents(Request $request)
-    {
-
-        $uids = $request->input('uids');
-
-        DB::transaction(function () use ($uids) {
-            CoursesUsersModel::destroy($uids);
-            LogsController::createLog('Eliminar estudiantes de cursos', 'Cursos', auth()->user()->uid);
-        });
-
-        return response()->json(['message' => 'Estudiantes del curso eliminados correctamente'], 200);
-    }
-
     public function approveInscriptionsCourse(Request $request)
     {
 
@@ -1425,38 +1344,102 @@ class ManagementCoursesController extends BaseController
         return response()->json(['message' => 'Inscripciones rechazadas correctamente'], 200);
     }
 
-    public function duplicateCourse($course_uid)
+    public function duplicateCourse(Request $request)
     {
-        $course_bd = CoursesModel::where('uid', $course_uid)->with(['teachers', 'tags', 'categories'])->first();
+        $courseUid = $request->input('course_uid');
+        $courseBd = $this->getCourseInfo($courseUid);
 
-        if (!$course_bd) return response()->json(['message' => 'El curso no existe'], 406);
+        $newCourse = $this->getQueryCopyBaseCourse($courseBd);
+        $introductionStatus = CourseStatusesModel::where('code', 'INTRODUCTION')->first();
+        $newCourse->course_status_uid = $introductionStatus->uid;
+        $newCourse->title = $newCourse->title . " (copia)";
 
-        $new_course = $course_bd->replicate();
-        $new_course->title = $new_course->title . " (copia)";
-
-        $introduction_status = CourseStatusesModel::where('code', 'INTRODUCTION')->first();
-        $new_course->course_status_uid = $introduction_status->uid;
-
-        DB::transaction(function () use ($new_course, $course_bd) {
-            $new_course_uid = generate_uuid();
-            $new_course->uid = $new_course_uid;
-            $new_course->identifier = $this->generateCourseIdentifier();
-            $new_course->creator_user_uid = Auth::user()['uid'];
-            $new_course->save();
-
-            $this->duplicateCourseTeachers($course_bd, $new_course_uid, $new_course);
-
-            $this->duplicateCourseTags($course_bd, $new_course_uid);
-
-            $this->duplicateCourseCategories($course_bd, $new_course_uid, $new_course);
-
-            LogsController::createLog('Duplicación de curso', 'Cursos', auth()->user()->uid);
-        }, 5);
+        DB::transaction(function () use ($newCourse, $courseBd) {
+            $newCourse->save();
+            $this->copyAuxiliarTablesCourse($courseBd, $newCourse);
+        });
 
         return response()->json(['message' => 'Curso duplicado correctamente'], 200);
     }
 
-    private function duplicateCourseTeachers($course_bd, $new_course_uid, $new_course)
+    public function editionCourse(Request $request)
+    {
+        $courseUid = $request->input('course_uid');
+        $courseBd = $this->getCourseInfo($courseUid);
+
+        $this->validateNewEdition($courseBd);
+
+        $newCourse = $this->getQueryCopyBaseCourse($courseBd);
+
+        $introductionStatus = CourseStatusesModel::where('code', 'INTRODUCTION')->first();
+        $newCourse->course_status_uid = $introductionStatus->uid;
+
+        $newCourse = $this->getQueryCopyBaseCourse($courseBd);
+        $newCourse->title = "{$courseBd->title} (nueva edición)";
+        $newCourse->course_origin_uid = $courseUid;
+
+        DB::transaction(function () use ($newCourse, $courseBd) {
+            $newCourse->save();
+            $this->copyAuxiliarTablesCourse($courseBd, $newCourse);
+        });
+
+        return response()->json(['message' => 'Edición creada correctamente'], 200);
+    }
+
+    private function duplicateStructure($courseBd, $newCourse)
+    {
+        foreach ($courseBd->blocks as $block) {
+            $newBlock = $block->replicate();
+            $newBlock->course_uid = $newCourse->uid;
+            $newBlock->uid = generate_uuid();
+            $newBlock->push();
+
+            // Asignamos las competencias al bloque
+            $competences_to_sync = [];
+            foreach ($block->competences as $competence) {
+                $competences_to_sync[$competence->uid] = [
+                    'uid' => generate_uuid(),
+                    'course_block_uid' => $newBlock->uid,
+                    'competence_uid' => $competence->uid
+                ];
+            }
+
+            $newBlock->competences()->sync($competences_to_sync);
+
+            $learningResultsToSync = [];
+            foreach ($block->learningResults as $learningResult) {
+                $learningResultsToSync[$learningResult->uid] = [
+                    'uid' => generate_uuid(),
+                    'course_block_uid' => $newBlock->uid,
+                    'learning_result_uid' => $learningResult->uid
+                ];
+            }
+            $newBlock->learningResults()->sync($learningResultsToSync);
+
+            foreach ($block->subBlocks as $subBlock) {
+                $newSubBlock = $subBlock->replicate();
+                $newSubBlock->uid = generate_uuid();
+                $newSubBlock->block_uid = $newBlock->uid;
+                $newSubBlock->push();
+
+                foreach ($subBlock->elements as $element) {
+                    $newElement = $element->replicate();
+                    $newElement->uid = generate_uuid();
+                    $newElement->subblock_uid = $newSubBlock->uid;
+                    $newElement->push();
+
+                    foreach ($element->subElements as $subElement) {
+                        $newSubElement = $subElement->replicate();
+                        $newSubElement->uid = generate_uuid();
+                        $newSubElement->element_uid = $newElement->uid;
+                        $newSubElement->push();
+                    }
+                }
+            }
+        }
+    }
+
+    private function duplicateCourseTeachers($course_bd, $new_course)
     {
         $teachers = $course_bd->teachers->pluck('uid')->toArray();
         $teachers_to_sync = [];
@@ -1464,21 +1447,21 @@ class ManagementCoursesController extends BaseController
         foreach ($teachers as $teacher_uid) {
             $teachers_to_sync[$teacher_uid] = [
                 'uid' => generate_uuid(),
-                'course_uid' => $new_course_uid,
+                'course_uid' => $new_course->uid,
                 'user_uid' => $teacher_uid
             ];
         }
         $new_course->teachers()->sync($teachers_to_sync);
     }
 
-    private function duplicateCourseTags($course_bd, $new_course_uid)
+    private function duplicateCourseTags($course_bd, $new_course)
     {
         $tags = $course_bd->tags->pluck('tag')->toArray();
         $tags_to_add = [];
         foreach ($tags as $tag) {
             $tags_to_add[] = [
                 'uid' => generate_uuid(),
-                'course_uid' => $new_course_uid,
+                'course_uid' => $new_course->uid,
                 'tag' => $tag,
                 'created_at' => date('Y-m-d H:i:s')
             ];
@@ -1486,139 +1469,75 @@ class ManagementCoursesController extends BaseController
         CoursesTagsModel::insert($tags_to_add);
     }
 
-    private function duplicateCourseCategories($course_bd, $new_course_uid, $new_course)
+    private function duplicateCourseCategories($course_bd, $new_course)
     {
         $categories = $course_bd->categories->pluck('uid')->toArray();
         $categories_to_sync = [];
         foreach ($categories as $category_uid) {
             $categories_to_sync[] = [
                 'uid' => generate_uuid(),
-                'course_uid' => $new_course_uid,
+                'course_uid' => $new_course->uid,
                 'category_uid' => $category_uid
             ];
         }
         $new_course->categories()->sync($categories_to_sync);
     }
 
-    public function newEditionCourse($course_uid)
+    private function getCourseInfo($courseUid)
     {
-        $course_bd = CoursesModel::where('uid', $course_uid)->with([
+        $course = CoursesModel::where('uid', $courseUid)->with([
             'teachers',
             'tags',
             'categories',
             'blocks',
+            'courseDocuments',
             'blocks.competences',
             'blocks.subBlocks',
             'blocks.subBlocks.elements',
             'blocks.subBlocks.elements.subElements',
         ])->first();
 
-        if (!$course_bd) return response()->json(['message' => 'El curso no existe'], 406);
+        return $course;
+    }
 
-        $new_course = $course_bd->replicate();
-        $new_course->title = $new_course->title . " (nueva edición)";
-        $new_course->creator_user_uid = Auth::user()['uid'];
-        $introduction_status = CourseStatusesModel::where('code', 'INTRODUCTION')->first();
-        $new_course->course_status_uid = $introduction_status->uid;
+    private function getQueryCopyBaseCourse($courseOrigin)
+    {
+        $newCourse = $courseOrigin->replicate();
+        $newCourse->uid = generate_uuid();
+        $newCourse->identifier = $this->generateCourseIdentifier();
+        $newCourse->creator_user_uid = Auth::user()['uid'];
 
-        return DB::transaction(function () use ($new_course, $course_bd, $course_uid) {
-            $new_course_uid = generate_uuid();
-            $new_course->uid = $new_course_uid;
-            $new_course->identifier = $this->generateCourseIdentifier();
-            $new_course->course_origin_uid = $course_uid;
-            $new_course->creator_user_uid = Auth::user()['uid'];
-            $new_course->save();
+        return $newCourse;
+    }
 
-            $teachers = $course_bd->teachers->pluck('uid')->toArray();
-            $teachers_to_sync = [];
+    private function copyAuxiliarTablesCourse($courseBd, $newCourse)
+    {
+        $this->duplicateCourseTeachers($courseBd, $newCourse);
+        $this->duplicateCourseTags($courseBd, $newCourse);
+        $this->duplicateCourseCategories($courseBd, $newCourse);
+        $this->duplicateStructure($courseBd, $newCourse);
+        $this->duplicateCourseDocuments($courseBd, $newCourse);
+    }
 
-            foreach ($teachers as $teacher_uid) {
-                $teachers_to_sync[$teacher_uid] = [
-                    'uid' => generate_uuid(),
-                    'course_uid' => $new_course_uid,
-                    'user_uid' => $teacher_uid
-                ];
-            }
-            $new_course->teachers()->sync($teachers_to_sync);
+    private function duplicateCourseDocuments($courseBd, $newCourse)
+    {
+        $documents = $courseBd->courseDocuments;
 
-            $tags = $course_bd->tags->pluck('tag')->toArray();
-            $tags_to_add = [];
-            foreach ($tags as $tag) {
-                $tags_to_add[] = [
-                    'uid' => generate_uuid(),
-                    'course_uid' => $new_course_uid,
-                    'tag' => $tag,
-                    'created_at' => date('Y-m-d H:i:s')
-                ];
-            }
-            CoursesTagsModel::insert($tags_to_add);
+        foreach($documents as $document) {
+            $newDocument = $document->replicate();
+            $newDocument->uid = generate_uuid();
+            $newDocument->course_uid = $newCourse->uid;
+            $newDocument->save();
+        }
+    }
 
-            $categories = $course_bd->categories->pluck('uid')->toArray();
-            $categories_to_sync = [];
-            foreach ($categories as $category_uid) {
-                $categories_to_sync[] = [
-                    'uid' => generate_uuid(),
-                    'course_uid' => $new_course_uid,
-                    'category_uid' => $category_uid
-                ];
-            }
-            $new_course->categories()->sync($categories_to_sync);
-
-            // Estructura del curso
-            foreach ($course_bd->blocks as $block) {
-                $newBlock = $block->replicate();
-                $newBlock->course_uid = $new_course_uid;
-                $newBlock->uid = generate_uuid();
-                $newBlock->push();
-
-                // Asignamos las competencias al bloque
-                $competences_to_sync = [];
-                foreach ($block->competences as $competence) {
-                    $competences_to_sync[$competence->uid] = [
-                        'uid' => generate_uuid(),
-                        'course_block_uid' => $newBlock->uid,
-                        'competence_uid' => $competence->uid
-                    ];
-                }
-
-                $newBlock->competences()->sync($competences_to_sync);
-
-                $learningResultsToSync = [];
-                foreach ($block->learningResults as $learningResult) {
-                    $learningResultsToSync[$learningResult->uid] = [
-                        'uid' => generate_uuid(),
-                        'course_block_uid' => $newBlock->uid,
-                        'learning_result_uid' => $learningResult->uid
-                    ];
-                }
-                $newBlock->learningResults()->sync($learningResultsToSync);
-
-                foreach ($block->subBlocks as $subBlock) {
-                    $newSubBlock = $subBlock->replicate();
-                    $newSubBlock->uid = generate_uuid();
-                    $newSubBlock->block_uid = $newBlock->uid;
-                    $newSubBlock->push();
-
-                    foreach ($subBlock->elements as $element) {
-                        $newElement = $element->replicate();
-                        $newElement->uid = generate_uuid();
-                        $newElement->subblock_uid = $newSubBlock->uid;
-                        $newElement->push();
-
-                        foreach ($element->subElements as $subElement) {
-                            $newSubElement = $subElement->replicate();
-                            $newSubElement->uid = generate_uuid();
-                            $newSubElement->element_uid = $newElement->uid;
-                            $newSubElement->push();
-                        }
-                    }
-                }
-            }
-
-            LogsController::createLog('Nueva edición de curso', 'Cursos', auth()->user()->uid);
-
-            return response()->json(['message' => 'Nueva edición del curso creada correctamente'], 200);
-        }, 5);
+    // Se comprueba que no hubiera creada una edición de ese curso
+    private function validateNewEdition($course_bd)
+    {
+        $existingEdition = CoursesModel::where('course_origin_uid', $course_bd->uid)->where('course_status_uid', '!=', 'RETIRED')->exists();
+        if ($existingEdition) {
+            throw new OperationFailedException('Ya existe una edición activa de este curso');
+        }
     }
 
     private function syncStructure($structure, $course_uid)

@@ -205,10 +205,6 @@ async function submitGeneralConfigurationForm() {
         "learning_objects_appraisals",
         document.getElementById("learning_objects_appraisals").checked ? 1 : 0
     );
-    formData.append(
-        "payment_gateway",
-        document.getElementById("payment_gateway").checked ? 1 : 0
-    );
 
     const params = {
         url: "/administration/save_general_options",

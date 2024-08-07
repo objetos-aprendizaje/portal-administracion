@@ -47,3 +47,7 @@ node_modules
 /public/hot
 .phpunit.result.cache
 .env.testing
+
+
+/tests/reports
+.DS_Store
