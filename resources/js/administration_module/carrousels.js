@@ -9,53 +9,70 @@ function initHandlers() {
         .getElementById("big-courses-carrousels-form")
         .addEventListener("submit", submitBigCoursesCarrouselsForm);
 
-        document
+    document
         .getElementById("small-courses-carrousels-form")
         .addEventListener("submit", submitSmallCoursesCarrouselsForm);
 }
 
 function submitBigCoursesCarrouselsForm() {
-
     const values = getInputsChecksForm(this);
 
     const params = {
         url: "/administration/carrousels/save_big_carrousels_approvals",
         method: "POST",
         body: {
-            courses: values
+            courses: values.courses,
+            educationalPrograms: values.educational_programs,
         },
         toast: true,
         loader: true,
-        stringify: true
+        stringify: true,
     };
 
     apiFetch(params);
 }
 
 function submitSmallCoursesCarrouselsForm() {
-
     const values = getInputsChecksForm(this);
 
     const params = {
         url: "/administration/carrousels/save_small_carrousels_approvals",
         method: "POST",
         body: {
-            courses: values
+            courses: values.courses,
+            educationalPrograms: values.educational_programs,
         },
         toast: true,
         loader: true,
-        stringify: true
+        stringify: true,
     };
 
     apiFetch(params);
 }
 
 function getInputsChecksForm(form) {
-    var checkedInputs = Array.from(
-        form.querySelectorAll("input[type=checkbox]:checked")
+    var allCoursesInputs = Array.from(
+        form.querySelectorAll("input[type=checkbox][data-type='course']")
     );
 
-    var values = checkedInputs.map((input) => input.name);
+    var allEducationalProgramsInputs = Array.from(
+        form.querySelectorAll(
+            "input[type=checkbox][data-type='educational_program']"
+        )
+    );
 
-    return values;
+    var courses = allCoursesInputs.map((input) => ({
+        uid: input.name,
+        checked: input.checked,
+    }));
+
+    var educationalPrograms = allEducationalProgramsInputs.map((input) => ({
+        uid: input.name,
+        checked: input.checked,
+    }));
+
+    return {
+        courses: courses,
+        educational_programs: educationalPrograms,
+    };
 }

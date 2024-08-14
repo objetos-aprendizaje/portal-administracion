@@ -14,7 +14,7 @@ class EducationalProgramsModel extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'name', 'description', 'educational_program_type_uid', 'call_uid',
+        'uid', 'name', 'description', 'educational_program_type_uid', 'call_uid',
         'inscription_start_date', 'inscription_finish_date', 'image_path',
         'enrolling_start_date', 'enrolling_finish_date', 'min_required_students', 'validate_student_registrations',
         'evaluation_criteria', 'cost', 'featured_slider', 'featured_slider_title', 'featured_slider_description',

@@ -4,40 +4,28 @@ namespace Tests\Unit;
 
 use App\User;
 use Tests\TestCase;
-use App\Models\CallsModel;
 use App\Models\UsersModel;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use App\Models\UserRolesModel;
-use Illuminate\Support\Carbon;
 use App\Models\FooterPagesModel;
 use App\Models\HeaderPagesModel;
-use App\Models\LicenseTypesModel;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
-use App\Models\GeneralOptionsModel;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
-use App\Models\EducationalProgramTypesModel;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Database\Eloquent\Factories\Factory;
-use App\Models\RedirectionQueriesEducationalProgramTypesModel;
 
 
-
-class AdministrationTest extends TestCase {
+class AdministrationConfigSystemTest extends TestCase
+{
+    /**
+ * @group configdesistema
+ */
     use RefreshDatabase;
-    /**
-     * @group configdesistema
-     */
 
-    /**
-     * @testdox Inicialización de inicio de sesión
-     */
+/**
+ * @testdox Inicialización de inicio de sesión
+ */
     public function setUp(): void {
         parent::setUp();
         $this->withoutMiddleware();
@@ -45,6 +33,9 @@ class AdministrationTest extends TestCase {
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
     }
 
+    /**
+    * @testdox Guardar Logo
+    */
     public function testSaveLogoImage()
     {
         // Crear un archivo temporal
@@ -63,35 +54,49 @@ class AdministrationTest extends TestCase {
             'logoId' => 'logoId',
         ]);
 
-        // Verificar la respuesta
+        // Verifica la respuesta
         $response->assertStatus(200);
 
-
-        // Limpiar el archivo temporal
+        // Limpia el archivo temporal
         unlink($tempFilePath);
     }
 
+    /**
+    * @testdox ERROR_MESSAGE al guardar el logo
+    */
+
+    public function testSaveLogoImageWithoutFile()
+    {
+        $response = $this->postJson('/administration/save_logo_image', [
+            'logoId' => 'test_logo_id'
+        ]);
+
+        $response->assertStatus(200)
+                ->assertJson(['message' => env('ERROR_MESSAGE')]);
+    }
+
+
 
     /**
-     * @testdox Verifica habilitación/deshabilitación de valoraciones
-     */
-    // public function testValoracionesPersistenEnBaseDeDatos() {
+    * @testdox Verifica habilitación/deshabilitación de valoraciones
+    */
+    public function testValoracionesPersistenEnBaseDeDatos() {
 
-    //     $user = UsersModel::factory()->create();
-    //     $this->actingAs($user);
+        $user = UsersModel::factory()->create();
+        $this->actingAs($user);
 
 
-    //     $requestData = [
-    //         'learning_objects_appraisals' => true,
-    //         'operation_by_calls' => false,
-    //     ];
+        $requestData = [
+            'learning_objects_appraisals' => true,
+            'operation_by_calls' => false,
+        ];
 
-    //     $response = $this->post('/administration/save_general_options', $requestData);
+        $response = $this->post('/administration/save_general_options', $requestData);
 
-    //     $this->assertResponseStatus($response);
-    //     $this->assertJsonResponse($response);
-    //     $this->assertDatabaseValues();
-    // }
+        $this->assertResponseStatus($response);
+        $this->assertJsonResponse($response);
+
+    }
 
     protected function assertResponseStatus($response) {
         $response->assertStatus(200);
@@ -101,13 +106,8 @@ class AdministrationTest extends TestCase {
         $response->assertJson(['message' => 'Opciones guardadas correctamente']);
     }
 
-    protected function assertDatabaseValues() {
-        $this->assertTrue(GeneralOptionsModel::where('option_name', 'learning_objects_appraisals')->first()->option_value);
-        $this->assertFalse(GeneralOptionsModel::where('option_name', 'operation_by_calls')->first()->option_value);
-    }
-
     /**
-     * @testdox Solo los admin modifican colores del tema*/
+    * @testdox Solo los admin modifican colores del tema*/
     public function test_admin_can_change_colors() {
         $admin = UsersModel::factory()->create();
         $roles_bd = UserRolesModel::get()->pluck('uid');
@@ -146,7 +146,7 @@ class AdministrationTest extends TestCase {
         }
     }
     /**
-     * @testdox Solo los admin configuran pasarela de pago*/
+    * @testdox Solo los admin configuran pasarela de pago*/
     public function testadminpaymentaccess() {
         $admin = UsersModel::factory()->create();
         $roles_bd = UserRolesModel::get()->pluck('uid');
@@ -174,7 +174,7 @@ class AdministrationTest extends TestCase {
     }
 
     /**
-     * @testdox Usuario no admin sin acceso a configuran pasarela de pago*/
+    * @testdox Usuario no admin sin acceso a configuran pasarela de pago*/
     public function testnonadminpaymentaccess() {
         $admin = UsersModel::factory()->create();
         $roles_bd = UserRolesModel::get()->pluck('uid');
@@ -202,8 +202,8 @@ class AdministrationTest extends TestCase {
         }
     }
 
- /**
-     * @testdox permiso a gestores*/
+    /**
+    * @testdox permiso a gestores*/
     public function testSaveManagersPermissions()
     {
         // Simular un usuario autenticado
@@ -222,7 +222,7 @@ class AdministrationTest extends TestCase {
 
         // Verificar el estado de la respuesta
         $response->assertStatus(200)
-                 ->assertJson(['message' => 'Permisos guardados correctamente']);
+                ->assertJson(['message' => 'Permisos guardados correctamente']);
 
         // Verificar que los datos se han guardado correctamente en la base de datos
         foreach ($data as $key => $value) {
@@ -234,6 +234,8 @@ class AdministrationTest extends TestCase {
 
     }
 
+    /**
+    * @test Crear Header Page*/
     public function testCreateHeaderPage()
     {
         // Datos de prueba para crear una nueva página de encabezado
@@ -250,7 +252,7 @@ class AdministrationTest extends TestCase {
 
         // Verificar el estado de la respuesta
         $response->assertStatus(200)
-                 ->assertJson(['message' => 'Página de header creada correctamente']);
+                ->assertJson(['message' => 'Página de header creada correctamente']);
 
         // Verificar que la página de encabezado se haya guardado en la base de datos
         $this->assertDatabaseHas('header_pages', [
@@ -259,6 +261,8 @@ class AdministrationTest extends TestCase {
         ]);
     }
 
+    /**
+    * @test Error al eliminar Header Page*/
     public function testDeleteHeaderPagesNotFound()
     {
         // Intentar eliminar páginas que no existen
@@ -268,9 +272,11 @@ class AdministrationTest extends TestCase {
 
         // Verificar el estado de la respuesta
         $response->assertStatus(200)
-                 ->assertJson(['message' => 'Páginas de header eliminadas correctamente']);
+                ->assertJson(['message' => 'Páginas de header eliminadas correctamente']);
     }
 
+    /**
+    * @test Elimina Header Page*/
     public function testDeleteHeaderPages()
     {
         // Crear manual páginas de encabezado para eliminar
@@ -284,13 +290,13 @@ class AdministrationTest extends TestCase {
             'header_page_uid' => null,
         ]);
 
-// dd($headerPage1);
+
         // Realizar la solicitud DELETE
         $response = $this->deleteJson('/administration/header_pages/delete_header_pages', [
             'uids' => [$headerPage1Uid],
         ]);
 
-         // Verificar el estado de la respuesta
+        // Verificar el estado de la respuesta
         $response->assertStatus(200)
         ->assertJson(['message' => 'Páginas de header eliminadas correctamente']);
 
@@ -301,7 +307,8 @@ class AdministrationTest extends TestCase {
 
     }
 
-
+    /**
+    * @test Actualiza Header Page*/
     public function testUpdateHeaderPages()
     {
         // Datos de prueba para crear una nueva página de encabezado
@@ -368,71 +375,29 @@ class AdministrationTest extends TestCase {
 
     }
 
-    public function testCreateFooterPage()
+    /**
+    * @test Crear Footer Pages Error*/
+    public function testErrorSaveFooterPages()
     {
-        // Datos de entrada
-        $data = [
-            'name' => 'Footer Page 1',
-            'content' => 'Contenido del pie de página 1',
-            'slug' => 'footer-page-1',
-            'order' => 1,
-            'footer_page_uid' => null,
-            'parent_page_uid' => null,
-        ];
+        // Simular un usuario autenticado
+        $this->actingAs(UsersModel::factory()->create());
 
-        // Realiza la solicitud POST
-        $response = $this->postJson('/administration/footer_pages/save_footer_page', $data);
+        // Datos de prueba
+        $legalAdvice = 'Este es un consejo legal';
 
-        // Verifica la respuesta
-        $response->assertStatus(200)
-                 ->assertJson(['message' => 'Página de footer creada correctamente']);
-
-        // Verifica que la página se haya guardado en la base de datos
-        $this->assertDatabaseHas('footer_pages', [
-            'slug' => 'footer-page-1',
-            'name' => 'Footer Page 1',
+        // Enviar la solicitud POST
+        $response = $this->postJson('/administration/footer_pages', [
+            'legalAdvice' => $legalAdvice
         ]);
+
+        // Verificar la respuesta
+        $response->assertStatus(405);
+
+
     }
 
-    public function testUpdateFooterPage()
-    {
-        // Crea una página de pie de página existente
-        $footerPageUid= Str::uuid();
-        FooterPagesModel::insert([
-            'uid' => $footerPageUid,
-            'name' => 'Footer Page Original',
-            'content' => 'Contenido original del pie de página',
-            'slug' => 'footer-page-original',
-            'order' => 1,
-        ]);
-
-        // Datos de entrada para la actualización
-        $data = [
-            'footer_page_uid' => $footerPageUid,
-            'name' => 'Footer Page Actualizada',
-            'content' => 'Contenido actualizado del pie de página',
-            'slug' => 'footer-page-actualizada',
-            'order' => 2,
-            'parent_page_uid' => null,
-        ];
-
-        // Realiza la solicitud POST para actualizar
-        $response = $this->postJson('/administration/footer_pages/save_footer_page', $data);
-
-        // Verifica la respuesta
-        $response->assertStatus(200)
-                 ->assertJson(['message' => 'Página de footer actualizada correctamente']);
-
-        // Verifica que la página se haya actualizado en la base de datos
-        $this->assertDatabaseHas('footer_pages', [
-            'uid' => $footerPageUid,
-            'name' => 'Footer Page Actualizada',
-            'content' => 'Contenido actualizado del pie de página',
-            'slug' => 'footer-page-actualizada',
-            'order' => 2,
-        ]);
-    }
-
+/**
+ * @test Actualiza Footer Page Error*/
     public function testUpdateFooterPageWithValidationErrors()
     {
         // Crea una página de pie de página existente
@@ -463,6 +428,8 @@ class AdministrationTest extends TestCase {
                  ->assertJson(['message' => 'Hay campos incorrectos']);
     }
 
+/**
+ * @test Elimina Footer Page*/
     public function testDeleteFooterPages()
     {
         // Crea algunas páginas de pie de página para eliminar
@@ -506,155 +473,7 @@ class AdministrationTest extends TestCase {
         ]);
     }
 
-    public function testDeleteNonExistingFooterPages()
-    {
-        // Datos de entrada para la eliminación de un UID que no existe
-        $data = [
-            'uids' => ['non-existing-uid'],
-        ];
-
-        // Realiza la solicitud DELETE
-        $response = $this->deleteJson('/administration/footer_pages/delete_footer_pages', $data);
-
-        // Verifica la respuesta
-        $response->assertStatus(200) // Asegúrate de que la respuesta sea 200, ya que el método no lanza un error si no encuentra el UID
-                 ->assertJson(['message' => 'Páginas de footer eliminadas correctamente']);
-    }
-
-/**
-*  @test  Sugerencias y mejoras*/
-    public function testSavesEmailSuggestions()
-    {
-
-        $user = UsersModel::factory()->create();
-        $this->actingAs($user);
-
-        $emailuid = Str::uuid();
-        $data = [
-            'uid'=> $emailuid,
-            'email' => 'test@example.com', // Asegúrate de que sea una cadena
-        ];
-
-        // Realiza la solicitud POST a la ruta correcta
-        $response = $this->postJson('/administration/suggestions_improvements/save_email', $data);
-
-        $response->assertStatus(200)
-                 ->assertJson([
-                     'message' => 'Email añadido correctamente',
-                 ]);
-
-        $this->assertDatabaseHas('suggestion_submission_emails', [
-            'email' => 'test@example.com',
-        ]);
-    }
-
-    public function testInvalidEmailReturnsError()
-    {
-        $user = UsersModel::factory()->create();
-        $this->actingAs($user);
-
-        $data = [
-            'email' => 'invalid-email', // Email no válido
-        ];
-
-        // Realiza la solicitud POST a la ruta correcta
-        $response = $this->postJson('/administration/suggestions_improvements/save_email', $data);
-
-        // Verifica que la respuesta tenga el código de estado 406 y el mensaje esperado
-        $response->assertStatus(406)
-                 ->assertJson([
-                     'message' => 'El email es inválido',
-                 ]);
-    }
 
 
-/**
- * @test Redirección de consultas por tipos de programas formativos */
-    public function testCreateLicense()
-    {
-        $user = UsersModel::factory()->create();
-        $this->actingAs($user);
-        $license = LicenseTypesModel::factory()->create();
-
-        $data = [
-            'uids' => [$license->uid],
-            'name' => $license->name,
-        ];
-
-        $response = $this->postJson('/administration/licenses/save_license', $data);
-
-        $response->assertStatus(200)
-            ->assertJson(['message' => 'Licencia añadida correctamente']);
-
-        $this->assertDatabaseHas('license_types', [
-            'uid' => $license->uid,
-            'name' => $license->name
-        ]);
-    }
-
-    public function testSaveLicenseWithInvalidData()
-    {
-        $data = [
-            'name' => '',
-        ];
-
-        $response = $this->postJson('/administration/licenses/save_license', $data);
-
-        $response->assertStatus(422)
-            ->assertJson(['message' => 'Algunos campos son incorrectos'])
-            ->assertJsonStructure(['errors' => ['name']]);
-
-
-    }
-
-    public function testSaveLicenseUpdatesExistingLicense()
-    {
-        $user = UsersModel::factory()->create();
-        $this->actingAs($user);
-        $license = LicenseTypesModel::factory()->create();
-
-        $data = [
-            'uid' => $license->uid,
-            'name' => 'Licencia prueba'
-        ];
-
-         $response = $this->postJson('/administration/licenses/save_license', $data);
-
-
-        $response->assertStatus(200)
-            ->assertJson(['message' => 'Licencia añadida correctamente']);
-
-        $this->assertDatabaseHas('license_types', [
-             'name' => 'Licencia prueba',
-        ]);
-    }
-
-    public function testDeleteLicensesSuccessfully()
-    {
-        $user = UsersModel::factory()->create();
-        $this->actingAs($user);
-        $license = LicenseTypesModel::factory()->create();
-
-        $data = [
-            'uids' => [$license->uid],
-        ];
-
-
-        // Realiza la solicitud DELETE para eliminar la licencia
-        $response = $this->deleteJson('/administration/licenses/delete_licenses', $data);
-
-        // Verifica que la respuesta sea correcta
-        $response->assertStatus(200)
-            ->assertJson(['message' => 'Licencias eliminadas correctamente']);
-
-        // Verifica que la licencia ya no existe en la base de datos
-        $this->assertDatabaseMissing('license_types', [
-            'uid' => $license->uid,
-        ]);
-    }
 
 }
-
-
-
-

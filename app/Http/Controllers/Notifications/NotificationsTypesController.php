@@ -108,6 +108,7 @@ class NotificationsTypesController extends BaseController
 
         $notification_type_uid = $request->get('notification_type_uid');
         $name = $request->get('name');
+        $description = $request->get('description');
 
         if ($notification_type_uid) {
             $notification_type = NotificationsTypesModel::find($notification_type_uid);
@@ -119,6 +120,7 @@ class NotificationsTypesController extends BaseController
         }
 
         $notification_type->name = $name;
+        $notification_type->description = $description;
 
         $notification_type->save();
 

@@ -118,13 +118,14 @@ class CategoriesController extends BaseController
             'name.max' => 'El nombre no puede tener más de 255 caracteres.',
             'parent_category_uid.exists' => 'La categoría padre seleccionada no existe.',
             'color.required' => 'Debes especificar un color',
-            'image_path.required' => 'Debes añadir una imagen'
+            'image_path.required' => 'Debes añadir una imagen',
+            'description.max' => 'La descripción no puede tener más de 256 caracteres.'
         ];
 
 
         $rules = [
             'name' => 'required|max:255',
-            'description' => 'nullable',
+            'description' => 'nullable|max:256',
             'parent_category_uid' => 'nullable|exists:categories,uid',
             'color' => 'required',
             'image_path' => 'max:6144'

@@ -7,7 +7,6 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
 use App\Models\GeneralOptionsModel;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Logs\LogsController;
 use App\Models\Saml2TenantsModel;
@@ -46,13 +45,14 @@ class LoginSystemsController extends BaseController
     {
 
         $messages = [
-            'google_client_id.required' => 'El ID de cliente es obligatorio',
-            'google_client_secret.required' => 'La clave secreta es obligatoria',
+            'google_client_id.required_if' => 'El ID de cliente es obligatorio',
+            'google_client_secret.required_if' => 'La clave secreta es obligatoria',
         ];
 
         $validator = Validator::make($request->all(), [
-            'google_client_id' => 'required|string',
-            'google_client_secret' => 'required|string',
+            'google_login_active' => 'required|boolean',
+            'google_client_id' => 'required_if:google_login_active,1',
+            'google_client_secret' => 'required_if:google_login_active,1',
         ], $messages);
 
         $validatorErrors = $validator->errors();
@@ -67,12 +67,10 @@ class LoginSystemsController extends BaseController
             'google_client_secret' => $request->input('google_client_secret'),
         ];
 
-        DB::transaction(function () use ($updateData, $request) {
+        DB::transaction(function () use ($updateData) {
             foreach ($updateData as $key => $value) {
                 GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
             }
-
-            $this->updateCache('parameters_login_systems', $request, ['google_login_active', 'google_client_id', 'google_client_secret']);
 
             LogsController::createLog('Actualización de inicio de sesión en Google', 'Sistemas de inicio de sesión', auth()->user()->uid);
         });
@@ -86,13 +84,13 @@ class LoginSystemsController extends BaseController
     {
 
         $messages = [
-            'facebook_client_id.required' => 'El ID de cliente es obligatorio',
-            'facebook_client_secret.required' => 'La clave secreta es obligatoria',
+            'facebook_client_id.required_if' => 'El ID de cliente es obligatorio',
+            'facebook_client_secret.required_if' => 'La clave secreta es obligatoria',
         ];
 
         $validator = Validator::make($request->all(), [
-            'facebook_client_id' => 'required|string',
-            'facebook_client_secret' => 'required|string',
+            'facebook_client_id' => 'required_if:facebook_login_active,1',
+            'facebook_client_secret' => 'required_if:facebook_login_active,1',
         ], $messages);
 
         $validatorErrors = $validator->errors();
@@ -107,12 +105,10 @@ class LoginSystemsController extends BaseController
             'facebook_client_secret' => $request->input('facebook_client_secret'),
         ];
 
-        DB::transaction(function () use ($updateData, $request) {
+        DB::transaction(function () use ($updateData) {
             foreach ($updateData as $key => $value) {
                 GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
             }
-
-            $this->updateCache('parameters_login_systems', $request, ['facebook_login_active', 'facebook_client_id', 'facebook_client_secret']);
 
             LogsController::createLog('Actualización de inicio de sesión en Facebook', 'Sistemas de inicio de sesión', auth()->user()->uid);
         });
@@ -124,13 +120,13 @@ class LoginSystemsController extends BaseController
     public function submitTwitterForm(Request $request)
     {
         $messages = [
-            'twitter_client_id.required' => 'El ID de cliente es obligatorio',
-            'twitter_client_secret.required' => 'La clave secreta es obligatoria',
+            'twitter_client_id.required_if' => 'El ID de cliente es obligatorio',
+            'twitter_client_secret.required_if' => 'La clave secreta es obligatoria',
         ];
 
         $validator = Validator::make($request->all(), [
-            'twitter_client_id' => 'required|string',
-            'twitter_client_secret' => 'required|string',
+            'twitter_client_id' => 'required_if:twitter_login_active,1',
+            'twitter_client_secret' => 'required_if:twitter_login_active,1',
         ], $messages);
 
         $validatorErrors = $validator->errors();
@@ -145,12 +141,10 @@ class LoginSystemsController extends BaseController
             'twitter_client_secret' => $request->input('twitter_client_secret'),
         ];
 
-        DB::transaction(function () use ($updateData, $request) {
+        DB::transaction(function () use ($updateData) {
             foreach ($updateData as $key => $value) {
                 GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
             }
-
-            $this->updateCache('parameters_login_systems', $request, ['twitter_login_active', 'twitter_client_id', 'twitter_client_secret']);
 
             LogsController::createLog('Actualización de inicio de sesión en Twitter', 'Sistemas de inicio de sesión', auth()->user()->uid);
         });
@@ -161,15 +155,14 @@ class LoginSystemsController extends BaseController
 
     public function submitLinkedinForm(Request $request)
     {
-
         $messages = [
-            'linkedin_client_id.required' => 'El ID de cliente es obligatorio',
-            'linkedin_client_secret.required' => 'La clave secreta es obligatoria',
+            'linkedin_client_id.required_if' => 'El ID de cliente es obligatorio',
+            'linkedin_client_secret.required_if' => 'La clave secreta es obligatoria',
         ];
 
         $validator = Validator::make($request->all(), [
-            'linkedin_client_id' => 'required|string',
-            'linkedin_client_secret' => 'required|string',
+            'linkedin_client_id' => 'required_if:linkedin_login_active,1',
+            'linkedin_client_secret' => 'required_if:linkedin_login_active,1',
         ], $messages);
 
         $validatorErrors = $validator->errors();
@@ -184,12 +177,10 @@ class LoginSystemsController extends BaseController
             'linkedin_client_secret' => $request->input('linkedin_client_secret'),
         ];
 
-        DB::transaction(function () use ($updateData, $request) {
+        DB::transaction(function () use ($updateData) {
             foreach ($updateData as $key => $value) {
                 GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
             }
-
-            $this->updateCache('parameters_login_systems', $request, ['linkedin_login_active', 'linkedin_client_id', 'linkedin_client_secret']);
 
             LogsController::createLog('Actualización de inicio de sesión en Linkedin', 'Sistemas de inicio de sesión', auth()->user()->uid);
         });
@@ -222,16 +213,15 @@ class LoginSystemsController extends BaseController
 
         $active = intval($request->input('cas_login_active'));
 
-        if($active){
+        if ($active) {
             GeneralOptionsModel::where('option_name', 'cas_active')->update(['option_value' => $active]);
-        }else{
+        } else {
             GeneralOptionsModel::where('option_name', 'cas_active')->update(['option_value' => $active]);
         }
 
-
         $cas = Saml2TenantsModel::where('key', 'cas')->first();
 
-        if ($cas){
+        if ($cas) {
 
             DB::transaction(function () use ($cas, $request) {
 
@@ -247,8 +237,7 @@ class LoginSystemsController extends BaseController
                 LogsController::createLog('Actualización de inicio de sesión en CAS', 'Sistemas de inicio de sesión', auth()->user()->uid);
             });
             return response()->json(['message' => 'Login de CAS guardado correctamente']);
-
-        }else{
+        } else {
 
             DB::transaction(function () use ($request) {
                 $uid = generate_uuid();
@@ -268,11 +257,8 @@ class LoginSystemsController extends BaseController
                 LogsController::createLog('Actualización de inicio de sesión en CAS', 'Sistemas de inicio de sesión', auth()->user()->uid);
             });
 
-
-
             return response()->json(['message' => 'Login de CAS guardado correctamente']);
         }
-
     }
 
     public function submitRedirisForm(Request $request)
@@ -301,15 +287,15 @@ class LoginSystemsController extends BaseController
 
         $active = intval($request->input('rediris_login_active'));
 
-        if($active){
+        if ($active) {
             GeneralOptionsModel::where('option_name', 'rediris_active')->update(['option_value' => $active]);
-        }else{
+        } else {
             GeneralOptionsModel::where('option_name', 'rediris_active')->update(['option_value' => $active]);
         }
 
         $rediris = Saml2TenantsModel::where('key', 'rediris')->first();
 
-        if ($rediris){
+        if ($rediris) {
 
             DB::transaction(function () use ($rediris, $request) {
 
@@ -325,8 +311,7 @@ class LoginSystemsController extends BaseController
                 LogsController::createLog('Actualización de inicio de sesión en REDIRIS', 'Sistemas de inicio de sesión', auth()->user()->uid);
             });
             return response()->json(['message' => 'Login de REDIRIS guardado correctamente']);
-
-        }else{
+        } else {
 
             DB::transaction(function () use ($request) {
                 $uid = generate_uuid();
@@ -348,28 +333,5 @@ class LoginSystemsController extends BaseController
 
             return response()->json(['message' => 'Login de REDIRIS guardado correctamente']);
         }
-
-    }
-
-    // Actualiza la caché con los parámetros de inicio de sesión
-    private function updateCache($cacheKey, $request, $fields)
-    {
-        // Obtén el objeto de la caché
-        $parameters = Cache::get($cacheKey);
-
-        // Actualiza las propiedades del objeto
-        foreach ($fields as $field) {
-            $parameters[$field] = $request->input($field);
-        }
-
-        $url = env('FRONT_URL') . '/api/update_login_system';
-        $header = ['API-KEY' => env('API_KEY_FRONT')];
-
-        // Realiza una petición POST a la URL de la api del front para que vacíe la caché de los
-        // sistemas de inicio de sesión
-        guzzle_call($url, null, $header, 'POST');
-
-        // Pone el objeto actualizado de nuevo en la caché
-        Cache::put($cacheKey, $parameters);
     }
 }

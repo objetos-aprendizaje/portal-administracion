@@ -13,4 +13,6 @@ class CourseTypesModel extends Model
 
     protected $keyType = 'string';
 
+    protected $fillable = ['uid', 'name'];
+
 }

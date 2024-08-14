@@ -182,7 +182,12 @@
                     <div class="content-container">
                         <div class="matadata-container" id="metadata-container"></div>
 
-                        <div class="flex justify-end">
+                        <div class="flex justify-between">
+                            <div>
+                                @if ($general_options['openai_key'])
+                                    <a href="javascript:void(0)" id="generate-metadata-btn">Generar metadatos</a>
+                                @endif
+                            </div>
                             <div>
                                 <button type="button" class="btn-icon" id="btn-add-metadata-pair">
                                     {{ e_heroicon('plus', 'outline') }}
@@ -221,8 +226,9 @@
                 </div>
 
                 <h3>Competencias y resultados de aprendizaje</h3>
-                <input type="hidden" id="tree-competences-learning-results-disabled"/>
+                <input type="hidden" id="tree-competences-learning-results-disabled" />
                 <div class="p-[15px] border" id="tree-competences-learning-results"></div>
+                <p>Has seleccionado <span id="learning-results-counter">0</span> resultados de aprendizaje de 100</p>
 
                 <input type="hidden" id="educational_resource_uid" name="educational_resource_uid"
                     value="" />
@@ -251,8 +257,7 @@
                 placeholder="Nombre" />
         </div>
         <div class="flex-auto">
-            <input type="text" class="poa-input" name="metadata_value[]" id=""
-                placeholder="Valor" />
+            <input type="text" class="poa-input" name="metadata_value[]" id="" placeholder="Valor" />
         </div>
         <div class="flex-none">
             <button type="button" class="btn-icon btn-remove-metadata-pair">

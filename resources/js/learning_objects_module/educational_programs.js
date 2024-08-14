@@ -159,6 +159,20 @@ function initHandlers() {
         });
 
     document
+        .getElementById("delete-students-btn")
+        .addEventListener("click", function () {
+            if (selectedEducationalProgramStudents.length) {
+                showModalConfirmation(
+                    "Eliminación de inscripciones",
+                    "¿Estás seguro de que quieres eliminar las inscripciones de los estudiantes seleccionados?"
+                ).then((result) => {
+                    if (!result) return;
+                    deleteInscriptionsStudentsEducationalProgram();
+                });
+            }
+        });
+
+    document
         .getElementById("enroll-students-csv-btn")
         .addEventListener("click", function () {
             showModal("enroll-educational-program-csv-modal");
@@ -776,6 +790,11 @@ function submitFormEducationalProgram() {
     const paymentTerms = getPaymentTerms();
     formData.append("payment_terms", JSON.stringify(paymentTerms));
 
+    const featuredImagePath = document.getElementById(
+        "featured_slider_image_path"
+    ).files[0];
+    formData.append("featured_slider_image_path", featuredImagePath ?? "");
+
     const params = {
         url: "/learning_objects/educational_programs/save_educational_program",
         method: "POST",
@@ -811,6 +830,12 @@ function resetModal() {
     document.getElementById("educational-program-form").reset();
     document.getElementById("educational_program_uid").value = "";
     resetFormErrors();
+
+    const colorisSelector = document.getElementById(
+        "featured_slider_color_font"
+    );
+    colorisSelector.value = "";
+    changeColorColoris(colorisSelector, "");
 
     let documentsContainer = document.getElementById("documents-container");
     showArea(documentsContainer, false);
@@ -927,7 +952,7 @@ function previsualizeSlider() {
     let file = fileInput.files[0];
 
     let formData = new FormData();
-    formData.append("image", file);
+    formData.append("image", file ?? "");
     formData.append(
         "title",
         document.getElementById("featured_slider_title").value
@@ -939,6 +964,12 @@ function previsualizeSlider() {
     formData.append(
         "color",
         document.getElementById("featured_slider_color_font").value
+    );
+
+    formData.append("learning_object_type", "educational_program");
+    formData.append(
+        "educational_program_uid",
+        document.getElementById("educational_program_uid").value
     );
 
     const params = {
@@ -1382,6 +1413,27 @@ function changeStatusStudentsEducationalProgram(status) {
         url: "/learning_objects/educational_program/change_status_inscriptions_educational_program",
         method: "POST",
         body: { uids: uidsStudentsInscriptions, status: status },
+        toast: true,
+        loader: true,
+        stringify: true,
+    };
+
+    apiFetch(params)
+        .then(() => {
+            reloadStudentsTable();
+        })
+        .catch((data) => {
+            showFormErrors(data.errors);
+        });
+}
+
+function deleteInscriptionsStudentsEducationalProgram() {
+    const uidsStudentsInscriptions = getUidsStudentsInscriptions();
+
+    const params = {
+        url: "/learning_objects/educational_program/delete_inscriptions_educational_program",
+        method: "delete",
+        body: { uids: uidsStudentsInscriptions },
         toast: true,
         loader: true,
         stringify: true,

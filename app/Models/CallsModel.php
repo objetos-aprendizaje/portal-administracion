@@ -12,7 +12,7 @@ class CallsModel extends Model
     protected $primaryKey = 'uid';
 
     protected $fillable = [
-        'name', 'description', 'attachment_path', 'start_date', 'end_date'
+        'uid', 'name', 'description', 'attachment_path', 'start_date', 'end_date'
     ];
 
     protected $keyType = 'string';

@@ -71,7 +71,8 @@ export default defineConfig({
                 "resources/js/trees.js",
                 "resources/js/administration_module/certidigital_configuration.js",
                 "resources/js/administration_module/licenses.js",
-                "resources/js/administration_module/tooltip_texts.js"
+                "resources/js/administration_module/tooltip_texts.js",
+                "resources/js/learning_objects_module/trees.js"
             ],
             refresh: true,
         }),

@@ -9,8 +9,19 @@ class CourseStatusesModel extends Model
 {
     use HasFactory;
     protected $table = 'course_statuses';
-    protected $primaryKey = 'uid';
+    protected $primaryKey = 'uid';   
 
     protected $keyType = 'string';
+
+    protected $casts = [
+        'uid' => 'string',
+    ];
+
+    protected $fillable = [       
+        'name',
+        'code',
+        'created_at',
+        'updated_at',
+    ];
 
 }

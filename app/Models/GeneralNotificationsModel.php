@@ -14,7 +14,7 @@ class GeneralNotificationsModel extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'title', 'description', 'start_date', 'end_date', 'type', 'notification_type_uid'
+        'uid', 'title', 'description', 'start_date', 'end_date', 'type', 'notification_type_uid'
     ];
 
     protected $casts = [

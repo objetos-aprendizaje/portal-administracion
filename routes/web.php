@@ -56,7 +56,8 @@ use App\Http\Controllers\Webhooks\FileController;
 use App\Http\Controllers\CertificateAccessController;
 use App\Http\Controllers\LearningObjects\LearningObjetsController;
 use App\Http\Controllers\Administration\TooltipTextsController;
-use App\Http\Controllers\Api\DepartmentsController;
+use App\Http\Controllers\Api\DepartmentsApiController;
+use App\Http\Controllers\Administration\DepartmentsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -147,6 +148,7 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/administration/centers/get_centers', [CentersController::class, 'getCenters']);
         Route::delete('/administration/centers/delete_centers', [CentersController::class, 'deleteCenters']);
 
+        Route::get('/administration/licenses', [LicensesController::class, 'index'])->name('licenses');
         Route::post('/administration/licenses/save_license', [LicensesController::class, 'saveLicense']);
         Route::get('/administration/licenses/get_license/{license_uid}', [LicensesController::class, 'getLicense']);
         Route::get('/administration/licenses/get_licenses', [LicensesController::class, 'getLicenses']);
@@ -176,6 +178,14 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/administration/tooltip_texts/get_tooltip_texts', [TooltipTextsController::class, 'getTooltipTexts']);
         Route::delete('/administration/tooltip_texts/delete_tooltip_texts', [TooltipTextsController::class, 'deleteTooltipTexts']);
         Route::get('/administration/tooltip_texts/get_all_tooltip_texts', [TooltipTextsController::class, 'getAllTooltipTexts']);
+
+
+        Route::get('/administration/departments', [DepartmentsController::class, 'index'])->name('departments');
+        Route::post('/administration/departments/save_department', [DepartmentsController::class, 'saveDepartment']);
+        Route::get('/administration/departments/get_department/{license_uid}', [DepartmentsController::class, 'getDepartment']);
+        Route::get('/administration/departments/get_departments', [DepartmentsController::class, 'getDepartments']);
+        Route::delete('/administration/departments/delete_departments', [DepartmentsController::class, 'deleteDepartments']);
+
 
     });
 
@@ -284,6 +294,7 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/learning_objects/courses/get_course_students/{course_uid}', [ManagementCoursesController::class, 'getCourseStudents']);
         Route::post('/learning_objects/courses/approve_inscriptions_course', [ManagementCoursesController::class, 'approveInscriptionsCourse']);
         Route::post('/learning_objects/courses/reject_inscriptions_course', [ManagementCoursesController::class, 'rejectInscriptionsCourse']);
+        Route::post('/learning_objects/courses/delete_inscriptions_course', [ManagementCoursesController::class, 'deleteInscriptionsCourse']);
         Route::post('/learning_objects/courses/duplicate_course/{course_uid}', [ManagementCoursesController::class, 'duplicateCourse']);
         Route::post('/learning_objects/courses/create_edition', [ManagementCoursesController::class, 'editionCourse']);
 
@@ -294,7 +305,7 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/learning_objects/educational_resources_per_users/get_notifications/{user_uid}', [EducationalResourcesPerUsersController::class, 'getEducationalResourcesPerUser']);
 
         Route::post('/learning_objects/generate_tags', [LearningObjetsController::class, 'generateTags']);
-
+        Route::post('/learning_objects/generate_metadata', [LearningObjetsController::class, 'generateMetadata']);
 
         Route::get('/learning_objects/educational_programs', [EducationalProgramsController::class, 'index'])->name('learning-objects-educational-programs');
         Route::get('/learning_objects/courses', [ManagementCoursesController::class, 'index'])->name('courses');
@@ -324,6 +335,7 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::post('/learning_objects/educational_program/change_status_inscriptions_educational_program', [EducationalProgramsController::class, 'changeStatusInscriptionsEducationalProgram']);
         Route::post('/learning_objects/educational_program/edition_or_duplicate_educational_program', [EducationalProgramsController::class, 'editionOrDuplicateEducationalProgram']);
         Route::post('/learning_objects/educational_program/download_document_student', [EducationalProgramsController::class, 'downloadDocumentStudent']);
+        Route::delete('/learning_objects/educational_program/delete_inscriptions_educational_program', [EducationalProgramsController::class, 'deleteInscriptionsEducationalProgram']);
 
         Route::post('/learning_objects/educational_program/new_edition_educational_program', [EducationalProgramsController::class, 'newEditionEducationalProgram']);
 
@@ -359,7 +371,6 @@ Route::middleware(['combined.auth'])->group(function () {
     Route::get('/users/list_users/get_user/{user_uid}', [ListUsersController::class, 'getUser']);
     Route::post('/users/list_users/save_user', [ListUsersController::class, 'saveUser']);
     Route::post('/users/list_users/export_users', [ListUsersController::class, 'exportUsers']);
-    Route::get('/users/list_users/get_departments', [ListUsersController::class, 'getDepartments']);
 
     Route::delete('/users/list_users/delete_users', [ListUsersController::class, 'deleteUsers']);
 
@@ -419,7 +430,6 @@ Route::post('/reset_password/send', [ResetPasswordController::class, 'resetPassw
 Route::middleware(['api_auth'])->group(function () {
     Route::post('/webhook/update_user_image', [UpdateUserImageController::class, 'index']);
     Route::post('/api/upload_file', [FileController::class, 'uploadFile']);
-    Route::post('/api/download_file', [FileController::class, 'downloadFile']);
 
     Route::post('/api/register_user', [RegisterUserController::class, 'index']);
     Route::post('/api/confirm_course_creation', [ConfirmCourseCreationController::class, 'index']);
@@ -427,10 +437,10 @@ Route::middleware(['api_auth'])->group(function () {
     Route::post('/api/update_user/{email_user}', [UpdateUserController::class, 'index']);
     Route::get('/api/get_course/{course_lms_uid}', [GetCourseController::class, 'index']);
 
-    Route::post('/api/departments/add', [DepartmentsController::class, 'addDepartment']);
-    Route::get('/api/departments/get', [DepartmentsController::class, 'getDepartments']);
-    Route::put('/api/departments/update/{department_uid}', [DepartmentsController::class, 'updateDepartment']);
-    Route::delete('/api/departments/delete/{department_uid}', [DepartmentsController::class, 'deleteDepartment']);
+    Route::post('/api/departments/add', [DepartmentsApiController::class, 'addDepartment']);
+    Route::get('/api/departments/get', [DepartmentsApiController::class, 'getDepartments']);
+    Route::put('/api/departments/update/{department_uid}', [DepartmentsApiController::class, 'updateDepartment']);
+    Route::delete('/api/departments/delete/{department_uid}', [DepartmentsApiController::class, 'deleteDepartment']);
 });
 
 Route::get('/certificate-access', [CertificateAccessController::class, 'index'])->name('certificate-access');
@@ -440,3 +450,4 @@ Route::get('/token_login/{token}', [LoginController::class, 'tokenLogin']);
 Route::get('password/reset/{token}', [ResetPasswordController::class, 'index'])->name('password.reset');
 Route::post('password/reset', [ResetPasswordController::class, 'resetPassword'])->name('password.update');
 
+Route::post('/download_file_token', [FileController::class, 'downloadFileToken']);

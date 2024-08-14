@@ -28,7 +28,6 @@ import { showToast } from "../toast.js";
 const endPointTable = "/users/list_users/get_users";
 let usersTable;
 let tomSelectRoles;
-let tomSelectDepartments;
 
 let selectedUsers = [];
 
@@ -98,8 +97,6 @@ function initHandlers() {
         .addEventListener("click", function () {
             resetFilters();
         });
-
-    tomSelectDepartments = document.getElementById("department_uid")
 }
 
 /**
@@ -128,27 +125,6 @@ function initializeTomSelect() {
                     value: rol.uid,
                     text: rol.name,
                 });
-            });
-        }
-    });
-    fetch("/users/list_users/get_departments", {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-TOKEN": getCsrfToken(),
-        },
-    }).then(async (response) => {
-        const data = await response.json();
-        if (response.status === 200) {
-            const emptyOption = document.createElement('option');
-            emptyOption.value = '';
-            emptyOption.textContent = '';
-            tomSelectDepartments.appendChild(emptyOption);
-            data.forEach(item => {
-                const option = document.createElement('option');
-                option.value = item.uid;
-                option.textContent = item.name;
-                tomSelectDepartments.appendChild(option);
             });
         }
     });
@@ -364,6 +340,7 @@ function fillFormUserModal(user) {
     document.getElementById("email").value = user.email;
     document.getElementById("curriculum").value = user.curriculum;
     document.getElementById("user_uid").value = user.uid;
+    document.getElementById("department_uid").value = user.department_uid ?? "";
 
     if (user.roles.length) {
         user.roles.forEach((rol) => {
@@ -371,12 +348,6 @@ function fillFormUserModal(user) {
         });
     } else {
         tomSelectRoles.clear();
-    }
-
-    if (user.department) {
-            tomSelectDepartments.value = user.department.uid;
-    } else {
-        tomSelectDepartments.value = "";
     }
 
     const imgElement = document.getElementById("photo_path_preview");
@@ -396,8 +367,6 @@ function submitFormUserModal() {
     const formData = new FormData(this);
     const roles = tomSelectRoles.items;
     formData.append("roles", JSON.stringify(roles));
-
-    formData.append("department_uid", tomSelectDepartments.value);
 
     const params = {
         method: "POST",
@@ -424,12 +393,12 @@ function resetModal() {
     const form = document.getElementById("user-form");
     form.reset();
     resetFormErrors("user-form");
+    document.getElementById("department_uid").value = "";
 
     const imgElement = document.getElementById("photo_path_preview");
     imgElement.src = defaultImagePreview;
 
     tomSelectRoles.clear();
-    tomSelectDepartments.value = '';
 
     document.getElementById("user_uid").value = "";
     document.getElementById("image-name").innerText =

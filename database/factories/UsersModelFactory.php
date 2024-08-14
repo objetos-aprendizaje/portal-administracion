@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use Illuminate\Support\Str;
+use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,9 +20,13 @@ class UsersModelFactory extends Factory
     {
         return [
             'uid' => Str::uuid(),
-            'first_name' => fake()->name(),
+            'first_name' => $this->faker->firstName,
+            'last_name' => $this->faker->lastName,
             'email' => fake()->unique()->safeEmail(),
             'password' => '$2y$10$vu2dWbPxPtGQeEVyjNiQtu0H.4zWzCPgJkuqXSPgHMWxhOAbhyTFC', // 1234
+            'created_at' => Carbon::now()->format('Y-m-d\TH:i'),
+            'updated_at' => Carbon::now()->format('Y-m-d\TH:i'),
+
 
         ];
     }

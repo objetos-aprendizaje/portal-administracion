@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use Illuminate\Support\Str;
+use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,9 +20,9 @@ class NotificationsTypesModelFactory extends Factory
     {
         return [
             'uid' => Str::uuid(),
-            'name' => $this->faker->name(),
-            'created_at' => now(),
-            'updated_at' => now(),
+            'name' => $this->faker->word,
+            'created_at' => Carbon::now()->format('Y-m-d\TH:i'),
+            'updated_at' => Carbon::now()->format('Y-m-d\TH:i'),
         ];
     }
 }

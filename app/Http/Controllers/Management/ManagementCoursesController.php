@@ -29,14 +29,12 @@ use App\Models\CoursesTagsModel;
 use Illuminate\Support\Facades\DB;
 
 use App\Models\CourseStatusesModel;
-use App\Models\CoursesUsersModel;
 use App\Models\EducationalProgramsModel;
 use App\Models\ElementsModel;
 use App\Models\GeneralOptionsModel;
 use App\Models\LmsSystemsModel;
 use App\Models\SubblocksModel;
 use App\Models\SubelementsModel;
-use App\Models\UserRolesModel;
 use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\Validator;
@@ -46,6 +44,7 @@ use League\Csv\Reader;
 
 use App\Rules\NifNie;
 use App\Services\KafkaService;
+use DateTime;
 
 class ManagementCoursesController extends BaseController
 {
@@ -671,7 +670,15 @@ class ManagementCoursesController extends BaseController
             'cost' => 'nullable|numeric',
             'featured_big_carrousel_title' => 'required_if:featured_big_carrousel,1',
             'featured_big_carrousel_description' => 'required_if:featured_big_carrousel,1',
-            'featured_big_carrousel_image_path' => 'required_if:featured_big_carrousel,1',
+            'featured_big_carrousel_image_path' => [
+                function ($attribute, $value, $fail) use ($request) {
+                    $featured_big_carrousel = $request->input('featured_big_carrousel');
+                    $courseUid = $request->input('course_uid');
+                    if ($featured_big_carrousel && !$courseUid && !$value) {
+                        $fail('Debes subir una imagen destacada para el slider');
+                    }
+                },
+            ],
             'featured_slider_color_font' => 'required_if:featured_big_carrousel,1',
             'center_uid' => 'required|string',
             'evaluation_criteria' => 'required_if:validate_student_registrations,1',
@@ -772,6 +779,7 @@ class ManagementCoursesController extends BaseController
             'center_uid' => 'Debes especificar un centro',
             'featured_big_carrousel_title.required_if' => 'Debes especificar un título',
             'featured_big_carrousel_description.required_if' => 'Debes especificar una descripción',
+            'featured_slider_color_font.required_if' => 'Debes especificar un color para la fuente',
             'evaluation_criteria.required_if' => 'Debes especificar unos criterios de evaluación si activas la validación de estudiantes',
             'realization_start_date.after_or_equal' => 'La fecha de inicio de realización no puede ser anterior a la fecha de fin de inscripción.',
             'realization_finish_date.after_or_equal' => 'La fecha de finalización de realización no puede ser anterior a la fecha de inicio de realización.',
@@ -782,6 +790,7 @@ class ManagementCoursesController extends BaseController
             'enrolling_start_date.after_or_equal' => 'La fecha de inicio de matriculación no puede ser anterior a la de fin de inscripción.',
             'enrolling_finish_date.after_or_equal' => 'La fecha de fin de matriculación no puede ser anterior a la de inicio de matriculación.',
             'featured_big_carrousel_image_path.required_if' => 'Debes seleccionar una imagen para el carrusel grande',
+            'featured_slider_color_font.required_if' => 'Debes especificar un color de fuente para el carrousel'
         ];
 
         return $messages;
@@ -824,14 +833,31 @@ class ManagementCoursesController extends BaseController
 
         if (!count($paymentTerms)) return "Debes especificar al menos un plazo de pago";
 
+        $previousFinishDate = null;
+
         foreach ($paymentTerms as $paymentTerm) {
+            if (!$paymentTerm["cost"]) return "Debes especificar un coste para cada plazo de pago";
             if ($paymentTerm['cost'] <= 0) return "El coste de los plazos de pago no puede ser negativo";
-            else if (!$paymentTerm['name']) return "Debes especificar un nombre para el plazo de pago";
+            if (!$paymentTerm['name']) return "Debes especificar un nombre para el plazo de pago";
 
             // Comprobamos si le falta algún campo
             foreach ($fields as $field) {
-                if (!array_key_exists($field, $paymentTerm)) return false;
+                if (!array_key_exists($field, $paymentTerm)) return "Falta el campo $field en uno de los plazos de pago";
             }
+
+            // Convertimos las fechas a objetos DateTime para compararlas
+            $startDate = new DateTime($paymentTerm['start_date']);
+            $finishDate = new DateTime($paymentTerm['finish_date']);
+
+            if ($previousFinishDate && $startDate <= $previousFinishDate) {
+                return "La fecha de inicio de un plazo de pago debe ser posterior a la fecha de finalización del plazo de pago anterior";
+            }
+
+            if ($startDate > $finishDate) {
+                return "La fecha de inicio de un plazo de pago no puede ser posterior a la fecha de finalización";
+            }
+
+            $previousFinishDate = $finishDate;
         }
 
         return true;
@@ -1344,6 +1370,15 @@ class ManagementCoursesController extends BaseController
         return response()->json(['message' => 'Inscripciones rechazadas correctamente'], 200);
     }
 
+    public function deleteInscriptionsCourse(Request $request)
+    {
+        $selectedCourseStudents = $request->input('uids');
+
+        CoursesStudentsModel::destroy($selectedCourseStudents);
+
+        return response()->json(['message' => 'Inscripciones eliminadas correctamente'], 200);
+    }
+
     public function duplicateCourse(Request $request)
     {
         $courseUid = $request->input('course_uid');
@@ -1523,7 +1558,7 @@ class ManagementCoursesController extends BaseController
     {
         $documents = $courseBd->courseDocuments;
 
-        foreach($documents as $document) {
+        foreach ($documents as $document) {
             $newDocument = $document->replicate();
             $newDocument->uid = generate_uuid();
             $newDocument->course_uid = $newCourse->uid;

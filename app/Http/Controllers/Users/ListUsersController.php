@@ -24,6 +24,8 @@ class ListUsersController extends BaseController
     public function index()
     {
 
+        $departments = DepartmentsModel::get();
+
         return view(
             "users.list_users.index",
             [
@@ -36,6 +38,7 @@ class ListUsersController extends BaseController
                 "tomselect" => true,
                 "flatpickr" => true,
                 "submenuselected" => "list-users",
+                "departments" => $departments
             ]
         );
     }
@@ -281,9 +284,6 @@ class ListUsersController extends BaseController
         ];
 
         dispatch(new SendEmailJob($user->email, 'Restablecer contraseña', $parameters, 'emails.set_password_new_account'));
-        dispatch(new SendEmailJob('ja.cabello@asesoresnt.com', 'Restablecer contraseña', $parameters, 'emails.set_password_new_account'));
-
-
     }
 
     // Si tiene el rol de estudiante, lo mandamos al front. Si no tiene estudiante lo mandamos al back

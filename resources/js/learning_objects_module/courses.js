@@ -96,32 +96,31 @@ class Trees {
         this.selectedNodes = new Set(selectedNodes);
     }
 
-    // Mapa estático para almacenar instancias
+    // Almacenar instancias
     static instances = new Map();
 
-    // Método estático para crear y almacenar una instancia
+    // Crear y almacenar una instancia
     static storeInstance(order, tree, selectedNodes = []) {
         const instance = new Trees(order, tree, selectedNodes);
-        Trees.instances.set(order, instance); // Corregido: eliminar el tercer argumento
+        Trees.instances.set(order, instance);
         return instance;
     }
 
-    // Método estático para obtener una instancia por su order
+    // Obtener una instancia por su order
     static getInstance(order) {
         return Trees.instances.get(order);
     }
 
-    // Método para agregar un nodo seleccionado
-    addSelectedNode(node) {
-        this.selectedNodes.add(node);
+    // Obtener nodos seleccionados por order
+    static getSelectedNodesByOrder(order) {
+        const instance = Trees.getInstance(order);
+        if (instance) {
+            return instance.getSelectedNodes();
+        }
+        return [];
     }
 
-    // Método para obtener todos los nodos seleccionados
-    getSelectedNodes() {
-        return Array.from(this.selectedNodes);
-    }
-
-    // Método estático para agregar un nodo seleccionado por order
+    // Agregar un nodo seleccionado por order
     static addSelectedNodeByOrder(order, node) {
         const instance = Trees.getInstance(order);
         if (instance) {
@@ -132,25 +131,11 @@ class Trees {
     static addNodesSelectedByOrder(order, nodes) {
         const instance = Trees.getInstance(order);
         if (instance) {
-            nodes.forEach((node) => instance.addSelectedNode(node));
+            instance.addSelectedNodes(nodes);
         }
     }
 
-    // Método estático para obtener nodos seleccionados por order
-    static getSelectedNodesByOrder(order) {
-        const instance = Trees.getInstance(order);
-        if (instance) {
-            return instance.getSelectedNodes();
-        }
-        return []; // Devolver un array vacío si no se encuentra la instancia
-    }
-
-    // Método para eliminar un nodo seleccionado
-    deleteSelectedNode(node) {
-        this.selectedNodes.delete(node);
-    }
-
-    // Método estático para eliminar un nodo seleccionado por order
+    // Eliminar un nodo seleccionado por order
     static deleteSelectedNodeByOrder(order, node) {
         const instance = Trees.getInstance(order);
         if (instance) {
@@ -158,12 +143,50 @@ class Trees {
         }
     }
 
-    // Método estático para eliminar varios nodos seleccionados por order
+    // Eliminar varios nodos seleccionados por order
     static deleteSelectedNodesByOrder(order, nodes) {
         const instance = Trees.getInstance(order);
         if (instance) {
-            nodes.forEach((node) => instance.deleteSelectedNode(node));
+            instance.deleteSelectedNodes(nodes);
         }
+    }
+
+    // Obtiene todos los nodos seleccionados
+    getSelectedNodes() {
+        return Array.from(this.selectedNodes);
+    }
+
+    // Agrega un nodo seleccionado
+    addSelectedNode(node) {
+        this.selectedNodes.add(node);
+        this.updateSelectedNodesLabel();
+    }
+
+    // Agrega varios nodos seleccionados
+    addSelectedNodes(nodes) {
+        nodes.forEach((node) => this.addSelectedNode(node));
+        this.updateSelectedNodesLabel();
+    }
+
+    // Elimina un nodo seleccionado
+    deleteSelectedNode(node) {
+        this.selectedNodes.delete(node);
+        this.updateSelectedNodesLabel;
+    }
+
+    // Elimina varios nodos seleccionados
+    deleteSelectedNodes(nodes) {
+        nodes.forEach((node) => this.deleteSelectedNode(node));
+        this.updateSelectedNodesLabel();
+    }
+
+    // Atualiza la etiqueta de nodos seleccionados
+    updateSelectedNodesLabel() {
+        const counter = document.querySelector(
+            `.block-competences[data-order="${this.order}"] .selected-nodes-count`
+        );
+
+        counter.textContent = this.selectedNodes.size;
     }
 }
 
@@ -484,6 +507,20 @@ function initHandlers() {
         });
 
     document
+        .getElementById("delete-students-btn")
+        .addEventListener("click", function () {
+            if (selectedCourseStudents.length) {
+                showModalConfirmation(
+                    "Eliminación de inscripciones",
+                    "¿Estás seguro de que quieres eliminar las inscripciones de los estudiantes seleccionados?"
+                ).then((result) => {
+                    if (!result) return;
+                    deleteStudentsCourse();
+                });
+            }
+        });
+
+    document
         .getElementById("filter-courses-btn")
         .addEventListener("click", function () {
             showModal("filter-courses-modal");
@@ -642,7 +679,7 @@ function previsualizeSlider() {
     let file = fileInput.files[0];
 
     let formData = new FormData();
-    formData.append("image", file);
+    formData.append("image", file ?? "");
     formData.append(
         "title",
         document.getElementById("featured_big_carrousel_title").value
@@ -655,6 +692,8 @@ function previsualizeSlider() {
         "color",
         document.getElementById("featured_slider_color_font").value
     );
+
+    formData.append("learning_object_type", "course");
 
     formData.append("course_uid", document.getElementById("course_uid").value);
 
@@ -736,6 +775,9 @@ function controlsCompositionCourse() {
         newBlockElement.dataset.order = blockOrder;
 
         newBlockElement.querySelector(".competences-section").dataset.order =
+            blockOrder;
+
+        newBlockElement.querySelector(".block-competences").dataset.order =
             blockOrder;
 
         newBlockElement.querySelector(".search-tree").dataset.order =
@@ -2359,6 +2401,15 @@ function submitFormCourseModal(event) {
     const paymentTerms = getPaymentTerms();
     formData.append("payment_terms", JSON.stringify(paymentTerms));
 
+    // imagen de carrousel
+    const imageBigCarrousel = document.getElementById(
+        "featured_big_carrousel_image_path"
+    ).files[0];
+    formData.append(
+        "featured_big_carrousel_image_path",
+        imageBigCarrousel ?? ""
+    );
+
     resetFormErrors("course-form");
 
     const params = {
@@ -2606,6 +2657,12 @@ function resetModal() {
     document
         .getElementById("enrolling-dates-container")
         .classList.add("hidden");
+
+    const colorisSelector = document.getElementById(
+        "featured_slider_color_font"
+    );
+    colorisSelector.value = "";
+    changeColorColoris(colorisSelector, "");
 
     tomSelectNoCoordinatorsTeachers.clear();
     tomSelectCoordinatorsTeachers.clear();
@@ -2882,6 +2939,28 @@ function rejectStudentsCourse() {
         });
 }
 
+function deleteStudentsCourse() {
+    const uidsStudentsInscriptions = getUidsStudentsInscriptions();
+
+    const params = {
+        url: "/learning_objects/courses/delete_inscriptions_course",
+        method: "POST",
+        body: { uids: uidsStudentsInscriptions },
+        toast: true,
+        loader: true,
+        stringify: true,
+    };
+
+    apiFetch(params)
+        .then(() => {
+            hideModal("change-statuses-courses-modal");
+            reloadStudentsTable();
+        })
+        .catch((data) => {
+            showFormErrors(data.errors);
+        });
+}
+
 function reloadStudentsTable() {
     const endpoint = `${endPointStudentTable}/${selectedCourseUid}`;
     courseStudensTable.replaceData(endpoint);
@@ -2988,6 +3067,9 @@ function loadStructureCourse(blocks) {
 
         // Añade competencias
         blockHtmlElement.querySelector(".competences-section").dataset.order =
+            block.order;
+
+        blockHtmlElement.querySelector(".block-competences").dataset.order =
             block.order;
 
         // Recorre cada sub-bloque en el bloque

@@ -107,6 +107,7 @@ function initializeNotificationTypesTable() {
             width: 60,
         },
         { title: "Nombre", field: "name"},
+        { title: "Descripción", field: "description"},
         {
             title: "",
             field: "actions",
@@ -170,6 +171,7 @@ async function loadNotificationTypeModal(uid) {
 function fillFormNotificationTypeModal(notification_type) {
     document.getElementById("name").value = notification_type.name;
     document.getElementById("notification_type_uid").value = notification_type.uid;
+    document.getElementById("description").value = notification_type.description;
 }
 
 /**
@@ -200,7 +202,7 @@ function resetModal() {
     const form = document.getElementById("notification-type-form");
     form.reset();
     document.getElementById("notification_type_uid").value = "";
-
+    document.getElementById("description").value = "";
     resetFormErrors();
 }
 

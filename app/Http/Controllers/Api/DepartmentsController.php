@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 
-class DepartmentsController extends BaseController
+class DepartmentsApiController extends BaseController
 {
     public function addDepartment(Request $request)
     {

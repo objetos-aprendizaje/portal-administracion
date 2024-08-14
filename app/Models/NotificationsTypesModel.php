@@ -13,4 +13,8 @@ class NotificationsTypesModel extends Model
 
     protected $keyType = 'string';
 
+    protected $fillable = [
+        'uid', 'name', 'description'
+    ];
+
 }
