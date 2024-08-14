@@ -28,6 +28,16 @@
                     </div>
                 </div>
 
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="description">Descripción</label>
+                    </div>
+                    <div class="content-container">
+                        <textarea maxlength="255" placeholder="Notificación de..." rows="5" class="poa-input" id="description"
+                            name="description"></textarea>
+                    </div>
+                </div>
+
                 <input type="hidden" id="notification_type_uid" name="notification_type_uid" value="" />
 
                 <div class="btn-block">

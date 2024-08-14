@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\LearningObjects;
 
+use App\Exceptions\OperationFailedException;
 use App\Models\CategoriesModel;
 use App\Models\EducationalResourceCategoriesModel;
 use Illuminate\Http\Request;
@@ -215,6 +216,14 @@ class EducationalResourcesController extends BaseController
 
     private function validateResource($request)
     {
+
+        // Resultados de aprendizaje
+        $learningResults = $request->input('learning_results');
+        $learningResults = json_decode($learningResults, true);
+        if (count($learningResults) > 100) {
+            throw new OperationFailedException('No se pueden seleccionar más de 100 resultados de aprendizaje');
+        }
+
         $messages = [
             'title.required' => 'El título del recurso es obligatorio',
             'educational_resource_type_uid.required' => 'El tipo de recurso es obligatorio',

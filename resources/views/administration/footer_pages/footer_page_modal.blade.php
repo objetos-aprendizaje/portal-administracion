@@ -59,6 +59,26 @@
                     </div>
                 </div>
 
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="version">Versión <span class="text-danger">*</span></label>
+                    </div>
+                    <div class="content-container">
+                        <input placeholder="1" type="number" id="version" name="version" class="poa-input" />
+                    </div>
+                </div>
+
+                <div class="checkbox mb-2">
+                    <label for="acceptance_required" class="inline-flex relative items-center cursor-pointer">
+                        <input type="checkbox" id="acceptance_required"
+                            name="acceptance_required" class="sr-only peer">
+                        <div
+                            class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
+                        </div>
+                        <div class="checkbox-name">Aceptación requerida</div>
+                    </label>
+                </div>
+
                 <div class="flex justify-center mt-8 gap-4">
 
                     <button type="submit" value="submit" id="submit-button" class="btn btn-primary">

@@ -14,7 +14,7 @@ class EducationalProgramTypesModel extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'name', 'description', 'managers_can_emit_credentials', 'teachers_can_emit_credentials'
+        'uid', 'name', 'description', 'managers_can_emit_credentials', 'teachers_can_emit_credentials'
     ];
 
 }

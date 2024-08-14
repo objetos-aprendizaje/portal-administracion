@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use Illuminate\Support\Str;
+use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -21,8 +22,8 @@ class CourseStatusesModelFactory extends Factory
             'uid' => Str::uuid(),
             'name' => $this->faker->name(),
             'code' => 'INSCRIPTION',
-            'created_at' => now(),
-            'updated_at' => now(),
+            'created_at' => Carbon::now()->format('Y-m-d\TH:i'),
+            'updated_at' => Carbon::now()->format('Y-m-d\TH:i'),
         ];
     }
 

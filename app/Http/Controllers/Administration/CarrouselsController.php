@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Administration;
 
 use App\Exceptions\OperationFailedException;
-use App\Models\CoursesBigCarrouselsApprovalsModel;
 use App\Models\CoursesModel;
-use App\Models\CoursesSmallCarrouselsApprovalsModel;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Logs\LogsController;
+use App\Models\EducationalProgramsModel;
 use App\Models\SlidersPrevisualizationsModel;
 use Illuminate\Support\Facades\Validator;
 
@@ -17,18 +16,33 @@ class CarrouselsController extends BaseController
 {
     public function index()
     {
-        $courses_big_carrousel = CoursesModel::where('featured_big_carrousel', true)
+        $coursesSlider = CoursesModel::where('featured_big_carrousel', true)
+            ->with("status")
             ->whereHas('status', function ($query) {
-                $query->where('code', '=', 'INSCRIPTION');
+                $query->whereIn('code', ['ACCEPTED_PUBLICATION', 'INSCRIPTION']);
             })
-            ->select('uid', 'title')->get();
+            ->get();
 
-        $courses_small_carrousel = CoursesModel::where('featured_small_carrousel', true)->whereHas('status', function ($query) {
-            $query->where('code', '=', 'INSCRIPTION');
-        })->select('uid', 'title')->get();
+        $educationalProgramsSlider = EducationalProgramsModel::where('featured_slider', true)
+            ->with("status")
+            ->whereHas('status', function ($query) {
+                $query->whereIn('code', ['ACCEPTED_PUBLICATION', 'INSCRIPTION']);
+            })
+            ->get();
 
-        $courses_big_carrousel_approved = CoursesBigCarrouselsApprovalsModel::pluck('course_uid')->toArray();
-        $courses_small_carrousel_approved = CoursesSmallCarrouselsApprovalsModel::pluck('course_uid')->toArray();
+        $coursesCarrousel = CoursesModel::where('featured_small_carrousel', true)
+            ->with("status")
+            ->whereHas('status', function ($query) {
+                $query->whereIn('code', ['ACCEPTED_PUBLICATION', 'INSCRIPTION']);
+            })->get();
+
+        $educationalProgramsCarrousel = EducationalProgramsModel::where('featured_main_carrousel_approved', true)
+            ->with("status")
+            ->whereHas('status', function ($query) {
+                $query->whereIn('code', ['ACCEPTED_PUBLICATION', 'INSCRIPTION']);
+            })
+            ->get();
+
 
         return view('administration.carrousels.index', [
             "page_name" => "Slider y carrousel principal",
@@ -36,57 +50,20 @@ class CarrouselsController extends BaseController
             "resources" => [
                 "resources/js/administration_module/carrousels.js"
             ],
-            "courses_big_carrousel" => $courses_big_carrousel,
-            "courses_small_carrousel" => $courses_small_carrousel,
-            "courses_big_carrousel_approved" => $courses_big_carrousel_approved,
-            "courses_small_carrousel_approved" => $courses_small_carrousel_approved,
+            "coursesSlider" => $coursesSlider,
+            "educationalProgramsSlider" => $educationalProgramsSlider,
+            "coursesCarrousel" => $coursesCarrousel,
+            "educationalProgramsCarrousel" => $educationalProgramsCarrousel,
             "submenuselected" => "carrousels",
         ]);
     }
 
-    public function previsualizeSlider(Request $request) {
+    public function previsualizeSlider(Request $request)
+    {
+        $this->validatePrevisualizationSlider($request);
 
-        $messages = [
-            'title.required' => 'Debes especificar un título',
-            'description.required' => 'Debes especificar una descripción',
-            'image.required' => 'Debes adjuntar una imagen',
-            'image.file' => 'Debes adjuntar una imagen válida',
-            'color.required' => 'Debes especificar un color',
-        ];
-
-        $rules = [
-            'title' => 'required',
-            'description' => 'required',
-            'image' => 'required',
-            'color' => 'required',
-        ];
-
-        // Si el curso es nuevo, siempre deberemos requerir una imagen
-        $courseUid = $request->input('course_uid');
-        if(!$courseUid) $rules['image'] = 'required|file';
-
-        $validator = Validator::make($request->all(), $rules, $messages);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $validator->errors()->first()
-            ], 400);
-        }
-
-        $image = $request->file('image');
-
-        // Si no hay imagen, sacamos la que esté en BD
-        if(!$image) {
-            $course = CoursesModel::where('uid', $request->input('course_uid'))->first();
-            $imagePath = $course->featured_big_carrousel_image_path;
-        } else {
-            $imagePath = saveFile($image, "images/previsualizations-sliders", null, true);
-        }
-
-        if(!$imagePath) {
-            throw new OperationFailedException('Debes adjuntar una imagen', 422);
-        }
+        // Si no viene adjunta una imagen, se toma la que está en BD. Si no hay ninguna, se lanza una excepción
+        $imagePath = $this->getPrevisualizationImage($request);
 
         $previsualizationSlider = new SlidersPrevisualizationsModel();
         $previsualizationSlider->uid = generate_uuid();
@@ -101,10 +78,80 @@ class CarrouselsController extends BaseController
         ]);
     }
 
+    private function getPrevisualizationImage($request)
+    {
+        $image = $request->file('image');
+        $learningObjectType = $request->input('learning_object_type');
+
+        if (!$image) {
+            if ($learningObjectType == "course") {
+                $course = CoursesModel::where('uid', $request->input('course_uid'))->first();
+                $imagePath = $course->featured_big_carrousel_image_path;
+            } else if ($learningObjectType == "educational_program") {
+                $educationalProgram = EducationalProgramsModel::where('uid', $request->input('educational_program_uid'))->first();
+                $imagePath = $educationalProgram->featured_slider_image_path;
+            }
+        } else {
+            $imagePath = saveFile($image, "images/previsualizations-sliders", null, true);
+        }
+
+        if (!$imagePath) {
+            throw new OperationFailedException('Debes adjuntar una imagen', 422);
+        }
+
+        return $imagePath;
+    }
+
+    private function validatePrevisualizationSlider($request)
+    {
+
+        $messages = [
+            'title.required' => 'Debes especificar un título',
+            'description.required' => 'Debes especificar una descripción',
+            'image.required' => 'Debes adjuntar una imagen',
+            'image.file' => 'Debes adjuntar una imagen válida',
+            'color.required' => 'Debes especificar un color',
+        ];
+
+        $rules = [
+            'title' => 'required',
+            'description' => 'required',
+            'color' => 'required',
+        ];
+
+        $courseUid = $request->input("course_uid");
+        $educationalProgramUid = $request->input("educational_program_uid");
+
+        if (!$courseUid && !$educationalProgramUid) {
+            $rules['image'] = 'required|file';
+        }
+
+        $validator = Validator::make($request->all(), $rules, $messages);
+
+        if ($validator->fails()) {
+            throw new OperationFailedException($validator->errors()->first());
+        }
+    }
+
     public function save_big_carrousels_approvals(Request $request)
     {
-        DB::transaction(function () use ($request) {
-            $this->save_carrousels_approvals($request, CoursesBigCarrouselsApprovalsModel::class);
+        $courses = $request->input('courses');
+        $educationalPrograms = $request->input('educationalPrograms');
+
+        DB::transaction(function () use ($courses, $educationalPrograms) {
+
+            $coursesToEnableUids = $this->filterArrayLearningObjects($courses, true);
+            CoursesModel::whereIn('uid', $coursesToEnableUids)->update(['featured_big_carrousel_approved' => true]);
+
+            $coursesToDisableUids = $this->filterArrayLearningObjects($courses, false);
+            CoursesModel::whereIn('uid', $coursesToDisableUids)->update(['featured_big_carrousel_approved' => false]);
+
+            $educationalProgramsToEnableUids = $this->filterArrayLearningObjects($educationalPrograms, true);
+            EducationalProgramsModel::whereIn('uid', $educationalProgramsToEnableUids)->update(['featured_slider_approved' => true]);
+
+            $educationalProgramsToDisableUids = $this->filterArrayLearningObjects($educationalPrograms, false);
+            EducationalProgramsModel::whereIn('uid', $educationalProgramsToDisableUids)->update(['featured_slider_approved' => false]);
+
             LogsController::createLog('Actualizar carrouseles grandes', 'Administración carrouseles', auth()->user()->uid);
         });
 
@@ -116,8 +163,24 @@ class CarrouselsController extends BaseController
 
     public function save_small_carrousels_approvals(Request $request)
     {
-        DB::transaction(function () use ($request) {
-            $this->save_carrousels_approvals($request, CoursesSmallCarrouselsApprovalsModel::class);
+        $courses = $request->input('courses');
+        $educationalPrograms = $request->input('educationalPrograms');
+
+
+        DB::transaction(function () use ($courses, $educationalPrograms) {
+
+            $coursesToEnableUids = $this->filterArrayLearningObjects($courses, true);
+            CoursesModel::whereIn('uid', $coursesToEnableUids)->update(['featured_small_carrousel_approved' => true]);
+
+            $coursesToDisableUids = $this->filterArrayLearningObjects($courses, false);
+            CoursesModel::whereIn('uid', $coursesToDisableUids)->update(['featured_small_carrousel_approved' => false]);
+
+            $educationalProgramsToEnableUids = $this->filterArrayLearningObjects($educationalPrograms, true);
+            EducationalProgramsModel::whereIn('uid', $educationalProgramsToEnableUids)->update(['featured_main_carrousel_approved' => true]);
+
+            $educationalProgramsToDisableUids = $this->filterArrayLearningObjects($educationalPrograms, false);
+            EducationalProgramsModel::whereIn('uid', $educationalProgramsToDisableUids)->update(['featured_main_carrousel_approved' => false]);
+
             LogsController::createLog('Actualizar carrouseles pequeños', 'Administración carrouseles', auth()->user()->uid);
         });
 
@@ -127,26 +190,12 @@ class CarrouselsController extends BaseController
         ]);
     }
 
-    private function save_carrousels_approvals(Request $request, $model)
+    private function filterArrayLearningObjects($array, $checked)
     {
-        DB::transaction(function () use ($request, $model) {
-            $newCourseUids = $request->input('courses');
-
-            $currentCourseUids = $model::pluck('course_uid')->toArray();
-
-            $courseUidsToInsert = array_diff($newCourseUids, $currentCourseUids);
-            $courseUidsToDelete = array_diff($currentCourseUids, $newCourseUids);
-
-            $recordsToInsert = array_map(function ($courseUid) {
-                return [
-                    'uid' => (string) generate_uuid(),
-                    'course_uid' => $courseUid
-                ];
-            }, $courseUidsToInsert);
-
-            $model::insert($recordsToInsert);
-
-            $model::whereIn('course_uid', $courseUidsToDelete)->delete();
-        });
+        return array_map(function ($learningObject) {
+            return $learningObject['uid'];
+        }, array_filter($array, function ($learningObject) use ($checked) {
+            return $learningObject['checked'] == $checked;
+        }));
     }
 }

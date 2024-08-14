@@ -650,11 +650,16 @@
 
                                 <textarea class="block-description border-full " placeholder="Descripción del bloque"></textarea>
 
-                                <div class="border-primary border-x p-[15px] rounded-b border-b  max-h-[]"
+                                <div class="block-competences border-primary border-x p-[15px] rounded-b border-b  max-h-[]"
                                     data-order="">
                                     <input type="text" class="search-tree" data-order=""
                                         placeholder="Escribe aquí para filtrar..." />
                                     <div class="competences-section"></div>
+
+                                    <p class="selected-nodes">Has seleccionado <span
+                                            class="selected-nodes-count">0</span> resultados de aprendizaje de
+                                        100</p>
+
                                 </div>
 
                             </div>

@@ -147,6 +147,18 @@ function initializeLegalTextsPagesTable() {
             },
             widthGrow: 2,
         },
+        { title: "Versión", field: "version", widthGrow: 2 },
+        {
+            title: "Aceptación requerida",
+            field: "acceptance_required",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getRow().getData().acceptance_required;
+
+                if (data == 0) return "No";
+                else return "Si";
+            },
+            widthGrow: 2,
+        },
         {
             title: "",
             field: "actions",
@@ -224,6 +236,15 @@ function submitFooterPageForm() {
     const content = tinymceContent.getContent();
 
     formData.append("content", content);
+
+    const checkbox = document.getElementById('acceptance_required');
+
+    if (checkbox.checked){
+        formData.append("acceptance_required", 1);
+    }else{
+        formData.append("acceptance_required", 0);
+    }
+
     const params = {
         url: "/administration/footer_pages/save_footer_page",
         method: "POST",
@@ -244,6 +265,13 @@ function fillFormFooterPage(footerPage) {
     tinymce.get("footer-page-content").setContent(footerPage.content);
     document.getElementById("slug").value = footerPage.slug;
     document.getElementById("order").value = footerPage.order;
+    document.getElementById("version").value = footerPage.version;
+    const checkbox = document.getElementById("acceptance_required");
+    if (footerPage.acceptance_required == 1){
+        checkbox.checked = true;
+    }else{
+        checkbox.checked = false;
+    }
     getAllParentPages(footerPage.footer_page_uid);
 }
 

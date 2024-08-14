@@ -35,6 +35,7 @@
                         <li><a class="{{ isset($submenuselected) && $submenuselected == 'certidigital' ? 'submenu-selected' : '' }}" href="{{ route('certidigital-configuration') }}">API Certidigital</a></li>
                         <li><a class="{{ isset($submenuselected) && $submenuselected == 'licenses' ? 'submenu-selected' : '' }}" href="{{ route('licenses') }}">Licencias</a></li>
                         <li><a class="{{ isset($submenuselected) && $submenuselected == 'administracion-tooltip-texts' ? 'submenu-selected' : '' }}" href="{{ route('tooltip-texts') }}">Textos para tooltips</a></li>
+                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'departments' ? 'submenu-selected' : '' }}" href="{{ route('departments') }}">Departamentos</a></li>
                     </ul>
                 </div>
             </div>

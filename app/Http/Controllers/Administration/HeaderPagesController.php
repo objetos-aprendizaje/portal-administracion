@@ -89,18 +89,6 @@ class HeaderPagesController extends BaseController
     public function saveHeaderPage(Request $request)
     {
 
-        $exist = false;
-        if (HeaderPagesModel::where('slug', $request->input('slug'))->first()){
-            $exist = true;
-        }
-        if (FooterPagesModel::where('slug', $request->input('slug'))->first()){
-            $exist = true;
-        }
-
-        if ($exist){
-            throw new OperationFailedException("El slug intriducido ya existe", 406);
-        }
-
         $messages = [
             'order.numeric' => 'El campo Orden debe ser numérico.',
             'slug.regex' => 'El campo Slug solo puede contener letras minúsculas, números, guiones y guiones bajos.'
@@ -120,14 +108,29 @@ class HeaderPagesController extends BaseController
 
 
         $header_page_uid = $request->input('header_page_uid');
+        $exist = false;
 
         if (!$header_page_uid) {
             $isNew = true;
             $header_page = new HeaderPagesModel();
             $header_page->uid = generate_uuid();
+            if (HeaderPagesModel::where('slug', $request->input('slug'))->first()){
+                $exist = true;
+            }
         } else {
             $isNew = false;
             $header_page = HeaderPagesModel::where('uid', $header_page_uid)->first();
+            if (HeaderPagesModel::where('slug', $request->input('slug'))->where('uid', '!=', $header_page_uid)->first()){
+                $exist = true;
+            }
+        }
+
+        if (FooterPagesModel::where('slug', $request->input('slug'))->first()){
+            $exist = true;
+        }
+
+        if ($exist){
+            throw new OperationFailedException("El slug intriducido ya existe", 406);
         }
 
         $header_page->name = $request->input('name');

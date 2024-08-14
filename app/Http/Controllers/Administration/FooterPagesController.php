@@ -89,18 +89,6 @@ class FooterPagesController extends BaseController
     public function saveFooterPage(Request $request)
     {
 
-        $exist = false;
-        if (HeaderPagesModel::where('slug', $request->input('slug'))->first()){
-            $exist = true;
-        }
-        if (FooterPagesModel::where('slug', $request->input('slug'))->first()){
-            $exist = true;
-        }
-
-        if ($exist){
-            throw new OperationFailedException("El slug intriducido ya existe", 406);
-        }
-
         $messages = [
             'order.numeric' => 'El campo Orden debe ser numérico.',
             'slug.regex' => 'El campo Slug solo puede contener letras minúsculas, números, guiones y guiones bajos.'
@@ -119,21 +107,40 @@ class FooterPagesController extends BaseController
         }
 
         $footer_page_uid = $request->input('footer_page_uid');
+        $exist = false;
 
         if (!$footer_page_uid) {
             $isNew = true;
             $footer_page = new FooterPagesModel();
             $footer_page->uid = generate_uuid();
+            if (FooterPagesModel::where('slug', $request->input('slug'))->first()){
+                $exist = true;
+            }
         } else {
             $isNew = false;
             $footer_page = FooterPagesModel::where('uid', $footer_page_uid)->first();
+
+            if(FooterPagesModel::where('slug', $request->input('slug'))->where('uid', '!=', $footer_page_uid)->first()){
+                $exist = true;
+            }
         }
+
+        if (HeaderPagesModel::where('slug', $request->input('slug'))->first()){
+            $exist = true;
+        }
+
+        if ($exist){
+            throw new OperationFailedException("El slug intriducido ya existe", 406);
+        }
+
 
         $footer_page->name = $request->input('name');
         $footer_page->content = $request->input('content');
         $footer_page->slug = $request->input('slug');
         $footer_page->order = $request->input('order');
         $footer_page->footer_page_uid = $request->input('parent_page_uid');
+        $footer_page->version = $request->input('version');
+        $footer_page->acceptance_required = $request->input('acceptance_required');
         $footer_page->save();
 
         return response()->json(['message' => $isNew ? 'Página de footer creada correctamente' : 'Página de footer actualizada correctamente']);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Webhooks;
 
+use App\Models\BackendFileDownloadTokensModel;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 
@@ -20,15 +21,21 @@ class FileController extends BaseController
 
     }
 
-    public function downloadFile(Request $request)
+    public function downloadFileToken(Request $request)
     {
+        $token = $request->input('token');
+        $backendFileDownloadToken = BackendFileDownloadTokensModel::where('token', $token)->first();
 
-        $file_path = $request->input('file_path');
+        if(!$backendFileDownloadToken) abort(406);
 
-        if(!$file_path) abort(406);
+        $filePath = storage_path($backendFileDownloadToken->file);
+        $fileName = basename($backendFileDownloadToken->file);
 
-        return response()->download(storage_path($file_path));
+        $backendFileDownloadToken->delete();
 
+        return response()->download($filePath, $fileName, [
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"'
+        ]);
     }
 
 }

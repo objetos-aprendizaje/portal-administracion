@@ -78,10 +78,10 @@ class EducationalProgramsController extends BaseController
             ->join("calls", "educational_programs.call_uid", "=", "calls.uid", "left")
             ->join("educational_program_statuses", "educational_programs.educational_program_status_uid", "=", "educational_program_statuses.uid", "left");
 
-            // Si no es gestor, sólo puede ver los programas formativos que ha creado
-            if(!auth()->user()->hasAnyRole(['MANAGEMENT'])) {
-                $query->where('educational_programs.creator_user_uid', auth()->user()->uid);
-            }
+        // Si no es gestor, sólo puede ver los programas formativos que ha creado
+        if (!auth()->user()->hasAnyRole(['MANAGEMENT'])) {
+            $query->where('educational_programs.creator_user_uid', auth()->user()->uid);
+        }
 
         if ($search) {
             $query->where(function ($query) use ($search) {
@@ -344,9 +344,21 @@ class EducationalProgramsController extends BaseController
             'validate_student_registrations' => 'boolean',
             'evaluation_criteria' => 'required_if:validate_student_registrations,1',
             'min_required_students' => 'nullable|integer',
-
             'inscription_start_date' => 'required|date',
             'inscription_finish_date' => 'required|date|after_or_equal:inscription_start_date',
+            'featured_slider_title' => 'required_if:featured_slider,1',
+            'featured_slider_description' => 'required_if:featured_slider,1',
+            'featured_slider_color_font' => 'required_if:featured_slider,1',
+            'featured_slider_image_path' => [
+                function ($attribute, $value, $fail) use ($request) {
+                    $featuredSliderImagePath = $request->input('featured_slider_image_path');
+                    $educationalProgramUid = $request->input('educational_program_uid');
+
+                    if ($featuredSliderImagePath && !$educationalProgramUid && !$value) {
+                        $fail('Debes subir una imagen destacada para el slider');
+                    }
+                },
+            ],
         ];
 
         if (app('general_options')['operation_by_calls']) {
@@ -495,7 +507,7 @@ class EducationalProgramsController extends BaseController
             'name', 'description', 'educational_program_type_uid', 'call_uid',
             'inscription_start_date', 'inscription_finish_date', 'min_required_students', 'validate_student_registrations',
             'featured_slider', 'featured_slider_title', 'featured_slider_description', 'featured_slider_color_font',
-            'featured_slider_image_path', 'featured_main_carrousel', 'realization_start_date', 'realization_finish_date', 'payment_mode'
+            'featured_main_carrousel', 'realization_start_date', 'realization_finish_date', 'payment_mode'
         ];
 
         $conditionalFieldsGeneral = ['cost'];
@@ -589,7 +601,11 @@ class EducationalProgramsController extends BaseController
             'realization_finish_date.required' => 'La fecha de fin de realización es obligatoria',
             'realization_finish_date.after_or_equal' => 'La fecha de fin de realización no puede ser anterior a la fecha de inicio de realización',
             'courses.required' => 'Debes añadir algún curso',
-            'call_uid.required' => 'La convocatoria es obligatoria'
+            'call_uid.required' => 'La convocatoria es obligatoria',
+            'featured_slider_title.required_if' => 'El título del slider es obligatorio si se activa el slider',
+            'featured_slider_description.required_if' => 'La descripción del slider es obligatoria si se activa el slider',
+            'featured_slider_image_path.required_if' => 'La imagen del slider es obligatoria si se activa el slider',
+            'featured_slider_color_font.required_if' => 'El color de la fuente del slider es obligatorio si se activa el slider',
         ];
 
         if ($enrollingDates) {
@@ -624,6 +640,20 @@ class EducationalProgramsController extends BaseController
             'validate_student_registrations' => 'boolean',
             'evaluation_criteria' => 'required_if:validate_student_registrations,1',
             'courses' => 'required|array',
+            'featured_slider_title' => 'required_if:featured_slider,1',
+            'featured_slider_description' => 'required_if:featured_slider,1',
+            'featured_slider_color_font' => 'required_if:featured_slider,1',
+            'lms_system_uid' => 'required_with:lms_url',
+            'featured_slider_image_path' => [
+                function ($attribute, $value, $fail) use ($request) {
+                    $featuredSliderImagePath = $request->input('featured_slider_image_path');
+                    $educationalProgramUid = $request->input('educational_program_uid');
+
+                    if ($featuredSliderImagePath && !$educationalProgramUid && !$value) {
+                        $fail('Debes subir una imagen destacada para el slider');
+                    }
+                },
+            ],
         ];
 
         if (app('general_options')['operation_by_calls']) {
@@ -1188,6 +1218,15 @@ class EducationalProgramsController extends BaseController
         }, 5);
 
         return response()->json(['message' => $action == 'edition' ? 'Edición creada correctamente' : 'Programa duplicado correctamente'], 200);
+    }
+
+    public function deleteInscriptionsEducationalProgram(Request $request)
+    {
+        $uids = $request->input('uids');
+
+        EducationalProgramsStudentsModel::destroy($uids);
+
+        return response()->json(['message' => 'Inscripciones eliminadas correctamente'], 200);
     }
 
     private function duplicateCourse($course_uid, $new_educational_program_uid)

@@ -33,8 +33,8 @@
                         <label for="last_name">Apellidos <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input maxlength="255" placeholder="Pérez Martínez" type="text" id="last_name" name="last_name"
-                            class="poa-input" />
+                        <input maxlength="255" placeholder="Pérez Martínez" type="text" id="last_name"
+                            name="last_name" class="poa-input" />
                     </div>
                 </div>
 
@@ -43,7 +43,8 @@
                         <label for="nif">NIF <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input maxlength="255" placeholder="12345678X" type="text" id="nif" name="nif" class="poa-input" />
+                        <input maxlength="255" placeholder="12345678X" type="text" id="nif" name="nif"
+                            class="poa-input" />
                     </div>
                 </div>
 
@@ -52,8 +53,8 @@
                         <label for="email">Email <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input maxlength="150" placeholder="email@email.com" type="text" id="email" name="email"
-                            class="poa-input" />
+                        <input maxlength="150" placeholder="email@email.com" type="text" id="email"
+                            name="email" class="poa-input" />
                     </div>
                 </div>
 
@@ -68,10 +69,16 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="department_uid">Departamento <span class="text-danger">*</span></label>
+                        <label for="department_uid">Departamento</label>
                     </div>
                     <div class="content-container">
-                        <select id="department_uid" class="poa-select w-full"></select>
+                        <select id="department_uid" name="department_uid" class="poa-select w-full">
+                            <option value="">Selecciona un departamento</option>
+
+                            @foreach ($departments as $department)
+                                <option value="{{ $department->uid }}">{{ $department->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
 
@@ -93,7 +100,8 @@
                         <div class="poa-input-image">
                             <img id="photo_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}" />
 
-                            <span class="dimensions">*Se recomienda imagen con aspecto cuadrado con una resolución mínima de: 400px x 400px.
+                            <span class="dimensions">*Se recomienda imagen con aspecto cuadrado con una resolución
+                                mínima de: 400px x 400px.
                                 Formato: PNG, JPG. Tam. Máx.: 6MB</span>
 
                             <div class="select-file-container">
@@ -119,7 +127,8 @@
                         Guardar {{ e_heroicon('paper-airplane', 'outline') }}</button>
 
                     <button data-modal-id="user-modal" type="button"
-                        class="btn btn-secondary close-modal-btn btn-close-modal-user">Cancelar {{ e_heroicon('x-mark', 'outline') }}</button>
+                        class="btn btn-secondary close-modal-btn btn-close-modal-user">Cancelar
+                        {{ e_heroicon('x-mark', 'outline') }}</button>
                 </div>
 
             </div>

@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Models\LearningResultsModel;
 use Illuminate\Support\Facades\Schema;
+use App\Models\CertificationTypesModel;
+use App\Models\EducationalProgramTypesModel;
 use App\Models\EducationalResourceTypesModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -33,8 +35,8 @@ class CatalogingTest extends TestCase
     }
 
 
-    /**
-     * @testdox Crear Categoría Exitoso*/
+/**
+* @testdox Crear Categoría Exitoso*/
     public function testCreateCategory()
     {
         $admin = UsersModel::factory()->create();
@@ -68,8 +70,8 @@ class CatalogingTest extends TestCase
         }
     }
 
-    /**
-     * @testdox Crear Categoría sin imagen*/
+/**
+ * @testdox Crear Categoría sin imagen*/
     public function testCreateCategoryWithoutImage()
     {
         $admin = UsersModel::factory()->create();
@@ -97,8 +99,8 @@ class CatalogingTest extends TestCase
         }
     }
 
-    /**
-     * @testdox Crear Categoría con validacion de error*/
+/**
+ * @testdox Crear Categoría con validacion de error*/
     public function testSaveCategoryValidationErrors()
     {
         $response = $this->postJson('/cataloging/categories/save_category', []);
@@ -106,9 +108,8 @@ class CatalogingTest extends TestCase
             ->assertJsonStructure(['message', 'errors']);
     }
 
-    /**
-     * @testdox Actualizar Categoría*/
-
+/**
+ * @testdox Actualizar Categoría*/
     public function testUpdateCategory()
     {
 
@@ -160,8 +161,8 @@ class CatalogingTest extends TestCase
     }
 
 
-    /**
-     * @testdox Eliminar Categoría */
+/**
+ * @testdox Eliminar Categoría */
     public function testDeleteCategory()
     {
         $admin = UsersModel::factory()->create();
@@ -205,8 +206,8 @@ class CatalogingTest extends TestCase
         }
     }
 
-    /**
-     * @testdox Crear Tipos de cursos exitoso*/
+/**
+ * @testdox Crear Tipos de cursos exitoso*/
     public function testCreateCourseType()
     {
         $admin = UsersModel::factory()->create();
@@ -247,8 +248,8 @@ class CatalogingTest extends TestCase
         }
     }
 
-    /**
-     * @testdox Actualiza Tipos de cursos */
+/**
+ * @testdox Actualiza Tipos de cursos */
     public function testUpdatesCourseType()
     {
 
@@ -296,8 +297,8 @@ class CatalogingTest extends TestCase
         }
     }
 
-    /**
-     * @testdox Elimina Tipos de cursos */
+/**
+ * @testdox Elimina Tipos de cursos */
     public function testDeleteCourseType()
     {
         $admin = UsersModel::factory()->create();
@@ -340,8 +341,8 @@ class CatalogingTest extends TestCase
         }
     }
 
-    /**
-     * @testdox Crear Recursos exitoso*/
+/**
+ * @testdox Crear Recursos exitoso*/
     public function testCreateResources()
     {
         $admin = UsersModel::factory()->create();
@@ -382,8 +383,8 @@ class CatalogingTest extends TestCase
         }
     }
 
-    /**
-     * @test Validación de campos requeridos en recurso educativo*/
+/**
+ * @test Validación de campos requeridos en recurso educativo*/
     public function testValidatesRequiredfields()
     {
         // Datos de prueba incompletos
@@ -399,8 +400,8 @@ class CatalogingTest extends TestCase
             ->assertJsonStructure(['message', 'errors']);
     }
 
-    /**
-     * @test  Actualiza recurso Educativo*/
+/**
+ * @test  Actualiza recurso Educativo*/
     public function testUpdatesResource()
     {
         $admin = UsersModel::factory()->create();
@@ -447,8 +448,8 @@ class CatalogingTest extends TestCase
         }
     }
 
-    /**
-     * @testdox Elimina recurso educativo */
+/**
+ * @testdox Elimina recurso educativo */
     public function testDeleteResource()
     {
         $admin = UsersModel::factory()->create();
@@ -490,8 +491,8 @@ class CatalogingTest extends TestCase
         }
     }
 
-    /**
-     * @testdox Crear Marco de competencias */
+/**
+* @testdox Crear Marco de competencias */
 
     public function testCreateCompetence()
     {
@@ -587,90 +588,139 @@ class CatalogingTest extends TestCase
     }
 
 /**
- * @test Validación campos requeridos Marco de competencias*/
-public function testValidatesRequiredFieldsCompetences()
-{
-    $data = [
-        'name' => '',
-        'is_multi_select' => null,
-    ];
+     * @test Validación campos requeridos Marco de competencias*/
+    public function testValidatesRequiredFieldsCompetences()
+    {
+        $data = [
+            'name' => '',
+            'is_multi_select' => null,
+        ];
 
-    $response = $this->postJson('/cataloging/competences_learnings_results/save_competence', $data);
+        $response = $this->postJson('/cataloging/competences_learnings_results/save_competence', $data);
 
-    $response->assertStatus(422)
-             ->assertJsonStructure(['message', 'errors']);
-}
+        $response->assertStatus(422)
+                ->assertJsonStructure(['message', 'errors']);
+    }
 
 /**
- * @test Retorna error si la competencia padre no existe*/
-public function testErrorIfParentCompetenceDoesNotExist()
-{
-    $data = [
-        'name' => 'Competencia con padre inexistente',
-        'parent_competence_uid' => 'inexistente-uid',
-        'is_multi_select' => true,
-    ];
+* @test Retorna error si la competencia padre no existe*/
+    public function testErrorIfParentCompetenceDoesNotExist()
+    {
+        $data = [
+            'name' => 'Competencia con padre inexistente',
+            'parent_competence_uid' => 'inexistente-uid',
+            'is_multi_select' => true,
+        ];
 
-    $response = $this->postJson('/cataloging/competences_learnings_results/save_competence', $data);
+        $response = $this->postJson('/cataloging/competences_learnings_results/save_competence', $data);
 
-    $response->assertStatus(422)
-             ->assertJson(['errors' => ['parent_competence_uid' => ['La competencia padre no existe']]]);
-}
+        $response->assertStatus(422)
+                ->assertJson(['errors' => ['parent_competence_uid' => ['La competencia padre no existe']]]);
+    }
 
 /**
  * @test Verifica asociación de resultados de aprendizaje a competencias*/
-public function testCreateLearningResult()
-{
-    $admin = UsersModel::factory()->create();
-    $roles_bd = UserRolesModel::get()->pluck('uid');
-    $roles_to_sync = [];
-    foreach ($roles_bd as $rol_uid) {
-        $roles_to_sync[] = [
-            'uid' => generate_uuid(),
-            'user_uid' => $admin->uid,
-            'user_role_uid' => $rol_uid
-        ];
+    public function testCreateLearningResult()
+    {
+        $admin = UsersModel::factory()->create();
+        $roles_bd = UserRolesModel::get()->pluck('uid');
+        $roles_to_sync = [];
+        foreach ($roles_bd as $rol_uid) {
+            $roles_to_sync[] = [
+                'uid' => generate_uuid(),
+                'user_uid' => $admin->uid,
+                'user_role_uid' => $rol_uid
+            ];
+        }
+
+        $admin->roles()->sync($roles_to_sync);
+        $this->actingAs($admin);
+
+        if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
+            // Datos de prueba
+        // Crea una competencia para asociar el resultado de aprendizaje
+            $competence = new CompetencesModel();
+            $competence->uid = '555-12499-123456-12345-12111'; // Asigno el uid manualmente
+            $competence->name = 'Competencia para Resultados de Aprendizaje';
+            $competence->description = 'Descripción de la competencia';
+            $competence->is_multi_select = false;
+            $competence->save();
+            $competence = CompetencesModel::find('555-12499-123456-12345-12111');
+
+            // Datos para crear un nuevo resultado de aprendizaje
+            $data = [
+                'uid' => Str::uuid(),
+                'competence_uid' => $competence->uid,
+                'name' => 'Nuevo Resultado de Aprendizaje',
+                'description' => 'Descripción del nuevo resultado de aprendizaje',
+            ];
+
+            // Realiza la solicitud para crear el resultado de aprendizaje
+            $response = $this->postJson('/cataloging/competences_learnings_results/save_learning_result', $data);
+
+            // Verifica la respuesta
+            $response->assertStatus(200);
+            $response->assertJson(['message' => 'Resultado de aprendizaje guardado correctamente']);
+
+            // Verifica que el resultado de aprendizaje ha sido guardado en la base de datos
+            $this->assertDatabaseHas('learning_results', [
+                'name' => 'Nuevo Resultado de Aprendizaje',
+                'competence_uid' => $competence->uid,
+            ]);
+        }
     }
 
-    $admin->roles()->sync($roles_to_sync);
-    $this->actingAs($admin);
+/**
+ * @test Elimina Competencias*/
+    public function testDeleteCompetencesLearningResults()
+    {
+        // Crea un administrador con roles
+        $admin = UsersModel::factory()->create();
+        $roles_bd = UserRolesModel::get()->pluck('uid');
+        $roles_to_sync = [];
+        foreach ($roles_bd as $rol_uid) {
+            $roles_to_sync[] = [
+                'uid' => generate_uuid(),
+                'user_uid' => $admin->uid,
+                'user_role_uid' => $rol_uid
+            ];
+        }
 
-    if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
-        // Datos de prueba
-       // Crea una competencia para asociar el resultado de aprendizaje
-        $competence = new CompetencesModel();
-        $competence->uid = '555-12499-123456-12345-12111'; // Asigno el uid manualmente
-        $competence->name = 'Competencia para Resultados de Aprendizaje';
-        $competence->description = 'Descripción de la competencia';
-        $competence->is_multi_select = false;
-        $competence->save();
-        $competence = CompetencesModel::find('555-12499-123456-12345-12111');
+        $admin->roles()->sync($roles_to_sync);
+        $this->actingAs($admin);
 
-        // Datos para crear un nuevo resultado de aprendizaje
-        $data = [
-            'uid' => Str::uuid(),
-            'competence_uid' => $competence->uid,
-            'name' => 'Nuevo Resultado de Aprendizaje',
-            'description' => 'Descripción del nuevo resultado de aprendizaje',
-        ];
+        if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
 
-        // Realiza la solicitud para crear el resultado de aprendizaje
-        $response = $this->postJson('/cataloging/competences_learnings_results/save_learning_result', $data);
+            // Crear algunos registros de ejemplo
+            $competence = CompetencesModel::create([
+                'uid' => generate_uuid(),
+                'name' => 'Example Competence'
+            ])->first();
+            $uid_competence = $competence->uid;
 
-        // Verifica la respuesta
-        $response->assertStatus(200);
-        $response->assertJson(['message' => 'Resultado de aprendizaje guardado correctamente']);
+            $learningResult = LearningResultsModel::create([
+                'uid' => generate_uuid(),
+                'name' => 'Example Learning Result',
+                'competence_uid' => $uid_competence
+            ]);
 
-        // Verifica que el resultado de aprendizaje ha sido guardado en la base de datos
-        $this->assertDatabaseHas('learning_results', [
-            'name' => 'Nuevo Resultado de Aprendizaje',
-            'competence_uid' => $competence->uid,
-        ]);
+            // Simular un request DELETE a la ruta
+            $response = $this->deleteJson('/cataloging/competences_learnings_results/delete_competences_learning_results', [
+                'uids' => [
+                    'competences' => [$competence->uid],
+                    'learningResults' => [$learningResult->uid],
+                ],
+            ]);
+
+            // Verificar que la respuesta sea correcta
+            $response->assertStatus(200)
+                    ->assertJson(['message' => 'Elementos eliminados correctamente']);
+
+            // Verificar que los registros han sido eliminados
+            $this->assertDatabaseMissing('competences', ['uid' => $competence->uid]);
+            $this->assertDatabaseMissing('learning_results', ['uid' => $learningResult->uid]);
+
+        }
     }
 }
-
-}
-
-
-
 

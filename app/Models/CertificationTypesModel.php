@@ -12,5 +12,9 @@ class CertificationTypesModel extends Model
     protected $primaryKey = 'uid';
 
     protected $keyType = 'string';
+    protected $fillable = [
+        'uid',
+        'name',
+    ];
 
 }

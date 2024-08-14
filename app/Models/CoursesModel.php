@@ -203,7 +203,7 @@ class CoursesModel extends Model
             CoursesPaymentTermsModel::class,
             'course_uid',
             'uid'
-        );
+        )->orderBy('start_date', 'asc');
     }
 
 }

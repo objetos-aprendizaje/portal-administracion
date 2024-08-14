@@ -134,9 +134,19 @@ function initHandlers() {
             generateTags();
         });
     }
+
+    const generateMetadataBtn = document.getElementById(
+        "generate-metadata-btn"
+    );
+
+    if (generateMetadataBtn) {
+        generateMetadataBtn.addEventListener("click", function () {
+            generateMetadata();
+        });
+    }
 }
 
-function addMetadataPair() {
+function addMetadataPair(data = null) {
     // Clona el template
     const template = document
         .getElementById("metadata-pair-template")
@@ -150,6 +160,10 @@ function addMetadataPair() {
     const valueInput = metadataPair.querySelector('[name="metadata_value[]"]');
     valueInput.id = `metadata.${metadataCounter}.metadata_value`;
 
+    if (data) {
+        keyInput.value = data.key;
+        valueInput.value = data.value;
+    }
     // Añade el par de metadatos al DOM
     document.querySelector(".matadata-container").appendChild(metadataPair);
 
@@ -157,8 +171,8 @@ function addMetadataPair() {
     metadataCounter++;
 }
 
-function removeMetadataPair() {
-    let target = this.target;
+function removeMetadataPair(event) {
+    let target = event.target;
 
     if (!target.classList.contains(".btn-remove-metadata-pair")) {
         target = target.closest(".btn-remove-metadata-pair");
@@ -1021,6 +1035,33 @@ function generateTags() {
         });
 }
 
+function generateMetadata() {
+    const text = document.getElementById("description").value;
+
+    if (!text) {
+        showToast("No hay descripción para generar metadatos", "error");
+        return;
+    }
+
+    const params = {
+        url: "/learning_objects/generate_metadata",
+        method: "POST",
+        body: { text },
+        loader: true,
+        stringify: true,
+    };
+
+    apiFetch(params)
+        .then((data) => {
+            data.forEach(metadata => {
+                addMetadataPair(metadata);
+            });
+        })
+        .catch(() => {
+            showToast("No se han podido generar los metadatos", "error");
+        });
+}
+
 function instanceTreeCompetencesLearningResults() {
     const updateCheckboxState = (treeCompetencesLearningResults) => {
         const checkboxes =
@@ -1114,6 +1155,8 @@ function updateSelectedCompetencesAndLearningResults(currentNode) {
             set.delete(id);
             items.forEach((item) => set.delete(item));
         }
+
+        document.getElementById("learning-results-counter").innerText = set.size;
         return set;
     }
 

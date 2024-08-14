@@ -28,6 +28,12 @@
                         <button id="reject-students-btn" type="button" class="btn-icon"
                             data-educational-program-uid="">{{ e_heroicon('x-mark', 'outline') }}</button>
                     </div>
+
+                    <div>
+                        <button id="delete-students-btn" type="button" class="btn-icon"
+                            data-educational-program-uid="">{{ e_heroicon('trash', 'outline') }}</button>
+                    </div>
+
                     <div>
                         <button id="enroll-students-btn" type="button" class="btn-icon"
                             data-educational-program-uid="">{{ e_heroicon('plus', 'outline') }}</button>

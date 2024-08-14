@@ -4,17 +4,14 @@ namespace Tests\Unit;
 
 use Tests\TestCase;
 use App\Models\UsersModel;
-use Illuminate\Support\Str;
-use Illuminate\Http\Response;
 use App\Models\UserRolesModel;
+use Illuminate\Support\Carbon;
 use PHPUnit\Framework\Exception;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\NotificationsTypesModel;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Http\Controllers\Users\ListUsersController;
 
 
 class UsersTest extends TestCase
@@ -82,7 +79,7 @@ class UsersTest extends TestCase
 
     }
 
- /**
+/**
  * @testdox Valida error campos obligatorios*/
     public function testValidateRequiredField(){
 
@@ -122,7 +119,7 @@ class UsersTest extends TestCase
             $response->assertJsonValidationErrors(['first_name', 'last_name', 'roles']);
         }
     }
-
+/*@test Actualiza users*/
     public function testUpdateUser(){
         $admin = UsersModel::factory()->create();
         $roles_bd = UserRolesModel::get()->pluck('uid');
@@ -169,7 +166,7 @@ class UsersTest extends TestCase
             ]);
         }
     }
-
+/*@test Email Valido*/
     public function testReturnsValidationEmail()
 {
         $admin = UsersModel::factory()->create();
@@ -208,6 +205,7 @@ class UsersTest extends TestCase
         }
     }
 
+/*@test Guara preferencias*/
     public function testSaveUserPreference()
     {
             $admin = UsersModel::factory()->create();
@@ -257,6 +255,65 @@ class UsersTest extends TestCase
 
             ]);
         }
+    }
+/*@test Obtener lista de usuarios*/
+    public function test_get_users_with_basic_pagination()
+    {
+        // Crea algunos usuarios de ejemplo
+        UsersModel::factory()->count(15)->create();
+
+        // Haz una petición GET a la ruta
+        $response = $this->get('/users/list_users/get_users');
+
+        // Verifica que la respuesta sea exitosa
+        $response->assertStatus(200);
+
+        // Verifica que la respuesta sea JSON
+        $response->assertJsonStructure([
+            'data' => [
+                '*' => [
+                    // Campos esperados en los usuarios
+                    'uid', 'first_name', 'last_name', 'email', 'nif', 'created_at', 'updated_at',
+                    'roles' => [] // Verifica que se incluyan los roles
+                ]
+            ],
+            'links' => [], // Verifica que haya información de paginación
+           // 'meta' => [],
+        ]);
+
+        // Verifica que haya 1 usuario en la primera página (paginación por defecto de 1)
+        $this->assertCount(1, $response->json('data'));
+    }
+/*@test search users*/
+    public function test_get_users_with_search()
+    {
+        // Crea algunos usuarios de ejemplo con diferentes nombres y emails
+        UsersModel::factory()->create(['first_name' => 'John', 'last_name' => 'Doe', 'email' => 'john.doe@example.com']);
+        UsersModel::factory()->create(['first_name' => 'Jane', 'last_name' => 'Smith', 'email' => 'jane.smith@example.com']);
+
+        // Haz una petición GET a la ruta con búsqueda por "John"
+        $response = $this->get('/users/list_users/get_users?search=John');
+
+        // Verifica que la respuesta sea exitosa
+        $response->assertStatus(200);
+
+        // Verifica que solo se devuelva el usuario relacionado con "John"
+        $this->assertCount(1, $response->json('data'));
+        $this->assertEquals('John', $response->json('data.0.first_name'));
+    }
+/* @test ordenar usuarios*/
+    public function test_get_users_with_sorting()
+    {
+        // Crea algunos usuarios de ejemplo con diferentes fechas de creación
+        UsersModel::factory()->create(['first_name' =>'test']);
+        UsersModel::factory()->create(['first_name' =>'unit']);
+
+
+        // Haz una petición GET a la ruta con ordenamiento por "created_at" descendente
+        $response = $this->get('/users/list_users/get_users?sort[0][field]=created_at&sort[0][dir]=desc&size=10');
+
+        // Verifica que la respuesta sea exitosa
+        $response->assertStatus(200);
     }
 
 }
