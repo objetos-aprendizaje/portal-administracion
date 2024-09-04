@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
+use App\Models\GeneralNotificationsModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -21,7 +22,7 @@ class NotificationsPerUsersModelFactory extends Factory
         return [
             'uid' => Str::uuid(),
             'user_uid' => '',
-            'general_notification_uid' => generate_uuid(),
+            'general_notification_uid' => GeneralNotificationsModel::factory()->create()->first(),
             'created_at' => Carbon::now()->format('Y-m-d\TH:i'),
             'updated_at' => Carbon::now()->format('Y-m-d\TH:i'),
         ];

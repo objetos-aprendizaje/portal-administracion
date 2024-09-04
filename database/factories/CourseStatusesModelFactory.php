@@ -19,7 +19,7 @@ class CourseStatusesModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => Str::uuid(),
+            'uid' => generate_uuid(),
             'name' => $this->faker->name(),
             'code' => 'INSCRIPTION',
             'created_at' => Carbon::now()->format('Y-m-d\TH:i'),

@@ -13,7 +13,7 @@ class NotificationsChangesStatusesCoursesModel extends Model
 
     protected $keyType = 'string';
 
-    protected $fillable = ['user_uid', 'course_uid', 'course_status_uid', 'date'];
+    protected $fillable = ['user_uid', 'course_uid', 'course_status_uid', 'date', 'is_read'];
 
     public $timestamps = false;
 

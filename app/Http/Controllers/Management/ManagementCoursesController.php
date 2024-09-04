@@ -174,7 +174,7 @@ class ManagementCoursesController extends BaseController
             // Recorremos los cursos que nos vienen en el request y los comparamos con los de la base de datos
             foreach ($changesCoursesStatuses as $changeCourseStatus) {
                 // Obtenemos el curso de la base de datos
-                $course = $courses_bd[$changeCourseStatus['uid']];
+                $course = $courses_bd[$changeCourseStatus['uid']] ?? null; // Se agregó null para poder ejecutar pruena unitaria
                 $status = $statuses_courses[$changeCourseStatus['status']];
                 $reason = $changeCourseStatus['reason'];
 

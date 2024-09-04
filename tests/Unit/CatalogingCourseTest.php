@@ -11,13 +11,17 @@ use App\Models\CategoriesModel;
 use App\Models\CompetencesModel;
 use App\Models\CourseTypesModel;
 use PHPUnit\Framework\Exception;
+use App\Models\TooltipTextsModel;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
 use App\Models\CertificationTypesModel;
 use App\Models\EducationalProgramTypesModel;
-use App\Models\EducationalResourceTypesModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Http\Controllers\Cataloging\CourseTypesController;
+use App\Services\AccessManager;
 
 class CatalogingCourseTest extends TestCase
 {
@@ -31,9 +35,195 @@ class CatalogingCourseTest extends TestCase
         // Asegúrate de que la tabla 'qvkei_settings' existe
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
     }
+
+/**
+ * @test Index View Tipo de Curso
+*/
+    public function testIndexViewCourseTypesWithAccess()
+    {
+        $user = UsersModel::factory()->create()->latest()->first();
+         $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]);// Crea roles de prueba
+         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+         // Autenticar al usuario
+         Auth::login($user);
+
+         // Compartir la variable de roles manualmente con la vista
+         View::share('roles', $roles);
+
+         // Configura el mock de general_options con la clave correcta
+         $generalOptionsMock = [
+            'managers_can_manage_course_types' => true,
+        ];
+        // Asignar el mock a app('general_options')
+        App::instance('general_options', $generalOptionsMock);
+
+         // Simula datos de TooltipTextsModel
+         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+         View::share('tooltip_texts', $tooltip_texts);
+
+         // Simula notificaciones no leídas
+         $unread_notifications = $user->notifications->where('read_at', null);
+         View::share('unread_notifications', $unread_notifications);
+
+        // Crear algunos tipos de curso de ejemplo
+        CourseTypesModel::factory()->count(3)->create();
+
+        // Llamar al método index del controlador
+        $response = $this->get('/cataloging/course_types');
+
+        // Verificar que la respuesta es una vista
+        $response->assertStatus(200);
+        $response->assertViewIs('cataloging.course_types.index');
+        $response->assertViewHas('page_name', 'Tipos de curso');
+        $response->assertViewHas('page_title', 'Tipos de curso');
+        $response->assertViewHas('resources', ['resources/js/cataloging_module/course_types.js']);
+        $response->assertViewHas('course_types', CourseTypesModel::all()->toArray());
+        $response->assertViewHas('tabulator', true);
+        $response->assertViewHas('submenuselected', 'cataloging-course-types');
+    }
+
     /**
- * @test Import Esco Framework
- */
+     * @test Index View Tipo de Curso usuario sin acceso
+    */
+    public function testIndexViewCourseTypesWithoutAccess()
+    {
+        // Crear un usuario de prueba
+        $user = UsersModel::factory()->create();
+
+        // Crear un rol de prueba y asignarlo al usuario
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        Auth::login($user);
+
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
+
+        // Configura el mock de general_options con la clave correcta
+        $generalOptionsMock = [
+            'managers_can_manage_course_types' => false,
+        ];
+        // Asignar el mock a app('general_options')
+        App::instance('general_options', $generalOptionsMock);
+
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+
+
+        $response = $this->get('/cataloging/course_types');
+
+            // Verificar que la respuesta es la vista de acceso denegado
+            $response->assertStatus(200);
+            $response->assertViewIs('access_not_allowed');
+            $response->assertViewHas('title', 'No tienes permiso para administrar los tipos de cursos');
+            $response->assertViewHas('description', 'El administrador ha bloqueado la administración de tipos de cursos a los gestores.');
+
+    }
+
+    /** @test */
+    public function testCourseTypesBasedOnSearch()
+    {
+
+        $user = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        Auth::login($user);
+
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
+
+        // Configura el mock de general_options con la clave correcta
+        $generalOptionsMock = [
+            'managers_can_manage_course_types' => true,
+        ];
+        // Asignar el mock a app('general_options')
+        App::instance('general_options', $generalOptionsMock);
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+
+
+        // Crear algunos tipos de curso de ejemplo
+        CourseTypesModel::factory()->create(['name' => 'Mathematics', 'description' => 'Study of numbers']);
+        CourseTypesModel::factory()->create(['name' => 'Science', 'description' => 'Study of nature']);
+        CourseTypesModel::factory()->create(['name' => 'History', 'description' => 'Study of past events']);
+
+        // Realizar una solicitud con un término de búsqueda
+        $response = $this->get('/cataloging/course_types/get_list_course_types?search=Math');
+
+        // Verificar que la respuesta sea exitosa
+        $response->assertStatus(200);
+
+        // Verificar que solo se devuelvan los tipos de curso que coinciden con la búsqueda
+        $this->assertCount(1, json_decode($response->getContent())->data);
+        $this->assertEquals('Mathematics', json_decode($response->getContent())->data[0]->name);
+    }
+
+    /** @test Ordena Tipo de cursos*/
+    public function testSortedCourseTypes()
+    {
+
+        $user = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        Auth::login($user);
+
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
+
+        // Configura el mock de general_options con la clave correcta
+        $generalOptionsMock = [
+            'managers_can_manage_course_types' => true,
+        ];
+        // Asignar el mock a app('general_options')
+        App::instance('general_options', $generalOptionsMock);
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+
+        // Crear algunos tipos de curso de ejemplo
+        CourseTypesModel::factory()->create(['name' => 'Science']);
+        CourseTypesModel::factory()->create(['name' => 'Mathematics']);
+        CourseTypesModel::factory()->create(['name' => 'Physical']);
+
+        // Realizar una solicitud con parámetros de ordenamiento
+        $response = $this->getJson('/cataloging/course_types/get_list_course_types?sort[0][field]=name&sort[0][dir]=asc&size=10');
+
+        // Verificar que la respuesta sea exitosa
+        $response->assertStatus(200);
+        // Verificar que la respuesta sea JSON
+        $response->assertJsonStructure(['data' => [['name']]]);
+        // Verificar que los tipos de curso estén ordenados alfabéticamente
+        $sortedData = json_decode($response->getContent())->data;
+        $this->assertEquals('Mathematics', $sortedData[0]->name);
+        $this->assertEquals('Physical', $sortedData[1]->name);
+        $this->assertEquals('Science', $sortedData[2]->name);
+
+    }
+
+    /**
+     * @test Import Esco Framework
+    */
+
     public function testImportEscoFramework()
     {
         // Crear archivos de prueba

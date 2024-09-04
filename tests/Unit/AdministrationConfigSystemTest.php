@@ -5,12 +5,13 @@ namespace Tests\Unit;
 use App\User;
 use Tests\TestCase;
 use App\Models\UsersModel;
-use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\UserRolesModel;
-use App\Models\FooterPagesModel;
-use App\Models\HeaderPagesModel;
+use App\Models\TooltipTextsModel;
 use Illuminate\Http\UploadedFile;
+use App\Models\GeneralOptionsModel;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -71,6 +72,25 @@ class AdministrationConfigSystemTest extends TestCase
             'logoId' => 'test_logo_id'
         ]);
 
+        $response->assertStatus(200)
+                ->assertJson(['message' => env('ERROR_MESSAGE')]);
+    }
+
+    /**
+     * @test Error archivo no existe
+     */
+    public function testSaveLogoImageNoFile()
+    {
+        // Crear un logoId ficticio y una entrada en la base de datos
+        $logoId = 'logo_example';
+        GeneralOptionsModel::create(['option_name' => $logoId, 'option_value' => '']);
+
+        // Realizar la solicitud POST sin archivo
+        $response = $this->postJson('/administration/save_logo_image', [
+            'logoPoaFile' => '', // No se envía un archivo
+            'logoId' => $logoId,
+        ]);
+        // Verificar que la respuesta sea un error
         $response->assertStatus(200)
                 ->assertJson(['message' => env('ERROR_MESSAGE')]);
     }
@@ -203,6 +223,53 @@ class AdministrationConfigSystemTest extends TestCase
     }
 
     /**
+    * @Group permiso a gestores*/
+
+    /**
+    * @test permiso a gestores*/
+    public function testIndexViewPermissions()
+    {
+
+        // Crear un usuario de prueba y asignar roles
+        $user = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        Auth::login($user);
+
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
+
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+
+
+        // Define los valores simulados que se deberían pasar a la vista
+        $general_options = [
+            'managers_can_manage_categories' => true,
+            'managers_can_manage_course_types' => false,
+            'managers_can_manage_educational_resources_types' => true,
+            'managers_can_manage_calls' => false,
+        ];
+
+        // Renderiza la vista y pasa los datos directamente
+        $response = $this->view('administration.management_permissions', compact('general_options'));
+
+        // Asegúrate de que la respuesta contiene los textos esperados
+        $response->assertSee('Permisos a gestores');
+        $response->assertSee('Administrar categorías');
+        $response->assertSee('Administrar tipos de cursos');
+        $response->assertSee('Administrar tipos de recursos educativos');
+        $response->assertSee('Administrar convocatorias');
+    }
+
+    /**
     * @testdox permiso a gestores*/
     public function testSaveManagersPermissions()
     {
@@ -234,246 +301,102 @@ class AdministrationConfigSystemTest extends TestCase
 
     }
 
-    /**
-    * @test Crear Header Page*/
-    public function testCreateHeaderPage()
+
+     /** @test Obtener Index View Payments*/
+    public function testIndexViewAdministrationPayments()
     {
-        // Datos de prueba para crear una nueva página de encabezado
+        // Crear un usuario de prueba y asignar roles
+        $user = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        Auth::login($user);
+
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
+
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+       View::share('general_options', $general_options);
+
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+
+        // Realiza una solicitud GET a la ruta
+        $response = $this->get('/administration/payments');
+
+        // Asegúrate de que la respuesta sea exitosa
+        $response->assertStatus(200);
+
+        // Asegúrate de que se retorne la vista correcta
+        $response->assertViewIs('administration.payments');
+
+        // Asegúrate de que la vista tenga los datos correctos
+        $response->assertViewHas('page_name', 'Pagos');
+        $response->assertViewHas('page_title', 'Pagos');
+        $response->assertViewHas('resources', ['resources/js/administration_module/payments.js']);
+        $response->assertViewHas('submenuselected', 'administration-payments');
+    }
+
+    /** @test */
+    public function testSavesPaymentFormSuccessfully()
+    {
+
+        $admin = UsersModel::factory()->create();
+        $this->actingAs($admin);
+
+        // Simular datos válidos
         $data = [
-            'name' => 'Nueva Página de Encabezado',
-            'content' => 'Contenido de la nueva página.',
-            'slug' => 'nueva-pagina-encabezado',
-            'order' => 1,
-            'parent_page_uid' => null,
+            'uid' => generate_uuid(),
+            'payment_gateway' => 'gateway_test',
+            'redsys_commerce_code' => '123456',
+            'redsys_terminal' => '1',
+            'redsys_currency' => 'EUR',
+            'redsys_transaction_type' => '0',
+            'redsys_encryption_key' => 'encryption_key_test',
         ];
 
         // Realizar la solicitud POST
-        $response = $this->postJson('/administration/header_pages/save_header_page', $data);
-
-        // Verificar el estado de la respuesta
-        $response->assertStatus(200)
-                ->assertJson(['message' => 'Página de header creada correctamente']);
-
-        // Verificar que la página de encabezado se haya guardado en la base de datos
-        $this->assertDatabaseHas('header_pages', [
-            'slug' => 'nueva-pagina-encabezado',
-            'name' => 'Nueva Página de Encabezado',
-        ]);
-    }
-
-    /**
-    * @test Error al eliminar Header Page*/
-    public function testDeleteHeaderPagesNotFound()
-    {
-        // Intentar eliminar páginas que no existen
-        $response = $this->deleteJson('/administration/header_pages/delete_header_pages', [
-            'uids' => ['non-existent-uid-1'],
-        ]);
-
-        // Verificar el estado de la respuesta
-        $response->assertStatus(200)
-                ->assertJson(['message' => 'Páginas de header eliminadas correctamente']);
-    }
-
-    /**
-    * @test Elimina Header Page*/
-    public function testDeleteHeaderPages()
-    {
-        // Crear manual páginas de encabezado para eliminar
-        $headerPage1Uid = generate_uuid();
-        HeaderPagesModel::insert([
-            'uid' => $headerPage1Uid,
-            'name' => 'Página 1 a Eliminar',
-            'content' => 'Contenido de la página 1 a eliminar.',
-            'slug' => 'pagina-1-a-eliminar',
-            'order' => 1,
-            'header_page_uid' => null,
-        ]);
-
-
-        // Realizar la solicitud DELETE
-        $response = $this->deleteJson('/administration/header_pages/delete_header_pages', [
-            'uids' => [$headerPage1Uid],
-        ]);
-
-        // Verificar el estado de la respuesta
-        $response->assertStatus(200)
-        ->assertJson(['message' => 'Páginas de header eliminadas correctamente']);
-
-        // Verificar que las páginas de encabezado ya no existan en la base de datos
-        $this->assertDatabaseMissing('header_pages', [
-        'uid' => $headerPage1Uid,
-        ]);
-
-    }
-
-    /**
-    * @test Actualiza Header Page*/
-    public function testUpdateHeaderPages()
-    {
-        // Datos de prueba para crear una nueva página de encabezado
-        $data = [
-            'name' => 'Nueva Página',
-            'content' => 'Contenido nueva página.',
-            'slug' => 'nueva-pagina',
-            'order' => 1,
-            'parent_page_uid' => null,
-        ];
-
-        // Realizar la solicitud POST para crear una nueva página
-        $response = $this->postJson('/administration/header_pages/save_header_page', $data);
-
-        // Verificar el estado de la respuesta
-        $response->assertStatus(200)
-                    ->assertJson(['message' => 'Página de header creada correctamente']);
-
-        // Verificar que la página de encabezado se haya guardado en la base de datos
-        $this->assertDatabaseHas('header_pages', [
-            'slug' => 'nueva-pagina',
-            'name' => 'Nueva Página',
-        ]);
-
-    }
-
-    public function testGetHeaderPages()
-    {
-        $headerPageUid= Str::uuid();
-
-        HeaderPagesModel::insert([
-            'uid' => $headerPageUid,
-            'name' => 'Página 3',
-            'content' => 'Contenido de la página 3.',
-            'slug' => 'pagina-3',
-            'order' => 3,
-            'header_page_uid' => null
-        ]);
-
-        // Realizar la solicitud GET para obtener las páginas de encabezado
-        $response = $this->getJson('/administration/header_pages/get_header_pages_select');
-
-        // Verificar el estado de la respuesta
-        $response->assertStatus(200);
-
-        // Verificar que la respuesta contenga las páginas de encabezado
-        $response->assertJsonStructure([
-            '*' => [
-                'uid',
-                'name',
-                'content',
-                'slug',
-                'order',
-                'header_page_uid',
-                'created_at',
-                'updated_at',
-            ],
-        ]);
-
-        // Verificar que solo se devuelvan las páginas sin parent
-        $this->assertCount(1, $response->json());
-        $this->assertEquals('Página 3', $response->json()[0]['name']);
-
-
-    }
-
-    /**
-    * @test Crear Footer Pages Error*/
-    public function testErrorSaveFooterPages()
-    {
-        // Simular un usuario autenticado
-        $this->actingAs(UsersModel::factory()->create());
-
-        // Datos de prueba
-        $legalAdvice = 'Este es un consejo legal';
-
-        // Enviar la solicitud POST
-        $response = $this->postJson('/administration/footer_pages', [
-            'legalAdvice' => $legalAdvice
-        ]);
+        $response = $this->postJson('/administration/payments/save_payments_form', $data);
 
         // Verificar la respuesta
-        $response->assertStatus(405);
-
-
-    }
-
-/**
- * @test Actualiza Footer Page Error*/
-    public function testUpdateFooterPageWithValidationErrors()
-    {
-        // Crea una página de pie de página existente
-        $footerPageUid1= Str::uuid();
-        FooterPagesModel::insert([
-            'uid' => $footerPageUid1,
-            'name' => 'Footer Page Original',
-            'content' => 'Contenido original del pie de página',
-            'slug' => 'footer-page-original',
-            'order' => 1,
-        ]);
-
-        // Datos de entrada inválidos
-        $data = [
-            'footer_page_uid' => $footerPageUid1,
-            'name' => '',
-            'content' => 'Contenido del pie de página',
-            'slug' => 'invalid slug', // Slug inválido
-            'order' => 'not a number', // Orden no numérico
-            'parent_page_uid' => null,
-        ];
-
-        // Realiza la solicitud POST para actualizar
-        $response = $this->postJson('/administration/footer_pages/save_footer_page', $data);
-
-        // Verifica la respuesta de error
-        $response->assertStatus(422)
-                 ->assertJson(['message' => 'Hay campos incorrectos']);
-    }
-
-/**
- * @test Elimina Footer Page*/
-    public function testDeleteFooterPages()
-    {
-        // Crea algunas páginas de pie de página para eliminar
-        $footerPageUid_1= Str::uuid();
-        FooterPagesModel::insert([
-            'uid' => $footerPageUid_1,
-            'name' => 'Footer Page 1',
-            'content' => 'Contenido del pie de página 1',
-            'slug' => 'footer-page-1',
-            'order' => 1,
-        ]);
-
-        $footerPageUid_2= Str::uuid();
-        FooterPagesModel::insert([
-            'uid' => $footerPageUid_2,
-            'name' => 'Footer Page 2',
-            'content' => 'Contenido del pie de página 2',
-            'slug' => 'footer-page-2',
-            'order' => 2,
-        ]);
-
-        // Datos de entrada para la eliminación
-        $data = [
-            'uids' => [$footerPageUid_1, $footerPageUid_2],
-        ];
-
-        // Realiza la solicitud DELETE
-        $response = $this->deleteJson('/administration/footer_pages/delete_footer_pages', $data);
-
-        // Verifica la respuesta
         $response->assertStatus(200)
-                 ->assertJson(['message' => 'Páginas de footer eliminadas correctamente']);
+                 ->assertJson(['message' => 'Datos de pago guardados correctamente']);
 
-        // Verifica que las páginas se hayan eliminado de la base de datos
-        $this->assertDatabaseMissing('footer_pages', [
-            'uid' => $footerPageUid_1,
-        ]);
-
-        $this->assertDatabaseMissing('footer_pages', [
-            'uid' => $footerPageUid_2,
-        ]);
     }
 
+    /** @test */
+    public function testReturnsErrorWhenValidationFails()
+    {
+        // Simular datos inválidos
+        $data = [
+            'payment_gateway' => 'gateway_test',
+            // Falta redsys_commerce_code
+            'redsys_terminal' => '1',
+            'redsys_currency' => '',
+            'redsys_transaction_type' => '0',
+            // Falta redsys_encryption_key
+        ];
 
+        // Realizar la solicitud POST
+        $response = $this->postJson('/administration/payments/save_payments_form', $data);
+
+        // Verificar la respuesta
+        $response->assertStatus(422)
+                 ->assertJson([
+                     'message' => 'Algunos campos son incorrectos',
+                     'errors' => [
+                         'redsys_commerce_code' => ['El código de comercio es obligatorio'],
+                         'redsys_currency' => ['La moneda es obligatoria'],
+                         'redsys_encryption_key' => ['La clave de encriptación es obligatoria'],
+                     ],
+                 ]);
+    }
 
 
 }

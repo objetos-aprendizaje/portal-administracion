@@ -13,6 +13,8 @@ class EducationalProgramsStudentsModel extends Model
 
     protected $keyType = 'string';
 
+    protected $fillable = ['uid', 'educational_program_uid', 'user_uid', 'acceptance_status'];
+
 
     public function educationalProgram()
     {

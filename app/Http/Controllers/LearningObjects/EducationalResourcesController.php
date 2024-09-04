@@ -2,29 +2,30 @@
 
 namespace App\Http\Controllers\LearningObjects;
 
-use App\Exceptions\OperationFailedException;
-use App\Models\CategoriesModel;
-use App\Models\EducationalResourceCategoriesModel;
-use Illuminate\Http\Request;
-use App\Models\EducationalResourcesModel;
-use App\Models\EducationalResourcesTagsModel;
-use App\Models\EducationalResourceStatusesModel;
-use App\Models\EducationalResourceTypesModel;
-use Illuminate\Routing\Controller as BaseController;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Logs\LogsController;
-use App\Models\AutomaticResourceAprovalUsersModel;
-use App\Models\CompetencesModel;
-use App\Models\EducationalResourcesEmailContactsModel;
-use App\Models\EducationalResourcesLearningResultsModel;
-use App\Models\EmailNotificationsAutomaticModel;
-use App\Models\GeneralNotificationsAutomaticModel;
-use App\Models\GeneralNotificationsAutomaticUsersModel;
-use App\Models\LearningResultsModel;
 use App\Models\UsersModel;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use App\Models\CategoriesModel;
+use App\Models\CompetencesModel;
 use App\Models\LicenseTypesModel;
+use Illuminate\Support\Facades\DB;
+use App\Models\LearningResultsModel;
+use Illuminate\Support\Facades\Auth;
+use App\Models\EducationalResourcesModel;
+use Illuminate\Support\Facades\Validator;
+use App\Exceptions\OperationFailedException;
+use App\Http\Controllers\Logs\LogsController;
+use App\Models\EducationalResourcesTagsModel;
+use App\Models\EducationalResourceTypesModel;
+use App\Models\AutomaticNotificationTypesModel;
+use App\Models\EducationalResourceStatusesModel;
+use App\Models\EmailNotificationsAutomaticModel;
+use App\Models\AutomaticResourceAprovalUsersModel;
+use App\Models\EducationalResourceCategoriesModel;
+use App\Models\GeneralNotificationsAutomaticModel;
+use Illuminate\Routing\Controller as BaseController;
+use App\Models\EducationalResourcesEmailContactsModel;
+use App\Models\GeneralNotificationsAutomaticUsersModel;
+use App\Models\EducationalResourcesLearningResultsModel;
 
 class EducationalResourcesController extends BaseController
 {
@@ -506,6 +507,10 @@ class EducationalResourcesController extends BaseController
             return !$commonCategories->isEmpty() && !$user->automaticGeneralNotificationsTypesDisabled->contains('code', 'NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS');
         });
 
+        //Todo: se agregó esto ya que el campo automatic_notification_type_uid es obligatorio si no da error 500, 
+        //Todo solo se hizo para poder correr la prueba unitaria
+        $type = AutomaticNotificationTypesModel::where('code', 'NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS' )->first();
+        
         $generalNotificationAutomaticUid = generate_uuid();
         $generalAutomaticNotification = new GeneralNotificationsAutomaticModel();
         $generalAutomaticNotification->uid = $generalNotificationAutomaticUid;
@@ -514,6 +519,7 @@ class EducationalResourcesController extends BaseController
         $generalAutomaticNotification->entity = "new_educational_resource";
         $generalAutomaticNotification->entity_uid = $resource->uid;
         $generalAutomaticNotification->created_at = now();
+        $generalAutomaticNotification->automatic_notification_type_uid = $type->uid;
         $generalAutomaticNotification->save();
 
         $dataInsert = [];

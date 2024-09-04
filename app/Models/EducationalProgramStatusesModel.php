@@ -13,4 +13,6 @@ class EducationalProgramStatusesModel extends Model
 
     protected $keyType = 'string';
 
+    protected $fillable = ['uid', 'name', 'code'];
+
 }

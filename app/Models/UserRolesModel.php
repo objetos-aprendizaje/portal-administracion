@@ -13,6 +13,8 @@ class UserRolesModel extends Model
 
     protected $keyType = 'string';
 
+    protected $fillable = ['uid', 'name', 'code'];
+
     public function users()
     {
         return $this->belongsToMany(UsersModel::class, 'user_role_relationships', 'user_role_uid', 'user_uid');

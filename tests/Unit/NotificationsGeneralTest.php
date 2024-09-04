@@ -2,20 +2,30 @@
 
 namespace Tests\Unit;
 
-use App\Models\AutomaticNotificationTypesModel;
-use App\Models\GeneralNotificationsAutomaticUsersModel;
 use Tests\TestCase;
 use App\Models\UsersModel;
 use Illuminate\Support\Str;
+use App\Models\CoursesModel;
 use App\Models\UserRolesModel;
 use Illuminate\Support\Carbon;
+use App\Models\TooltipTextsModel;
 use Illuminate\Support\Facades\DB;
+use App\Models\CourseStatusesModel;
+use App\Models\GeneralOptionsModel;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
+use App\Models\EmailNotificationsModel;
 use App\Models\NotificationsTypesModel;
+use Illuminate\Support\Facades\Request;
 use App\Models\GeneralNotificationsModel;
 use App\Models\NotificationsPerUsersModel;
+use App\Models\UserGeneralNotificationsModel;
+use App\Models\AutomaticNotificationTypesModel;
 use App\Models\GeneralNotificationsAutomaticModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\GeneralNotificationsAutomaticUsersModel;
+use App\Models\NotificationsChangesStatusesCoursesModel;
 
 class NotificationsGeneralTest extends TestCase
 {
@@ -30,8 +40,69 @@ class NotificationsGeneralTest extends TestCase
         $this->actingAs($user);
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
     }
-/**@test Obtener Error usuario no se encuentra */
 
+/** @test Obtener Index View Notificaciones por usuario */
+
+    public function testIndexViewWithNotificationsPerUsers()
+    {
+
+        $user = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        Auth::login($user);
+
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
+
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+       View::share('general_options', $general_options);
+
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+        // Simula notificaciones leídas
+
+        $notificationType = NotificationsTypesModel::create([
+            'uid' => generate_uuid(),
+            'name' => 'Tipos de notificaciones',
+            // Agrega otros campos necesarios según tu modelo
+        ])->latest()->first();
+
+        $notificationGeneral = GeneralNotificationsModel::factory()->create([
+            'uid' => generate_uuid(),
+            'notification_type_uid' => $notificationType->uid,
+            'type' => 'USERS'
+        ])->first();
+
+         NotificationsPerUsersModel::factory()->create([
+            'uid' => generate_uuid(),
+            'user_uid' => $user->uid,
+            'general_notification_uid' => $notificationGeneral->uid,
+        ])->first();
+
+        // Hacer la solicitud GET a la ruta
+        $response = $this->get(route('notifications-per-users'));
+
+        // Verificar que la respuesta sea exitosa
+        $response->assertStatus(200);
+
+        // Verificar que se devuelva la vista correcta
+        $response->assertViewIs('notifications.notifications_per_users.index');
+
+        // Verificar que los datos pasan a la vista
+        $response->assertViewHas('page_name', 'Notificaciones por usuarios');
+        $response->assertViewHas('page_title', 'Notificaciones por usuarios');
+        $response->assertViewHas('tabulator', true);
+        $response->assertViewHas('submenuselected', 'notifications-per-users');
+    }
+
+/**@test Obtener Error usuario no se encuentra */
     public function testGetNotificationsPerUserNotFound()
     {
         // Crear un usuario de prueba
@@ -350,5 +421,650 @@ class NotificationsGeneralTest extends TestCase
         $response->assertStatus(404);
 
     }
+    /**
+     * @test notificaciones al cambiar estatus del curso
+     */
+    public function testGetNotificationsChangesStatusesCourses()
+    {
+        // Crear un usuario autenticado
 
+         $user = UsersModel::factory()->create();
+        $this->actingAs($user);
+
+         // Crear un curso que será referenciado
+         $course = CoursesModel::factory()->create();
+
+         // Crear un estatus de curso que será referenciado
+        $courseStatus = CourseStatusesModel::factory()->create()->first();
+
+        // Crear una notificación de ejemplo
+        $notification = NotificationsChangesStatusesCoursesModel::factory()->create([
+            'uid' => generate_uuid(),
+            'user_uid' => $user->uid,
+            'course_uid' => $course->uid,
+            'course_status_uid' => $courseStatus->uid,
+            'date' => Carbon::now()->format('Y-m-d\TH:i'),
+            'is_read' => 1,
+        ])->first();
+
+        // Realizar la petición GET a la ruta
+        $response = $this->get('/notifications/notifications_statuses_courses/get_notifications_statuses_courses/' . $notification->uid);
+
+        // Verificar que la respuesta tenga el código 200 (OK)
+        $response->assertStatus(200);
+
+        // Verificar que la respuesta contenga los datos de la notificación
+        $response->assertJsonFragment([
+            'uid' => $notification->uid,
+            'user_uid' => $user->uid,
+            'is_read' => 1,
+        ]);
+
+        // Verificar que la notificación se haya marcado como leída
+        $this->assertDatabaseHas('notifications_changes_statuses_courses', [
+            'uid' => $notification->uid,
+            'is_read' => 1,
+        ]);
+    }
+    /**
+     * @test Generación automatica notificaión por usuario
+     *
+     */
+    public function testGetGeneralAutomaticNotificationUser()
+    {
+        // Crear un usuario autenticado
+        $user = UsersModel::factory()->create();
+        Auth::login($user);
+
+        // Crear una notificación automática de ejemplo
+        $notification = GeneralNotificationsAutomaticModel::factory()->create()->first();
+
+
+        $relationUid = (string) \Str::uuid(); // Genera un UID único
+
+        $notification->users()->attach($user->uid, [
+            'uid' => $relationUid,
+            'is_read' => false,
+        ]);
+
+        // Realizar la petición GET a la ruta
+        $response = $this->get('/notifications/notifications_statuses_courses/get_general_notification_automatic/' . $notification->uid);
+
+        // Verificar que la respuesta tenga el código 200 (OK)
+        $response->assertStatus(200);
+
+        // Verificar que la respuesta contenga los datos de la notificación
+        $response->assertJsonFragment([
+            'uid' => $notification->uid,
+        ]);
+
+        // Verificar que la notificación se haya marcado como leída en la tabla pivote
+        $this->assertDatabaseHas('general_notifications_automatic_users', [
+            'user_uid' => $user->uid,
+            'general_notifications_automatic_uid' => $notification->uid,
+            'is_read' => true,
+        ]);
+    }
+    /**
+     * @test Elimina Notificaciones generales
+     */
+    public function testDeleteGeneralNotifications()
+    {
+
+        // Crear un tipo de notificación antes de crear la notificación general
+        $notificationType = NotificationsTypesModel::factory()->create()->first();
+        // Crear algunas notificaciones para probar
+        $notification1 = GeneralNotificationsModel::factory()->create([
+            'uid' => generate_uuid(),
+            'notification_type_uid' => $notificationType->uid,
+            'start_date' => Carbon::now()->format('Y-m-d\TH:i'),
+            'end_date' => Carbon::now()->format('Y-m-d\TH:i'),
+        ]);
+
+
+        // Asegurarse de que las notificaciones existan antes de la eliminación
+        $this->assertDatabaseCount('general_notifications', 1);
+
+        // Hacer la solicitud DELETE a la ruta
+        $response = $this->delete('/notifications/general/delete_general_notifications', [
+            'uids' => [$notification1->uid],
+        ]);
+
+        // Verificar que la respuesta sea correcta
+        $response->assertStatus(200);
+        $response->assertJson([
+            'message' => 'Notificaciones eliminadas correctamente',
+            'general_notifications' => [],
+        ]);
+
+        // Verificar que las notificaciones hayan sido eliminadas
+        $this->assertDatabaseMissing('general_notifications', [
+            'uid' => $notification1->uid,
+        ]);
+
+        // Verificar que no haya más notificaciones en la base de datos
+        $this->assertDatabaseCount('general_notifications', 0);
+    }
+    /**
+     * @test Obtener usuario de notificaciones
+     */
+    public function testGetUserViewsGeneralNotification()
+    {
+        // Crear un usuario autenticado
+        $user = UsersModel::factory()->create();
+        Auth::login($user);
+
+        // Crear un tipo de notificación antes de crear la notificación general
+        $notificationTyp = NotificationsTypesModel::factory()->create()->first();
+        // Crear algunas notificaciones para probar
+
+        $generalNotification = GeneralNotificationsModel::factory()->create([
+            'uid' => generate_uuid(),
+            'notification_type_uid' => $notificationTyp->uid,
+            'start_date' => Carbon::now()->format('Y-m-d\TH:i'),
+            'end_date' => Carbon::now()->format('Y-m-d\TH:i'),
+        ]);
+
+        // Crear una entrada en UserGeneralNotificationsModel para el usuario y la notificación
+        UserGeneralNotificationsModel::factory()->create([
+            'uid' => generate_uuid(),
+            'user_uid' => $user->uid,
+            'general_notification_uid' => $generalNotification->uid,
+
+        ]);
+
+        // Hacer la solicitud GET a la ruta
+        $response = $this->get('/notifications/general/get_users_views_general_notification/' . $generalNotification->uid);
+
+        // Verificar que la respuesta sea correcta
+        $response->assertStatus(200);
+        $response->assertJsonFragment([
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'email'=> $user->email,
+
+        ]);
+
+    }
+    /**
+     * @test Obtener notificación medienat búsqueda
+     */
+    public function testGetUserViewsGeneralNotificationWithSearch()
+    {
+        // Crear un usuario autenticado
+        $user = UsersModel::factory()->create([
+            'first_name' => 'Jane',
+            'last_name' => 'Smith',
+            'email' => 'jane.smith@example.com',
+        ]);
+        Auth::login($user);
+
+        // Crear un tipo de notificación antes de crear la notificación general
+        $notificationTyp = NotificationsTypesModel::factory()->create()->first();
+        // Crear algunas notificaciones para probar
+
+        $generalNotification = GeneralNotificationsModel::factory()->create([
+            'uid' => generate_uuid(),
+            'notification_type_uid' => $notificationTyp->uid,
+            'start_date' => Carbon::now()->format('Y-m-d\TH:i'),
+            'end_date' => Carbon::now()->format('Y-m-d\TH:i'),
+        ]);
+
+        // Crear una entrada en UserGeneralNotificationsModel para el usuario y la notificación
+        UserGeneralNotificationsModel::factory()->create([
+            'user_uid' => $user->uid,
+            'general_notification_uid' => $generalNotification->uid,
+            'view_date' => now(),
+        ]);
+
+        // Hacer la solicitud GET a la ruta con un parámetro de búsqueda
+        $response = $this->get('/notifications/general/get_users_views_general_notification/' . $generalNotification->uid . '?search=Jane');
+
+        // Verificar que la respuesta sea correcta
+        $response->assertStatus(200);
+        $response->assertJsonFragment([
+            'first_name' => 'Jane',
+            'last_name' => 'Smith',
+            'email' => 'jane.smith@example.com',
+        ]);
+    }
+
+    /**
+     * @test obtener email notificación
+     */
+    public function testGetEmailNotification()
+    {
+        // Crear un usuario autenticado
+        $user = UsersModel::factory()->create();
+        Auth::login($user);
+
+        // Crear un tipo de notificación
+        $notificationType = NotificationsTypesModel::factory()->create()->first();
+
+        // Crear una notificación de correo electrónico de ejemplo
+        $emailNotification = EmailNotificationsModel::factory()->create([
+            'uid' => generate_uuid(),
+            'notification_type_uid' => $notificationType->uid,
+
+        ]);
+
+        // Realizar la petición GET a la ruta
+        $response = $this->get('notifications/email/get_email_notification/' . $emailNotification->uid);
+
+        // Verificar que la respuesta tenga el código 200 (OK)
+        $response->assertStatus(200);
+
+        // Verificar que la respuesta contenga los datos de la notificación
+        $response->assertJsonFragment([
+            'uid' => $emailNotification->uid,
+            'notification_type_uid' => $notificationType->uid,
+
+
+        ]);
+    }
+
+    /**
+     * @test Elimina email notificación
+     */
+     public function testDeleteEmailNotifications()
+    {
+        // Crear un usuario autenticado
+        $user = UsersModel::factory()->create();
+        Auth::login($user);
+
+        $notificationType1 = NotificationsTypesModel::factory()->create()->first();
+
+        // Crear notificaciones de correo electrónico de ejemplo
+        $emailNotification1 = EmailNotificationsModel::factory()->create([
+            'uid' => generate_uuid(),
+            'notification_type_uid' => $notificationType1->uid,
+            'sent' => false,
+        ]);
+        $emailNotification2 = EmailNotificationsModel::factory()->create([
+            'uid' => generate_uuid(),
+            'notification_type_uid' => $notificationType1->uid,
+            'sent' => true,
+        ]);
+
+        // Realizar la petición DELETE a la ruta
+        $response = $this->delete('/notifications/email/delete_email_notifications', [
+            'uids' => [$emailNotification1->uid, $emailNotification2->uid],
+        ]);
+
+        // Verificar que la respuesta tenga el código 200 (OK)
+        $response->assertStatus(200);
+
+        // Verificar que se haya eliminado la notificación no enviada
+        $this->assertDatabaseMissing('email_notifications', [
+            'uid' => $emailNotification1->uid,
+        ]);
+
+        // Verificar que no se haya eliminado la notificación enviada
+        $this->assertDatabaseHas('email_notifications', [
+            'uid' => $emailNotification2->uid,
+        ]);
+    }
+
+    /**
+     * @test Obtener notificacion general por usuario
+     */
+    public function testGetGeneralNotificationUser()
+    {
+        // Crear un usuario autenticado
+        $user = UsersModel::factory()->create();
+        Auth::login($user);
+
+        $notificationType1 = NotificationsTypesModel::factory()->create()->first();
+
+        // Crear una notificación general
+        $generalNotification = GeneralNotificationsModel::factory()->create([
+            'uid' => generate_uuid(),
+            'notification_type_uid' => $notificationType1->uid,
+        ]);
+
+        // Realizar la petición GET a la ruta
+        $response = $this->get('/notifications/general/get_general_notification_user/' . $generalNotification->uid);
+
+        // Verificar que la respuesta tenga el código 200 (OK)
+        $response->assertStatus(200);
+
+        // Verificar que la respuesta contenga los datos de la notificación general
+        $response->assertJsonFragment([
+            'uid' => $generalNotification->uid,
+            'notification_type_uid' => $notificationType1->uid,
+        ]);
+
+        // Verificar que se haya creado un registro en UserGeneralNotificationsModel
+        $this->assertDatabaseHas('user_general_notifications', [
+            'user_uid' => $user->uid,
+            'general_notification_uid' => $generalNotification->uid,
+        ]);
+    }
+
+    /**@test Obtener email notificaciones*/
+
+    public function testGetEmailNotifications()
+    {
+        // Crear un usuario autenticado
+        $user = UsersModel::factory()->create();
+        Auth::login($user);
+
+        // Crear tipos de notificación
+        $notificationType = NotificationsTypesModel::factory()->create()->first();
+
+        // Crear notificaciones de correo electrónico de ejemplo
+        $emailNotification1 = EmailNotificationsModel::factory()->create([
+            'uid' => generate_uuid(),
+            'notification_type_uid' => $notificationType->uid,
+            'subject' => 'Asunto de Ejemplo 1',
+            'body' => 'Cuerpo de Ejemplo 1',
+        ]);
+
+        EmailNotificationsModel::factory()->create([
+            'uid' => generate_uuid(),
+            'notification_type_uid' => $notificationType->uid,
+            'subject' => 'Asunto de Ejemplo 2',
+            'body' => 'Cuerpo de Ejemplo 2',
+        ]);
+
+        // Realizar la petición GET a la ruta
+        $response = $this->get('notifications/email/get_list_email_notifications');
+
+        // Verificar que la respuesta tenga el código 200 (OK)
+        $response->assertStatus(200);
+
+    }
+ /**@test Obtener email notificaciónes con la opción buscar*/
+    public function testGetEmailNotificationsWithSearch()
+    {
+        // Crear un usuario autenticado
+        $user = UsersModel::factory()->create();
+        Auth::login($user);
+
+        // Crear tipos de notificación
+        $notificationType = NotificationsTypesModel::factory()->create()->first();
+
+        // Crear notificaciones de correo electrónico de ejemplo
+        EmailNotificationsModel::factory()->create([
+            'notification_type_uid' => $notificationType->uid,
+            'subject' => 'Asunto de Ejemplo 1',
+            'body' => 'Cuerpo de Ejemplo 1',
+        ]);
+        EmailNotificationsModel::factory()->create([
+            'notification_type_uid' => $notificationType->uid,
+            'subject' => 'Asunto de Ejemplo 2',
+            'body' => 'Cuerpo de Ejemplo 2',
+        ]);
+
+        // Realizar la petición GET a la ruta con búsqueda
+        $response = $this->get('notifications/email/get_list_email_notifications?search=Ejemplo 1');
+
+        // Verificar que la respuesta tenga el código 200 (OK)
+        $response->assertStatus(200);
+
+        // Verificar que la respuesta contenga solo la notificación que coincide con la búsqueda
+        $response->assertJsonFragment([
+            'subject' => 'Asunto de Ejemplo 1',
+        ]);
+
+        // Verificar que no contenga la segunda notificación
+        $response->assertJsonMissing([
+            'subject' => 'Asunto de Ejemplo 2',
+        ]);
+    }
+/**@test Obtener email notificaciónes con la opción ordenar*/
+    public function testGetEmailNotificationsWithSort()
+    {
+        // Crear un usuario autenticado
+        $user = UsersModel::factory()->create();
+        Auth::login($user);
+
+        // Crear tipos de notificación
+        $notificationType = NotificationsTypesModel::factory()->create()->first();
+
+        // Crear notificaciones de correo electrónico de ejemplo
+        EmailNotificationsModel::factory()->create([
+            'notification_type_uid' => $notificationType->uid,
+            'subject' => 'B Asunto',
+            'body' => 'Cuerpo de Ejemplo 1',
+        ]);
+        EmailNotificationsModel::factory()->create([
+            'notification_type_uid' => $notificationType->uid,
+            'subject' => 'A Asunto',
+            'body' => 'Cuerpo de Ejemplo 2',
+        ]);
+
+        // Realizar la petición GET a la ruta con ordenación
+        $response = $this->get('notifications/email/get_list_email_notifications?sort[0][field]=subject&sort[0][dir]=asc&size=10');
+
+        // Verificar que la respuesta tenga el código 200 (OK)
+        $response->assertStatus(200);
+
+        // Verificar que la respuesta contenga las notificaciones en el orden correcto
+        $data = $response->json();
+        $this->assertEquals('A Asunto', $data['data'][0]['subject']);
+        $this->assertEquals('B Asunto', $data['data'][1]['subject']);
+    }
+
+/**@test Obtener mensaje de envio de notificaciónes*/
+    public function testSaveEmailNotificationThrowsExceptionIfSent()
+    {
+
+        $user = UsersModel::factory()->create();
+        Auth::login($user);
+
+        // Crear tipos de notificación
+        $notificationType = NotificationsTypesModel::factory()->create()->first();
+
+        // Crear notificaciones de correo electrónico de ejemplo
+        $emailNotification1 = EmailNotificationsModel::factory()->create([
+            'uid' => generate_uuid(),
+            'notification_type_uid' => $notificationType->uid,
+            'subject' => 'Asunto de Ejemplo 1',
+            'body' => 'Cuerpo de Ejemplo 1',
+            'type' => 'USERS',
+            'sent' => 1,
+
+        ]);
+
+        // Simular una solicitud para intentar actualizar la notificación existente
+        $response = $this->postJson('notifications/email/save_email_notification', [
+            'notification_email_uid' => $emailNotification1->uid,
+            'notification_type_uid' => $notificationType->uid,
+            'subject' => 'Asunto de Ejemplo 1',
+            'body' => 'Cuerpo de Ejemplo 1',
+            'type' => 'USERS',
+            'users' => [$user->uid]
+        ]);
+
+        // Verificar que se lance una excepción
+        $response->assertStatus(500)
+                 ->assertJson(['message' => 'La notificación ya ha sido enviada y no puede ser modificada.']);
+    }
+
+    /**
+     * @test Obtener error cuando el email de notificacion no se encuentra
+     *      */
+    public function testGetEmailNotificationNotFound()
+    {
+        // Crear un usuario autenticado
+        $user = UsersModel::factory()->create();
+        Auth::login($user);
+
+        // Intentar obtener una notificación que no existe
+        $response = $this->get('/notifications/email/get_email_notification/non-existing-uid');
+
+        // Verificar que la respuesta tenga el código 406 (Not Acceptable)
+        $response->assertStatus(406);
+        $response->assertJson(['message' => 'La notificación general no existe']);
+    }
+
+
+    public function testIndexGeneralNotifications()
+    {
+
+        $user = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        Auth::login($user);
+
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
+
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+       View::share('general_options', $general_options);
+
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+
+         NotificationsTypesModel::factory()->count(3)->create();
+
+
+        $response = $this->get(route('notifications-general'));
+
+
+        $response->assertStatus(200);
+        $response->assertViewIs('notifications.general.index');
+        $response->assertViewHas('page_name', 'Notificaciones generales');
+        $response->assertViewHas('page_title', 'Notificaciones generales');
+        $response->assertViewHas('resources');
+        $response->assertViewHas('tabulator', true);
+        $response->assertViewHas('tomselect', true);
+        $response->assertViewHas('flatpickr', true);
+        $response->assertViewHas('submenuselected', 'notifications-general');
+    }
+
+    public function testIndexNotificationstypes()
+    {
+
+        $user = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        Auth::login($user);
+
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
+
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+       View::share('general_options', $general_options);
+
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+
+        NotificationsTypesModel::factory()->count(3)->create();
+
+        $response = $this->get(route('notifications-types'));
+
+        $response->assertStatus(200);
+        $response->assertViewIs('notifications.notifications_types.index');
+        $response->assertViewHas('page_name', 'Tipos de notificaciones');
+        $response->assertViewHas('page_title', 'Tipos de notificaciones');
+        $response->assertViewHas('resources');
+        $response->assertViewHas('tabulator', true);
+        $response->assertViewHas('submenuselected', 'notifications-types');
+    }
+
+    public function testIndexnotificationsPerUsers()
+    {
+
+        $user = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        Auth::login($user);
+
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
+
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+       View::share('general_options', $general_options);
+
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+
+        // Crear tipos de notificación
+        $notificationType = NotificationsTypesModel::factory()->create()->first();
+
+        $general_notificactions = GeneralNotificationsModel::factory()->create([
+            'uid' => generate_uuid(),
+            'notification_type_uid' => $notificationType->uid,
+        ])->first();
+
+        $notificationsPerUsers = NotificationsPerUsersModel::factory()->create([
+            'uid' => generate_uuid(),
+            'user_uid' => $user->uid,
+            'general_notification_uid' => $general_notificactions->uid,
+        ]);
+
+        $response = $this->get(route('notifications-per-users'));
+
+        $response->assertStatus(200);
+        $response->assertViewIs('notifications.notifications_per_users.index');
+        $response->assertViewHas('page_name', 'Notificaciones por usuarios');
+        $response->assertViewHas('page_title', 'Notificaciones por usuarios');
+        $response->assertViewHas('resources');
+        $response->assertViewHas('tabulator', true);
+        $response->assertViewHas('submenuselected', 'notifications-per-users');
+    }
+
+    public function testIndexEmailNotifications()
+    {
+
+        $user = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        Auth::login($user);
+
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
+
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+        View::share('general_options', $general_options);
+
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+        // Arrange: Crear algunos tipos de notificaciones
+        $notificationTypes = NotificationsTypesModel::factory()->count(3)->create();
+
+        // Act: Realizar la solicitud GET a la ruta
+        $response = $this->get(route('notifications-email'));
+
+        // Assert: Verificar que la respuesta sea correcta
+        $response->assertStatus(200);
+        $response->assertViewIs('notifications.email.index');
+        $response->assertViewHas('page_name', 'Notificaciones por email');
+        $response->assertViewHas('page_title', 'Notificaciones por email');
+        $response->assertViewHas('resources');
+        $response->assertViewHas('tabulator', true);
+        $response->assertViewHas('tomselect', true);
+        $response->assertViewHas('flatpickr', true);
+              $response->assertViewHas('submenuselected', 'notifications-email');
+    }
 }

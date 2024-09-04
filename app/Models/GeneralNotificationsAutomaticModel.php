@@ -22,7 +22,8 @@ class GeneralNotificationsAutomaticModel extends Model
         'uid',
         'title',
         'description',
-        'entity_uid'
+        'entity_uid',
+        'automatic_notification_type_uid'
     ];
 
     function users()

@@ -13,4 +13,6 @@ class UserRoleRelationshipsModel extends Model
 
     protected $keyType = 'string';
 
+    protected $fillable = ['uid', 'user_uid', 'user_role_uid'];
+
 }
