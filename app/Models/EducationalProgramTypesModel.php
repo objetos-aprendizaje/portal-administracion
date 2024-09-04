@@ -10,6 +10,8 @@ class EducationalProgramTypesModel extends Model
     use HasFactory;
     protected $table = 'educational_program_types';
     protected $primaryKey = 'uid';
+    
+    public $incrementing = false; // El uid no debe ser auto-incremental    
 
     protected $keyType = 'string';
 

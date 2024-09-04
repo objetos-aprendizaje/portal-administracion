@@ -34,6 +34,8 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
             $_SERVER['REQUEST_SCHEME'] = 'https';
             $_SERVER['SERVER_PORT'] = '443';
+        }else{
+            URL::forceScheme('http');
         }
 
         \Carbon\Carbon::setLocale(config('app.locale'));

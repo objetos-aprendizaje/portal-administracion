@@ -3,12 +3,16 @@
 namespace Tests\Unit;
 
 
-use App\Models\DepartmentsModel;
 use Tests\TestCase;
 use App\Models\UsersModel;
 use Illuminate\Http\Request;
 use App\Models\UserRolesModel;
 use Illuminate\Support\Carbon;
+use App\Models\DepartmentsModel;
+use App\Models\TooltipTextsModel;
+use App\Models\GeneralOptionsModel;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -32,7 +36,52 @@ class AdministrationDepartamentsTest extends TestCase
          $user = UsersModel::factory()->create();
          $this->actingAs($user);
     }
-/* @test Crea departamento*/
+
+
+/** @test Obtener Index View Departamentos */
+    public function testIndexViewTheDepartaments()
+    {
+
+        $user = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        Auth::login($user);
+
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
+
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+       View::share('general_options', $general_options);
+
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+        // Realiza una solicitud GET a la ruta especificada
+        $response = $this->get(route('departments'));
+
+        // Verifica que la respuesta sea exitosa (código 200)
+        $response->assertStatus(200);
+
+        // Verifica que se cargue la vista correcta
+        $response->assertViewIs('administration.departments.index');
+
+        // Verifica que los datos pasados a la vista sean correctos
+        $response->assertViewHas('coloris', true);
+        $response->assertViewHas('page_name', 'Departamentos');
+        $response->assertViewHas('page_title', 'Departamentos');
+        $response->assertViewHas('resources', [
+            "resources/js/administration_module/departments.js"
+        ]);
+        $response->assertViewHas('tabulator', true);
+        $response->assertViewHas('submenuselected', 'departments');
+    }
+/** @test Crea departamento*/
     public function testSaveDepartmentWithValidData()
     {
          // Simular un usuario autenticado

@@ -3,6 +3,8 @@ vendor
 node_modules
 
 
+!storage/app/files/test-file.txt
+
 /public/images/custom-logos/*
 !/public/images/custom-logos/index
 

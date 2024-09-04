@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
+use App\Models\AutomaticNotificationTypesModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,13 +19,14 @@ class GeneralNotificationsAutomaticModelFactory extends Factory
      */
     public function definition(): array
     {
+        
         return [
-            'uid' => Str::uuid(),
+            'uid' => generate_uuid(),
             'title' => $this->faker->unique()->sentence(3),
             'description' => $this->faker->unique()->paragraph(2),
             'created_at' => Carbon::now()->format('Y-m-d\TH:i'),
             'updated_at' => Carbon::now()->format('Y-m-d\TH:i'),
-            'automatic_notification_type_uid' => Str::uuid(),
+            'automatic_notification_type_uid' => AutomaticNotificationTypesModel::factory()->create()->first(),
         ];
     }
 }

@@ -30,6 +30,7 @@ class GeneralAdministrationController extends BaseController
                     "resources/js/administration_module/general.js"
                 ],
                 'submenuselected' => 'administracion-general',
+
             ]
         );
     }

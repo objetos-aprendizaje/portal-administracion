@@ -4,22 +4,17 @@ namespace Tests\Unit;
 
 use Tests\TestCase;
 use App\Models\UsersModel;
-use Illuminate\Support\Str;
-use Illuminate\Http\Response;
 use App\Models\UserRolesModel;
 use App\Models\CategoriesModel;
-use App\Models\CompetencesModel;
-use App\Models\CourseTypesModel;
-use PHPUnit\Framework\Exception;
+use App\Models\TooltipTextsModel;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use App\Models\LearningResultsModel;
+use App\Models\GeneralOptionsModel;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
-use App\Models\CertificationTypesModel;
-use App\Models\EducationalProgramTypesModel;
-use App\Models\EducationalResourceTypesModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Http\Controllers\Cataloging\CategoriesController;
 
 
 class CatalogingTest extends TestCase
@@ -205,6 +200,213 @@ class CatalogingTest extends TestCase
             $this->assertDatabaseMissing('categories', ['uid' => $categoryId]);
         }
     }
+
+    /**
+     * @test Buscar Categoria
+     * @return void
+     */
+    public function testGetCategoriesWithSearch()
+    {
+        // Crear categorías de prueba
+        CategoriesModel::factory()->create(['name' => 'Category 1']);
+        CategoriesModel::factory()->create(['name' => 'Category 2']);
+        CategoriesModel::factory()->create(['name' => 'Test Category']);
+
+        // Hacer una solicitud GET a la ruta con parámetros de búsqueda
+        $response = $this->get('/cataloging/categories/get_categories?search=Test');
+
+        // Verificar que la respuesta tenga el código HTTP 200
+        $response->assertStatus(200);
+
+        // Verificar que solo se devuelva la categoría que coincide con la búsqueda
+        $data = $response->json();
+        $this->assertCount(1, $data['data']);
+        $this->assertEquals('Test Category', $data['data'][0]['name']);
+    }
+
+    public function testIndexWithAccessAllowed()
+    {
+        // Crear un usuario con el rol 'MANAGEMENT'
+        $user = UsersModel::factory()->create()->latest()->first();
+         $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]);// Crea roles de prueba
+         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+         // Autenticar al usuario
+         Auth::login($user);
+
+         // Compartir la variable de roles manualmente con la vista
+         View::share('roles', $roles);
+
+         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+        View::share('general_options', $general_options);
+
+         // Simula datos de TooltipTextsModel
+         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+         View::share('tooltip_texts', $tooltip_texts);
+
+         // Simula notificaciones no leídas
+         $unread_notifications = $user->notifications->where('read_at', null);
+         View::share('unread_notifications', $unread_notifications);
+
+        // Crear una opción general para permitir que los gestores administren categorías
+        GeneralOptionsModel::create([
+            'option_name' => 'managers_can_manage_categories',
+            'option_value' => true
+        ]);
+
+        // Hacer una solicitud GET a la ruta como usuario autenticado
+        $response = $this->actingAs($user)->get('/cataloging/categories/');
+
+        // Verificar que la respuesta tenga el código HTTP 200
+        $response->assertStatus(200);
+
+        // Verificar que la vista se renderice correctamente
+        $response->assertViewHas('categories_anidated');
+        $response->assertViewHas('categories');
+    }
+
+    /**
+     * @test Respuesta al denegar acceso a categoria
+     */
+    public function testIndexWithAccessDenied()
+    {
+        $user = UsersModel::factory()->create()->latest()->first();
+         $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+         // Autenticar al usuario
+         Auth::login($user);
+
+         // Compartir la variable de roles manualmente con la vista
+         View::share('roles', $roles);
+
+         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+        View::share('general_options', $general_options);
+
+         // Simula datos de TooltipTextsModel
+         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+         View::share('tooltip_texts', $tooltip_texts);
+
+         // Simula notificaciones no leídas
+         $unread_notifications = $user->notifications->where('read_at', null);
+         View::share('unread_notifications', $unread_notifications);
+
+
+        // Crear una opción general para denegar que los gestores administren categorías
+        GeneralOptionsModel::create([
+            'option_name' => 'managers_can_manage_categories',
+            'option_value' => false
+        ]);
+
+        // Hacer una solicitud GET a la ruta como usuario autenticado
+        $response = $this->actingAs($user)->get('/cataloging/categories/');
+
+        // Verificar que la respuesta a la opción de denegar es correcta
+        $response->assertStatus(200);
+    }
+
+    public function testGetCategoriesWithSort()
+    {
+        // Crear categorías de prueba
+        CategoriesModel::factory()->create(['name' => 'Category 1']);
+        CategoriesModel::factory()->create(['name' => 'Category 2']);
+        CategoriesModel::factory()->create(['name' => 'Test Category']);
+
+        // Hacer una solicitud GET a la ruta con parámetros de ordenamiento
+        $response = $this->get('/cataloging/categories/get_categories?sort[0][field]=name&sort[0][dir]=desc&size=3');
+
+        // Verificar que la respuesta tenga el código HTTP 200
+        $response->assertStatus(200);
+
+        // Verificar que las categorías se devuelvan en orden descendente por nombre
+        $data = $response->json();
+        $this->assertCount(3, $data['data']);
+        $this->assertEquals('Test Category', $data['data'][0]['name']);
+        $this->assertEquals('Category 2', $data['data'][1]['name']);
+        $this->assertEquals('Category 1', $data['data'][2]['name']);
+    }
+
+
+    public function testIndexWithCategoriesAnidated()
+    {
+
+        $user = UsersModel::factory()->create()->latest()->first();
+         $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]);// Crea roles de prueba
+         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+         // Autenticar al usuario
+         Auth::login($user);
+
+         // Compartir la variable de roles manualmente con la vista
+         View::share('roles', $roles);
+
+         $generalOptionsMock = [
+            'operation_by_calls' => false, // O false, según lo que necesites para la prueba
+            'necessary_approval_editions' => true,
+            'necessary_approval_resources' => true,
+
+        ];
+        // Asignar el mock a app('general_options')
+        App::instance('general_options', $generalOptionsMock);
+
+         // Simula datos de TooltipTextsModel
+         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+         View::share('tooltip_texts', $tooltip_texts);
+
+         // Simula notificaciones no leídas
+         $unread_notifications = $user->notifications->where('read_at', null);
+         View::share('unread_notifications', $unread_notifications);
+
+           // Crear categorías anidadas
+           $parentCategory = CategoriesModel::factory()->create([
+                'uid' => generate_uuid(),
+                'name' => 'Parent Category',
+                'parent_category_uid' => null
+           ])->first();
+
+
+           $childCategory1 = CategoriesModel::factory()->create([
+                'uid' => generate_uuid(),
+                'name' => 'Child Category 1',
+                'parent_category_uid' => $parentCategory->uid
+            ])->latest()->first();
+
+
+            $childCategory2 = CategoriesModel::factory()->create([
+                'uid' => generate_uuid(),
+                'name' => 'Child Category 9',
+                'parent_category_uid' => $parentCategory->uid
+            ])->latest()->first();
+
+
+           // Hacer una solicitud GET a la ruta
+           $response = $this->getJson('/cataloging/categories');
+
+
+           // Verificar que la respuesta tenga el código HTTP 200
+           $response->assertStatus(200);
+
+            // Verificar que la vista se renderice correctamente
+            $response->assertViewHas('page_name', 'Categorías');
+            $response->assertViewHas('page_title', 'Categorías');
+            $response->assertViewHas('resources', [
+                "resources/js/cataloging_module/categories.js"
+            ]);
+
+            $response->assertViewHas('submenuselected', 'cataloging-categories');
+            // Obtener los datos de las categorías desde la vista
+            $data = $response->getOriginalContent()->getData();
+
+            // Verificar que las categorías anidadas se carguen correctamente
+            $categories_anidated = $data['categories_anidated'];
+            $categories = $data['categories'];
+
+            $this->assertCount(1, $categories_anidated);
+            $this->assertCount(2, $categories_anidated[0]['subcategories']);
+
+            // Verificar que las categorías planas se carguen correctamente
+            $this->assertCount(3, $categories);
+            }
 
 /**
  * @testdox Crear Tipos de cursos exitoso*/
@@ -491,236 +693,6 @@ class CatalogingTest extends TestCase
         }
     }
 
-/**
-* @testdox Crear Marco de competencias */
 
-    public function testCreateCompetence()
-    {
-        $admin = UsersModel::factory()->create();
-        $roles_bd = UserRolesModel::get()->pluck('uid');
-        $roles_to_sync = [];
-        foreach ($roles_bd as $rol_uid) {
-            $roles_to_sync[] = [
-                'uid' => generate_uuid(),
-                'user_uid' => $admin->uid,
-                'user_role_uid' => $rol_uid
-            ];
-        }
-
-        $admin->roles()->sync($roles_to_sync);
-        $this->actingAs($admin);
-
-        if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
-            // Datos de prueba
-            $data = [
-                'name' => 'Nueva Competencia',
-                'description' => 'Descripción de la nueva competencia',
-                'is_multi_select' => true,
-            ];
-
-            // Realiza la solicitud POST
-            $response = $this->postJson('/cataloging/competences_learnings_results/save_competence', $data);
-
-            // Verifica la respuesta
-            $response->assertStatus(200)
-                ->assertJson([
-                    'message' => 'Competencia añadida correctamente',
-                ]);
-
-            // Verifica que la competencia fue creada en la base de datos
-            $this->assertDatabaseHas('competences', [
-                'name' => 'Nueva Competencia',
-                'description' => 'Descripción de la nueva competencia',
-                'is_multi_select' => true,
-            ]);
-        }
-    }
-
-
-/**
- * @testdox Actualizar Marco de competencias */
-    public function testUpdateCompetences(){
-        $admin = UsersModel::factory()->create();
-        $roles_bd = UserRolesModel::get()->pluck('uid');
-        $roles_to_sync = [];
-        foreach ($roles_bd as $rol_uid) {
-            $roles_to_sync[] = [
-                'uid' => generate_uuid(),
-                'user_uid' => $admin->uid,
-                'user_role_uid' => $rol_uid
-            ];
-        }
-
-        $admin->roles()->sync($roles_to_sync);
-        $this->actingAs($admin);
-
-        if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
-            $response = $this->postJson('/cataloging/competences_learnings_results/save_competence', [
-                'uid' => '999-12499-123456-12345-12111',
-                'name' => 'Competencia',
-                'description' => 'Descripción de la competencia',
-                'is_multi_select' => true,
-
-            ]);
-
-            // Verifica que la competencia se haya creado correctamente
-            $response->assertStatus(200)
-                    ->assertJson(['message' => 'Competencia añadida correctamente']);
-
-            // Obtiene el uid de la competencia recién creada
-            $uid_tc = '999-12499-123456-12345-12111';
-            $this->assertNotNull($uid_tc, 'Competencia no se creó correctamente.');
-
-
-            // Se actualiza la competencia
-            $data = [
-                'name' => 'Nueva Competencia',
-                'description' => 'Descripción de la nueva competencia',
-                'is_multi_select' => true,
-            ];
-
-            $response = $this->postJson('/cataloging/competences_learnings_results/save_competence', $data);
-
-            // Respuesta que la competencia se haya actualizado correctamente
-            $response->assertStatus(200);
-
-            }
-    }
-
-/**
-     * @test Validación campos requeridos Marco de competencias*/
-    public function testValidatesRequiredFieldsCompetences()
-    {
-        $data = [
-            'name' => '',
-            'is_multi_select' => null,
-        ];
-
-        $response = $this->postJson('/cataloging/competences_learnings_results/save_competence', $data);
-
-        $response->assertStatus(422)
-                ->assertJsonStructure(['message', 'errors']);
-    }
-
-/**
-* @test Retorna error si la competencia padre no existe*/
-    public function testErrorIfParentCompetenceDoesNotExist()
-    {
-        $data = [
-            'name' => 'Competencia con padre inexistente',
-            'parent_competence_uid' => 'inexistente-uid',
-            'is_multi_select' => true,
-        ];
-
-        $response = $this->postJson('/cataloging/competences_learnings_results/save_competence', $data);
-
-        $response->assertStatus(422)
-                ->assertJson(['errors' => ['parent_competence_uid' => ['La competencia padre no existe']]]);
-    }
-
-/**
- * @test Verifica asociación de resultados de aprendizaje a competencias*/
-    public function testCreateLearningResult()
-    {
-        $admin = UsersModel::factory()->create();
-        $roles_bd = UserRolesModel::get()->pluck('uid');
-        $roles_to_sync = [];
-        foreach ($roles_bd as $rol_uid) {
-            $roles_to_sync[] = [
-                'uid' => generate_uuid(),
-                'user_uid' => $admin->uid,
-                'user_role_uid' => $rol_uid
-            ];
-        }
-
-        $admin->roles()->sync($roles_to_sync);
-        $this->actingAs($admin);
-
-        if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
-            // Datos de prueba
-        // Crea una competencia para asociar el resultado de aprendizaje
-            $competence = new CompetencesModel();
-            $competence->uid = '555-12499-123456-12345-12111'; // Asigno el uid manualmente
-            $competence->name = 'Competencia para Resultados de Aprendizaje';
-            $competence->description = 'Descripción de la competencia';
-            $competence->is_multi_select = false;
-            $competence->save();
-            $competence = CompetencesModel::find('555-12499-123456-12345-12111');
-
-            // Datos para crear un nuevo resultado de aprendizaje
-            $data = [
-                'uid' => Str::uuid(),
-                'competence_uid' => $competence->uid,
-                'name' => 'Nuevo Resultado de Aprendizaje',
-                'description' => 'Descripción del nuevo resultado de aprendizaje',
-            ];
-
-            // Realiza la solicitud para crear el resultado de aprendizaje
-            $response = $this->postJson('/cataloging/competences_learnings_results/save_learning_result', $data);
-
-            // Verifica la respuesta
-            $response->assertStatus(200);
-            $response->assertJson(['message' => 'Resultado de aprendizaje guardado correctamente']);
-
-            // Verifica que el resultado de aprendizaje ha sido guardado en la base de datos
-            $this->assertDatabaseHas('learning_results', [
-                'name' => 'Nuevo Resultado de Aprendizaje',
-                'competence_uid' => $competence->uid,
-            ]);
-        }
-    }
-
-/**
- * @test Elimina Competencias*/
-    public function testDeleteCompetencesLearningResults()
-    {
-        // Crea un administrador con roles
-        $admin = UsersModel::factory()->create();
-        $roles_bd = UserRolesModel::get()->pluck('uid');
-        $roles_to_sync = [];
-        foreach ($roles_bd as $rol_uid) {
-            $roles_to_sync[] = [
-                'uid' => generate_uuid(),
-                'user_uid' => $admin->uid,
-                'user_role_uid' => $rol_uid
-            ];
-        }
-
-        $admin->roles()->sync($roles_to_sync);
-        $this->actingAs($admin);
-
-        if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
-
-            // Crear algunos registros de ejemplo
-            $competence = CompetencesModel::create([
-                'uid' => generate_uuid(),
-                'name' => 'Example Competence'
-            ])->first();
-            $uid_competence = $competence->uid;
-
-            $learningResult = LearningResultsModel::create([
-                'uid' => generate_uuid(),
-                'name' => 'Example Learning Result',
-                'competence_uid' => $uid_competence
-            ]);
-
-            // Simular un request DELETE a la ruta
-            $response = $this->deleteJson('/cataloging/competences_learnings_results/delete_competences_learning_results', [
-                'uids' => [
-                    'competences' => [$competence->uid],
-                    'learningResults' => [$learningResult->uid],
-                ],
-            ]);
-
-            // Verificar que la respuesta sea correcta
-            $response->assertStatus(200)
-                    ->assertJson(['message' => 'Elementos eliminados correctamente']);
-
-            // Verificar que los registros han sido eliminados
-            $this->assertDatabaseMissing('competences', ['uid' => $competence->uid]);
-            $this->assertDatabaseMissing('learning_results', ['uid' => $learningResult->uid]);
-
-        }
-    }
 }
 

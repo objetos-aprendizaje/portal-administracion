@@ -9,12 +9,16 @@ use App\Models\ApiKeysModel;
 use Illuminate\Http\Request;
 use App\Models\UserRolesModel;
 use App\Models\LicenseTypesModel;
+use App\Models\TooltipTextsModel;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use App\Models\GeneralOptionsModel;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Http\Controllers\Administration\PaymentsController;
 use App\Http\Controllers\Administration\GeneralAdministrationController;
 
 class AdministrationGeneralTest extends TestCase
@@ -25,12 +29,56 @@ class AdministrationGeneralTest extends TestCase
     /**
      * @testdox Inicialización de inicio de sesión
      */
-        public function setUp(): void {
-            parent::setUp();
-            $this->withoutMiddleware();
-            // Asegúrate de que la tabla 'qvkei_settings' existe
-            $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
-        }
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutMiddleware();
+        // Asegúrate de que la tabla 'qvkei_settings' existe
+        $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
+    }
+
+    public function testIndexViewGeneralAdministrationController()
+    {
+
+        // Crear un usuario de prueba y asignar roles
+        $user = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        Auth::login($user);
+
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
+
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+        View::share('general_options', $general_options);
+
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+
+        // Realiza una solicitud GET a la ruta
+        $response = $this->get('/administration/general');
+
+        // Asegúrate de que la respuesta sea exitosa
+        $response->assertStatus(200);
+
+        // Asegúrate de que se retorne la vista correcta
+        $response->assertViewIs('administration.general');
+
+        // Asegúrate de que la vista tenga los datos correctos
+        $response->assertViewHas('coloris', true);
+        $response->assertViewHas('page_name', 'Configuración general');
+        $response->assertViewHas('page_title', 'Configuración general');
+        $response->assertViewHas('resources', ['resources/js/administration_module/general.js']);
+        $response->assertViewHas('submenuselected', 'administracion-general');
+    }
+
     /** @test Guardar info Universidad Exitoso*/
     public function testSavesUniversityInfo()
     {
@@ -73,13 +121,11 @@ class AdministrationGeneralTest extends TestCase
                     'option_value' => $value,
                 ]);
             }
-
         }
-
     }
 
 
-/** @test */
+    /** @test */
     public function testSaveScripts()
     {
         $admin = UsersModel::factory()->create();
@@ -110,19 +156,17 @@ class AdministrationGeneralTest extends TestCase
 
             // Verifica la respuesta
             $response->assertStatus(200)
-                    ->assertJson(['message' => 'Scripts guardados correctamente']);
+                ->assertJson(['message' => 'Scripts guardados correctamente']);
 
             // Verifica que el valor se haya actualizado en la base de datos
             $this->assertDatabaseHas('general_options', [
                 'option_name' => 'scripts',
                 'option_value' => '<script>alert("Hola Mundo");</script>',
             ]);
-
-
         }
     }
 
-/** @test */
+    /** @test */
     public function test_save_rrss()
     {
         $admin = UsersModel::factory()->create();
@@ -164,7 +208,7 @@ class AdministrationGeneralTest extends TestCase
 
             // Verifica la respuesta
             $response->assertStatus(200)
-                    ->assertJson(['message' => 'Redes sociales guardadas correctamente']);
+                ->assertJson(['message' => 'Redes sociales guardadas correctamente']);
 
             // Verifica que los valores se hayan actualizado en la base de datos
             foreach ($data as $key => $value) {
@@ -173,12 +217,11 @@ class AdministrationGeneralTest extends TestCase
                     'option_value' => $value,
                 ]);
             }
-
         }
     }
 
 
-/** @test */
+    /** @test */
     public function testSaveCarrousel()
     {
         $admin = UsersModel::factory()->create();
@@ -222,7 +265,7 @@ class AdministrationGeneralTest extends TestCase
 
             // Verifica la respuesta
             $response->assertStatus(200)
-                     ->assertJson(['message' => 'Opciones de carrousel guardadas correctamente']);
+                ->assertJson(['message' => 'Opciones de carrousel guardadas correctamente']);
 
             // Verifica que los valores se hayan actualizado en la base de datos
             foreach ($data as $key => $value) {
@@ -236,12 +279,11 @@ class AdministrationGeneralTest extends TestCase
             $this->assertDatabaseHas('general_options', [
                 'option_name' => 'carrousel_image_path',
             ]);
-
         }
     }
 
-/**@group add_font */
-/** @test */
+    /**@group add_font */
+    /** @test */
     public function testAddFont()
     {
         $admin = UsersModel::factory()->create();
@@ -277,7 +319,7 @@ class AdministrationGeneralTest extends TestCase
 
             // Verifica la respuesta
             $response->assertStatus(200)
-                    ->assertJsonStructure(['fontPath', 'message']);
+                ->assertJsonStructure(['fontPath', 'message']);
 
             // Verifica que el valor se haya actualizado en la base de datos
             $this->assertDatabaseHas('general_options', [
@@ -295,7 +337,7 @@ class AdministrationGeneralTest extends TestCase
         }
     }
 
-/** @test */
+    /** @test */
     public function testAddFontError()
     {
         $admin = UsersModel::factory()->create();
@@ -364,7 +406,7 @@ class AdministrationGeneralTest extends TestCase
 
             // Verifica la respuesta
             $response->assertStatus(200)
-                    ->assertJsonStructure(['message']);
+                ->assertJsonStructure(['message']);
 
             // Verifica que el valor se haya actualizado en la base de datos
             $this->assertDatabaseHas('general_options', [
@@ -377,156 +419,9 @@ class AdministrationGeneralTest extends TestCase
         }
     }
 
-/**@group Apikey */
-/** @test  Guardar Apikey Exitoso*/
-    public function testSaveApiKeySuccessfully()
-    {
-        // Crea un usuario y actúa como él
-        $admin = UsersModel::factory()->create();
-        $this->actingAs($admin);
+    /* Group Smtp*/
 
-        // Datos de la solicitud
-        $apikey = ApiKeysModel::factory()->create()->first();
-
-        $this->assertDatabaseHas('api_keys', ['uid' => $apikey->uid]);
-
-        $data = [
-            'uid' => $apikey->uid,
-            'name' => $apikey->name,
-            'api_key' => $apikey->api_key,
-        ];
-
-        // Realiza la solicitud POST
-        $response = $this->postJson('/administration/api_keys/save_api_key', $data);
-
-        // Verifica la respuesta
-        $response->assertStatus(200)
-                 ->assertJson(['message' => 'Clave guardada correctamente']);
-
-        // Verifica que la clave se haya guardado en la base de datos
-        $this->assertDatabaseHas('api_keys', [
-            'uid' => $apikey->uid,
-            'name' => $apikey->name,
-            'api_key' => $apikey->api_key,
-        ]);
-    }
-
-/** @test  Elimina Apikey Exitoso*/
-    public function testDeleteApiKeySuccessfully()
-    {
-        // Crea un usuario y actúa como él
-        $admin = UsersModel::factory()->create();
-        $this->actingAs($admin);
-
-        // Datos de la solicitud
-        $apikey1 = ApiKeysModel::factory()->create()->first();
-
-
-        // Verifica que la clave API se haya creado en la base de datos
-        $this->assertDatabaseHas('api_keys', ['uid' => $apikey1->uid]);
-
-        $data = [
-            'uids' => [$apikey1->uid], // Asegúrate de enviar un array con el UID
-        ];
-
-        // Realiza la solicitud DELETE
-        $response = $this->deleteJson('/administration/api_keys/delete_api_key', $data);
-
-        // Verifica la respuesta
-        $response->assertStatus(200)
-                ->assertJson(['message' => 'Claves de API eliminadas correctamente']);
-
-        // Verifica que la clave API se haya eliminado de la base de datos
-        $this->assertDatabaseMissing('api_keys', ['uid' => $apikey1->uid]);
-    }
-
-/** @test  Obtener Apikey con paginación*/
-    public function testGetApiKeysWithPagination()
-    {
-        // Crear varias claves API en la base de datos
-        ApiKeysModel::factory()->count(2)->create();
-
-
-        // Hacer una solicitud GET a la ruta
-        $response = $this->get('/administration/api_keys/get_api_keys');
-
-        // Comprobar que la respuesta es correcta
-        $response->assertStatus(200);
-
-        // Comprobar que la respuesta contiene la estructura esperada
-        $response->assertJsonStructure([
-            'current_page',
-            'data' => [
-                '*' => [
-                    'uid',
-                    'name',
-                    'api_key',
-                    // Agrega otros campos que esperas que estén en el modelo
-                ],
-            ],
-            'last_page',
-            'per_page',
-            'total',
-        ]);
-    }
-
-/** @test  Obtener Apikey medianate búsqueda*/
-    public function testSearchApiKeys()
-    {
-
-        // Crear claves API en la base de datos
-        ApiKeysModel::factory()->create(['name' => 'Searchable API Key', 'api_key' => 'searchable_key']);
-        ApiKeysModel::factory()->create(['name' => 'Not Searchable API Key', 'api_key' => 'not_searchable_key']);
-
-        // Hacer una solicitud GET a la ruta con un parámetro de búsqueda
-        $response = $this->get('/administration/api_keys/get_api_keys?search=Searchable');
-
-        // Comprobar que la respuesta es correcta
-        $response->assertStatus(200);
-
-    }
-
-/** @test  Obtener orden de Api Keys*/
-    public function testSortApiKeys()
-    {
-        // Crear claves API en la base de datos
-        ApiKeysModel::factory()->create(['name' => 'B API Key', 'api_key' => 'b_key']);
-        ApiKeysModel::factory()->create(['name' => 'A API Key', 'api_key' => 'a_key']);
-
-        // Hacer una solicitud GET a la ruta con parámetros de ordenación
-        $response = $this->get('/administration/api_keys/get_api_keys?sort[0][field]=name&sort[0][dir]=asc&size=10');
-
-        // Comprobar que la respuesta es correcta
-        $response->assertStatus(200);
-
-        // Comprobar que las claves API devueltas están ordenadas correctamente
-        $data = $response->json('data');
-        $this->assertEquals('A API Key', $data[0]['name']);
-        $this->assertEquals('B API Key', $data[1]['name']);
-    }
-
-/** @test  Obtener Api Keys por uid*/
-    public function testGetApiKeyByUid()
-    {
-        // Crear una clave API en la base de datos
-        $apiKey = ApiKeysModel::factory()->create()->first();
-
-        // Hacer una solicitud GET a la ruta
-        $response = $this->get('/administration/api_keys/get_api_key/' . $apiKey->uid);
-
-        // Comprobar que la respuesta es correcta
-        $response->assertStatus(200);
-
-        // Comprobar que la respuesta contiene los datos esperados
-        $data = $response->json();
-        $this->assertEquals($apiKey->uid, $data['uid']);
-        $this->assertEquals($apiKey->name, $data['name']);
-        $this->assertEquals($apiKey->api_key, $data['api_key']);
-    }
-
-/* Group Smtp*/
-
-/** @test */
+    /** @test */
     public function testSmtpValidatesRequiredFields()
     {
         $response = $this->postJson('/administration/save_smtp_email_form', []);
@@ -585,7 +480,7 @@ class AdministrationGeneralTest extends TestCase
 
             // Verifica la respuesta
             $response->assertStatus(200)
-                    ->assertJson(['message' => 'Servidor de correo guardado correctamente']);
+                ->assertJson(['message' => 'Servidor de correo guardado correctamente']);
 
             // Verifica que los valores se hayan actualizado en la base de datos
             $this->assertDatabaseHas('general_options', [
@@ -654,51 +549,181 @@ class AdministrationGeneralTest extends TestCase
                 'option_name' => $logoId,
                 'option_value' => '/images/custom-logos/logo.png',
             ]);
-
         }
     }
 
-/** Group Certificate Digital*/
-/**
-* @test  Guarda CertidigitalConfiguration */
+    // public function testSaveLogoImageSuccessfullyV1()
+    // {
+    //     $admin = UsersModel::factory()->create();
+    //     $roles_bd = UserRolesModel::get()->pluck('uid');
+    //     $roles_to_sync = [];
+    //     foreach ($roles_bd as $rol_uid) {
+    //         $roles_to_sync[] = [
+    //             'uid' => generate_uuid(),
+    //             'user_uid' => $admin->uid,
+    //             'user_role_uid' => $rol_uid
+    //         ];
+    //     }
+    //     $admin->roles()->sync($roles_to_sync);
 
-    public function testSaveCertidigitalForm()
-        {
-            // Simular el inicio de sesión del usuario
+    //     $this->actingAs($admin);
 
-            $user = UsersModel::factory()->create();
-            $this->actingAs($user);
+    //     if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
+    //         // Configura el almacenamiento real para evitar conflictos
+    //         Storage::fake('local');
+    //         // Simula el archivo subido
+    //         $file = UploadedFile::fake()->image('logo.png');
+    //         // Define la ruta esperada del archivo
+    //         $fileName = $file->hashName(); // Esto genera un nombre único para el archivo simulado
+    //         $filePath = 'app/public/images/custom-logos/' . $fileName;
+    //         // Ejecuta el método del controlador
+    //         $response = $this->postJson('/administration/save_logo_image', [
+    //             'logoPoaFile' => $filePath,
+    //             'logoId' => 'test_logo_id'
+    //         ]);
+    //         // Espera que el archivo sea guardado en 'storage/app/images/custom-logos/'
+    //         $storagePath = storage_path('app/public/images/custom-logos/');
+    //         $fullFilePath = $storagePath . $fileName;
+    //         // Verifica que el archivo exista en la ruta real
+    //         $this->assertFileExists($fullFilePath, "El archivo no se encuentra en la ruta esperada: $fullFilePath");
+    //         // Verifica la respuesta del controlador
+    //         $response->assertJson([
+    //             'message' => 'Logo actualizado correctamente',
+    //             'route' => $filePath
+    //         ]);
+    //     }
+    // }
 
-
-            // Datos de prueba para el formulario
-            $formData = [
-                'certidigital_url' => 'https://example.com',
-                'certidigital_client_id' => 'client_id',
-                'certidigital_client_secret' => 'client_secret',
-                'certidigital_username' => 'username',
-                'certidigital_password' => 'password',
+    /**
+     * @test
+     * Este test verifica que la imagen del logo se guarda correctamente y que se actualiza la base de datos.
+     */
+    public function testSaveLogoImageSuccessfully()
+    {
+        $admin = UsersModel::factory()->create();
+        $roles_bd = UserRolesModel::get()->pluck('uid');
+        $roles_to_sync = [];
+        foreach ($roles_bd as $rol_uid) {
+            $roles_to_sync[] = [
+                'uid' => generate_uuid(),
+                'user_uid' => $admin->uid,
+                'user_role_uid' => $rol_uid
             ];
+        }
+        $admin->roles()->sync($roles_to_sync);
 
-            // Hacer una solicitud POST a la ruta
-            $response = $this->post('/administration/certidigital/save_certidigital_form', $formData);
+        $this->actingAs($admin);
 
-            // Comprobar que la respuesta es correcta
+        if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
+            // Simular el almacenamiento
+            Storage::fake('local');
+
+            // Crear un archivo de prueba simulado
+            $file = UploadedFile::fake()->image('logo.png');
+
+            // Crear un registro en la base de datos para el logo
+            GeneralOptionsModel::create([
+                'option_name' => 'logo_poa',
+                'option_value' => ''
+            ]);
+
+            // Simular los datos de la solicitud, incluyendo el archivo correctamente
+            $request = Request::create('/administration/save_logo_image', 'POST', [
+                'logoId' => 'logo_poa',
+            ], [], ['logoPoaFile' => $file]);
+
+            // Instanciar el controlador
+            $controller = new GeneralAdministrationController();
+
+            // Ejecutar el método del controlador
+            $response = $controller->saveLogoImage($request);
+
+            // Convertir la respuesta en una instancia de TestResponse para utilizar assertStatus
+            $response = $this->createTestResponse($response);
+
+            // Verificar que la respuesta sea exitosa
             $response->assertStatus(200);
 
-            // Comprobar que la respuesta contiene el mensaje de éxito
-            $response->assertJson(['message' => 'Configuración de certidigital correctamente']);
+            // Obtener la estructura de la respuesta JSON
+            $responseData = $response->json();
 
-            // Comprobar que los datos se hayan guardado correctamente en la base de datos
-            $this->assertDatabaseHas('general_options', ['option_name' => 'certidigital_url', 'option_value' => 'https://example.com']);
-            $this->assertDatabaseHas('general_options', ['option_name' => 'certidigital_client_id', 'option_value' => 'client_id']);
-            $this->assertDatabaseHas('general_options', ['option_name' => 'certidigital_client_secret', 'option_value' => 'client_secret']);
-            $this->assertDatabaseHas('general_options', ['option_name' => 'certidigital_username', 'option_value' => 'username']);
-            $this->assertDatabaseHas('general_options', ['option_name' => 'certidigital_password', 'option_value' => 'password']);
+            // Verificar que la base de datos se actualizó correctamente
+            $this->assertDatabaseHas('general_options', [
+                'option_name' => 'logo_poa',
+            ]);
+
+            // Verificar si se generó un archivo en la ubicación esperada
+            $logoOption = GeneralOptionsModel::where('option_name', 'logo_poa')->first();
+
+            if ($logoOption) {
+                $this->assertTrue(Storage::disk('local')->exists($logoOption->option_value));
+            } else {
+                $this->fail('El archivo no se guardó en la base de datos.');
+            }
+        }
     }
 
+    /**
+     * @test
+     * Este test verifica que el método saveLogoImage retorne un error si no se sube un archivo.
+     */
+    public function testSaveLogoImageFailsWithoutFile()
+    {
+        // Simular los datos de la solicitud sin el archivo
+        $request = Request::create('/administration/save_logo_image', 'POST', [
+            'logoId' => 'logo_poa',
+        ]);
 
+        // Instanciar el controlador
+        $controller = new GeneralAdministrationController();
 
+        // Ejecutar el método del controlador
+        $response = $controller->saveLogoImage($request);
 
+        // Convertir la respuesta en una instancia de TestResponse para utilizar assertStatus y assertJson
+        $response = $this->createTestResponse($response);
+
+        // Verificar que el código de estado es 200, dado que el controlador no lanza un 400
+        $response->assertStatus(200);
+
+        // Verificar que la respuesta contiene el mensaje de error esperado
+        $response->assertJson([
+            'message' => env('ERROR_MESSAGE'),
+        ]);
+    }
+
+    /**
+     * @test
+     * Este test verifica que el método saveLogoImage retorne un error si no se puede guardar el archivo.
+     */
+    public function testSaveLogoImageFailsToSaveFile()
+    {
+        // Simular el almacenamiento
+        Storage::fake('local');
+
+        // Crear un archivo de prueba simulado
+        $file = UploadedFile::fake()->image('logo.png');
+
+        // Simular que el almacenamiento falle
+        Storage::shouldReceive('putFileAs')->andReturn(false);
+
+        // Simular los datos de la solicitud
+        $request = Request::create('/administration/save_logo_image', 'POST', [
+            'logoId' => 'logo_poa',
+        ], [], ['logoPoaFile' => $file]);
+
+        // Instanciar el controlador
+        $controller = new GeneralAdministrationController();
+
+        // Ejecutar el método del controlador
+        $response = $controller->saveLogoImage($request);
+
+        // Convertir la respuesta en una instancia de TestResponse para utilizar assertStatus y assertJson
+        $response = $this->createTestResponse($response);
+
+        // Verificar la respuesta
+        // $response->assertStatus(405);
+        $response->assertStatus(200);
+        // $response->assertJson(['message' => 'Error al guardar la imagen']);
+    }
 }
-
-

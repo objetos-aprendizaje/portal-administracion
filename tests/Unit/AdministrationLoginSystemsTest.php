@@ -5,8 +5,13 @@ namespace Tests\Unit;
 use App\User;
 use Tests\TestCase;
 use App\Models\UsersModel;
+use Illuminate\Support\Str;
 use App\Models\UserRolesModel;
 use App\Models\Saml2TenantsModel;
+use App\Models\TooltipTextsModel;
+use App\Models\GeneralOptionsModel;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -26,6 +31,59 @@ class AdministrationLoginSystemsTest extends TestCase
         }
 
 /**@group redes API */
+
+/** @test  Obtener Index View Google */
+    public function testIndexViewLoginSystems()
+    {
+        $user = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);
+        // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        Auth::login($user);
+
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
+
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+    View::share('general_options', $general_options);
+
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+
+        // Crear datos de ejemplo para Saml2TenantsModel
+        $cas = Saml2TenantsModel::factory()->create(['key' => 'cas', 'uuid' => generate_uuid()])->first();
+
+
+       // Crear datos de ejemplo para GeneralOptionsModel
+       GeneralOptionsModel::create(['option_name' => 'cas_active', 'option_value' => 1])->first();
+
+        // Simular la ruta
+        $response = $this->get(route('login-systems'));
+
+        // Verificar que la respuesta sea exitosa
+        $response->assertStatus(200);
+
+        // Verificar que la vista correcta fue cargada
+        $response->assertViewIs('administration.login_systems');
+
+        // Verificar que los datos de la vista sean los correctos
+        $response->assertViewHas('page_name', 'Sistemas de inicio de sesión');
+        $response->assertViewHas('page_title', 'Sistemas de inicio de sesión');
+        $response->assertViewHas('resources', [
+            "resources/js/administration_module/login_systems.js"
+        ]);
+        $response->assertViewHas('cas', $cas);
+        $response->assertViewHas('submenuselected', 'login-systems');
+    }
+
+
 /** @test  Submit Google */
     public function testSubmitGoogleFormWithValidData()
     {

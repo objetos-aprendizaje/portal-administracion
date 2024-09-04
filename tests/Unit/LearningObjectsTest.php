@@ -25,6 +25,8 @@ class LearningObjectsTest extends TestCase
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
     }
 
+    
+
 
  /**
  * @testdox Verifica Duplicar Cursos*/

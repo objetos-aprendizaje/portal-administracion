@@ -5,7 +5,11 @@ namespace Tests\Unit;
 use App\User;
 use Tests\TestCase;
 use App\Models\UsersModel;
+use App\Models\UserRolesModel;
 use App\Models\TooltipTextsModel;
+use App\Models\GeneralOptionsModel;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -28,7 +32,51 @@ class AdministrationTooltipTextTest extends TestCase {
         }
 
 /**@group Tooltip_texts
- * @test Crear Nuevo Tool Tip */
+ /** @test Obtener Index View Tool Tip */
+ public function testIndexReturnsViewToolTipTexts()
+    {
+
+        $user = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        Auth::login($user);
+
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
+
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+       View::share('general_options', $general_options);
+
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+        // Hacer la solicitud GET a la ruta
+        $response = $this->get(route('tooltip-texts'));
+
+        // Verificar que la respuesta sea exitosa
+        $response->assertStatus(200);
+
+        // Verificar que se devuelva la vista correcta
+        $response->assertViewIs('administration.tooltip_texts.index');
+
+        // Verificar que los datos se pasan a la vista
+        $response->assertViewHas('page_name', 'Textos para tooltips');
+        $response->assertViewHas('page_title', 'Textos para tooltips');
+        $response->assertViewHas('resources', [
+            "resources/js/administration_module/tooltip_texts.js"
+        ]);
+        $response->assertViewHas('tabulator', true);
+        $response->assertViewHas('submenuselected', 'administracion-tooltip-texts');
+    }
+
+
+ /** @test Crear Nuevo Tool Tip */
 
     public function testSaveTooltipTextCreatesNewTooltip()
     {

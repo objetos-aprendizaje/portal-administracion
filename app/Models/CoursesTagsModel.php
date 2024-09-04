@@ -13,4 +13,6 @@ class CoursesTagsModel extends Model
 
     protected $keyType = 'string';
 
+    protected $fillable = ['uid', 'course_uid', 'tag'];
+
 }

@@ -10,6 +10,10 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\UserRolesModel;
 use Illuminate\Support\Carbon;
+use App\Models\TooltipTextsModel;
+use App\Models\GeneralOptionsModel;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
 use App\Models\EducationalProgramTypesModel;
 use App\Models\SuggestionSubmissionEmailsModel;
@@ -31,9 +35,56 @@ class AdministrationSuggestionsTest extends TestCase
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
     }
 
+    /**
+     * @test Obtener Index View*/
+
+    public function testIndexViewSuggestionsImprovements()
+    {
+
+        $user = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+         // Autenticar al usuario
+        Auth::login($user);
+
+         // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
+
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+        View::share('general_options', $general_options);
+
+         // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+         // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+
+        // Simular la ruta
+        $response = $this->get(route('suggestions-improvements'));
+
+        // Verificar que la respuesta sea exitosa
+        $response->assertStatus(200);
+
+        // Verificar que la vista correcta fue cargada
+        $response->assertViewIs('administration.suggestions_improvements');
+
+        // Verificar que los datos de la vista sean los correctos
+        $response->assertViewHas('page_name', 'Sugerencias y mejoras');
+        $response->assertViewHas('page_title', 'Sugerencias y mejoras');
+        $response->assertViewHas('resources', [
+            "resources/js/administration_module/suggestions_improvements.js",
+        ]);
+
+        $response->assertViewHas('tabulator', true);
+        $response->assertViewHas('submenuselected', 'suggestions-improvements');
+    }
+
 
     /**
- * @test Elimina Footer error*/
+     * @test Elimina Footer error*/
     public function testDeleteNonExistingFooterPages()
     {
         // Datos de entrada para la eliminación de un UID que no existe

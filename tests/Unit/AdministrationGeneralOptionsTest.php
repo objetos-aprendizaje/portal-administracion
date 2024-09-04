@@ -11,11 +11,13 @@ use App\Models\UserRolesModel;
 use Illuminate\Support\Carbon;
 use App\Models\LmsSystemsModel;
 use App\Models\LicenseTypesModel;
+use App\Models\TooltipTextsModel;
 use App\Models\GeneralOptionsModel;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use App\Http\Controllers\Administration\PaymentsController;
 
 class AdministrationGeneralOptionsTest extends TestCase
 {
@@ -30,6 +32,56 @@ class AdministrationGeneralOptionsTest extends TestCase
             // Asegúrate de que la tabla 'qvkei_settings' existe
             $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
         }
+
+/** Group Lanes show*/
+
+/**
+*  @test  Obtener Index View Lanes Show */
+
+
+
+    public function testIndexViewLanesShow()
+    {
+
+        // Crear un usuario de prueba y asignar roles
+        $user = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        Auth::login($user);
+
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
+
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+       View::share('general_options', $general_options);
+
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+
+        // Simular la ruta
+        $response = $this->get(route('lanes-show'));
+
+        // Verificar que la respuesta sea exitosa
+        $response->assertStatus(200);
+
+        // Verificar que la vista correcta fue cargada
+        $response->assertViewIs('administration.lanes_show');
+
+        // Verificar que los datos de la vista sean los correctos
+        $response->assertViewHas('page_name', 'Carriles a mostrar');
+        $response->assertViewHas('page_title', 'Carriles a mostrar');
+        $response->assertViewHas('resources', [
+            "resources/js/administration_module/lanes_show.js"
+        ]);
+        $response->assertViewHas('submenuselected', 'lanes-show');
+    }
 
 
 
@@ -80,6 +132,51 @@ class AdministrationGeneralOptionsTest extends TestCase
 
 
 /** Group LMS Systems*/
+/** @test Obtener Index View */
+
+    public function testIndexRouteReturnsViewLms()
+    {
+
+        $user = UsersModel::factory()->create()->latest()->first();
+         $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+         // Autenticar al usuario
+         Auth::login($user);
+
+         // Compartir la variable de roles manualmente con la vista
+         View::share('roles', $roles);
+
+         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+        View::share('general_options', $general_options);
+
+         // Simula datos de TooltipTextsModel
+         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+         View::share('tooltip_texts', $tooltip_texts);
+
+         // Simula notificaciones no leídas
+         $unread_notifications = $user->notifications->where('read_at', null);
+         View::share('unread_notifications', $unread_notifications);
+
+        // Realiza una solicitud GET a la ruta
+        $response = $this->get(route('lms-systems'));
+
+        // Verifica que la respuesta sea exitosa (código 200)
+        $response->assertStatus(200);
+
+        // Verifica que se retorne la vista correcta
+        $response->assertViewIs('administration.lms_systems.index');
+
+        // Verifica que los datos se pasen correctamente a la vista
+        $response->assertViewHas('coloris', true);
+        $response->assertViewHas('page_name', 'Sistemas LMS');
+        $response->assertViewHas('page_title', 'Sistemas LMS');
+        $response->assertViewHas('resources', [
+            "resources/js/administration_module/lms_systems.js"
+        ]);
+        $response->assertViewHas('tabulator', true);
+        $response->assertViewHas('submenuselected', 'lms-systems');
+    }
 /**
  * @test  Guardar Lms Systems */
     public function testSaveLmsSystemCreatesNewLms()
@@ -268,201 +365,6 @@ class AdministrationGeneralOptionsTest extends TestCase
 
         $response->assertStatus(200);
 
-    }
-
-/** @group Center Controller */
-
-/**
-*  @test  Valida Crear Centros */
-    public function testSaveCenterSuccess()
-    {
-        // Simular un usuario autenticado
-        $user = UsersModel::factory()->create();
-        $this->actingAs($user);
-
-        // Datos de prueba válidos
-        $data = [
-            'name' => 'Test Center',
-        ];
-
-        // Enviar la solicitud POST
-        $response = $this->postJson('/administration/centers/save_center', $data);
-
-        // Verificar la respuesta
-        $response->assertStatus(200)
-                ->assertJson(['message' => 'Centro añadido correctamente']);
-
-        // Verificar que el centro se haya guardado en la base de datos
-        $this->assertDatabaseHas('centers', [
-            'name' => 'Test Center',
-        ]);
-    }
-
-/** @test Elimina Centro*/
-    public function testDeleteCentersSuccess()
-    {
-        // Simular un usuario autenticado
-        $user = UsersModel::factory()->create();
-        $this->actingAs($user);
-
-        // Crear algunos centros de prueba
-        $center1 = CentersModel::factory()->create()->first();
-        $center2 = CentersModel::factory()->create()->first();
-
-
-        // Asegúrate de que los centros existen antes de la eliminación
-        $this->assertDatabaseHas('centers', ['uid' => $center1->uid]);
-        $this->assertDatabaseHas('centers', ['uid' => $center2->uid]);
-
-        // Enviar la solicitud DELETE para eliminar los centros
-        $response = $this->deleteJson('/administration/centers/delete_centers', [
-            'uids' => [$center1->uid, $center2->uid]
-        ]);
-
-        // Verificar la respuesta
-        $response->assertStatus(200)
-                ->assertJson(['message' => 'Centros eliminados correctamente']);
-
-        // Verificar que los centros ya no existen en la base de datos
-        $this->assertDatabaseMissing('centers', ['uid' => $center1->uid]);
-        $this->assertDatabaseMissing('centers', ['uid' => $center2->uid]);
-    }
-
-/**
- * test Obtener Centro por uid
-*/
-    public function testGetCenterByUid()
-    {
-        // Crear un centro de prueba
-        $center = CentersModel::factory()->create()->first();
-
-        // Hacer una petición GET a la ruta con el uid del centro
-        $response = $this->get('/administration/centers/get_center/'.$center->uid);
-
-        // Verifica que la respuesta sea exitosa
-        $response->assertStatus(200);
-
-        // Verifica que la respuesta contenga los datos del centro
-        $response->assertJson([
-            'uid' => $center->uid,
-            'name' => $center->name,
-        ]);
-    }
-
-/**
- * @test Filtrar centro
- */
-    public function testFilterCentersBySearch()
-    {
-        // Crear un centro de prueba
-        CentersModel::factory()->create(['name' => 'Centro 1']);
-        CentersModel::factory()->create(['name' => 'Unidad 1']);
-
-        $response = $this->get('/administration/centers/get_centers?search=Centro');
-
-        $response->assertStatus(200);
-        $this->assertCount(1, $response->json('data'));
-    }
-
-/** @test  Ordenar centros*/
-    public function testSortCenters()
-    {
-
-        CentersModel::factory()->create(['name' => 'Center2']);
-        CentersModel::factory()->create(['name' => 'Another Center']);
-
-
-        $response = $this->get('/administration/lms_systems/get_lms_systems?sort[0][field]=name&sort[0][dir]=asc&size=10');
-
-        $response->assertStatus(200);
-
-    }
-
-/* @Group Center*/
-/**
- * @test Crear Licencias  */
-    public function testCreateLicense()
-    {
-        $user = UsersModel::factory()->create();
-        $this->actingAs($user);
-        $license = LicenseTypesModel::factory()->create();
-
-        $data = [
-            'uids' => [$license->uid],
-            'name' => $license->name,
-        ];
-
-        $response = $this->postJson('/administration/licenses/save_license', $data);
-
-        $response->assertStatus(200)
-            ->assertJson(['message' => 'Licencia añadida correctamente']);
-
-        $this->assertDatabaseHas('license_types', [
-            'uid' => $license->uid,
-            'name' => $license->name
-        ]);
-    }
-/** @test Error licencia invalida*/
-    public function testSaveLicenseWithInvalidData()
-    {
-        $data = [
-            'name' => '',
-        ];
-
-        $response = $this->postJson('/administration/licenses/save_license', $data);
-
-        $response->assertStatus(422)
-            ->assertJson(['message' => 'Algunos campos son incorrectos'])
-            ->assertJsonStructure(['errors' => ['name']]);
-
-
-    }
-/** @test  Actualizar licencia*/
-    public function testSaveLicenseUpdatesExistingLicense()
-    {
-        $user = UsersModel::factory()->create();
-        $this->actingAs($user);
-        $license = LicenseTypesModel::factory()->create();
-
-        $data = [
-            'uid' => $license->uid,
-            'name' => 'Licencia prueba'
-        ];
-
-         $response = $this->postJson('/administration/licenses/save_license', $data);
-
-
-        $response->assertStatus(200)
-            ->assertJson(['message' => 'Licencia añadida correctamente']);
-
-        $this->assertDatabaseHas('license_types', [
-             'name' => 'Licencia prueba',
-        ]);
-    }
-
-/** @test Elimina Licencia*/
-    public function testDeleteLicensesSuccessfully()
-    {
-        $user = UsersModel::factory()->create();
-        $this->actingAs($user);
-        $license = LicenseTypesModel::factory()->create();
-
-        $data = [
-            'uids' => [$license->uid],
-        ];
-
-
-        // Realiza la solicitud DELETE para eliminar la licencia
-        $response = $this->deleteJson('/administration/licenses/delete_licenses', $data);
-
-        // Verifica que la respuesta sea correcta
-        $response->assertStatus(200)
-            ->assertJson(['message' => 'Licencias eliminadas correctamente']);
-
-        // Verifica que la licencia ya no existe en la base de datos
-        $this->assertDatabaseMissing('license_types', [
-            'uid' => $license->uid,
-        ]);
     }
 
 }

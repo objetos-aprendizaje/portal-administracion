@@ -19,10 +19,10 @@ class CoursesModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => Str::uuid(),
+            'uid' => generate_uuid(),
             'title' => $this->faker->sentence(),
-            'course_status_uid' => CourseStatusesModel::factory()->create()->first(), // Esto generará un estado de curso automáticamente
-            'course_type_uid' => CourseTypesModel::factory()->create()->first(), // Asegúrate de que este también esté definido
+            'course_status_uid' => CourseStatusesModel::factory()->create()->first(),
+            'course_type_uid' => CourseTypesModel::factory()->create()->first(),
             'ects_workload' => $this->faker->numberBetween(1, 10),
             'belongs_to_educational_program' => $this->faker->boolean(),
             'identifier' => 'identifier',

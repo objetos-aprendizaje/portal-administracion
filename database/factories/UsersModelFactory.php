@@ -19,7 +19,7 @@ class UsersModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => Str::uuid(),
+            'uid' => generate_uuid(),
             'first_name' => $this->faker->firstName,
             'last_name' => $this->faker->lastName,
             'email' => fake()->unique()->safeEmail(),

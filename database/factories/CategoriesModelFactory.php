@@ -19,7 +19,7 @@ class CategoriesModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => Str::uuid(),
+            'uid' => generate_uuid(),
             'name' => $this->faker->name(),
             'color' => '#fff',
             'image_path' => '',

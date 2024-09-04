@@ -18,7 +18,7 @@ class EmailNotificationsAutomaticUsersModel extends Model
 
     protected $keyType = 'string';
 
-    protected $timestamps = false;
+    public $timestamps = false;
 
     protected $fillable = [
         'uid',

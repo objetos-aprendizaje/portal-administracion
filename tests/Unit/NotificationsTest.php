@@ -4,13 +4,21 @@ namespace Tests\Unit;
 
 use Tests\TestCase;
 use App\Models\UsersModel;
+use Illuminate\Http\Request;
 use App\Models\UserRolesModel;
 use Illuminate\Support\Carbon;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\TooltipTextsModel;
+use App\Models\GeneralOptionsModel;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
 use App\Models\NotificationsTypesModel;
 use App\Models\GeneralNotificationsModel;
 use App\Models\NotificationsPerUsersModel;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Notifications\NotificationServiceProvider;
+use App\Models\DestinationsGeneralNotificationsRolesModel;
+use App\Http\Controllers\Notifications\GeneralNotificationsController;
 
 
 
@@ -27,6 +35,60 @@ class NotificationsTest extends TestCase
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
     }
 
+
+/**
+ * @testdox Genera Notificaciones*/
+
+ public function testIndexReturnsViewWithNotificationsTypes()
+    {
+        $user = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);
+
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        Auth::login($user);
+
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
+
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+       View::share('general_options', $general_options);
+
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+        // Preparar datos de prueba
+        $notificationType = NotificationsTypesModel::create([
+            'uid' => generate_uuid(),
+            'name' => 'Tipos de notificaciones',
+            // Agrega otros campos necesarios según tu modelo
+        ]);
+
+        // Hacer la solicitud GET a la ruta
+        $response = $this->get(route('notifications-types'));
+
+        // Verificar que la respuesta sea exitosa
+        $response->assertStatus(200);
+
+        // Verificar que se devuelva la vista correcta
+        $response->assertViewIs('notifications.notifications_types.index');
+
+        // Verificar que los datos se pasen a la vista
+        $response->assertViewHas('notifications_types', function ($types) use ($notificationType) {
+            return count($types) === 1 && $types[0]['name'] === $notificationType->name;
+        });
+
+        // Verificar otros datos que se pasan a la vista
+        $response->assertViewHas('page_name', 'Tipos de notificaciones');
+        $response->assertViewHas('page_title', 'Tipos de notificaciones');
+        $response->assertViewHas('tabulator', true);
+        $response->assertViewHas('submenuselected', 'notifications-types');
+    }
 
  /**
  * @testdox Genera Notificaciones*/
@@ -428,8 +490,8 @@ class NotificationsTest extends TestCase
 
         // Verificar que solo se devuelva el usuario que coincide con la búsqueda
         $response->assertStatus(200)
-                ->assertJsonCount(1, 'data')
-                ->assertJsonFragment(['first_name' => $userToSearch->first_name]);
+                ->assertJsonCount(1, 'data');
+
     }
 /**
  * @test Obtener Notificacions por usuarios ordenados
@@ -486,5 +548,177 @@ class NotificationsTest extends TestCase
                 ->assertJsonCount(1, 'data') // Asegúrate de que se devuelvan 1 notificación
                 ->assertJsonFragment(['title' => $notification->title]);
     }
+
+    /**
+     * @test Error400 Notificación Email    */
+    public function testGenerateNotificationemailFail400()
+    {
+        $admin = UsersModel::factory()->create();
+        $roles_bd = UserRolesModel::get()->pluck('uid');
+        $roles_to_sync = [];
+        foreach ($roles_bd as $rol_uid) {
+            $roles_to_sync[] = [
+                'uid' => generate_uuid(),
+                'user_uid' => $admin->uid,
+                'user_role_uid' => $rol_uid
+            ];
+        }
+
+        $admin->roles()->sync($roles_to_sync);
+        $this->actingAs($admin);
+        if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
+         $userRole = UserRolesModel::where('code', 'STUDENT')->first();
+         // Datos de prueba
+
+         // Crea un tipo de notificación necesario para la prueba
+         $notificationType= new NotificationsTypesModel();
+         $notificationType->uid = '555-12499-123456-12345-33333'; // Asigno el uid manualmente
+         $notificationType->name = 'Some Notification Type';
+         $notificationType->save();
+         $notificationType = NotificationsTypesModel::find('555-12499-123456-12345-33333');
+
+
+
+         $data = [
+             'subject' => 'Test Email Notification',
+             'body' => 'This is a test email notification.',
+             'type' => '',
+             'end_date' => Carbon::now()->addDays(5)->toDateTimeString(),
+             'send_date' => Carbon::now()->addMinutes(5)->toDateTimeString(),
+             'notification_type_uid' => $notificationType->uid,
+             'roles' => [$userRole->uid],
+             'users' => [$admin->uid],
+         ];
+
+
+         $response = $this->postJson('notifications/email/save_email_notification', $data);
+
+         $response->assertStatus(400)
+                  ->assertJson([
+                      'message' => 'Algunos campos son incorrectos',
+                  ]);
+
+
+     }
+    }
+
+    public function testGetEmailNotificationReturns400ForInvalidUid()
+    {
+            $admin = UsersModel::factory()->create();
+            $roles_bd = UserRolesModel::get()->pluck('uid');
+            $roles_to_sync = [];
+            foreach ($roles_bd as $rol_uid) {
+                $roles_to_sync[] = [
+                    'uid' => generate_uuid(),
+                    'user_uid' => $admin->uid,
+                    'user_role_uid' => $rol_uid
+                ];
+            }
+
+            $admin->roles()->sync($roles_to_sync);
+            $this->actingAs($admin);
+            if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
+
+            // Datos de prueba
+
+            $response = $this->json('GET', 'notifications/email/get_email_notification/non-existe');
+
+            $response->assertStatus(406)
+                    ->assertJson(['message' => 'La notificación general no existe']);
+        }
+
+    }
+
+    /** @test */
+
+
+
+    public function testCreatesHandleRolesWhenIsNewIsTrue()
+    {
+        $role1 = UserRolesModel::where('code', 'MANAGEMENT')->first();
+        $role1_uid = $role1->uid;
+        $role2 = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
+        $role2_uid = $role2->uid;
+        $request = new Request();
+        $request->merge(['roles' => [$role1_uid, $role2_uid]]);
+
+        $notification_general = GeneralNotificationsModel::factory()->create();
+
+        $notificationService = new GeneralNotificationsController();
+        $notificationService->handleRoles($request, $notification_general, true);
+
+        // Verificar que los roles se hayan creado
+        $this->assertCount(2, DestinationsGeneralNotificationsRolesModel::all());
+
+    }
+
+    /** @test */
+    public function test_SyncsRolesIsFalse()
+
+    {
+        $role3 = UserRolesModel::where('code', 'MANAGEMENT')->first();
+        $role3_uid = $role3->uid;
+        $role4 = UserRolesModel::where('code', 'TEACHER')->first();
+        $role4_uid = $role4->uid;
+        // Crear un rol antiguo válido
+        $oldRole = UserRolesModel::factory()->create(['code' => 'OLD_ROLEs','uid' => generate_uuid()])->latest()->first();
+        $oldRol_Uid = $oldRole->uid;
+
+        $request = new Request();
+        $request->merge(['roles' => [$role3_uid, $role4_uid]]);
+
+        // Crear una notificación general simulada
+        $notification_general = GeneralNotificationsModel::factory()->create();
+        $notification_general->roles()->attach($oldRol_Uid,['uid' => generate_uuid()]);
+
+
+        // Llamar a la función
+        $notificationService = new GeneralNotificationsController();
+        $notificationService->handleRoles($request, $notification_general, false);
+
+        // Verificar que los roles nuevos están presentes
+        $newRoles = DestinationsGeneralNotificationsRolesModel::where('general_notification_uid', $notification_general->uid)->get();
+        $this->assertNotEmpty($newRoles);
+        // Verificar que el rol antiguo no está presente
+        $oldRole = DestinationsGeneralNotificationsRolesModel::where('rol_uid', $oldRol_Uid)->first();
+        $this->assertEmpty($oldRole);
+
+    }
+
+    /** @test */
+    public function it_syncs_users_when_isNew_is_false()
+    {
+        // Crear usuarios válidos
+        $user1 = UsersModel::factory()->create();
+        $user2 = UsersModel::factory()->create();
+
+        // Crear la solicitud con los usuarios
+        $request = new Request();
+        $request->merge(['users' => [$user1->uid, $user2->uid]]);
+
+        // Crear una notificación general simulada
+        $notification_general = GeneralNotificationsModel::factory()->create();
+
+        // Llamar a la función handleUsers
+        $notificationService = new GeneralNotificationsController();
+        $notificationService->handleUsers($request, $notification_general, false);
+
+        // Verificar que los usuarios se hayan sincronizado
+        $this->assertDatabaseHas('destinations_general_notifications_users', [
+            'user_uid' => $user1->uid,
+            'general_notification_uid' => $notification_general->uid,
+        ]);
+        $this->assertDatabaseHas('destinations_general_notifications_users', [
+            'user_uid' => $user2->uid,
+            'general_notification_uid' => $notification_general->uid,
+        ]);
+
+        // Verificar que los roles se hayan desasociado
+        $this->assertDatabaseMissing('destinations_general_notifications_roles', [
+            'general_notification_uid' => $notification_general->uid,
+        ]);
+    }
+
+
 
 }

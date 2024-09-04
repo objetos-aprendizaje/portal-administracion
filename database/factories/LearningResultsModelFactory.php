@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use Illuminate\Support\Str;
+use App\Models\CompetencesModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -21,7 +22,7 @@ class LearningResultsModelFactory extends Factory
             'uid'=> Str::uuid(),
             'name' => $this->faker->unique()->sentence(3),
             'description' => $this->faker->paragraph(2),
-            'competence_uid' => Str::uuid(),
+            'competence_uid' => CompetencesModel::factory()->create()->first(),
 
         ];
     }
