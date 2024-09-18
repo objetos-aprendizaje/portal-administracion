@@ -75,7 +75,7 @@ export default (node, treeOptions) => {
     const checkbox = tag("input", {
         type: "checkbox",
         style: "display: inline-block; margin: 0 4px",
-        class: "checkbox",
+        class: "checkbox infinite-tree-checkbox",
         checked: checked,
         "data-checked": checked,
         "data-indeterminate": indeterminate,

@@ -64,7 +64,7 @@ class AnaliticsUsersControllerTest extends TestCase
         $response->assertViewHas('resources', [
             "resources/js/analytics_module/analytics_users.js"
         ]);
-        $response->assertViewHas('total_users', 6);
+        $response->assertViewHas('total_users', 7);
         $response->assertViewHas('tabulator', true);
         $response->assertViewHas('submenuselected', 'analytics-users');
     }

@@ -13,20 +13,20 @@ class CompetencesModel extends Model
 
     protected $keyType = 'string';
 
-    protected $fillable = ['uid', 'name', 'parent_competence_uid', 'is_multi_select', 'origin_code'];
+    protected $fillable = ['uid', 'name', 'description', 'parent_competence_uid', 'origin_code', 'competence_framework_uid'];
 
     public function parentCompetence()
     {
         return $this->belongsTo(CompetencesModel::class, 'parent_competence_uid')->with('parentCompetence')->whereNull('parent_competence_uid')->orderBy('name', 'ASC');
     }
 
-    public function subcompetences()
+    public function allSubcompetences()
     {
         return $this->hasMany(CompetencesModel::class, 'parent_competence_uid', 'uid')
             ->orderBy('created_at', 'ASC')
-            ->with(['subcompetences' => function ($query) {
+            ->with(['allSubcompetences' => function ($query) {
 
-                $query->select('uid', 'name', 'parent_competence_uid', 'is_multi_select', 'description')
+                $query->select('uid', 'name', 'parent_competence_uid', 'description')
                       ->with(['learningResults' => function ($query) {
                           $query->select('uid', 'name', 'competence_uid', 'description');
                       }])->orderBy('created_at', 'ASC');

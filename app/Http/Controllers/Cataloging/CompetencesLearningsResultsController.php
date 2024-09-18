@@ -10,6 +10,7 @@ use App\Models\CompetencesModel;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Logs\LogsController;
+use App\Models\CompetenceFrameworksModel;
 use App\Models\LearningResultsModel;
 use Exception;
 use Illuminate\Http\Request;
@@ -37,9 +38,15 @@ class CompetencesLearningsResultsController extends BaseController
 
     public function getAllCompetences()
     {
-        $competencesLearningResults = CompetencesModel::whereNull('parent_competence_uid')->with(['subcompetences', 'learningResults'])->orderBy('created_at', 'ASC')->get(['uid', 'name', 'description']);
+        $competenceFrameworks = CompetenceFrameworksModel::with([
+            'levels',
+            'competences',
+            'competences.learningResults',
+            'competences.allSubcompetences',
+            'competences.allSubcompetences.learningResults'
+        ])->get();
 
-        return response()->json($competencesLearningResults, 200);
+        return response()->json($competenceFrameworks, 200);
     }
 
     public function getCompetence($competence_uid)
@@ -47,6 +54,13 @@ class CompetencesLearningsResultsController extends BaseController
         $competence = CompetencesModel::with('parentCompetence')->where('uid', $competence_uid)->first()->toArray();
 
         return response()->json($competence, 200);
+    }
+
+    public function getCompetenceFramework($competenceFrameworkUid)
+    {
+        $competenceFramework = CompetenceFrameworksModel::with('levels')->where('uid', $competenceFrameworkUid)->first();
+
+        return response()->json($competenceFramework, 200);
     }
 
 
@@ -77,31 +91,68 @@ class CompetencesLearningsResultsController extends BaseController
         return response()->json($data, 200);
     }
 
+    public function saveCompetenceFramework(Request $request)
+    {
+        $messages = [
+            'name.required' => 'El nombre es obligatorio.',
+            'name.max' => 'El nombre no puede tener más de 255 caracteres.',
+        ];
+
+        $rules = [
+            'name' => 'required|max:255',
+            'description' => 'nullable',
+            'competence_framework_uid' => 'nullable|exists:competence_frameworks,uid',
+        ];
+
+        $validator = Validator::make($request->all(), $rules, $messages);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validator->errors()], 422);
+        }
+
+        $competenceFrameworkUid = $request->get('competence_framework_uid');
+
+        if ($competenceFrameworkUid) {
+            $isNew = false;
+            $competenceFramework = CompetenceFrameworksModel::find($competenceFrameworkUid);
+        } else {
+            $isNew = true;
+            $competenceFramework = new CompetenceFrameworksModel();
+            $competenceFramework->uid = generate_uuid();
+        }
+
+        $competenceFramework->fill($request->only([
+            'name',
+            'has_levels',
+            'description'
+        ]));
+
+        $messageLog = $isNew ? 'Marco de competencias añadido' : 'Marco de competencias actualizado';
+
+        DB::transaction(function () use ($competenceFramework, $messageLog) {
+            $competenceFramework->save();
+            LogsController::createLog($messageLog, 'Marcos de competencias', auth()->user()->uid);
+        });
+
+        return response()->json(['message' => $isNew ? 'Marco de competencias añadido correctamente' : 'Marco de competencias modificado correctamente'], 200);
+    }
+
     /**
      * Guarda una categoría. Si recibe un uid, actualiza la categoría con ese uid.
      */
     public function saveCompetence(Request $request)
     {
-        $parent_competence_uid = $request->get('parent_competence_uid');
-        $parent_competence = null;
-        if ($parent_competence_uid) {
-            $parent_competence = CompetencesModel::find($parent_competence_uid);
-            if (!$parent_competence) {
-                return response()->json(['errors' => ['parent_competence_uid' => ['La competencia padre no existe']]], 422);
-            }
-        }
 
         $messages = [
             'name.required' => 'El nombre es obligatorio.',
             'name.max' => 'El nombre no puede tener más de 255 caracteres.',
-            'is_multi_select.required_if' => 'Debes seleccionar si es multi seleccionable',
         ];
 
         $rules = [
             'name' => 'required|max:255',
             'description' => 'nullable',
             'parent_competence_uid' => 'nullable|exists:competences,uid',
-            'is_multi_select' => 'required_if:parent_competence_uid,null|boolean'
+            'competence_framework_uid' => 'nullable|exists:competence_frameworks,uid',
         ];
 
         $validator = Validator::make($request->all(), $rules, $messages);
@@ -120,10 +171,9 @@ class CompetencesLearningsResultsController extends BaseController
             $competence->uid = generate_uuid();
         }
 
-        $competence->name = $request->get('name');
-        $competence->description = $request->get('description');
-        $competence->parent_competence_uid = $parent_competence_uid;
-        $competence->is_multi_select = $request->get('is_multi_select');
+        $competence->fill($request->only([
+            'name', 'description', 'parent_competence_uid', 'competence_framework_uid'
+        ]));
 
         $messageLog = $isNew ? 'Competencia añadida' : 'Competencia actualizada';
 
@@ -151,6 +201,7 @@ class CompetencesLearningsResultsController extends BaseController
         $uids = $request->input('uids');
 
         DB::transaction(function () use ($uids) {
+            CompetenceFrameworksModel::destroy($uids["competencesFrameworks"]);
             LearningResultsModel::destroy($uids["learningResults"]);
             CompetencesModel::destroy($uids["competences"]);
             LogsController::createLog("Eliminación de competencias", 'Competencias', auth()->user()->uid);

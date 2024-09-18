@@ -88,7 +88,6 @@ class DepartmentsController extends BaseController
         ];
 
         $validator = Validator::make($request->all(), [
-            'uid' => 'required',
             'name' =>'required|string|max:255',
         ], $messages);
 

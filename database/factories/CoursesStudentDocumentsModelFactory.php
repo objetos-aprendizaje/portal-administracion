@@ -21,7 +21,7 @@ class CoursesStudentDocumentsModelFactory extends Factory
         return [
             'uid'=> generate_uuid(),            
             'user_uid' => UsersModel::factory()->create()->first(),
-            'course_document_uid' => CourseDocumentsModel::factory()->create()->first(),
+            'course_document_uid' => CourseDocumentsModel::factory()->withCourseUid()->create()->first(),
             'document_path' => 'storage/',
         ];
     }

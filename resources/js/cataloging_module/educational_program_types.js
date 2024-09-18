@@ -47,7 +47,7 @@ function newEducationalProgramType() {
     resetModal();
     showModal(
         "educational-program-type-modal",
-        "Añade un nuevo tipo de programa educativo"
+        "Añade un nuevo tipo de programa formativo"
     );
 }
 
@@ -183,7 +183,7 @@ async function loadEducationalProgramTypeModal(uid) {
         fillFormEducationalProgramTypeModal(data);
         showModal(
             "educational-program-type-modal",
-            "Edita el tipo de programa educativo"
+            "Edita el tipo de programa formativo"
         );
     });
 }
@@ -261,8 +261,8 @@ function handleDeleteEducationalProgramTypes() {
         .addEventListener("click", () => {
             if (selectedEducationalProgramTypes.length) {
                 showModalConfirmation(
-                    "Eliminar tipos de programa educativos",
-                    "¿Está seguro que desea eliminar los tipos de programa educativo seleccionados?",
+                    "Eliminar tipos de programa formativos",
+                    "¿Está seguro que desea eliminar los tipos de programa formativo seleccionados?",
                     "delete_educational_program_types"
                 ).then((resultado) => {
                     if (resultado) {
@@ -271,7 +271,7 @@ function handleDeleteEducationalProgramTypes() {
                 });
             } else {
                 showToast(
-                    "Debe seleccionar al menos un tipo de programa educativo",
+                    "Debe seleccionar al menos un tipo de programa formativo",
                     "error"
                 );
             }

@@ -35,7 +35,7 @@
                         <label for="description">Descripción</label>
                     </div>
                     <div class="content-container">
-                        <textarea class="w-full poa-input" placeholder="La convocatoria de este año tratará de..." rows="5"
+                        <textarea maxlength="1000" class="w-full poa-input" placeholder="La convocatoria de este año tratará de..." rows="5"
                             id="description" name="description"></textarea>
                     </div>
                 </div>

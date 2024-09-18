@@ -726,7 +726,12 @@ function selectLearningResultsUser(learningResultsUserSelected = []) {
             openNode(n);
             treeCompetencesLearningResults.checkNode(n, true);
         }
+
+        selectedLearningResults.add(learningResult.uid);
     });
+
+    document.getElementById("learning-results-counter").innerText =
+        selectedLearningResults.size;
 }
 
 function toggleResourcesFields(formId, isDisabled) {
@@ -743,6 +748,17 @@ function toggleResourcesFields(formId, isDisabled) {
     ).value = isDisabled ? "1" : "0";
 
     toggleFormFields(formId, isDisabled);
+
+    if (isDisabled) disableInfiniteTreeCheckboxes();
+}
+
+function disableInfiniteTreeCheckboxes() {
+    const infiniteTreeCheckboxes = document.querySelectorAll(
+        ".infinite-tree-checkbox"
+    );
+    infiniteTreeCheckboxes.forEach(function (checkbox) {
+        checkbox.disabled = true;
+    });
 }
 
 /**
@@ -946,7 +962,7 @@ function changeStatusesResources() {
                     </select>
                     <div class="">
                         <h4>Indica un motivo</h4>
-                        <textarea placeholder="El estado del recurso se debe a..." class="reason-status-resource poa-input"></textarea>
+                        <textarea maxlength="1000" placeholder="El estado del recurso se debe a..." class="reason-status-resource poa-input"></textarea>
                     </div>
                 </div>
             </div>`;
@@ -1053,7 +1069,7 @@ function generateMetadata() {
 
     apiFetch(params)
         .then((data) => {
-            data.forEach(metadata => {
+            data.forEach((metadata) => {
                 addMetadataPair(metadata);
             });
         })
@@ -1107,7 +1123,9 @@ function instanceTreeCompetencesLearningResults() {
             event.clientX,
             event.clientY
         );
-        if (!currentNode || event.target.className !== "checkbox") return;
+
+        if (!currentNode || !event.target.classList.contains("checkbox"))
+            return;
         event.stopPropagation();
         treeCompetencesLearningResults.checkNode(currentNode);
 
@@ -1135,7 +1153,7 @@ function updateSelectedCompetencesAndLearningResults(currentNode) {
         if (!node.children.length) return resultSet;
 
         node.children.forEach((child) => {
-            if (child.type === "learningResult") {
+            if (child.type === "learning_result") {
                 resultSet.add(child.id);
             }
             getChildNodesLearningResults(child, resultSet);
@@ -1156,7 +1174,8 @@ function updateSelectedCompetencesAndLearningResults(currentNode) {
             items.forEach((item) => set.delete(item));
         }
 
-        document.getElementById("learning-results-counter").innerText = set.size;
+        document.getElementById("learning-results-counter").innerText =
+            set.size;
         return set;
     }
 
@@ -1173,7 +1192,7 @@ function updateSelectedCompetencesAndLearningResults(currentNode) {
         isSelected
     );
 
-    if (currentNode.type === "learningResult") {
+    if (currentNode.type === "learning_result") {
         selectedLearningResults = updateSet(
             selectedLearningResults,
             [id],

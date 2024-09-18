@@ -561,7 +561,6 @@ function initializeEmailNotificationsTable() {
                 );
             },
             headerSort: false,
-            //widthGrow: 1,
         },
         {
             title: "Estado",
@@ -574,10 +573,10 @@ function initializeEmailNotificationsTable() {
                     <div class="label-status" style="background-color: ${color}">${status}</div>
                 `;
             },
-            widthGrow: 1,
+            widthGrow: 3,
         },
         { title: "Asunto", field: "subject", widthGrow: 2 },
-        { title: "Cuerpo", field: "body", widthGrow: 6 },
+        { title: "Cuerpo", field: "body", widthGrow: 4 },
         {
             title: "Tipo",
             field: "notification_type_name",

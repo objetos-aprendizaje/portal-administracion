@@ -179,11 +179,7 @@ class EducationalProgramsController extends BaseController
             $isNew = true;
         }
 
-        if ($educational_program->educational_program_origin_uid) {
-            $errors = $this->validateEducationalProgramNewEdition($request);
-        } else {
-            $errors = $this->validateEducationalProgram($request);
-        }
+        $errors = $this->validateEducationalProgram($request);
 
         if ($errors->any()) {
             return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $errors], 400);
@@ -323,67 +319,6 @@ class EducationalProgramsController extends BaseController
         if (!in_array($educational_program->status->code, ["INTRODUCTION", "UNDER_CORRECTION_PUBLICATION", "UNDER_CORRECTION_APPROVAL"])) {
             throw new OperationFailedException('No puedes editar un programa formativo en este estado', 400);
         }
-    }
-
-    private function validateEducationalProgramNewEdition($request)
-    {
-        $validateStudentsRegistrations = $request->input("validate_student_registrations");
-        $cost = $request->input("cost");
-        $paymentMode = $request->input('payment_mode');
-
-        // Si se valida la inscripción de estudiantes o el curso tiene un coste, se solicita plazo de matriculación
-        if ($validateStudentsRegistrations || ($cost && $cost > 0 && $paymentMode == "SINGLE_PAYMENT")) {
-            $enrollingDates = true;
-        } else {
-            $enrollingDates = false;
-        }
-
-        $messages = $this->getValidationMessages($enrollingDates);
-
-        $rules = [
-            'validate_student_registrations' => 'boolean',
-            'evaluation_criteria' => 'required_if:validate_student_registrations,1',
-            'min_required_students' => 'nullable|integer',
-            'inscription_start_date' => 'required|date',
-            'inscription_finish_date' => 'required|date|after_or_equal:inscription_start_date',
-            'featured_slider_title' => 'required_if:featured_slider,1',
-            'featured_slider_description' => 'required_if:featured_slider,1',
-            'featured_slider_color_font' => 'required_if:featured_slider,1',
-            'featured_slider_image_path' => [
-                function ($attribute, $value, $fail) use ($request) {
-                    $featuredSliderImagePath = $request->input('featured_slider_image_path');
-                    $educationalProgramUid = $request->input('educational_program_uid');
-
-                    if ($featuredSliderImagePath && !$educationalProgramUid && !$value) {
-                        $fail('Debes subir una imagen destacada para el slider');
-                    }
-                },
-            ],
-        ];
-
-        if (app('general_options')['operation_by_calls']) {
-            $rules['call_uid'] = 'required';
-        }
-
-        $validateStudentsRegistrations = $request->input("validate_student_registrations");
-        $cost = $request->input("cost");
-
-        if ($validateStudentsRegistrations || ($cost && $cost > 0 && $paymentMode == "SINGLE_PAYMENT")) {
-            $rules['enrolling_start_date'] = 'required|date|after_or_equal:inscription_finish_date';
-            $rules['enrolling_finish_date'] = 'required|date|after_or_equal:enrolling_start_date';
-
-            $rules['realization_start_date'] = 'required|date|after_or_equal:enrolling_finish_date';
-            $rules['realization_finish_date'] = 'required|date|after_or_equal:realization_start_date';
-        } else {
-            $rules['realization_start_date'] = 'required|date|after_or_equal:inscription_finish_date';
-            $rules['realization_finish_date'] = 'required|date|after_or_equal:realization_start_date';
-        }
-
-        $validator = Validator::make($request->all(), $rules, $messages);
-
-        $errorsValidator = $validator->errors();
-
-        return $errorsValidator;
     }
 
     private function syncDocuments($request, $educational_program)
@@ -578,7 +513,7 @@ class EducationalProgramsController extends BaseController
     private function logAction($isNew)
     {
         $logMessage = $isNew ? 'Programa formativo añadido' : 'Programa formativo actualizado';
-        LogsController::createLog($logMessage, 'Programas educativos', auth()->user()->uid);
+        LogsController::createLog($logMessage, 'Programas formativos', auth()->user()->uid);
     }
 
     private function getValidationMessages($enrollingDates)
@@ -586,7 +521,7 @@ class EducationalProgramsController extends BaseController
         $messages = [
             'name.required' => 'El nombre es obligatorio',
             'name.max' => 'El nombre no puede tener más de 255 caracteres',
-            'educational_program_type_uid.required' => 'El tipo de programa educativo es obligatorio',
+            'educational_program_type_uid.required' => 'El tipo de programa formativo es obligatorio',
             'inscription_start_date.required' => 'La fecha de inicio de inscripción es obligatoria',
             'inscription_finish_date.required' => 'La fecha de fin de inscripción es obligatoria',
             'inscription_start_date.after_or_equal' => 'La fecha de inicio de inscripción no puede ser anterior a la fecha y hora actual.',
@@ -619,18 +554,6 @@ class EducationalProgramsController extends BaseController
 
     private function validateEducationalProgram($request)
     {
-
-        $validateStudentsRegistrations = $request->input("validate_student_registrations");
-        $cost = $request->input("cost");
-
-        if ($validateStudentsRegistrations || ($cost && $cost > 0)) {
-            $enrollingDates = true;
-        } else {
-            $enrollingDates = false;
-        }
-
-        $messages = $this->getValidationMessages($enrollingDates);
-
         $rules = [
             'name' => 'required|max:255',
             'educational_program_type_uid' => 'required',
@@ -673,8 +596,9 @@ class EducationalProgramsController extends BaseController
             ];
         }
 
-        $this->addRulesDates($request, $rules);
-
+        $validateStudentsRegistrations = $request->input("validate_student_registrations");
+        $messages = $this->getValidationMessages($validateStudentsRegistrations);
+        $this->addRulesDates($validateStudentsRegistrations, $rules);
         $validator = Validator::make($request->all(), $rules, $messages);
 
         $errorsValidator = $validator->errors();
@@ -707,13 +631,10 @@ class EducationalProgramsController extends BaseController
      * Si el curso tiene validación de estudiantes o un coste, se solicita plazo de matriculación.
      * Si no, se valida simplemente el plazo de realización
      */
-    private function addRulesDates($request, &$rules)
+    private function addRulesDates($validateStudentsRegistrations, &$rules)
     {
-        $validateStudentsRegistrations = $request->input("validate_student_registrations");
-        $cost = $request->input("cost");
-        $paymentMode = $request->input('payment_mode');
         // Si se valida la inscripción de estudiantes o el curso tiene un coste, se solicita plazo de matriculación
-        if ($validateStudentsRegistrations || ($cost && $cost > 0 && $paymentMode == 'SINGLE_PAYMENT')) {
+        if ($validateStudentsRegistrations) {
             $rules['enrolling_start_date'] = 'required|date|after_or_equal:inscription_finish_date';
             $rules['enrolling_finish_date'] = 'required|date|after_or_equal:enrolling_start_date';
 
@@ -806,7 +727,7 @@ class EducationalProgramsController extends BaseController
 
         DB::transaction(function () use ($uids) {
             EducationalProgramsModel::destroy($uids);
-            LogsController::createLog("Eliminación de programas educativos", 'Programas educativos', auth()->user()->uid);
+            LogsController::createLog("Eliminación de programas formativos", 'Programas formativos', auth()->user()->uid);
         });
 
         return response()->json(['message' => 'Programas formativos eliminados correctamente']);
@@ -957,6 +878,10 @@ class EducationalProgramsController extends BaseController
 
         $users = $request->get('usersToEnroll');
 
+        if(!$users || !count($users)){
+            throw new OperationFailedException('No se han seleccionado alumnos');
+        }
+
         $usersenrolled = false;
 
         foreach ($users as $user) {
@@ -1026,11 +951,11 @@ class EducationalProgramsController extends BaseController
         $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
 
         if ($status == "ACCEPTED") {
-            $generalNotificationAutomatic->title = "Inscripción a programa educativo aceptada";
-            $generalNotificationAutomatic->description = "Tu inscripción en el programa educativo " . $educationalProgram->name . " ha sido aceptada";
+            $generalNotificationAutomatic->title = "Inscripción a programa formativo aceptada";
+            $generalNotificationAutomatic->description = "Tu inscripción en el programa formativo " . $educationalProgram->name . " ha sido aceptada";
         } else {
-            $generalNotificationAutomatic->title = "Inscripción a programa educativo rechazada";
-            $generalNotificationAutomatic->description = "Tu inscripción en el programa educativo " . $educationalProgram->name . " ha sido rechazada";
+            $generalNotificationAutomatic->title = "Inscripción a programa formativo rechazada";
+            $generalNotificationAutomatic->description = "Tu inscripción en el programa formativo " . $educationalProgram->name . " ha sido rechazada";
         }
 
         $generalNotificationAutomatic->entity = "educational_program";
@@ -1055,10 +980,10 @@ class EducationalProgramsController extends BaseController
         ];
 
         if ($status == "ACCEPTED") {
-            $emailNotificationAutomatic->subject = "Inscripción a programa educativo aceptada";
+            $emailNotificationAutomatic->subject = "Inscripción a programa formativo aceptada";
             $emailParameters["status"] = "ACCEPTED";
         } else {
-            $emailNotificationAutomatic->subject = "Inscripción a programa educativo rechazada";
+            $emailNotificationAutomatic->subject = "Inscripción a programa formativo rechazada";
             $emailParameters["status"] = "REJECTED";
         }
 

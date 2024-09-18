@@ -18,7 +18,8 @@ use App\Models\CourseTypesModel;
 use App\Models\UsersModel;
 use App\Models\CategoriesModel;
 use App\Models\CentersModel;
-use App\Models\CompetencesModel;
+use App\Models\CertificationTypesModel;
+use App\Models\CompetenceFrameworksModel;
 use App\Models\CourseCategoriesModel;
 use App\Models\CoursesEmailsContactsModel;
 use App\Models\CoursesPaymentTermsModel;
@@ -71,16 +72,13 @@ class ManagementCoursesController extends BaseController
 
         $educational_programs = EducationalProgramsModel::all()->toArray();
 
-        $competences = CompetencesModel::whereNull('parent_competence_uid')->with('subcompetences')->orderBy('name', 'ASC')->get()->toArray();
-
         $lmsSystems = LmsSystemsModel::all();
+        $certificationTypes = CertificationTypesModel::all();
 
         if (!empty($categories)) $categories = $this->buildNestedCategories($categories);
 
         $rolesUser = Auth::user()['roles']->pluck("code")->toArray();
         $variables_js = [
-            "operationByCalls" => GeneralOptionsModel::where(['option_name' => 'operation_by_calls'])->first()->option_value == 1,
-            "competences" => $competences,
             "frontUrl" => env('FRONT_URL'),
             "rolesUser" => $rolesUser
         ];
@@ -109,6 +107,7 @@ class ManagementCoursesController extends BaseController
                 "variables_js" => $variables_js,
                 "treeselect" => true,
                 "centers" => $centers,
+                "certificationTypes" => $certificationTypes,
                 "coloris" => true,
                 "submenuselected" => "courses",
                 "infiniteTree" => true
@@ -470,15 +469,16 @@ class ManagementCoursesController extends BaseController
             $course_bd->creator_user_uid = Auth::user()['uid'];
         }
 
-        if ($course_bd->course_origin_uid) {
-            $errors = $this->validateCourseEdition($request);
-        } else {
-            $errors = $this->validateCourseFields($request);
-        }
+        $errors = $this->validateCourseFields($request);
 
         if (!$errors->isEmpty()) {
             return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $errors], 422);
         }
+
+        // Validamos la estructura
+        $structure = $request->input('structure');
+        $structure = json_decode($structure, true);
+        $this->validateCourseStructure($structure);
 
         $action = $request->input('action');
         $belongsEducationalProgram = $request->input('belongs_to_educational_program');
@@ -536,7 +536,7 @@ class ManagementCoursesController extends BaseController
         $educational_program_finish_date = $course_bd->educational_program->realization_finish_date;
 
         if ($realization_start_date < $educational_program_start_date || $realization_finish_date > $educational_program_finish_date) {
-            throw new OperationFailedException('Las fechas de realización deben estar dentro del rango del programa educativo', 422);
+            throw new OperationFailedException('Las fechas de realización deben estar dentro del rango del programa formativo', 422);
         }
     }
 
@@ -702,7 +702,8 @@ class ManagementCoursesController extends BaseController
 
         $belongsToEducationalProgram = $request->input('belongs_to_educational_program');
 
-        if ($belongsToEducationalProgram) {
+        $isCourseEdition = $request->input('course_origin_uid');
+        if ($belongsToEducationalProgram && !$isCourseEdition) {
             $this->addRulesIfBelongsToEducationalProgram($rules);
         } else {
             $this->addRulesIfNotBelongsEducationalProgram($request, $rules);
@@ -713,28 +714,16 @@ class ManagementCoursesController extends BaseController
         return $validator->errors();
     }
 
-    private function validateCourseEdition($request)
+    private function addRulesIfNotBelongsEducationalProgram($request, &$rules)
     {
 
-        $rules = [
-            'inscription_start_date' => 'required',
-            'inscription_finish_date' => 'required|after_or_equal:inscription_start_date',
-            'min_required_students' => 'nullable|integer|min:0',
-            'featured_big_carrousel_title' => 'required_if:featured_big_carrousel,1',
-            'featured_big_carrousel_description' => 'required_if:featured_big_carrousel,1',
-            'featured_big_carrousel_image_path' => 'required_if:featured_big_carrousel,1',
-            'featured_slider_color_font' => 'required_if:featured_big_carrousel,1',
-            'lms_system_uid' => 'required_with:lms_url',
-            'call_uid' => 'required'
-        ];
-
-        if (app('general_options')['operation_by_calls']) {
-            $rules['call_uid'] = 'required';
-        }
+        $rules['inscription_start_date'] = 'required';
+        $rules['inscription_finish_date'] = 'required|after_or_equal:inscription_start_date';
 
         $validateStudentRegistrations = $request->input('validate_student_registrations');
-        $cost = $request->input('cost');
-        if ($validateStudentRegistrations || $cost && $cost > 0) {
+        $paymentMode = $request->input('payment_mode');
+
+        if ($validateStudentRegistrations) {
             $rules['enrolling_start_date'] = 'required|after_or_equal:inscription_finish_date';
             $rules['enrolling_finish_date'] = 'required|after_or_equal:enrolling_start_date';
 
@@ -745,10 +734,33 @@ class ManagementCoursesController extends BaseController
             $rules['realization_finish_date'] = 'required|after_or_equal:realization_start_date';
         }
 
-        $validatorMessages = $this->getValidatorCourseMessages();
-        $validator = Validator::make($request->all(), $rules, $validatorMessages);
+        if ($paymentMode == "INSTALLMENT_PAYMENT") {
+            $rules['payment_terms'] = [
+                'required',
+                function ($attribute, $value, $fail) {
+                    $value = json_decode($value, true);
+                    $validation = $this->validatePaymentTerms($value);
+                    if ($validation !== true) $fail($validation);
+                },
+            ];
+        }
+    }
 
-        return $validator->errors();
+    private function addRulesIfBelongsToEducationalProgram(&$rules)
+    {
+        $rules['realization_start_date'] = 'required';
+        $rules['realization_finish_date'] = 'required|after_or_equal:realization_start_date';
+    }
+
+    private function validateCourseStructure($structure)
+    {
+
+        foreach ($structure as $block) {
+            // Validamos si el bloque tiene más de 100 resultados
+            if (count($block['learningResults']) > 100) {
+                throw new OperationFailedException('No puedes añadir más de 100 resultados de aprendizaje por bloque', 422);
+            }
+        }
     }
 
     private function getValidatorCourseMessages()
@@ -757,7 +769,7 @@ class ManagementCoursesController extends BaseController
         $messages = [
             'title.required' => 'Introduce el título del curso.',
             'course_type_uid.required' => 'Selecciona el tipo de curso.',
-            'educational_program_type_uid.required' => 'Selecciona el tipo de programa educativo.',
+            'educational_program_type_uid.required' => 'Selecciona el tipo de programa formativo.',
             'min_required_students.integer' => 'El número mínimo de estudiantes debe ser un número entero.',
 
             'inscription_start_date.required' => 'La fecha de inicio de inscripción es obligatoria.',
@@ -796,36 +808,6 @@ class ManagementCoursesController extends BaseController
         return $messages;
     }
 
-    private function addRulesIfNotBelongsEducationalProgram($request, &$rules)
-    {
-
-        $rules['inscription_start_date'] = 'required';
-        $rules['inscription_finish_date'] = 'required|after_or_equal:inscription_start_date';
-
-        $cost = $request->input('cost');
-        $validateStudentRegistrations = $request->input('validate_student_registrations');
-        $paymentMode = $request->input('payment_mode');
-
-        if ($cost && $cost > 0 || $validateStudentRegistrations) {
-            $rules['enrolling_start_date'] = 'required|after_or_equal:inscription_finish_date';
-            $rules['enrolling_finish_date'] = 'required|after_or_equal:enrolling_start_date';
-
-            $rules['realization_start_date'] = 'required|after_or_equal:enrolling_finish_date';
-            $rules['realization_finish_date'] = 'required|after_or_equal:realization_start_date';
-        }
-
-        if ($paymentMode == "INSTALLMENT_PAYMENT") {
-            $rules['payment_terms'] = [
-                'required',
-                function ($attribute, $value, $fail) {
-                    $value = json_decode($value, true);
-                    $validation = $this->validatePaymentTerms($value);
-                    if ($validation !== true) $fail($validation);
-                },
-            ];
-        }
-    }
-
     // Validación del bloque de plazos de pago
     private function validatePaymentTerms($paymentTerms)
     {
@@ -849,7 +831,7 @@ class ManagementCoursesController extends BaseController
             $startDate = new DateTime($paymentTerm['start_date']);
             $finishDate = new DateTime($paymentTerm['finish_date']);
 
-            if ($previousFinishDate && $startDate <= $previousFinishDate) {
+            if ($previousFinishDate && $startDate < $previousFinishDate) {
                 return "La fecha de inicio de un plazo de pago debe ser posterior a la fecha de finalización del plazo de pago anterior";
             }
 
@@ -861,20 +843,6 @@ class ManagementCoursesController extends BaseController
         }
 
         return true;
-    }
-
-    private function addRulesIfBelongsToEducationalProgram(&$rules)
-    {
-        $rules['realization_start_date'] = 'required';
-        $rules['realization_finish_date'] = 'required|after_or_equal:realization_start_date';
-    }
-
-    private function addRulesIfCallsIsEnabled(&$rules)
-    {
-        $operation_by_calls = GeneralOptionsModel::where(['option_name' => 'operation_by_calls'])->first()->option_value;
-
-        if ($operation_by_calls) $rules['call_uid'] = 'required|string';
-        else $rules['call_uid'] = 'nullable|string';
     }
 
     private function statusCourseBelongsEducationalProgram($action, $course_bd)
@@ -952,9 +920,24 @@ class ManagementCoursesController extends BaseController
     private function updateCourseFieldsNewEdition($request, $courseBd)
     {
         $fields = [
-            "inscription_start_date", "inscription_finish_date", "realization_start_date", "realization_finish_date", "min_required_students",
-            "presentation_video_url", "lms_url", "lms_system_uid", "cost", "featured_big_carrousel", "featured_big_carrousel_title", "featured_big_carrousel_description",
-            "featured_slider_color", "featured_small_carrousel", "validate_student_registrations", "evaluation_criteria", "call_uid"
+            "inscription_start_date",
+            "inscription_finish_date",
+            "realization_start_date",
+            "realization_finish_date",
+            "min_required_students",
+            "presentation_video_url",
+            "lms_url",
+            "lms_system_uid",
+            "cost",
+            "featured_big_carrousel",
+            "featured_big_carrousel_title",
+            "featured_big_carrousel_description",
+            "featured_slider_color",
+            "featured_small_carrousel",
+            "validate_student_registrations",
+            "evaluation_criteria",
+            "call_uid",
+            "certification_type_uid",
         ];
 
         $conditionalFields = ["enrolling_start_date", "enrolling_finish_date"];
@@ -987,31 +970,92 @@ class ManagementCoursesController extends BaseController
     {
         // Lista de todos los campos posibles
         $allFields = [
-            'title', 'description', 'contact_information', 'course_type_uid', 'educational_program_type_uid',
-            'call_uid', 'center_uid', 'objectives', 'ects_workload', 'lms_url', 'lms_system_uid', 'belongs_to_educational_program',
-            'inscription_start_date', 'inscription_finish_date',
-            'realization_start_date', 'realization_finish_date', 'featured_big_carrousel_description', 'featured_big_carrousel_title',
-            'featured_slider_color_font', 'presentation_video_url', 'cost', 'featured_big_carrousel',
-            'calification_type', 'enrolling_start_date', 'enrolling_finish_date', 'evaluation_criteria',
-            'min_required_students', 'validate_student_registrations', 'featured_big_carrousel_image_path', 'featured_small_carrousel', 'payment_mode'
+            'title',
+            'description',
+            'contact_information',
+            'course_type_uid',
+            'educational_program_type_uid',
+            'certification_type_uid',
+            'call_uid',
+            'center_uid',
+            'objectives',
+            'ects_workload',
+            'lms_url',
+            'lms_system_uid',
+            'belongs_to_educational_program',
+            'inscription_start_date',
+            'inscription_finish_date',
+            'realization_start_date',
+            'realization_finish_date',
+            'featured_big_carrousel_description',
+            'featured_big_carrousel_title',
+            'featured_slider_color_font',
+            'presentation_video_url',
+            'cost',
+            'featured_big_carrousel',
+            'calification_type',
+            'enrolling_start_date',
+            'enrolling_finish_date',
+            'evaluation_criteria',
+            'min_required_students',
+            'validate_student_registrations',
+            'featured_big_carrousel_image_path',
+            'featured_small_carrousel',
+            'payment_mode'
         ];
         if ($belongsToEducationalProgram) {
             $fields = [
-                'title', 'description', 'contact_information', 'course_type_uid', 'educational_program_type_uid',
-                'call_uid', 'center_uid', 'objectives', 'ects_workload', 'lms_url', 'lms_system_uid', 'belongs_to_educational_program', 'calification_type',
-                'realization_start_date', 'realization_finish_date', 'presentation_video_url'
+                'title',
+                'description',
+                'contact_information',
+                'course_type_uid',
+                'educational_program_type_uid',
+                'certification_type_uid',
+                'call_uid',
+                'center_uid',
+                'objectives',
+                'ects_workload',
+                'lms_url',
+                'lms_system_uid',
+                'belongs_to_educational_program',
+                'calification_type',
+                'realization_start_date',
+                'realization_finish_date',
+                'presentation_video_url',
+                'payment_mode'
             ];
         } else {
             $fields = [
-                'inscription_start_date', 'inscription_finish_date',
-                'realization_start_date', 'realization_finish_date',
-                'presentation_video_url', 'featured_big_carrousel', 'featured_big_carrousel_title', 'featured_big_carrousel_description',
-                'featured_slider_color', 'featured_slider_color_font', 'evaluation_criteria', 'featured_small_carrousel',
-                'calification_type', 'belongs_to_educational_program',
-                'title', 'description', 'contact_information', 'course_type_uid', 'educational_program_type_uid',
-                'call_uid', 'min_required_students', 'center_uid',
-                'objectives', 'ects_workload', 'featured_big_carrousel_image_path',
-                'validate_student_registrations', 'lms_url', 'lms_system_uid', 'payment_mode'
+                'inscription_start_date',
+                'inscription_finish_date',
+                'realization_start_date',
+                'realization_finish_date',
+                'presentation_video_url',
+                'featured_big_carrousel',
+                'featured_big_carrousel_title',
+                'featured_big_carrousel_description',
+                'featured_slider_color',
+                'featured_slider_color_font',
+                'evaluation_criteria',
+                'featured_small_carrousel',
+                'calification_type',
+                'belongs_to_educational_program',
+                'title',
+                'description',
+                'contact_information',
+                'course_type_uid',
+                'educational_program_type_uid',
+                'certification_type_uid',
+                'call_uid',
+                'min_required_students',
+                'center_uid',
+                'objectives',
+                'ects_workload',
+                'featured_big_carrousel_image_path',
+                'validate_student_registrations',
+                'lms_url',
+                'lms_system_uid',
+                'payment_mode'
             ];
 
             $paymentMode = $request->input('payment_mode');
@@ -1384,6 +1428,11 @@ class ManagementCoursesController extends BaseController
         $courseUid = $request->input('course_uid');
         $courseBd = $this->getCourseInfo($courseUid);
 
+        // Comprobamos que el curso no pertenezca a un programa formativo
+        if ($courseBd->belongs_to_educational_program) {
+            throw new OperationFailedException('No puedes duplicar un curso que pertenezca a un programa formativo', 422);
+        }
+
         $newCourse = $this->getQueryCopyBaseCourse($courseBd);
         $introductionStatus = CourseStatusesModel::where('code', 'INTRODUCTION')->first();
         $newCourse->course_status_uid = $introductionStatus->uid;
@@ -1409,7 +1458,6 @@ class ManagementCoursesController extends BaseController
         $introductionStatus = CourseStatusesModel::where('code', 'INTRODUCTION')->first();
         $newCourse->course_status_uid = $introductionStatus->uid;
 
-        $newCourse = $this->getQueryCopyBaseCourse($courseBd);
         $newCourse->title = "{$courseBd->title} (nueva edición)";
         $newCourse->course_origin_uid = $courseUid;
 
@@ -1569,6 +1617,11 @@ class ManagementCoursesController extends BaseController
     // Se comprueba que no hubiera creada una edición de ese curso
     private function validateNewEdition($course_bd)
     {
+        // Comprobar que no sea un curso de programa
+        if ($course_bd->belongs_to_educational_program) {
+            throw new OperationFailedException('No se puede crear una edición de un curso de programa');
+        }
+
         $existingEdition = CoursesModel::where('course_origin_uid', $course_bd->uid)->where('course_status_uid', '!=', 'RETIRED')->exists();
         if ($existingEdition) {
             throw new OperationFailedException('Ya existe una edición activa de este curso');
@@ -1693,15 +1746,25 @@ class ManagementCoursesController extends BaseController
 
     public function getAllCompetences()
     {
-        $competencesLearningResults = CompetencesModel::with('subcompetences')->whereNull('parent_competence_uid')
-            ->orderBy('created_at', 'DESC')->get();
 
-        return $competencesLearningResults;
+        $competenceFrameworks = CompetenceFrameworksModel::with([
+            'levels',
+            'allSubcompetences',
+            'allSubcompetences.learningResults',
+            'allSubcompetences.allSubcompetences',
+            'allSubcompetences.allSubcompetences.learningResults'
+        ])->get();
+
+        return $competenceFrameworks;
     }
     public function enrollStudents(Request $request)
     {
 
         $users = $request->get('usersToEnroll');
+
+        if (!$users || !count($users)) {
+            throw new OperationFailedException('No se han seleccionado alumnos');
+        }
 
         $usersenrolled = false;
 

@@ -123,7 +123,7 @@ function initializeRedirectionQueriesTable() {
         },
         { title: "Tipo", field: "type", widthGrow: "2" },
         {
-            title: "Tipo de programa educativo",
+            title: "Tipo de programa formativo",
             field: "educational_program_type_name",
             widthGrow: "6",
         },

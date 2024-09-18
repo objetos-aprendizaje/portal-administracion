@@ -19,13 +19,11 @@ import { heroicon } from "../heroicons.js";
 
 let competencesLearningResults = [];
 let treeCompetencesLearningResults;
-let selectedCompetencesLearningResults = {
-    competences: [],
-    learningResults: [],
-};
+let selectedCompetencesLearningResults;
 
 document.addEventListener("DOMContentLoaded", async function () {
     initHandlers();
+    instanceSelectedCompetencesLearningResults();
     updateInputFile();
     await loadTreeCompetencesLearningResults();
     instanceTreeCompetences();
@@ -54,7 +52,7 @@ async function initHandlers() {
     const doneTypingInterval = 500;
 
     document.addEventListener("input", function (e) {
-        if (e.target.matches('#search-competences-input')) {
+        if (e.target.matches("#search-competences-input")) {
             clearTimeout(typingTimer); // Limpia el temporizador anterior para reiniciar el retraso
             typingTimer = setTimeout(function () {
                 filterTree(e.target.value); // Ejecuta después del retraso
@@ -138,8 +136,11 @@ async function initHandlers() {
 function submitCompetencesFrameworkForm() {
     const formData = new FormData(this);
 
+    const hasLevels = document.getElementById("has_levels");
+    formData.append("has_levels", hasLevels.checked ? 1 : 0);
+
     const params = {
-        url: "/cataloging/competences_learnings_results/save_competence",
+        url: "/cataloging/competences_learnings_results/save_competence_framework",
         method: "POST",
         body: formData,
         loader: true,
@@ -180,10 +181,12 @@ function handleNodeClick(event) {
     } else if (editLearningResultBtn) {
         loadLearningResultModal(nodeId);
     } else if (addCompetenceBtn) {
-        newCompetence(nodeId);
+        if (node.type == "competence_framework") newCompetence(null, nodeId);
+        else newCompetence(nodeId);
     } else if (editNodeBtn) {
-        const isFather = node.parent.id ? false : true;
-        loadCompetenceModal(nodeId, isFather);
+        if (node.type === "competence_framework")
+            loadCompetenceFrameworkModal(nodeId);
+        else loadCompetenceModal(nodeId);
     }
 }
 
@@ -196,43 +199,55 @@ async function reloadTreeCompetencesLearningResults(openNodes = []) {
         treeCompetencesLearningResults.openNode(n);
     });
 
-    resetSelectedCompetencesLearningResults();
+    instanceSelectedCompetencesLearningResults();
 }
 
 async function loadTreeCompetencesLearningResults() {
-    function mapStructure(obj, isMultiSelect) {
+    function mapStructure(obj, type) {
         // Crear un nuevo objeto con los campos necesarios
         const mappedObj = {
             id: obj.uid,
             name: obj.name,
             description: obj.description,
             children: [],
-            type: "competence",
+            type: type,
             showCheckbox: true,
             disabled: false,
             buttons: [
                 {
                     className: "edit-node-btn",
                     icon: heroicon("pencil", "outline"),
-                    title: "Editar competencia",
+                    title:
+                        type == "competence_framework"
+                            ? "Editar marco de competencias"
+                            : "Editar competencia",
                 },
                 {
                     className: "add-competence-btn",
                     icon: heroicon("folder-plus", "outline"),
-                    title: "Añadir competencia",
-                },
-                {
-                    className: "add-learning-result-btn",
-                    icon: heroicon("plus", "outline"),
-                    title: "Añadir resultado de aprendizaje",
+                    title: "Añadir competenciaaa",
                 },
             ],
         };
 
+        if (type == "competence") {
+            mappedObj.buttons.push({
+                className: "add-learning-result-btn",
+                icon: heroicon("plus", "outline"),
+                title: "Añadir resultado de aprendizaje",
+            });
+        }
+
+        if (obj.competences && obj.competences.length > 0) {
+            obj.competences.forEach((comp) => {
+                mappedObj.children.push(mapStructure(comp, "competence"));
+            });
+        }
+
         // Si hay subcompetencias, recursivamente mapéalas
-        if (obj.subcompetences && obj.subcompetences.length > 0) {
-            obj.subcompetences.forEach((sub) => {
-                mappedObj.children.push(mapStructure(sub, isMultiSelect));
+        if (obj.all_subcompetences && obj.all_subcompetences.length > 0) {
+            obj.all_subcompetences.forEach((sub) => {
+                mappedObj.children.push(mapStructure(sub, "competence"));
             });
         }
 
@@ -272,10 +287,7 @@ async function loadTreeCompetencesLearningResults() {
 
     data.forEach((competenceFramework) => {
         structure.push(
-            mapStructure(
-                competenceFramework,
-                competenceFramework.is_multi_select
-            )
+            mapStructure(competenceFramework, "competence_framework")
         );
     });
 
@@ -317,14 +329,15 @@ function instanceTreeCompetences() {
             event.clientX,
             event.clientY
         );
-        if (!currentNode || event.target.className !== "checkbox") return;
+
+        if (!currentNode || !event.target.className.includes("checkbox")) return;
+
         event.stopPropagation();
         treeCompetencesLearningResults.checkNode(currentNode);
 
         // Llamada a la función con el nodo actual
         updateSelectedCompetencesAndLearningResults(currentNode);
 
-        console.log(selectedCompetencesLearningResults);
     });
 
     treeCompetencesLearningResults.on("contentDidUpdate", () => {
@@ -399,23 +412,21 @@ function updateSelectedCompetencesAndLearningResults(currentNode) {
     const childCompetences = getChildNodesCompetences(currentNode);
     const childLearningResults = getChildNodesLearningResults(currentNode);
 
-    if (isCompetence) {
-        selectedCompetencesLearningResults.competences = updateArray(
-            selectedCompetencesLearningResults.competences,
-            childCompetences,
-            isSelected
-        );
-        selectedCompetencesLearningResults.learningResults = updateArray(
-            selectedCompetencesLearningResults.learningResults,
-            childLearningResults,
-            isSelected
-        );
+    if(type == "competence_framework"){
+        if(isSelected) selectedCompetencesLearningResults.competencesFrameworks.add(id);
+        else selectedCompetencesLearningResults.competencesFrameworks.delete(id);
+    }
+    else if (isCompetence) {
+        if(isSelected) {
+            selectedCompetencesLearningResults.competences.add(id);
+            selectedCompetencesLearningResults.learningResults.add(...childCompetences);
+        } else {
+            selectedCompetencesLearningResults.competences.delete(id);
+            selectedCompetencesLearningResults.learningResults.delete(...childCompetences);
+        }
     } else if (isLearningResult) {
-        selectedCompetencesLearningResults.learningResults = updateArray(
-            selectedCompetencesLearningResults.learningResults,
-            childLearningResults,
-            isSelected
-        );
+        if(isSelected) selectedCompetencesLearningResults.learningResults.add(...childLearningResults);
+        else selectedCompetencesLearningResults.learningResults.delete(...childLearningResults);
     }
 }
 
@@ -496,22 +507,6 @@ function submitEscoFrameworkForm() {
         });
 }
 
-async function searchCompetences() {
-    const textToSearch = document.getElementById(
-        "search-competences-input"
-    ).value;
-
-    treeCompetencesLearningResults.filter(textToSearch, {
-        caseSensitive: false,
-        exactMatch: false,
-        filterKey: "name",
-        includeAncestors: true,
-        includeDescendants: true,
-    });
-
-    resetSelectedCompetencesLearningResults();
-}
-
 async function filterTree(textToSearch) {
     closeAllNodes(treeCompetencesLearningResults.getRootNode());
 
@@ -582,16 +577,25 @@ function submitFormCompetence() {
 /**
  * Inicializa el botón para crear una nueva competencia y abre el modal correspondiente.
  */
-async function newCompetence(competenceFatherUid = null) {
+async function newCompetence(
+    competenceFatherUid = null,
+    competenceFrameworkUid = null
+) {
     resetFormFields("competence-form");
     resetFormErrors("competence-form");
+
     document.getElementById("parent_competence_uid").value =
         competenceFatherUid;
+
+    document.getElementById("competence_framework_uid").value =
+        competenceFrameworkUid;
+
     showModal("competence-modal", "Nueva competencia");
 }
 
 function newCompetenceFramework() {
     resetFormFields("competence-framework-form");
+    document.getElementById("has_levels").checked = false;
     showModal("competence-framework-modal", "Nuevo marco de competencias");
 }
 
@@ -599,7 +603,7 @@ function newCompetenceFramework() {
  * Carga el modal para editar una competencia.
  * @param {string} competenceUid - El UID de la competencia a editar. Null para una nueva competencia.
  */
-async function loadCompetenceModal(competenceUid = null, isFather = false) {
+async function loadCompetenceModal(competenceUid = null) {
     const params = {
         url:
             "/cataloging/competences_learnings_results/get_competence/" +
@@ -617,15 +621,26 @@ async function loadCompetenceModal(competenceUid = null, isFather = false) {
             competence_uid: response.uid,
         };
 
-        if (isFather) {
-            document.getElementById("is_multi_select").value =
-                data.is_multi_select;
-            fillFormWithObject(data, "competence-framework-form");
-            showModal("competence-framework-modal", "Editar competencia");
-        } else {
-            fillFormWithObject(data, "competence-form");
-            showModal("competence-modal", "Editar competencia");
-        }
+        fillFormWithObject(data, "competence-form");
+        showModal("competence-modal", "Editar competencia");
+    });
+}
+
+function loadCompetenceFrameworkModal(competenceFrameworkUid) {
+    const params = {
+        url:
+            "/cataloging/competences_learnings_results/get_competence_framework/" +
+            competenceFrameworkUid,
+        method: "GET",
+        loader: true,
+    };
+
+    apiFetch(params).then((data) => {
+        document.getElementById("has_levels").checked = data.has_levels;
+        document.getElementById("competence_framework_uid").value = data.uid;
+
+        fillFormWithObject(data, "competence-framework-form");
+        showModal("competence-framework-modal", "Editar marco de competencias");
     });
 }
 
@@ -636,8 +651,9 @@ async function deleteSelectedCompetences() {
     // Get all checked checkboxes
 
     if (
-        !selectedCompetencesLearningResults.competences.length &&
-        !selectedCompetencesLearningResults.learningResults.length
+        !selectedCompetencesLearningResults.competencesFrameworks.size &&
+        !selectedCompetencesLearningResults.competences.size &&
+        !selectedCompetencesLearningResults.learningResults.size
     ) {
         showToast("No has seleccionado ningún elemento", "error");
         return;
@@ -659,10 +675,22 @@ async function deleteSelectedCompetences() {
  * @param {Array} competenceUids - Un array de UIDs de las competencias a eliminar.
  */
 async function deleteCompetencesLearningResults() {
+    // Convertir los sets a arrays
+    const competencesFrameworksArray = Array.from(selectedCompetencesLearningResults.competencesFrameworks);
+    const competencesArray = Array.from(selectedCompetencesLearningResults.competences);
+    const learningResultsArray = Array.from(selectedCompetencesLearningResults.learningResults);
+
+    // Crear el objeto que se enviará en el cuerpo de la solicitud
+    const body = {
+        competencesFrameworks: competencesFrameworksArray,
+        competences: competencesArray,
+        learningResults: learningResultsArray,
+    };
+
     const params = {
         url: "/cataloging/competences_learnings_results/delete_competences_learning_results",
         method: "DELETE",
-        body: { uids: selectedCompetencesLearningResults },
+        body: { uids: body },
         stringify: true,
         loader: true,
         toast: true,
@@ -675,10 +703,11 @@ async function deleteCompetencesLearningResults() {
     });
 }
 
-function resetSelectedCompetencesLearningResults() {
+function instanceSelectedCompetencesLearningResults() {
     selectedCompetencesLearningResults = {
-        competences: [],
-        learningResults: [],
+        competencesFrameworks: new Set(),
+        competences: new Set(),
+        learningResults: new Set(),
     };
 }
 

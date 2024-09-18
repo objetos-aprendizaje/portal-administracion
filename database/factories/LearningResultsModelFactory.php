@@ -19,11 +19,21 @@ class LearningResultsModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid'=> Str::uuid(),
+            'uid' => Str::uuid(),
             'name' => $this->faker->unique()->sentence(3),
             'description' => $this->faker->paragraph(2),
-            'competence_uid' => CompetencesModel::factory()->create()->first(),
-
+            'origin_code' => $this->faker->url(),
+            'created_at' => $this->faker->dateTimeThisYear()->format('Y-m-d\TH:i'),
+            'updated_at' => $this->faker->dateTimeThisYear()->format('Y-m-d\TH:i'),
         ];
+    }
+
+    public function withCompetence(): Factory
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'competence_uid' => CompetencesModel::factory()->create()->first(),
+            ];
+        });
     }
 }

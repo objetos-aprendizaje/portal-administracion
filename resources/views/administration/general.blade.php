@@ -420,7 +420,7 @@
             de Facebook y otros servicios de seguimiento o análisis.
         </p>
 
-        <textarea rows="7" id="scripts-input" class="poa-input">{{ $general_options['scripts'] }}</textarea>
+        <textarea maxlength="1000" rows="7" id="scripts-input" class="poa-input">{{ $general_options['scripts'] }}</textarea>
 
         <button type="button" class="btn btn-primary" id="save-scripts-btn">Guardar
             {{ e_heroicon('paper-airplane', 'outline') }}</button>

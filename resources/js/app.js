@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", function () {
     controlClickOutsideMoreOptionsTable();
     applyPreventDefaultForms();
 
-    getAllLabelsOfPage()
+    getAllLabelsOfPage();
 });
 
 window.addEventListener("resize", function () {
@@ -181,13 +181,11 @@ export function showFormErrors(errors) {
                         choicesContainer.nextSibling
                     );
                 }
-            }
-            else if(element.classList.contains("coloris")) {
+            } else if (element.classList.contains("coloris")) {
                 const contentContainer = element.closest(".content-container");
-                if (contentContainer) contentContainer.append(errorContainer)
-            }
-            else if (
-                ["INPUT", "TEXTAREA", "SELECT", 'DIV'].includes(element.tagName)
+                if (contentContainer) contentContainer.append(errorContainer);
+            } else if (
+                ["INPUT", "TEXTAREA", "SELECT", "DIV"].includes(element.tagName)
             ) {
                 element.classList.add("error-border");
                 element.parentNode.appendChild(errorContainer);
@@ -621,8 +619,10 @@ export function toggleFormFields(formId, isDisabled = false) {
     // Selecciona el formulario
     const form = document.getElementById(formId);
 
-    // Selecciona todos los elementos de entrada en el formulario
-    const inputs = form.querySelectorAll("input, select, textarea, button");
+    // Selecciona todos los elementos de entrada en el formulario, excluyendo los checkboxes de Infinite Tree
+    const inputs = form.querySelectorAll(
+        "input:not(.infinite-tree-checkbox), select, textarea, button"
+    );
 
     // Recorre cada elemento de entrada y establece su propiedad 'disabled' en 'true' o 'false'
     inputs.forEach(function (input) {
@@ -966,21 +966,32 @@ export function showElement(element, show) {
     else element.classList.add("hidden");
 }
 
-function getAllLabelsOfPage(){
-    const labels = document.querySelectorAll('label');
+function getAllLabelsOfPage() {
+    const labels = document.querySelectorAll("label");
     labels.forEach((label, index) => {
-        if (label.htmlFor != ""){
-            let findElement = findByInputId(tooltiptexts, label.htmlFor)
-            if (findElement){
-                const div_tooltp_i = tag("div",{
-                    'class': 'tooltip-i',
-                    'data-tooltip': findElement.uid,
-                },`${heroicon("tooltip-i","outline")}`);
-                const div_tooltip_text = tag("div",{
-                    'class': 'tooltip-texts hidden',
-                    'data-tooltip-text': findElement.uid,
-                },findElement.description);
-                label.insertAdjacentHTML('afterend', div_tooltp_i+div_tooltip_text);
+        if (label.htmlFor != "") {
+            let findElement = findByInputId(tooltiptexts, label.htmlFor);
+            if (findElement) {
+                const div_tooltp_i = tag(
+                    "div",
+                    {
+                        class: "tooltip-i",
+                        "data-tooltip": findElement.uid,
+                    },
+                    `${heroicon("tooltip-i", "outline")}`
+                );
+                const div_tooltip_text = tag(
+                    "div",
+                    {
+                        class: "tooltip-texts hidden",
+                        "data-tooltip-text": findElement.uid,
+                    },
+                    findElement.description
+                );
+                label.insertAdjacentHTML(
+                    "afterend",
+                    div_tooltp_i + div_tooltip_text
+                );
             }
         }
     });
@@ -988,36 +999,39 @@ function getAllLabelsOfPage(){
 }
 
 function findByInputId(array, inputId) {
-    const item = array.find(item => item.input_id === inputId);
+    const item = array.find((item) => item.input_id === inputId);
     return item ? { uid: item.uid, description: item.description } : null;
 }
 
-function addEventsToTooltipTexts(){
-    const tooltips = document.getElementsByClassName('tooltip-i');
-    Array.from(tooltips).forEach(tooltip => {
-        tooltip.addEventListener('mouseover', (event) => {
-            const uid = event.target.parentNode.getAttribute('data-tooltip');
-            const element = document.querySelector(`[data-tooltip-text="${uid}"]`);
-            element.classList.remove('hidden');
+function addEventsToTooltipTexts() {
+    const tooltips = document.getElementsByClassName("tooltip-i");
+    Array.from(tooltips).forEach((tooltip) => {
+        tooltip.addEventListener("mouseover", (event) => {
+            const uid = event.target.parentNode.getAttribute("data-tooltip");
+            const element = document.querySelector(
+                `[data-tooltip-text="${uid}"]`
+            );
+            element.classList.remove("hidden");
             const xPosition = tooltip.offsetLeft + 75;
             element.style.left = `${xPosition}px`;
             element.classList.add("tooltip-before");
             setPseudoElementTop(element, "tooltip-before");
         });
-        tooltip.addEventListener('mouseout', () => {
-            const uid = event.target.parentNode.getAttribute('data-tooltip');
-            const element = document.querySelector(`[data-tooltip-text="${uid}"]`);
-            element.classList.add('hidden');
+        tooltip.addEventListener("mouseout", () => {
+            const uid = event.target.parentNode.getAttribute("data-tooltip");
+            const element = document.querySelector(
+                `[data-tooltip-text="${uid}"]`
+            );
+            element.classList.add("hidden");
             element.classList.remove("tooltip-before");
         });
     });
 }
 function setPseudoElementTop(element, uid) {
-    const height = (element.offsetHeight/2)-10;
-    const style = document.createElement('style');
-    style.type = 'text/css';
+    const height = element.offsetHeight / 2 - 10;
+    const style = document.createElement("style");
+    style.type = "text/css";
     const css = `.${uid}::before { top: ${height}px; }`;
     style.appendChild(document.createTextNode(css));
     document.head.appendChild(style);
 }
-

@@ -126,7 +126,10 @@
                                     <div
                                         class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
                                     </div>
-                                    <div class="checkbox-name">{{ $notification_type->name }}</div>
+                                    <div class="checkbox-name">
+                                        <div>{{ $notification_type->name }}</div>
+                                        <small class="italic">{{ $notification_type->description }}</small>
+                                    </div>
                                 </label>
                             </div>
                         @endforeach
@@ -191,7 +194,11 @@
                                     <div
                                         class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
                                     </div>
-                                    <div class="checkbox-name">{{ $notification_type->name }}</div>
+
+                                    <div class="checkbox-name">
+                                        <div>{{ $notification_type->name }}</div>
+                                        <small class="italic">{{ $notification_type->description }}</small>
+                                    </div>
 
                                 </label>
                             </div>

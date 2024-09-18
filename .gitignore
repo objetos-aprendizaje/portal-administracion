@@ -50,6 +50,8 @@ node_modules
 .phpunit.result.cache
 .env.testing
 
+!storage/app/files/test-file.txt
+
 
 /tests/reports
 .DS_Store

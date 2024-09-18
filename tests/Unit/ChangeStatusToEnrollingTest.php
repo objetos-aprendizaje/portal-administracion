@@ -23,7 +23,7 @@ class ChangeStatusToEnrollingTest extends TestCase
     public function testChangesCoursesStatusToEnrolling()
     {
         // Preparar datos de prueba
-        $course = CoursesModel::factory()->create([
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
             'uid' => generate_uuid(),
             'enrolling_start_date' => now()->subDays(1),
             'enrolling_finish_date' => now()->addDays(1),

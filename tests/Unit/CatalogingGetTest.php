@@ -688,8 +688,8 @@ class CatalogingGetTest extends TestCase
         });
 
         // Verificar que otros datos están presentes en la vista
-        $response->assertViewHas('page_name', 'Tipos de programas educativos');
-        $response->assertViewHas('page_title', 'Tipos de programas educativos');
+        $response->assertViewHas('page_name', 'Tipos de programas formativos');
+        $response->assertViewHas('page_title', 'Tipos de programas formativos');
         $response->assertViewHas('submenuselected', 'cataloging-educational-program-types');
         $response->assertViewHas('tabulator', true);
     }

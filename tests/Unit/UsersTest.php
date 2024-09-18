@@ -570,7 +570,7 @@ class UsersTest extends TestCase
         $studentRole = UserRolesModel::factory()->create(['uid' => generate_uuid(), 'name' => 'Estudiante', 'code' => 'STUDENT'])->latest()->first();
 
         // Crear cursos
-        $course = CoursesModel::factory()->create()->first();
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create()->first();
 
         // Crear usuarios
         $user1 = UsersModel::factory()->create([
@@ -621,7 +621,7 @@ class UsersTest extends TestCase
         ]);
 
         // Crear cursos
-        $course = CoursesModel::factory()->create([
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
             'uid' => generate_uuid(),
             'title' => 'Nombre curso2',
             'educational_program_type_uid' => $educationalProgramTypes->uid

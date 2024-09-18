@@ -33,7 +33,7 @@
                     </div>
 
                     <div class="content-container">
-                        <textarea placeholder="Descripción" rows="4" id="description" name="description" class="poa-input"></textarea>
+                        <textarea maxlength="1000" placeholder="Descripción" rows="4" id="description" name="description" class="poa-input"></textarea>
                     </div>
                 </div>
 
@@ -47,6 +47,7 @@
 
                 <input type="hidden" id="competence_uid" name="competence_uid" value="" />
                 <input type="hidden" id="parent_competence_uid" name="parent_competence_uid" value="" />
+                <input type="hidden" id="competence_framework_uid" name="competence_framework_uid" value="" />
 
             </form>
         </div>

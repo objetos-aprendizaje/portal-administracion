@@ -118,7 +118,11 @@ class LearningObjectEducationalResourceTest extends TestCase
     public function testReturns200AndResourceDataIfResourceExists()
     {
         // Crea un recurso educativo simulado en la base de datos
-        $resource = EducationalResourcesModel::factory()->create()->first();
+        $resource = EducationalResourcesModel::factory()
+        ->withStatus()
+        ->withEducationalResourceType()
+        ->withCreatorUser()
+        ->create()->first();
 
         // Realiza la solicitud GET a la ruta con un UID válido
         $response = $this->get('/learning_objects/educational_resources/get_resource/' . $resource->uid);
@@ -140,8 +144,15 @@ class LearningObjectEducationalResourceTest extends TestCase
         $this->actingAs(UsersModel::factory()->create());
 
         // Crea algunos recursos educativos en la base de datos
-        $resource1 = EducationalResourcesModel::factory()->create();
-        $resource2 = EducationalResourcesModel::factory()->create();
+        $resource1 = EducationalResourcesModel::factory()
+        ->withStatus()
+        ->withEducationalResourceType()
+        ->withCreatorUser()
+        ->create();
+        $resource2 = EducationalResourcesModel::factory() ->withStatus()
+        ->withEducationalResourceType()
+        ->withCreatorUser()
+        ->create();
 
         // Prepara los UIDs de los recursos a eliminar
         $resourcesUids = [$resource1->uid, $resource2->uid];
@@ -217,8 +228,8 @@ class LearningObjectEducationalResourceTest extends TestCase
         // Crea algunas categorías y resultados de aprendizaje para asociar con el recurso
         $category1 = CategoriesModel::factory()->create()->first();
         $category2 = CategoriesModel::factory()->create()->first();
-        $learningResult1 = LearningResultsModel::factory()->create();
-        $learningResult2 = LearningResultsModel::factory()->create();
+        $learningResult1 = LearningResultsModel::factory()->withCompetence()->create();
+        $learningResult2 = LearningResultsModel::factory()->withCompetence()->create();
 
         $educationalResourceTypes = EducationalResourceTypesModel::factory()->create()->first();
         $licenseTypes = LicenseTypesModel::factory()->create()->first();
@@ -315,7 +326,11 @@ class LearningObjectEducationalResourceTest extends TestCase
         $licenseTypes = LicenseTypesModel::factory()->create()->first();
 
         // Crea un recurso educativo existente en la base de datos
-        $resource = EducationalResourcesModel::factory()->create([
+        $resource = EducationalResourcesModel::factory()
+        ->withStatus()
+        ->withEducationalResourceType()
+        ->withCreatorUser()
+        ->create([
             'license_type_uid' => $licenseTypes->uid,
         ])->first();
 
@@ -331,8 +346,8 @@ class LearningObjectEducationalResourceTest extends TestCase
         // Crea algunas categorías y resultados de aprendizaje para asociar con el recurso
         $category1 = CategoriesModel::factory()->create()->first();
         $category2 = CategoriesModel::factory()->create()->first();
-        $learningResult1 = LearningResultsModel::factory()->create();
-        $learningResult2 = LearningResultsModel::factory()->create();
+        $learningResult1 = LearningResultsModel::factory()->withCompetence()->create();
+        $learningResult2 = LearningResultsModel::factory()->withCompetence()->create();
 
         $educationalResourceTypes = EducationalResourceTypesModel::factory()->create()->first();
 
@@ -431,7 +446,10 @@ class LearningObjectEducationalResourceTest extends TestCase
         $this->actingAs($user_teacher);
 
         // Creamos algunos recursos educativos
-        EducationalResourcesModel::factory()->count(15)->create([
+        EducationalResourcesModel::factory()
+        ->withStatus()
+        ->withEducationalResourceType()
+        ->withCreatorUser()->count(15)->create([
             'creator_user_uid' => $user_teacher->uid,
         ]);
 
@@ -471,7 +489,10 @@ class LearningObjectEducationalResourceTest extends TestCase
         $user = UsersModel::factory()->create();
         //  $user->roles()->attach(RolesModel::factory()->create(['code' => 'TEACHER']));
 
-        $resource = EducationalResourcesModel::factory()->create([
+        $resource = EducationalResourcesModel::factory()
+        ->withStatus()
+        ->withEducationalResourceType()        
+        ->create([
             'creator_user_uid' => $user->uid,
             'title' => 'Unique Title'
         ]);
@@ -502,7 +523,10 @@ class LearningObjectEducationalResourceTest extends TestCase
 
 
         $category = CategoriesModel::factory()->create()->first();
-        $resource = EducationalResourcesModel::factory()->create([
+        $resource = EducationalResourcesModel::factory()
+        ->withStatus()
+        ->withEducationalResourceType()       
+        ->create([
             'creator_user_uid' => $user_teacher->uid,
         ])->first();
 
@@ -539,11 +563,17 @@ class LearningObjectEducationalResourceTest extends TestCase
         }
         $user_teacher->roles()->sync($roles_to_sync);
 
-        EducationalResourcesModel::factory()->create([
+        EducationalResourcesModel::factory()
+        ->withStatus()
+        ->withEducationalResourceType()
+        ->create([
             'creator_user_uid' => $user_teacher->uid,
             'title' => 'B Title'
         ]);
-        EducationalResourcesModel::factory()->create([
+        EducationalResourcesModel::factory()
+        ->withStatus()
+        ->withEducationalResourceType()        
+        ->create([
             'creator_user_uid' => $user_teacher->uid,
             'title' => 'A Title'
         ]);
@@ -635,13 +665,20 @@ class LearningObjectEducationalResourceTest extends TestCase
         ]);
         Auth::login($user);
 
-        $status = EducationalResourceStatusesModel::factory()->create([
+        $status = EducationalResourceStatusesModel::factory()
+        ->create([
             'code' => 'PUBLISHED1',
         ])->latest()->first();
 
         // Crear recursos educativos de prueba
-        $resource1 = EducationalResourcesModel::factory()->create( [ 'status_uid' => $status->uid ] );
-        $resource2 = EducationalResourcesModel::factory()->create([ 'status_uid' => $status->uid ] );
+        $resource1 = EducationalResourcesModel::factory()
+        ->withEducationalResourceType()
+        ->withCreatorUser()
+        ->create( [ 'status_uid' => $status->uid ] );
+        $resource2 = EducationalResourcesModel::factory()
+        ->withEducationalResourceType()
+        ->withCreatorUser()
+        ->create([ 'status_uid' => $status->uid ] );
 
         // Datos de la solicitud
         $changesResourcesStatuses = [
@@ -686,8 +723,14 @@ class LearningObjectEducationalResourceTest extends TestCase
         ])->latest()->first();
 
         // Crear recursos educativos de prueba
-        $resource1 = EducationalResourcesModel::factory()->create( [ 'status_uid' => $status->uid ] );
-        $resource2 = EducationalResourcesModel::factory()->create([ 'status_uid' => $status->uid ] );
+        $resource1 = EducationalResourcesModel::factory()
+        ->withEducationalResourceType()
+        ->withCreatorUser()
+        ->create( [ 'status_uid' => $status->uid ] );
+        $resource2 = EducationalResourcesModel::factory()
+        ->withEducationalResourceType()
+        ->withCreatorUser()
+        ->create([ 'status_uid' => $status->uid ] );
 
         // Datos de la solicitud
         $changesResourcesStatuses = [

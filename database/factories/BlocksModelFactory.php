@@ -19,10 +19,19 @@ class BlocksModelFactory extends Factory
     {
         return [
             'uid'        => generate_uuid(),
-            'course_uid' => CoursesModel::factory()->create()->first(),
             'name'       => $this->faker->word,
+            'description' => $this->faker->sentence,
             'order'      => $this->faker->randomNumber,
-            'type'       => 'PRACTICAL',
+            'type'       => $this->faker->randomElement(['THEORETIC', 'PRACTICAL', 'EVALUATION']),
         ];
+    }
+
+    public function withCourse(): Factory
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'course_uid' => CoursesModel::factory()->create()->first(),
+            ];
+        });
     }
 }

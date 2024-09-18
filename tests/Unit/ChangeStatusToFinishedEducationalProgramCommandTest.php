@@ -25,7 +25,7 @@ class ChangeStatusToFinishedEducationalProgramCommandTest extends TestCase
         $statusDevelopment =  EducationalProgramStatusesModel::where('code','DEVELOPMENT')->first();
 
         // Crear un programa educativo en estado 'DEVELOPMENT' que ha finalizado
-        $educationalProgram = EducationalProgramsModel::factory()->create([
+        $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
             'realization_finish_date' => now()->subDay(),
             'educational_program_status_uid' => $statusDevelopment->uid,
         ]);
@@ -72,7 +72,7 @@ class ChangeStatusToFinishedEducationalProgramCommandTest extends TestCase
         $statusDevelopment =  EducationalProgramStatusesModel::where('code','DEVELOPMENT')->first();
 
         // Crear un programa educativo en estado 'DEVELOPMENT' que ha finalizado sin estudiantes
-        $educationalProgram = EducationalProgramsModel::factory()->create([
+        $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
             'realization_finish_date' => now()->subDay(),
             'educational_program_status_uid' => $statusDevelopment->uid,
         ]);

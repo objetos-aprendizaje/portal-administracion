@@ -20,6 +20,7 @@ use App\Models\AutomaticNotificationTypesModel;
 use App\Models\EducationalResourceStatusesModel;
 use App\Models\EmailNotificationsAutomaticModel;
 use App\Models\AutomaticResourceAprovalUsersModel;
+use App\Models\CompetenceFrameworksModel;
 use App\Models\EducationalResourceCategoriesModel;
 use App\Models\GeneralNotificationsAutomaticModel;
 use Illuminate\Routing\Controller as BaseController;
@@ -36,9 +37,7 @@ class EducationalResourcesController extends BaseController
         $categories = CategoriesModel::with('parentCategory')->get()->toArray();
         $license_types = LicenseTypesModel::get()->toArray();
 
-        $competencesLearningResults = CompetencesModel::whereNull('parent_competence_uid')->with(['subcompetences', 'learningResults'])->orderBy('name', 'ASC')->get();
-
-        $competencesLearningResults = $this->mapCompetencesLearningResults($competencesLearningResults->toArray());
+        $competencesLearningResults = $this->getCompetencesFrameworks();
 
         return view(
             'learning_objects.educational_resources.index',
@@ -507,10 +506,9 @@ class EducationalResourcesController extends BaseController
             return !$commonCategories->isEmpty() && !$user->automaticGeneralNotificationsTypesDisabled->contains('code', 'NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS');
         });
 
-        //Todo: se agregó esto ya que el campo automatic_notification_type_uid es obligatorio si no da error 500, 
+        //Todo: se agregó esto ya que el campo automatic_notification_type_uid es obligatorio si no da error 500,
         //Todo solo se hizo para poder correr la prueba unitaria
         $type = AutomaticNotificationTypesModel::where('code', 'NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS' )->first();
-        
         $generalNotificationAutomaticUid = generate_uuid();
         $generalAutomaticNotification = new GeneralNotificationsAutomaticModel();
         $generalAutomaticNotification->uid = $generalNotificationAutomaticUid;
@@ -611,37 +609,55 @@ class EducationalResourcesController extends BaseController
         return $identifier;
     }
 
-    private function mapCompetencesLearningResults($competencesLearningResults)
-    {
-        $mapped = array_map(function ($competence) {
-            $mappedCompetence = [
-                'id' => $competence['uid'],
-                'name' => $competence['name'],
-                'children' => [],
-                'type' => 'competence',
-                'showCheckbox' => true,
-            ];
+    private function getCompetencesFrameworks() {
 
-            // Si hay subcompetences, aplicar la función de manera recursiva
-            if (!empty($competence['subcompetences'])) {
-                $mappedCompetence['children'] = $this->mapCompetencesLearningResults($competence['subcompetences']);
+        $competenceFrameworks = CompetenceFrameworksModel::with([
+            'levels',
+            'allSubcompetences',
+            'allSubcompetences.learningResults',
+            'allSubcompetences.allSubcompetences',
+            'allSubcompetences.allSubcompetences.learningResults'
+        ])->get();
+
+        $competencesLearningResults = [];
+        foreach ($competenceFrameworks as $competenceFramework) {
+            $competencesLearningResults[] = $this->mapStructureFramework($competenceFramework->toArray(), "competence_framework");
+        }
+
+        return $competencesLearningResults;
+    }
+
+    private function mapStructureFramework($obj, $type = "competence") {
+        // Crear un nuevo objeto con los campos necesarios
+        $mappedObj = [
+            'id' => $obj['uid'],
+            'name' => $obj['name'],
+            'children' => [],
+            'type' => $type,
+            'showCheckbox' => true,
+        ];
+
+        // Si hay subcompetencias, recursivamente mapéalas
+        if (isset($obj['all_subcompetences']) && count($obj['all_subcompetences']) > 0) {
+            foreach ($obj['all_subcompetences'] as $sub) {
+                $mappedObj['children'][] = $this->mapStructureFramework($sub);
             }
+        }
 
-            if (!empty($competence['learning_results'])) {
-                foreach ($competence['learning_results'] as $learningResult) {
-                    $mappedCompetence['children'][] = [
-                        'id' => $learningResult['uid'],
-                        'name' => $learningResult['name'],
-                        'children' => [],
-                        'type' => 'learningResult',
-                        'showCheckbox' => true,
-                    ];
-                }
+        // Si hay resultados de aprendizaje, agrégalos también
+        if (isset($obj['learning_results']) && count($obj['learning_results']) > 0) {
+            foreach ($obj['learning_results'] as $lr) {
+                $mappedObj['children'][] = [
+                    'id' => $lr['uid'],
+                    'name' => $lr['name'],
+                    'type' => 'learning_result',
+                    'showCheckbox' => true,
+                    'disabled' => false,
+                ];
             }
+        }
 
-            return $mappedCompetence;
-        }, $competencesLearningResults);
-
-        return $mapped;
+        // Devuelve el objeto mapeado
+        return $mappedObj;
     }
 }

@@ -44,7 +44,7 @@ class ChangeStatusToInscriptionEducationalProgramTest extends TestCase
         $roles = UserRolesModel::firstOrCreate(['code' => 'STUDENT'], ['uid' => generate_uuid()]);
         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
-        $educationalProgram = EducationalProgramsModel::factory()->create([
+        $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
             'uid' => generate_uuid(),
             'name' => 'Curso de Prueba',
             'description' => 'Descripción del curso de prueba',

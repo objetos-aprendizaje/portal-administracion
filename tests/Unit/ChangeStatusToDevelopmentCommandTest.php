@@ -27,7 +27,7 @@ class ChangeStatusToDevelopmentCommandTest extends TestCase
         $lmsSystem = LmsSystemsModel::factory()->create()->first();
 
         // Crear un curso en estado de inscripción que cumple con las condiciones
-        $course = CoursesModel::factory()->create([
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
             'realization_start_date' => now()->subDay(),
             'realization_finish_date' => now()->addDay(),
             'course_status_uid' => CourseStatusesModel::where('code', 'DEVELOPMENT')->first()->uid,
@@ -64,7 +64,7 @@ class ChangeStatusToDevelopmentCommandTest extends TestCase
         $lmsSystem = LmsSystemsModel::factory()->create()->first();
 
         // Crear un curso en estado de inscripción que cumple con las condiciones
-        $course = CoursesModel::factory()->create([
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
             'realization_start_date' => now()->subDay(),
             'realization_finish_date' => now()->addDay(),
             'course_status_uid' => CourseStatusesModel::where('code', 'PENDING_DECISION')->first()->uid,
@@ -101,7 +101,7 @@ class ChangeStatusToDevelopmentCommandTest extends TestCase
         $lmsSystem = LmsSystemsModel::factory()->create()->first();
 
         // Crear un curso en estado de inscripción que cumple con las condiciones
-        $course = CoursesModel::factory()->create([
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
             'realization_start_date' => now()->subDay(),
             'realization_finish_date' => now()->addDay(),
             'course_status_uid' => CourseStatusesModel::where('code', 'ENROLLING')->first()->uid,

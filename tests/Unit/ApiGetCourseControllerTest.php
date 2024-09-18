@@ -56,7 +56,7 @@ class ApiGetCourseControllerTest extends TestCase
         // Crea un usuario y actúa como él
         $admin = UsersModel::factory()->create();
         $this->actingAs($admin);
-        
+
         // Simular la carga de datos que haría el GeneralOptionsMiddleware
         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
         View::share('general_options', $general_options);
@@ -66,10 +66,10 @@ class ApiGetCourseControllerTest extends TestCase
 
         $this->assertDatabaseHas('api_keys', ['uid' => $apikey->uid]);
 
-        $educationalProg = EducationalProgramsModel::factory()->create()->first();
+        $educationalProg = EducationalProgramsModel::factory()->withEducationalProgramType()->create()->first();
 
         // Crear un curso de prueba con datos relacionados
-        $course = CoursesModel::factory()->create([
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
             'course_lms_uid' => 'lms-uid-123',
             'title' => 'Curso de prueba',
             'description' => 'Descripción del curso de prueba',
@@ -124,7 +124,7 @@ class ApiGetCourseControllerTest extends TestCase
         // Crea un usuario y actúa como él
         $admin = UsersModel::factory()->create();
         $this->actingAs($admin);
-        
+
         // Simular la carga de datos que haría el GeneralOptionsMiddleware
         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
         View::share('general_options', $general_options);
@@ -134,10 +134,10 @@ class ApiGetCourseControllerTest extends TestCase
 
         $this->assertDatabaseHas('api_keys', ['uid' => $apikey->uid]);
 
-        $educationalProg = EducationalProgramsModel::factory()->create()->first();
+        $educationalProg = EducationalProgramsModel::factory()->withEducationalProgramType()->create()->first();
 
         // Crear un curso de prueba con datos relacionados
-        $course = CoursesModel::factory()->create([
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
             'course_lms_uid' => 'lms-uid-123',
             'title' => 'Curso de prueba',
             'description' => 'Descripción del curso de prueba',
@@ -176,5 +176,5 @@ class ApiGetCourseControllerTest extends TestCase
         $response->assertStatus(200);
 
     }
-    
+
 }

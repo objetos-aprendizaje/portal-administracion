@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use Carbon\Carbon;
 use Tests\TestCase;
 use App\Models\UsersModel;
 use App\Models\ApiKeysModel;
@@ -29,10 +30,12 @@ class ApiUpdateCourseControllerTest extends TestCase
 
         $this->assertDatabaseHas('api_keys', ['uid' => $apikey->uid]);
 
-        $edu_program = EducationalProgramsModel::factory()->create()->first();
+        $edu_program = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
+            'enrolling_finish_date' => Carbon::now()->addDays(30)->format('Y-m-d\TH:i'),
+        ])->first();
 
         // Crear un curso en la base de datos
-        $course = CoursesModel::factory()->create([
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
             'course_lms_uid' => 'lms-1234',
             'title' => 'Old Title',
             'description' => 'Old Description',
@@ -50,8 +53,8 @@ class ApiUpdateCourseControllerTest extends TestCase
             'description' => 'New Description',
             'lms_url' => 'https://newurl.com/course',
             'ects_workload' => 5,
-            'realization_start_date' => '2024-09-15 10:00:00',
-            'realization_finish_date' => '2024-09-20 10:00:00',
+            'realization_start_date' =>  Carbon::now()->addDays(40)->format('Y-m-d\TH:i'),
+            'realization_finish_date' => Carbon::now()->addDays(50)->format('Y-m-d\TH:i'),
             'educational_program_uid' => $edu_program->uid,
         ];      
         
@@ -71,8 +74,8 @@ class ApiUpdateCourseControllerTest extends TestCase
             'description' => 'New Description',
             'lms_url' => 'https://newurl.com/course',
             'ects_workload' => 5,
-            'realization_start_date' => '2024-09-15 10:00:00',
-            'realization_finish_date' => '2024-09-20 10:00:00',
+            'realization_start_date' => Carbon::now()->addDays(40)->format('Y-m-d\TH:i'),
+            'realization_finish_date' => Carbon::now()->addDays(50)->format('Y-m-d\TH:i'),
         ]);
     }
 
@@ -128,7 +131,7 @@ class ApiUpdateCourseControllerTest extends TestCase
         $this->assertDatabaseHas('api_keys', ['uid' => $apikey->uid]);
 
         // Crear un curso en la base de datos
-        $course = CoursesModel::factory()->create([
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
             'course_lms_uid' => 'lms-1234',
             'realization_start_date' => '2024-09-01 10:00:00',
             'realization_finish_date' => '2024-09-10 10:00:00',

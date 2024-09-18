@@ -33,7 +33,7 @@
                         <label for="description">Descripción</label>
                     </div>
                     <div class="content-container">
-                        <textarea maxlength="255" placeholder="Notificación de..." rows="5" class="poa-input" id="description"
+                        <textarea maxlength="1000" maxlength="255" placeholder="Notificación de..." rows="5" class="poa-input" id="description"
                             name="description"></textarea>
                     </div>
                 </div>

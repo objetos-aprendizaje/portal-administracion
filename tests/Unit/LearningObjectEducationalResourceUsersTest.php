@@ -216,7 +216,11 @@ class LearningObjectEducationalResourceUsersTest extends TestCase
     {
         $user = UsersModel::factory()->create();
 
-        $resource = EducationalResourcesModel::factory()->create(['title' => 'Matemáticas']);
+        $resource = EducationalResourcesModel::factory()
+        ->withStatus()
+        ->withEducationalResourceType()
+        ->withCreatorUser()
+        ->create(['title' => 'Matemáticas']);
 
         // Generar un UID manualmente para la tabla intermedia
         $user->educationalResources()->attach($resource->uid, [
@@ -240,8 +244,15 @@ class LearningObjectEducationalResourceUsersTest extends TestCase
         $user = UsersModel::factory()->create();
 
         // Crear recursos educativos de prueba
-        $resource1 = EducationalResourcesModel::factory()->create(['title' => 'Matemáticas']);
-        $resource2 = EducationalResourcesModel::factory()->create(['title' => 'Historia']);
+        $resource1 = EducationalResourcesModel::factory()
+        ->withStatus()
+        ->withEducationalResourceType()
+        ->withCreatorUser()
+        ->create(['title' => 'Matemáticas']);
+        $resource2 = EducationalResourcesModel::factory() ->withStatus()
+        ->withEducationalResourceType()
+        ->withCreatorUser()
+        ->create(['title' => 'Historia']);
 
         // Asociar los recursos educativos al usuario mediante la tabla intermedia
         $user->educationalResources()->attach($resource1->uid, [
@@ -270,7 +281,11 @@ class LearningObjectEducationalResourceUsersTest extends TestCase
         $user = UsersModel::factory()->create();
 
         // Crear recursos educativos de prueba
-        $resource1 = EducationalResourcesModel::factory()->create(['title' => 'Historia'])->first();
+        $resource1 = EducationalResourcesModel::factory()
+        ->withStatus()
+        ->withEducationalResourceType()
+        ->withCreatorUser()
+        ->create(['title' => 'Historia'])->first();
 
         // Asociar los recursos educativos al usuario mediante la tabla intermedia
         $user->educationalResources()->attach($resource1->uid, [

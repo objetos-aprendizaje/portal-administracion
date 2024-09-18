@@ -34,7 +34,7 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
             $_SERVER['REQUEST_SCHEME'] = 'https';
             $_SERVER['SERVER_PORT'] = '443';
-        }else{
+        } else {
             URL::forceScheme('http');
         }
 
@@ -55,7 +55,12 @@ class AppServiceProvider extends ServiceProvider
 
             if (!$dataLogin["email"]) Redirect::to('/')->send();
 
-            $user = UsersModel::where('email', strtolower($dataLogin["email"]))->first();
+            $user = UsersModel::with('roles')
+                ->whereHas('roles', function ($query) {
+                    $query->whereIn('code', ['ADMINISTRATOR', 'MANAGEMENT', 'TEACHER']);
+                })
+                ->where('email', strtolower($dataLogin["email"]))
+                ->first();
 
             DB::transaction(function () use ($dataLogin, &$user) {
                 if (!$user) $user = $this->registerCasRediris($dataLogin);
@@ -78,7 +83,7 @@ class AppServiceProvider extends ServiceProvider
         $newUser->email = $dataLogin["email"];
         $newUser->logged_x509 = 1;
 
-        if(isset($dataLogin["nif"])) $newUser->nif = $dataLogin["nif"];
+        if (isset($dataLogin["nif"])) $newUser->nif = $dataLogin["nif"];
 
         $newUser->save();
         return $newUser;
@@ -99,12 +104,12 @@ class AppServiceProvider extends ServiceProvider
         $loginSystem = $this->detectLoginSystem();
         $dataLogin = [];
 
-        if($loginSystem == "cas") {
+        if ($loginSystem == "cas") {
             $dataLogin = [
                 "email" => $userDataSaml['id'],
                 "nif" => $userDataSaml['attributes']['sPUID'][0],
             ];
-        } else if($loginSystem == "rediris") {
+        } else if ($loginSystem == "rediris") {
             $dataLogin = [
                 "email" => $userDataSaml['attributes']['urn:oid:0.9.2342.19200300.100.1.3'][0],
             ];

@@ -21,7 +21,7 @@ class EducationalProgramTypesModelFactory extends Factory
         return [
             'uid' => generate_uuid(),
             'name' => $this->faker->unique()->sentence(3),
-            'description' => '',
+            'description' => $this->faker->paragraph(1),
             'managers_can_emit_credentials' => 1,
             'teachers_can_emit_credentials' => 0,
             'created_at' => Carbon::now()->format('Y-m-d\TH:i'),

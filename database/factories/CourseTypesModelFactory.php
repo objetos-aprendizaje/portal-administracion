@@ -19,8 +19,8 @@ class CourseTypesModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => Str::uuid(),
-            'name' => $this->faker->name(),
+            'uid' => generate_uuid(),
+            'name' => $this->faker->words(3, true),
             'created_at' => Carbon::now()->format('Y-m-d\TH:i'),
             'updated_at' => Carbon::now()->format('Y-m-d\TH:i'),
         ];

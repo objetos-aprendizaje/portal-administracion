@@ -41,7 +41,7 @@
                         <label for="description">Descripción</label>
                     </div>
                     <div class="content-container">
-                        <textarea placeholder="El recurso contiene..." rows="5" class="poa-input" id="description" name="description"></textarea>
+                        <textarea maxlength="1000" placeholder="El recurso contiene..." rows="5" class="poa-input" id="description" name="description"></textarea>
                     </div>
                 </div>
 

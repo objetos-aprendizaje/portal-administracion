@@ -61,7 +61,12 @@ class CombinedAuthMiddleware
 
     private function loadUserData($user_email)
     {
-        $user = UsersModel::where('email', $user_email)->with("roles")->first();
+        $user = UsersModel::with('roles')
+            ->whereHas('roles', function ($query) {
+                $query->whereIn('code', ['ADMINISTRATOR', 'MANAGEMENT', 'TEACHER']);
+            })
+            ->where('email', $user_email)
+            ->first();
 
         if (!$user) {
             throw new \Exception('No hay ninguna cuenta asociada al email');
@@ -114,16 +119,16 @@ class CombinedAuthMiddleware
                                 ->where('destinations_general_notifications_users.user_uid', $user_uid);
                         });
                 })
-                ->orWhere(function ($q) use ($uids_roles) {
-                    $q->where('type', 'ROLES')
-                        ->whereExists(function ($query) use ($uids_roles) {
-                            $query->select(DB::raw(1))
-                                ->from('destinations_general_notifications_roles')
-                                ->whereColumn('destinations_general_notifications_roles.general_notification_uid', 'general_notifications.uid')
-                                ->whereIn('destinations_general_notifications_roles.rol_uid', $uids_roles);
-                        });
-                })
-                ->orWhere('type', 'ALL_USERS');
+                    ->orWhere(function ($q) use ($uids_roles) {
+                        $q->where('type', 'ROLES')
+                            ->whereExists(function ($query) use ($uids_roles) {
+                                $query->select(DB::raw(1))
+                                    ->from('destinations_general_notifications_roles')
+                                    ->whereColumn('destinations_general_notifications_roles.general_notification_uid', 'general_notifications.uid')
+                                    ->whereIn('destinations_general_notifications_roles.rol_uid', $uids_roles);
+                            });
+                    })
+                    ->orWhere('type', 'ALL_USERS');
             })
             ->where('start_date', '<=', now())
             ->where('end_date', '>=', now())
@@ -140,7 +145,7 @@ class CombinedAuthMiddleware
                     ->limit(1),
             ]);
 
-            return $generalNotificationsQuery;
+        return $generalNotificationsQuery;
     }
 
     private function getGeneralNotificationsAutomatic($user)

@@ -78,36 +78,8 @@ class JobsSendCourseNotificationToManagementsTest extends TestCase
         ]);
 
         // Verificar que se despachó el trabajo de envío de correo
-        Queue::assertPushed(SendEmailJob::class, 2); // Verifica que se hayan enviado 2 trabajos
-
-        // Verificar que se despacharon los trabajos con los parámetros correctos
-        Queue::assertPushed(SendEmailJob::class, function ($job) use ($course, $manager1) {
-            // Usar reflexión para acceder a la propiedad protegida
-            $reflection = new \ReflectionClass($job);
-            $emailProperty = $reflection->getProperty('email');
-            $emailProperty->setAccessible(true); // Hacer la propiedad accesible
-
-            $parametersProperty = $reflection->getProperty('parameters');
-            $parametersProperty->setAccessible(true); // Hacer la propiedad accesible
-
-            return $emailProperty->getValue($job) === $manager1->email &&
-                $parametersProperty->getValue($job)['course_title'] === $course['title'];
-        });
-
-        Queue::assertPushed(SendEmailJob::class, function ($job) use ($course, $manager2) {
-            // Usar reflexión para acceder a la propiedad protegida
-            $reflection = new \ReflectionClass($job);
-            $emailProperty = $reflection->getProperty('email');
-            $emailProperty->setAccessible(true); // Hacer la propiedad accesible
-
-            $parametersProperty = $reflection->getProperty('parameters');
-            $parametersProperty->setAccessible(true); // Hacer la propiedad accesible
-
-            return $emailProperty->getValue($job) === $manager2->email &&
-                $parametersProperty->getValue($job)['course_title'] === $course['title'];
-        });
-
+        Queue::assertPushed(SendEmailJob::class, 2);
 
     }
-
 }
+

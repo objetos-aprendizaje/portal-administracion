@@ -81,7 +81,7 @@ class CarrouselsTest extends TestCase
             'featured_big_carrousel' => 0,
         ]);
 
-        EducationalProgramsModel::factory()->create([
+        EducationalProgramsModel::factory()->withEducationalProgramType()->create([
             'featured_slider_approved' => false,
         ]);
 
@@ -142,12 +142,12 @@ class CarrouselsTest extends TestCase
     {
 
         //   Crear registros usando el factory
-         $course1 = CoursesModel::factory()->create([
+         $course1 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
             'featured_big_carrousel_approved' => false,
          ]);
 
 
-        $course2 = CoursesModel::factory()->create([
+        $course2 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
             'featured_big_carrousel_approved' => true,
         ]);
 
@@ -157,11 +157,11 @@ class CarrouselsTest extends TestCase
             ['uid' => $course2->uid, 'checked' => false],
         ];
 
-        $education1 = EducationalProgramsModel::factory()->create([
+        $education1 = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
             'featured_slider_approved' => false,
         ]);
 
-        $education2 = EducationalProgramsModel::factory()->create([
+        $education2 = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
             'featured_slider_approved' => true,
         ]);
 
@@ -238,12 +238,12 @@ class CarrouselsTest extends TestCase
      {
 
          //   Crear registros usando el factory
-          $course1 = CoursesModel::factory()->create([
+          $course1 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
              'featured_small_carrousel_approved' => false,
           ]);
 
 
-         $course2 = CoursesModel::factory()->create([
+         $course2 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
              'featured_small_carrousel_approved' => true,
          ]);
 
@@ -253,11 +253,11 @@ class CarrouselsTest extends TestCase
              ['uid' => $course2->uid, 'checked' => false],
          ];
 
-         $education1 = EducationalProgramsModel::factory()->create([
+         $education1 = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
              'featured_main_carrousel_approved' => false,
          ]);
 
-         $education2 = EducationalProgramsModel::factory()->create([
+         $education2 = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
              'featured_main_carrousel_approved' => true,
          ]);
 

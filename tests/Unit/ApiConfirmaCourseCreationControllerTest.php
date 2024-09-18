@@ -28,7 +28,7 @@ class ApiConfirmaCourseCreationControllerTest extends TestCase
         $this->assertDatabaseHas('api_keys', ['uid' => $apikey->uid]);
 
         // Crear un curso en la base de datos
-        $course = CoursesModel::factory()->create([
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
             'uid' => generate_uuid(),
             'course_lms_uid' => null,
             'lms_url' => null,
@@ -73,7 +73,7 @@ class ApiConfirmaCourseCreationControllerTest extends TestCase
         $this->assertDatabaseHas('api_keys', ['uid' => $apikey->uid]);
 
         // Crear un curso en la base de datos
-        $course = CoursesModel::factory()->create();
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create();
 
         // Datos de la solicitud con campos faltantes o incorrectos
         $courseConfirm = [

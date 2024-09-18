@@ -64,7 +64,7 @@
             </select>
             <div>
                 <h4>Indica un motivo</h4>
-                <textarea placeholder="El estado del programa formativo se debe a..." class="reason-status-educational-program poa-input h-5"></textarea>
+                <textarea maxlength="1000" placeholder="El estado del programa formativo se debe a..." class="reason-status-educational-program poa-input h-5"></textarea>
             </div>
         </div>
     </div>

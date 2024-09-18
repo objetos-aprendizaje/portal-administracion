@@ -35,7 +35,7 @@
                         <label for="description">Descripción <span class="text-red-500">*</span></label>
                     </div>
                     <div class="content-container">
-                        <textarea class="required poa-input" rows="4" placeholder="Campo destinado al nombre de la empresa." type="text" id="description"
+                        <textarea maxlength="1000" class="required poa-input" rows="4" placeholder="Campo destinado al nombre de la empresa." type="text" id="description"
                             name="description"></textarea>
                     </div>
                 </div>

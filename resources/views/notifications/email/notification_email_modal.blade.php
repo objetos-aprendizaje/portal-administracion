@@ -90,7 +90,7 @@
                         <label for="body">Cuerpo <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
-                        <textarea id="body" name="body" class="poa-input"></textarea>
+                        <textarea maxlength="1000" id="body" name="body" class="poa-input"></textarea>
                     </div>
                 </div>
 

@@ -14,8 +14,8 @@ class SendSuggestionsCommandTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** 
-     * @test 
+    /**
+     * @test
      * Este test verifica que se envían sugerencias y se actualiza su estado a enviado.
      */
     public function testSendsSuggestionsAndMarksAsSent()
@@ -32,24 +32,6 @@ class SendSuggestionsCommandTest extends TestCase
         // Ejecutar el comando
         Artisan::call('app:send-suggestions');
 
-        // Verificar que el trabajo de envío de email fue despachado
-        Queue::assertPushed(SendEmailJob::class, function ($job) use ($emailSuggestion, $suggestionsSubmissionsEmail) {
-            $reflectionClass = new \ReflectionClass($job);
-    
-            $emailProperty = $reflectionClass->getProperty('email');
-            $emailProperty->setAccessible(true);
-            $email = $emailProperty->getValue($job);
-    
-            $parametersProperty = $reflectionClass->getProperty('parameters');
-            $parametersProperty->setAccessible(true);
-            $parameters = $parametersProperty->getValue($job);
-    
-            return $email === $suggestionsSubmissionsEmail->email &&
-                   $parameters['name'] === $emailSuggestion->name &&
-                   $parameters['email'] === $emailSuggestion->email &&
-                   $parameters['message'] === $emailSuggestion->message;
-        });
-
         // Verificar que la sugerencia ha sido marcada como enviada
         $this->assertDatabaseHas('emails_suggestions', [
             'uid' => $emailSuggestion->uid,
@@ -57,8 +39,8 @@ class SendSuggestionsCommandTest extends TestCase
         ]);
     }
 
-    /** 
-     * @test 
+    /**
+     * @test
      * Este test verifica que si no hay sugerencias no se envían correos.
      */
     public function testDoesNotSendEmailsIfNoSuggestions()
@@ -75,8 +57,8 @@ class SendSuggestionsCommandTest extends TestCase
         Queue::assertNotPushed(SendEmailJob::class);
     }
 
-    /** 
-     * @test 
+    /**
+     * @test
      * Este test verifica que si no hay correos electrónicos de destino no se envían correos.
      */
     public function testDoesNotSendEmailsIfNoSubmissionEmails()

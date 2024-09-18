@@ -27,7 +27,7 @@ class ChangeStatusToEnrollingEducationalProgramTest extends TestCase
         $statusEnrolling = EducationalProgramStatusesModel::where('code', 'ENROLLING')->first();
 
         // Crear un programa educativo en estado INSCRIPTION
-        $educationalProgram = EducationalProgramsModel::factory()->create([
+        $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
             'uid' => generate_uuid(),
             'name' => 'Curso de Prueba educational program',
             'description' => 'Descripción del curso',
@@ -67,7 +67,7 @@ class ChangeStatusToEnrollingEducationalProgramTest extends TestCase
         // Verificar que se creó la notificación general
         $this->assertDatabaseHas('general_notifications_automatic', [
             'title' => 'Programa formativo en matriculación',
-            'description' => 'El programa educativo <b>' . $educationalProgram->name . '</b> en el que estás inscrito, ya está en período de matriculación',
+            'description' => 'El programa formativo <b>' . $educationalProgram->name . '</b> en el que estás inscrito, ya está en período de matriculación',
         ]);
     }
 }

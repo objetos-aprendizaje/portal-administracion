@@ -36,7 +36,7 @@ class LearningObjectGetCoursesTest extends TestCase
          View::share('roles', $roles);
 
          // Crear cursos de ejemplo
-         CoursesModel::factory()->create();
+         CoursesModel::factory()->withCourseStatus()->withCourseType()->create();
 
          // Simular la solicitud
          $response = $this->postJson('/learning_objects/courses/get_courses');
@@ -61,12 +61,12 @@ class LearningObjectGetCoursesTest extends TestCase
          View::share('roles', $roles);
 
          // Crear cursos cerado por profesor
-         CoursesModel::factory()->create(['creator_user_uid' => $teacher->uid]);
+         CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['creator_user_uid' => $teacher->uid]);
          // Crear cursos crado por un usuario diferente a profesor
-         CoursesModel::factory()->create();
+         CoursesModel::factory()->withCourseStatus()->withCourseType()->create();
 
          // Suponiendo que el profesor está asignado a algunos cursos
-         $course3 = CoursesModel::factory()->create(); // Curso creado por otro usuario
+         $course3 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(); // Curso creado por otro usuario
          $course3->teachers_coordinate()->attach($teacher->uid, ['uid' => generate_uuid()]); // Asignar al profesor como coordinador
 
          // Simular la solicitud
@@ -88,9 +88,9 @@ class LearningObjectGetCoursesTest extends TestCase
          Auth::login($user);
 
          // Crear cursos de ejemplo
-         CoursesModel::factory()->create(['title' => 'Mathematics']);
-         CoursesModel::factory()->create(['title' => 'Science']);
-         CoursesModel::factory()->create(['title' => 'History']);
+         CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['title' => 'Mathematics']);
+         CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['title' => 'Science']);
+         CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['title' => 'History']);
 
 
          // Simular la búsqueda de cursos
@@ -115,9 +115,9 @@ class LearningObjectGetCoursesTest extends TestCase
          Auth::login($user);
 
          // Crear cursos de ejemplo
-         CoursesModel::factory()->create(['title' => 'Science']);
-         CoursesModel::factory()->create(['title' => 'Mathematics']);
-         CoursesModel::factory()->create(['title' => 'History']);
+         CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['title' => 'Science']);
+         CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['title' => 'Mathematics']);
+         CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['title' => 'History']);
 
          // Simular la solicitud con parámetros de ordenamiento
          $response = $this->postJson('/learning_objects/courses/get_courses?sort[0][field]=title&sort[0][dir]=asc&size=5');
