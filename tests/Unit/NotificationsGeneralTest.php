@@ -432,7 +432,7 @@ class NotificationsGeneralTest extends TestCase
         $this->actingAs($user);
 
          // Crear un curso que será referenciado
-         $course = CoursesModel::factory()->create();
+         $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create();
 
          // Crear un estatus de curso que será referenciado
         $courseStatus = CourseStatusesModel::factory()->create()->first();

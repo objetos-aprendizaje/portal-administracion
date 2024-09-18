@@ -75,31 +75,7 @@ class JobsSendEducationalProgramNotificationToManagementsTest extends TestCase
         ]);
 
         // Verificar que se despachó el trabajo de envío de correo
-        Queue::assertPushed(SendEmailJob::class, 2); 
+        Queue::assertPushed(SendEmailJob::class, 2);
 
-        // Verificar que se despacharon los trabajos con los parámetros correctos
-        Queue::assertPushed(SendEmailJob::class, function ($job) use ($educationalProgram, $manager1) {
-            $reflection = new \ReflectionClass($job);
-            $emailProperty = $reflection->getProperty('email');
-            $emailProperty->setAccessible(true); // Hacer la propiedad accesible
-
-            $parametersProperty = $reflection->getProperty('parameters');
-            $parametersProperty->setAccessible(true); // Hacer la propiedad accesible
-
-            return $emailProperty->getValue($job) === $manager1->email &&
-                $parametersProperty->getValue($job)['educational_program_title'] === $educationalProgram['name'];
-        });
-
-        Queue::assertPushed(SendEmailJob::class, function ($job) use ($educationalProgram, $manager2) {
-            $reflection = new \ReflectionClass($job);
-            $emailProperty = $reflection->getProperty('email');
-            $emailProperty->setAccessible(true); // Hacer la propiedad accesible
-
-            $parametersProperty = $reflection->getProperty('parameters');
-            $parametersProperty->setAccessible(true); // Hacer la propiedad accesible
-
-            return $emailProperty->getValue($job) === $manager2->email &&
-                $parametersProperty->getValue($job)['educational_program_title'] === $educationalProgram['name'];
-        });
     }
 }

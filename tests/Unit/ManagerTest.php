@@ -811,8 +811,8 @@ class ManagerTest extends TestCase
 
         // Crear una convocatoria y asociarla a un curso y a un programa formativo
         $call = CallsModel::factory()->create();
-        CoursesModel::factory()->create(['call_uid' => $call->uid]);
-        EducationalProgramsModel::factory()->create(['call_uid' => $call->uid]);
+        CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['call_uid' => $call->uid]);
+        EducationalProgramsModel::factory()->withEducationalProgramType()->create(['call_uid' => $call->uid]);
 
         // Realizar la solicitud DELETE a la ruta correspondiente
         $response = $this->delete('/management/calls/delete_calls', [

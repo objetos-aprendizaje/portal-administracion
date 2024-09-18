@@ -446,7 +446,7 @@ class CatalogingCourseTest extends TestCase
             // Verificar que la respuesta sea correcta
             $response->assertStatus(200)
                     ->assertJsonStructure(['message', 'educational_program_types'])
-                    ->assertJson(['message' => 'Tipo de programa educativo añadido correctamente']);
+                    ->assertJson(['message' => 'Tipo de programa formativo añadido correctamente']);
         }
     }
 
@@ -521,7 +521,7 @@ class CatalogingCourseTest extends TestCase
             // Verificar que la respuesta sea correcta
             $response->assertStatus(200)
                     ->assertJsonStructure(['message', 'educational_program_types'])
-                    ->assertJson(['message' => 'Tipos de programa educativo eliminados correctamente']);
+                    ->assertJson(['message' => 'Tipos de programa formativo eliminados correctamente']);
 
             // Verificar que los tipos de programa educativo se hayan eliminado
             $this->assertDatabaseMissing('educational_program_types', ['uid' => $programType1->uid]);
@@ -637,7 +637,7 @@ class CatalogingCourseTest extends TestCase
         $response->assertStatus(406);
 
         // Verificar que la respuesta contenga el mensaje esperado
-        $response->assertJson(['message' => 'El tipo de programa educativo no existe']);
+        $response->assertJson(['message' => 'El tipo de programa formativo no existe']);
     }
 
 

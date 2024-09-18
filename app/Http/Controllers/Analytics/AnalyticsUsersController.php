@@ -22,12 +22,13 @@ class AnalyticsUsersController extends BaseController
         $total_users = UsersModel::count();
 
         return view(
-            'analytics.index',
+            'analytics.users_per_role.index',
             [
                 "page_name" => "Analíticas de usuarios",
                 "page_title" => "Analíticas de usuarios",
                 "resources" => [
-                    "resources/js/analytics_module/analytics_users.js"
+                    "resources/js/analytics_module/analytics_users.js",
+                    "resources/js/analytics_module/d3.js"
                 ],
                 "roles_with_user_count" => "roles_with_user_count",
                 "total_users" => $total_users,
@@ -67,4 +68,14 @@ class AnalyticsUsersController extends BaseController
 
         return response()->json($data, 200);
     }
+
+    public function getUsersRolesGraph() {
+
+        $query = UserRolesModel::withCount('users')->get()->toArray();
+
+        return response()->json($query, 200);
+
+    }
 }
+
+

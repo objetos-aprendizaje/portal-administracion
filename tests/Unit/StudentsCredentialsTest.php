@@ -19,24 +19,25 @@ class StudentsCredentialsTest extends TestCase
 {
     use RefreshDatabase;
 
-/**
- * @testdox Inicialización de inicio de sesión
- */
-    public function setUp(): void {
+    /**
+     * @testdox Inicialización de inicio de sesión
+     */
+    public function setUp(): void
+    {
         parent::setUp();
         $this->withoutMiddleware();
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
     }
 
-/**
- * @testdox Obtener Index View Estudiantes
- */
+    /**
+     * @testdox Obtener Index View Estudiantes
+     */
 
     public function testIndexViewStudents()
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
         // Autenticar al usuario
@@ -46,7 +47,7 @@ class StudentsCredentialsTest extends TestCase
         View::share('roles', $roles);
 
         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
-    View::share('general_options', $general_options);
+        View::share('general_options', $general_options);
 
         // Simula datos de TooltipTextsModel
         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
@@ -71,58 +72,58 @@ class StudentsCredentialsTest extends TestCase
     }
 
 
-/**
- * @testdox Obtener estudiantes
- */
+    /**
+     * @testdox Obtener estudiantes
+     */
     public function testGetStudentsWithPagination()
     {
 
-            $students = UsersModel::factory()->count(2)->create();
+        $students = UsersModel::factory()->count(2)->create();
 
-            // Asigna el rol 'STUDENT' a los usuarios creados
-            foreach ($students as $student) {
-                $student->roles()->attach(UserRolesModel::where('code', 'STUDENT')->first()->uid, [
-                    'uid' => generate_uuid(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-
-            // Simula que el usuario está autenticado
-            $this->actingAs($students->first());
-
-            // Realiza la solicitud a la ruta
-            $response = $this->get('/credentials/students/get_students?size=2');
-
-            // Verifica que la respuesta sea correcta
-            $response->assertStatus(200);
-            $response->assertJsonStructure([
-                'current_page',
-                'data' => [
-                    '*' => [
-                        'uid',
-                        'first_name',
-                        'last_name',
-                        'email',
-                    ],
-                ],
-                'last_page',
-                'per_page',
-                'total',
+        // Asigna el rol 'STUDENT' a los usuarios creados
+        foreach ($students as $student) {
+            $student->roles()->attach(UserRolesModel::where('code', 'STUDENT')->first()->uid, [
+                'uid' => generate_uuid(),
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
+        }
 
-            // Verifica que la paginación funcione
-            $this->assertCount(2, $response->json('data'));
+        // Simula que el usuario está autenticado
+        $this->actingAs($students->first());
+
+        // Realiza la solicitud a la ruta
+        $response = $this->get('/credentials/students/get_students?size=2');
+
+        // Verifica que la respuesta sea correcta
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'current_page',
+            'data' => [
+                '*' => [
+                    'uid',
+                    'first_name',
+                    'last_name',
+                    'email',
+                ],
+            ],
+            'last_page',
+            'per_page',
+            'total',
+        ]);
+
+        // Verifica que la paginación funcione
+        $this->assertCount(2, $response->json('data'));
     }
 
-/** @test  Obtener cursos por estudiante con paginación*/
+    /** @test  Obtener cursos por estudiante con paginación*/
     public function testGetCoursesStudents()
     {
-            // Crea un estudiante de prueba
+        // Crea un estudiante de prueba
         $student = UsersModel::factory()->create()->first();
 
         // Crea algunos cursos y asocia al estudiante
-        $courses = CoursesModel::factory()->count(5)->create();
+        $courses = CoursesModel::factory()->withCourseStatus()->withCourseType()->count(5)->create();
         $pivot_data = [];
 
         foreach ($courses as $course) {
@@ -162,12 +163,12 @@ class StudentsCredentialsTest extends TestCase
     /** @test  Busca curso por estudiante*/
     public function testSearchCoursesForStudent()
     {
-            // Crea un estudiante de prueba
+        // Crea un estudiante de prueba
         $student = UsersModel::factory()->create()->first();
 
         // Crea algunos cursos
-        $course1 = CoursesModel::factory()->create(['title' => 'Mathematics']);
-        $course2 = CoursesModel::factory()->create(['title' => 'Science']);
+        $course1 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['title' => 'Mathematics']);
+        $course2 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['title' => 'Science']);
 
         // Crea los datos de la relación con uid
         $pivotData = [
@@ -193,8 +194,6 @@ class StudentsCredentialsTest extends TestCase
         $response->assertStatus(200);
         $response->assertJsonFragment(['title' => 'Mathematics']);
         $response->assertJsonMissing(['title' => 'Science']);
-
-
     }
 
 
@@ -210,7 +209,6 @@ class StudentsCredentialsTest extends TestCase
 
         // Assert: Verifica que la respuesta contenga el estudiante buscado
         $response->assertStatus(200);
-
     }
 
     /** @test Ordena credenciales Estudiantes*/
@@ -219,18 +217,17 @@ class StudentsCredentialsTest extends TestCase
     {
         // Crea estudiantes en la base de datos
         $student1 = UsersModel::factory()->create(['uid' => generate_uuid(), 'first_name' => 'John', 'last_name' => 'Perez', 'email' => 'john@example.com']);
-        $roles = UserRolesModel::firstOrCreate(['code' => 'STUDENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $roles = UserRolesModel::firstOrCreate(['code' => 'STUDENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
         $student1->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
-         $student2 = UsersModel::factory()->create(['uid' => generate_uuid(), 'first_name' => 'Smith', 'last_name' => 'Alvarez', 'email' => 'smith@example.com']);
-         $student2->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $student2 = UsersModel::factory()->create(['uid' => generate_uuid(), 'first_name' => 'Smith', 'last_name' => 'Alvarez', 'email' => 'smith@example.com']);
+        $student2->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
         // Act: Realiza una solicitud GET con parámetros de ordenación
         $response = $this->get('/credentials/students/get_students?sort[0][field]=last_name&sort[0][dir]=asc&size=2');
 
 
         $response->assertStatus(200);
-
     }
 
     /** @test Ordena estudiantes de cursos por credenciales*/
@@ -239,12 +236,12 @@ class StudentsCredentialsTest extends TestCase
         // Arrange: Crea un estudiante y cursos en la base de datos
         $student = UsersModel::factory()->create();
 
-        $course1 = CoursesModel::factory()->create(['uid' => generate_uuid() , 'title' => 'Course 1']);
-        $course2 = CoursesModel::factory()->create(['uid' => generate_uuid(), 'title' => 'Course 2']);
+        $course1 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['uid' => generate_uuid(), 'title' => 'Course 1']);
+        $course2 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['uid' => generate_uuid(), 'title' => 'Course 2']);
 
         // Asocia los cursos al estudiante con diferentes credeciales
-        $student->coursesStudents()->attach($course1->uid, ['uid' =>generate_uuid() , 'credential' => 'Certificate']);
-        $student->coursesStudents()->attach($course2->uid, ['uid' =>generate_uuid(), 'credential' => 'Diploma']);
+        $student->coursesStudents()->attach($course1->uid, ['uid' => generate_uuid(), 'credential' => 'Certificate']);
+        $student->coursesStudents()->attach($course2->uid, ['uid' => generate_uuid(), 'credential' => 'Diploma']);
 
         // Act: Realiza una solicitud GET con parámetros de ordenación
         $response = $this->get("/credentials/students/get_courses_student/{$student->uid}?sort[0][field]=pivot.credential&sort[0][dir]=asc&size=2");
@@ -260,5 +257,4 @@ class StudentsCredentialsTest extends TestCase
         $this->assertEquals('Certificate', $data['data'][0]['pivot']['credential']);
         $this->assertEquals('Diploma', $data['data'][1]['pivot']['credential']);
     }
-
 }

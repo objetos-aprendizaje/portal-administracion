@@ -45,7 +45,7 @@
                         <label for="description">Descripción</label>
                     </div>
                     <div class="content-container">
-                        <textarea id="description" name="description" class="poa-input"></textarea>
+                        <textarea maxlength="1000" id="description" name="description" class="poa-input"></textarea>
                     </div>
                 </div>
 

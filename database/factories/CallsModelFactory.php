@@ -20,7 +20,8 @@ class CallsModelFactory extends Factory
     {
         return [
             'uid' => Str::uuid(),
-            'name' => $this->faker->name(),
+            'name' => $this->faker->words(3, true),
+            'description' => $this->faker->paragraph(),
             'start_date' => Carbon::now()->addDays(1)->format('Y-m-d\TH:i'),
             'end_date' => Carbon::now()->addDays(5)->format('Y-m-d\TH:i'),
         ];

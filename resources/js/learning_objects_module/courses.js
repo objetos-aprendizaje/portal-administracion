@@ -43,7 +43,6 @@ import {
 import { heroicon } from "../heroicons.js";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
 import { showToast } from "../toast.js";
-import Treeselect from "treeselectjs";
 import InfiniteTree from "infinite-tree";
 import renderer from "../renderer_infinite_tree.js";
 
@@ -102,6 +101,7 @@ class Trees {
     // Crear y almacenar una instancia
     static storeInstance(order, tree, selectedNodes = []) {
         const instance = new Trees(order, tree, selectedNodes);
+        instance.updateSelectedNodesLabel();
         Trees.instances.set(order, instance);
         return instance;
     }
@@ -198,7 +198,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     initializeTomSelect();
     updateInputImage();
     initializeFlatpickrDates();
-    initializeTreeSelect();
     controlChecksCarrousels();
     dropdownButtonToogle();
     controlValidationStudents();
@@ -225,22 +224,20 @@ async function loadCompetencesLearningResults() {
         loader: true,
     };
 
-    function mapStructure(obj, isMultiSelect) {
+    function mapStructure(obj) {
         // Crear un nuevo objeto con los campos necesarios
         const mappedObj = {
             id: obj.uid,
             name: obj.name,
-            isMultiSelect: isMultiSelect ? true : false,
             children: [],
             type: "competence",
             showCheckbox: true,
-            disabled: isMultiSelect ? false : true,
         };
 
         // Si hay subcompetencias, recursivamente mapéalas
-        if (obj.subcompetences && obj.subcompetences.length > 0) {
-            obj.subcompetences.forEach((sub) => {
-                mappedObj.children.push(mapStructure(sub, isMultiSelect));
+        if (obj.all_subcompetences && obj.all_subcompetences.length > 0) {
+            obj.all_subcompetences.forEach((sub) => {
+                mappedObj.children.push(mapStructure(sub));
             });
         }
 
@@ -252,7 +249,6 @@ async function loadCompetencesLearningResults() {
                     name: lr.name,
                     type: "learning_result",
                     showCheckbox: true,
-                    isMultiSelect: isMultiSelect,
                     disabled: false,
                 });
             });
@@ -267,12 +263,7 @@ async function loadCompetencesLearningResults() {
     const structure = [];
 
     data.forEach((competenceFramework) => {
-        structure.push(
-            mapStructure(
-                competenceFramework,
-                competenceFramework.is_multi_select
-            )
-        );
+        structure.push(mapStructure(competenceFramework));
     });
 
     competencesLearningResults = structure;
@@ -352,22 +343,10 @@ async function instanceTreeCompetences(order, selectedNodes = []) {
 
     tree.on("click", (event) => {
         const currentNode = tree.getNodeFromPoint(event.clientX, event.clientY);
-        if (!currentNode || event.target.className !== "checkbox") return;
+        if (!currentNode || !event.target.classList.contains("checkbox"))
+            return;
         event.stopPropagation();
         tree.checkNode(currentNode);
-
-        // si el padre NO es multiselect, desseleccionamos el resto de sus hermanos
-        if (!currentNode.parent.isMultiSelect) {
-            currentNode.parent.children.forEach((child) => {
-                if (
-                    child !== currentNode &&
-                    child.state.checked &&
-                    !child.children.length
-                ) {
-                    tree.checkNode(child);
-                }
-            });
-        }
 
         function getChildNodesLearningResults(node) {
             let resultArray = [];
@@ -392,19 +371,7 @@ async function instanceTreeCompetences(order, selectedNodes = []) {
             getChildNodesLearningResults(currentNode);
 
         if (currentNode.state.checked) {
-            if (currentNode.isMultiSelect) {
-                Trees.addNodesSelectedByOrder(order, childNodesLearningResults);
-            }
-            // Si no es multi seleccionable, deseleccionamos el resto de nodos hermanos
-            else {
-                const parentNode = currentNode.parent;
-                parentNode.children.forEach((child) => {
-                    if (child !== currentNode) {
-                        tree.checkNode(child, false);
-                        Trees.deleteSelectedNodeByOrder(order, child.id);
-                    }
-                });
-            }
+            Trees.addNodesSelectedByOrder(order, childNodesLearningResults);
 
             if (currentNode.type === "learning_result")
                 Trees.addSelectedNodeByOrder(order, currentNode.id);
@@ -443,34 +410,6 @@ async function instanceTreeCompetences(order, selectedNodes = []) {
     });
 
     return tree;
-}
-
-function initializeTreeSelect() {
-    const optionsCompetencesTreeSelect = convertCompetencesToOptions(
-        window.competences
-    );
-
-    competencesTreeSelect = new Treeselect({
-        parentHtmlContainer: document.getElementById("treeselect-competences"),
-        options: optionsCompetencesTreeSelect,
-        showTags: false,
-        tagsCountText: "competencias seleccionadas",
-        searchable: false,
-        iconElements: {},
-        placeholder: "Seleccione competencias",
-        value: [],
-        inputCallback: function (competences) {
-            selectedCompetencesFilter = competences;
-        },
-    });
-}
-
-function convertCompetencesToOptions(competences) {
-    return competences.map((competence) => ({
-        name: competence.name,
-        value: competence.uid,
-        children: convertCompetencesToOptions(competence.subcompetences),
-    }));
 }
 
 function initHandlers() {
@@ -660,9 +599,7 @@ function initHandlers() {
     const generateTagsBtn = document.getElementById("generate-tags-btn");
     if (generateTagsBtn) {
         generateTagsBtn.addEventListener("click", () => {
-            if (!generateTagsBtn.classList.contains("element-disabled")) {
-                generateTags();
-            }
+            generateTags();
         });
     }
 }
@@ -1291,7 +1228,7 @@ function collectFilters() {
 
         if (educationalPrograms.length) {
             addFilter(
-                "Programas educativos",
+                "Programas formativos",
                 tomSelectEducationalProgramsFilter.getValue(),
                 selectedEducationalProgramsLabel,
                 "educational_programs",
@@ -1557,7 +1494,7 @@ function initializeCoursesTable() {
             widthgrow: 2,
         },
         {
-            title: "Programa educativo",
+            title: "Programa formativo",
             field: "educational_programs_name",
             formatter: function (cell, formatterParams, onRendered) {
                 const data = cell.getValue();
@@ -1567,7 +1504,7 @@ function initializeCoursesTable() {
             visible: false,
         },
         {
-            title: "Tipo de programa educativo",
+            title: "Tipo de programa formativo",
             field: "educational_program_types_name",
             formatter: function (cell, formatterParams, onRendered) {
                 const data = cell.getValue();
@@ -2048,6 +1985,7 @@ function duplicateCourse(courseUid) {
         body: { course_uid: courseUid },
         toast: true,
         stringify: true,
+        loader: true,
     };
 
     apiFetch(params).then(() => {
@@ -2062,6 +2000,7 @@ function newEditionCourse(courseUid) {
         body: { course_uid: courseUid },
         toast: true,
         stringify: true,
+        loader: true,
     };
 
     apiFetch(params).then(() => {
@@ -2099,23 +2038,11 @@ function loadCourseModal(courseUid) {
 function fillFormCourseModal(course) {
     resetModal();
 
-    const draftButtonContainer = document.getElementById(
-        "draft-button-container"
-    );
-
-    // Si el estado del curso no es INTRODUCCIÓN, ocultamos el botón de borrador
-    if (course.status.code == "INTRODUCTION")
-        draftButtonContainer.classList.remove("hidden");
-    else draftButtonContainer.classList.add("hidden");
-
     document.getElementById("field-created-by").classList.remove("hidden");
     const createdByDiv = document.getElementById("created-by");
 
     if (course.creator_user) {
-        createdByDiv.innerText =
-            course.creator_user.first_name +
-            " " +
-            course.creator_user.last_name;
+        createdByDiv.innerText = `${course.creator_user.first_name} ${course.creator_user.last_name}`;
     } else {
         createdByDiv.innerText = "No disponible";
     }
@@ -2124,32 +2051,26 @@ function fillFormCourseModal(course) {
 
     fillFormWithObject(course, "course-form");
 
-    if (course.inscription_start_date) {
-        document.getElementById("inscription_start_date").value =
-            course.inscription_start_date.substring(0, 16);
-    }
+    const callUid = document.getElementById("call_uid");
+    if (callUid) callUid.value = course.call_uid;
 
-    if (course.inscription_finish_date) {
-        document.getElementById("inscription_finish_date").value =
-            course.inscription_finish_date.substring(0, 16);
-    }
+    const dateFields = [
+        "inscription_start_date",
+        "inscription_finish_date",
+        "enrolling_start_date",
+        "enrolling_finish_date",
+        "realization_start_date",
+        "realization_finish_date",
+    ];
 
-    if (course.realization_start_date) {
-        document.getElementById("realization_start_date").value =
-            course.realization_start_date.substring(0, 16);
-    }
-
-    if (course.realization_finish_date) {
-        document.getElementById("realization_finish_date").value =
-            course.realization_finish_date.substring(0, 16);
-    }
-
-    if (course.call_uid) {
-        document.getElementById("call_uid").value = course.call_uid;
-        showCallField(true);
-    } else {
-        showCallField(operationByCalls);
-    }
+    dateFields.forEach((field) => {
+        if (course[field]) {
+            document.getElementById(field).value = course[field].substring(
+                0,
+                16
+            );
+        }
+    });
 
     if (
         course.validate_student_registrations ||
@@ -2158,16 +2079,6 @@ function fillFormCourseModal(course) {
         document
             .getElementById("enrolling-dates-container")
             .classList.remove("hidden");
-    }
-
-    if (course.enrolling_start_date) {
-        document.getElementById("enrolling_start_date").value =
-            course.enrolling_start_date.substring(0, 16);
-    }
-
-    if (course.enrolling_finish_date) {
-        document.getElementById("enrolling_finish_date").value =
-            course.enrolling_finish_date.substring(0, 16);
     }
 
     document.getElementById("belongs_to_educational_program").value =
@@ -2180,22 +2091,28 @@ function fillFormCourseModal(course) {
         ? true
         : false;
 
+    const criteriaArea = document.getElementById("criteria-area");
+    showArea(criteriaArea, validateStudentsRegistrations);
+
+    const documentsContainer = document.getElementById("documents-container");
+    showArea(documentsContainer, validateStudentsRegistrations);
+    loadDocuments(course.course_documents);
+
     document.getElementById("validate_student_registrations").value =
-        course.validate_student_registrations;
+        validateStudentsRegistrations;
 
     document.getElementById("validate_student_registrations").checked =
         validateStudentsRegistrations;
 
-    const criteriaArea = document.getElementById("criteria-area");
-    showArea(criteriaArea, validateStudentsRegistrations);
-
     document.getElementById("featured_big_carrousel").checked =
         course.featured_big_carrousel;
+
     document.getElementById("featured_big_carrousel").value =
         course.featured_big_carrousel;
 
     document.getElementById("featured_small_carrousel").value =
         course.featured_small_carrousel;
+
     document.getElementById("featured_small_carrousel").checked =
         course.featured_small_carrousel;
 
@@ -2208,7 +2125,8 @@ function fillFormCourseModal(course) {
         course.featured_slider_color_font
     );
 
-    showBigCarrouselInfo(course.featured_big_carrousel);
+    const bigCarrouselInfo = document.getElementById("big-carrousel-info");
+    showArea(bigCarrouselInfo, course.featured_big_carrousel);
 
     if (course.teachers) {
         course.teachers.forEach((teacher) => {
@@ -2261,18 +2179,25 @@ function fillFormCourseModal(course) {
         });
     }
 
+    let imagePathPreview = document.getElementById("image_path_preview");
     if (course.image_path) {
-        document.getElementById("image_path_preview").src =
-            "/" + course.image_path;
+        imagePathPreview.src = "/" + course.image_path;
     } else {
-        document.getElementById("image_path_preview").src = defaultImagePreview;
+        imagePathPreview.src = defaultImagePreview;
     }
 
     if (course.blocks) loadStructureCourse(course.blocks);
 
-    loadDocuments(course.course_documents);
-    updatePaymentMode(course.payment_mode);
+    const draftButtonContainer = document.getElementById(
+        "draft-button-container"
+    );
 
+    // Si el estado del curso no es INTRODUCCIÓN, ocultamos el botón de borrador
+    if (course.status.code == "INTRODUCTION")
+        draftButtonContainer.classList.remove("hidden");
+    else draftButtonContainer.classList.add("hidden");
+
+    updatePaymentMode(course.payment_mode);
     if (course.payment_mode === "INSTALLMENT_PAYMENT") {
         loadPaymentTerms(course.payment_terms);
     }
@@ -2304,6 +2229,10 @@ function fillFormCourseModal(course) {
     }
 
     setVisibilityFieldsCourse(course);
+
+    // Para evitar problemas e inconsistencias
+    document.getElementById("belongs_to_educational_program").disabled =
+        course.status.code !== "INTRODUCTION";
 }
 
 function setVisibilityFieldsCourse(course) {
@@ -2608,13 +2537,6 @@ function getCoursesStatuses() {
     return changesCoursesStatuses;
 }
 
-function showCallField(show) {
-    const callField = document.getElementById("call-field");
-
-    if (show) callField.classList.remove("hidden");
-    else callField.classList.add("hidden");
-}
-
 /**
  * Prepara y muestra el modal para añadir un nuevo curso.
  * Resetea el formulario del modal y muestra el modal en blanco para la entrada de datos.
@@ -2625,13 +2547,10 @@ function newCourse() {
     );
     draftButtonContainer.classList.remove("hidden");
 
-    showCallField(operationByCalls);
-
     resetModal();
     document.getElementById("course-composition").innerHTML = "";
     document.getElementById("document-list").innerHTML = "";
     toggleFormFieldsAccessibility(false);
-    updatePaymentMode("SINGLE_PAYMENT");
     showModal("course-modal", "Añadir curso");
 }
 
@@ -2643,6 +2562,7 @@ function newCourse() {
 function resetModal() {
     const form = document.getElementById("course-form");
     form.reset();
+    resetFormErrors("course-form");
     // Reseteo del campo uid ya que al ser hidden, no le afecta form.reset()
     // Reseteamos solo este campo y no todos los hidden porque si no nos cargamos el campo del token csrf
     document.getElementById("course_uid").value = "";
@@ -2653,10 +2573,6 @@ function resetModal() {
     document.getElementById("featured_big_carrousel_image_path_preview").src =
         defaultImagePreview;
     document.getElementById("course-composition").innerHTML = "";
-    document.getElementById("documents-container").classList.add("hidden");
-    document
-        .getElementById("enrolling-dates-container")
-        .classList.add("hidden");
 
     const colorisSelector = document.getElementById(
         "featured_slider_color_font"
@@ -2671,8 +2587,16 @@ function resetModal() {
     tomSelectTags.clear();
     tomSelectContactEmails.clear();
 
-    resetFormErrors("course-form");
-    showBigCarrouselInfo(false);
+    const bigCarrouselInfo = document.getElementById("big-carrousel-info");
+    showArea(bigCarrouselInfo, false);
+
+    let documentContainer = document.getElementById("documents-container");
+    showArea(documentContainer, false);
+
+    let enrollingDatesContainer = document.getElementById(
+        "enrolling-dates-container"
+    );
+    showArea(enrollingDatesContainer, false);
 
     let criteriaArea = document.getElementById("criteria-area");
     showArea(criteriaArea, false);
@@ -2714,6 +2638,7 @@ function resetModal() {
     );
     showArea(featureMainCarrouselContainer, true);
 
+    updatePaymentMode("SINGLE_PAYMENT");
     document.getElementById("payment-terms-list").innerHTML = "";
 }
 
@@ -2877,22 +2802,9 @@ function controlChecksCarrousels() {
     const checkbox = document.getElementById("featured_big_carrousel");
 
     checkbox.addEventListener("change", function () {
-        if (checkbox.checked) showBigCarrouselInfo(true);
-        else showBigCarrouselInfo(false);
+        const bigCarrouselInfo = document.getElementById("big-carrousel-info");
+        showArea(bigCarrouselInfo, checkbox.checked);
     });
-}
-
-function showBigCarrouselInfo(show) {
-    const bigCarrouselInfoSection =
-        document.getElementById("big-carrousel-info");
-
-    if (show) {
-        bigCarrouselInfoSection.classList.remove("hidden");
-        bigCarrouselInfoSection.classList.add("block");
-    } else {
-        bigCarrouselInfoSection.classList.remove("block");
-        bigCarrouselInfoSection.classList.add("hidden");
-    }
 }
 
 function approveStudentsCourse() {
@@ -3196,7 +3108,6 @@ function toggleFormFieldsAccessibility(isDisabled) {
         "lms_url",
         "image_input_file",
         "featured_small_carrousel",
-        "generate-tags-btn",
     ];
     setReadOnlyForSpecificFields(formId, idsReadOnly, isDisabled);
 
@@ -3205,6 +3116,7 @@ function toggleFormFieldsAccessibility(isDisabled) {
         "call_uid",
         "educational_program_type_uid",
         "course_type_uid",
+        "certification_type_uid",
         "center_uid",
         "belongs_to_educational_program",
         "image_input_file",
@@ -3282,6 +3194,7 @@ function setFieldsNewEdition() {
     const idsDisable = [
         "educational_program_type_uid",
         "course_type_uid",
+        "certification_type_uid",
         "belongs_to_educational_program",
         "calification_type",
         "center_uid",
@@ -3523,7 +3436,6 @@ function setVisibilityCourseFieldsBasedOnProgramMembership(isPartOfProgram) {
     if (isPartOfProgram) {
         document.getElementById("featured_big_carrousel").checked = false;
         document.getElementById("featured_big_carrousel").value = 0;
-        showBigCarrouselInfo(false);
 
         document.getElementById("featured_small_carrousel").checked = false;
         document.getElementById("featured_small_carrousel").value = 0;

@@ -13,4 +13,6 @@ class LearningResultsBlocksModel extends Model
 
     protected $keyType = 'string';
 
+    public $timestamps = false;
+
 }

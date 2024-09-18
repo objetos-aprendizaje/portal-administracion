@@ -81,7 +81,7 @@ class ChangeStatusToEnrollingEducationalProgram extends Command
         $generalNotificationAutomatic = new GeneralNotificationsAutomaticModel();
         $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
         $generalNotificationAutomatic->title = "Programa formativo en matriculación";
-        $generalNotificationAutomatic->description = "El programa educativo <b>" . $educationalProgram->name . "</b> en el que estás inscrito, ya está en período de matriculación";
+        $generalNotificationAutomatic->description = "El programa formativo <b>" . $educationalProgram->name . "</b> en el que estás inscrito, ya está en período de matriculación";
         $generalNotificationAutomatic->entity_uid = $educationalProgram->uid;
         $generalNotificationAutomatic->automatic_notification_type_uid = $automaticNotificationType->uid;
         $generalNotificationAutomatic->created_at = now();

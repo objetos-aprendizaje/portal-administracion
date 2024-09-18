@@ -20,11 +20,19 @@ class CoursesPaymentTermsModelFactory extends Factory
     {
         return [
             'uid' => generate_uuid(),
-            'course_uid'=> CoursesModel::factory()->create()->first(),
-            'name'=>'Card',            
-            'start_date' => Carbon::now()->addDays(1),            
-            'finish_date' =>Carbon::now()->addDays(10),
-            'cost' =>50,
+            'name' => $this->faker->words(2, true),
+            'start_date' => Carbon::now(),
+            'finish_date' => Carbon::now()->addDays(10),
+            'cost' => $this->faker->randomFloat(2, 1, 100),
         ];
+    }
+
+    public function withCourse(): Factory
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'course_uid' => CoursesModel::factory()->create()->first(),
+            ];
+        });
     }
 }

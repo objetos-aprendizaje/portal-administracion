@@ -44,19 +44,19 @@ class ChangestatustoinscriptionTest extends TestCase
         ])->latest()->first();
 
         // Crear cursos con diferentes fechas y estados
-         CoursesModel::factory()->create([
+         CoursesModel::factory()->withCourseType()->create([
             'inscription_start_date' => now()->subDays(1),
             'inscription_finish_date' => now()->addDays(1),
             'course_status_uid' => $acceptedStatus->uid,
         ]);
 
-        CoursesModel::factory()->create([
+        CoursesModel::factory()->withCourseType()->create([
             'inscription_start_date' => now()->subDays(2),
             'inscription_finish_date' => now()->addDays(2),
             'course_status_uid' => $acceptedStatus->uid,
         ]);
 
-         CoursesModel::factory()->create([
+         CoursesModel::factory()->withCourseType()->create([
             'inscription_start_date' => now()->subDays(1),
             'inscription_finish_date' => now()->subDays(1), // Este curso no será ser devuelto
             'course_status_uid' => $acceptedStatus->uid,

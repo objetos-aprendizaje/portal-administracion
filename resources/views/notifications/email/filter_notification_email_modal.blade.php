@@ -61,7 +61,7 @@
                     <div class="content-container mt-1">
                         <select id="state_email_notification" class="poa-select w-full" name="state_email_notification"
                             placeholder="Selecciona un estado">
-                            <option value="" selected></option>
+                            <option value="" selected>No especificado</option>
                             <option value="1">Enviado</option>
                             <option value="0">No enviado</option>
                         </select>

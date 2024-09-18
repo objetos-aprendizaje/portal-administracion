@@ -30,6 +30,8 @@ use App\Http\Controllers\LearningObjects\EducationalResourcesController;
 use App\Http\Controllers\Logs\LogsController;
 use App\Http\Controllers\Users\ListUsersController;
 use App\Http\Controllers\Analytics\AnalyticsUsersController;
+use App\Http\Controllers\Analytics\AnalyticsPoaController;
+use App\Http\Controllers\Analytics\AnalyticsAbandonedController;
 use App\Http\Controllers\Api\AddDepartmentsController;
 use App\Http\Controllers\Api\ConfirmCourseCreationController;
 use App\Http\Controllers\Api\GetCourseController;
@@ -165,10 +167,6 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::post('/notifications/notifications_types/save_notification_type', [NotificationsTypesController::class, 'saveNotificationType']);
         Route::delete('/notifications/notifications_types/delete_notifications_types', [NotificationsTypesController::class, 'deleteNotificationsTypes']);
 
-        Route::get('/notifications/notifications_per_users', [NotificationsPerUsersController::class, 'index'])->name('notifications-per-users');
-        Route::get('/notifications/notifications_per_users/get_list_users', [NotificationsPerUsersController::class, 'getNotificationsPerUsers']);
-        Route::get('/notifications/notifications_per_users/get_notifications/{user_uid}', [NotificationsPerUsersController::class, 'getNotificationsPerUser']);
-
         Route::post('/administration/save_openai_form', [GeneralAdministrationController::class, 'saveOpenai']);
 
 
@@ -220,12 +218,15 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::delete('/cataloging/categories/delete_categories', [CategoriesController::class, 'deleteCategories']);
         Route::get('/cataloging/competences_learnings_results/get_competences', [CompetencesLearningsResultsController::class, 'getCompetences']);
         Route::post('/cataloging/competences_learnings_results/save_competence', [CompetencesLearningsResultsController::class, 'saveCompetence']);
+        Route::post('/cataloging/competences_learnings_results/save_competence_framework', [CompetencesLearningsResultsController::class, 'saveCompetenceFramework']);
+
         Route::post('/cataloging/competences_learnings_results/save_learning_result', [CompetencesLearningsResultsController::class, 'saveLearningResult']);
         Route::get('/cataloging/competences_learnings_results/get_learning_result/{learning_result_uid}', [CompetencesLearningsResultsController::class, 'getLearningResult']);
 
 
         Route::post('/cataloging/competences_learnings_results/get_list_competences', [CompetencesLearningsResultsController::class, 'getListCompetences']);
         Route::get('/cataloging/competences_learnings_results/get_competence/{competence_uid}', [CompetencesLearningsResultsController::class, 'getCompetence']);
+        Route::get('/cataloging/competences_learnings_results/get_competence_framework/{competence_framework_uid}', [CompetencesLearningsResultsController::class, 'getCompetenceFramework']);
         Route::get('/cataloging/competences_learnings_results/get_all_competences', [CompetencesLearningsResultsController::class, 'getAllCompetences']);
         Route::delete('/cataloging/competences_learnings_results/delete_competences_learning_results', [CompetencesLearningsResultsController::class, 'deleteCompetencesLearningResults']);
 
@@ -351,14 +352,31 @@ Route::middleware(['combined.auth'])->group(function () {
     Route::middleware(['role:ADMINISTRATOR,MANAGEMENT'])->group(function () {
         Route::get('/logs/list_logs', [LogsController::class, 'index'])->name('list-logs');
         Route::get('/analytics/users', [AnalyticsUsersController::class, 'index'])->name('analytics-users');
+        Route::get('/analytics/poa', [AnalyticsPoaController::class, 'index'])->name('analytics-poa');
+        Route::get('/analytics/abandoned', [AnalyticsAbandonedController::class, 'index'])->name('analytics-abandoned');
 
         Route::get('/logs/list_logs/get_logs', [LogsController::class, 'getLogs']);
 
         Route::get('/analytics/users/get_user_roles', [AnalyticsUsersController::class, 'getUsersRoles'])->name('analytics-users-roles');
+        Route::get('/analytics/users/get_user_roles_graph', [AnalyticsUsersController::class, 'getUsersRolesGraph'])->name('analytics-users-roles-graph');
+
+        Route::get('/analytics/users/get_poa_get', [AnalyticsPoaController::class, 'getPoa'])->name('analytics-poa-get');
+        Route::get('/analytics/users/get_poa_graph', [AnalyticsPoaController::class, 'getPoaGraph'])->name('analytics-poa-graph');
+
+        Route::get('/analytics/users/get_poa_resources', [AnalyticsPoaController::class, 'getPoaResources'])->name('analytics-poa-resources');
+        Route::get('/analytics/users/get_poa_graph_resources', [AnalyticsPoaController::class, 'getPoaGraphResources'])->name('analytics-poa-graph-resources');
+
+        Route::get('/analytics/users/get_abandoned', [AnalyticsAbandonedController::class, 'getAbandoned'])->name('analytics-abandoned-get');
+        Route::get('/analytics/users/get_abandoned_graph', [AnalyticsAbandonedController::class, 'getAbandonedGraph'])->name('analytics-abandoned-graph');
 
         Route::post('/learning_objects/educational_resources/change_statuses_resources', [EducationalResourcesController::class, 'changeStatusesResources']);
     });
 
+    Route::middleware(['role:MANAGEMENT,TEACHER'])->group(function () {
+        Route::get('/notifications/notifications_per_users', [NotificationsPerUsersController::class, 'index'])->name('notifications-per-users');
+        Route::get('/notifications/notifications_per_users/get_list_users', [NotificationsPerUsersController::class, 'getNotificationsPerUsers']);
+        Route::get('/notifications/notifications_per_users/get_notifications/{user_uid}', [NotificationsPerUsersController::class, 'getNotificationsPerUser']);
+    });
 
     Route::get('/users/list_users', [ListUsersController::class, 'index'])->name('list-users');
     Route::get('/users/list_users/get_users', [ListUsersController::class, 'getUsers']);
@@ -439,7 +457,7 @@ Route::middleware(['api_auth'])->group(function () {
 
     Route::post('/api/departments/add', [DepartmentsApiController::class, 'addDepartment']);
     Route::get('/api/departments/get', [DepartmentsApiController::class, 'getDepartments']);
-    Route::put('/api/departments/update/{department_uid}', [DepartmentsApiController::class, 'updateDepartment']);
+    Route::post('/api/departments/update/{department_uid}', [DepartmentsApiController::class, 'updateDepartment']);
     Route::delete('/api/departments/delete/{department_uid}', [DepartmentsApiController::class, 'deleteDepartment']);
 });
 

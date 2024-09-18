@@ -113,8 +113,8 @@ class TeachersCredentialsTest extends TestCase
         ]);
 
         // Crea algunos cursos y asocia al profesor
-        $course1 = CoursesModel::factory()->create(['title' => 'Mathematics']);
-        $course2 = CoursesModel::factory()->create(['title' => 'Science']);
+        $course1 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['title' => 'Mathematics']);
+        $course2 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['title' => 'Science']);
 
         // Crea los datos de la relación con uid
         $pivotData = [
@@ -199,8 +199,8 @@ class TeachersCredentialsTest extends TestCase
             'uid' => generate_uuid()
         ]);
 
-        $course1 = CoursesModel::factory()->create(['title' => 'Physical']);
-        $course2 = CoursesModel::factory()->create(['title' => 'Science']);
+        $course1 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['title' => 'Physical']);
+        $course2 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['title' => 'Science']);
 
         // Asocia los cursos al profesor
         $teacher->coursesTeachers()->attach($course1->uid, ['uid' =>generate_uuid()]);
@@ -226,8 +226,8 @@ class TeachersCredentialsTest extends TestCase
             'uid' => generate_uuid()
         ]);
 
-        $course1 = CoursesModel::factory()->create(['title' => 'Biology']);
-        $course2 = CoursesModel::factory()->create(['title' => 'Algebra']);
+        $course1 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['title' => 'Biology']);
+        $course2 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['title' => 'Algebra']);
 
         // Asocia los cursos al profesor
         $teacher->coursesTeachers()->attach($course1->uid, ['uid' =>generate_uuid()]);

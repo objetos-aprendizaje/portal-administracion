@@ -41,7 +41,7 @@
                         <label for="description">Descripción</label>
                     </div>
                     <div class="content-container mt-1">
-                        <textarea placeholder="Los contenidos del curso son los siguientes..." rows="5" class="poa-input" id="description"
+                        <textarea maxlength="1000" placeholder="Los contenidos del curso son los siguientes..." rows="5" class="poa-input" id="description"
                             name="description"></textarea>
                     </div>
                 </div>
@@ -51,12 +51,12 @@
                         <label for="contact_information">Información de contacto</label>
                     </div>
                     <div class="content-container mt-1">
-                        <textarea placeholder="Información de contacto..." rows="5" class="poa-input" id="contact_information"
+                        <textarea maxlength="1000" placeholder="Información de contacto..." rows="5" class="poa-input" id="contact_information"
                             name="contact_information"></textarea>
                     </div>
                 </div>
 
-                <div id="call-field">
+                @if ($general_options['operation_by_calls'])
                     <div class="field mt-2">
                         <div class="label-container label-center">
                             <label for="call_uid">Convocatoria <span class="text-danger">*</span></label>
@@ -72,25 +72,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="belongs_to_educational_program">¿Pertenece a un programa formativo?</label>
-                    </div>
-                    <div class="content-container mt-1">
-                        <div class="checkbox">
-                            <label for="belongs_to_educational_program"
-                                class="inline-flex relative items-center cursor-pointer">
-                                <input type="checkbox" id="belongs_to_educational_program"
-                                    name="belongs_to_educational_program" class="sr-only peer">
-                                <div
-                                    class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
+                @endif
 
                 <div class="field mt-2">
                     <div class="label-container label-center">
@@ -130,22 +112,27 @@
                     </div>
                 </div>
 
-                <section id="min-required-students-container">
-                    <div class="field mt-2">
-                        <div class="label-container label-center">
-                            <label for="min_required_students">Mínimo de estudiantes requeridos</label>
-                        </div>
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="certification_type_uid">Tipo de certificación</label>
+                    </div>
 
-                        <div class="content-container mt-1">
-                            <input type="number" class="poa-input" id="min_required_students"
-                                name="min_required_students" value="0" />
+                    <div class="content-container mt-1">
+                        <div class="select-container">
+                            <select id="certification_type_uid" name="certification_type_uid" class="poa-select w-full">
+                                <option value="" selected>Ninguno</option>
+                                @foreach ($certificationTypes as $certificationType)
+                                    <option value="{{ $certificationType['uid'] }}">
+                                        {{ $certificationType['name'] }}</option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
-                </section>
+                </div>
 
                 <div class="field mt-2">
                     <div class="label-container label-center">
-                        <label for="center">Centro <span class="text-danger">*</span></label>
+                        <label for="center_uid">Centro <span class="text-danger">*</span></label>
                     </div>
 
                     <div class="content-container mt-1">
@@ -158,6 +145,214 @@
                         </select>
                     </div>
                 </div>
+
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="realization_start_date">Fecha de inicio de realización <span
+                                class="text-danger">*</span></label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <input type="datetime-local" class="poa-input" id="realization_start_date"
+                            name="realization_start_date" />
+                    </div>
+                </div>
+
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="realization_finish_date">Fecha de fin de realización <span
+                                class="text-danger">*</span></label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <input type="datetime-local" class="poa-input" id="realization_finish_date"
+                            name="realization_finish_date" />
+                    </div>
+                </div>
+
+                <div class="field mt-2">
+                    <div class="label-container">
+                        <label for="image_input_file">Imagen</label>
+                    </div>
+                    <div class="content-container mt-1">
+
+                        <div class="poa-input-image">
+                            <img id="image_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}" />
+
+                            <span class="dimensions">*Dimensiones: Alto: 50px x Ancho: 300px. Formato: PNG, JPG. Tam.
+                                Máx.: 1MB</span>
+
+                            <div class="select-file-container">
+                                <input accept="image/*" type="file" id="image_input_file" name="image_input_file"
+                                    class="hidden" />
+
+                                <div class="flex items-center gap-[20px]">
+                                    <label for="image_input_file" class="btn btn-rectangular">
+                                        Subir {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                    </label>
+
+                                    <span class="image-name text-[14px]">Ningún archivo seleccionado</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="calification_type">Tipo de calificación <span class="text-danger">*</span></label>
+                    </div>
+
+                    <div class="content-container mt-1">
+                        <div class="select-container">
+                            <select id="calification_type" name="calification_type" class="poa-select w-full">
+                                <option value="" selected>Selecciona tipo de calificación</option>
+                                <option value="NUMERICAL">Numérica</option>
+                                <option value="TEXTUAL">Textual</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field mt-2" data-id="presentation_video_url">
+                    <div class="label-container label-center">
+                        <label for="presentation_video_url">URL Vídeo de presentación</label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <input placeholder="https://youtube.com/" class="poa-input" type="text"
+                            id="presentation_video_url" name="presentation_video_url" />
+                    </div>
+                </div>
+
+                <div class="field mt-2">
+                    <div class="label-container">
+                        <label for="objectives">Objetivos</label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <textarea maxlength="1000" placeholder="Los objetivos del curso son los siguientes..." rows="5" class="poa-input"
+                            id="objectives" name="objectives"></textarea>
+                    </div>
+                </div>
+
+                <div class="hidden mt-2" id="validation-information-field">
+                    <div class="label-container label-center">
+                        <label for="validation_information">Información de validación</label>
+                    </div>
+
+                    <div class="content-container">
+                        <textarea maxlength="1000" placeholder="Los estudiantes deberán cumplir los siguientes requisitos..." rows="5" class="poa-input"
+                            name="validation_information" id="validation_information"></textarea>
+                    </div>
+                </div>
+
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="ects_workload">Carga de trabajo ECTS</label>
+                    </div>
+
+                    <div class="content-container mt-1">
+                        <input type="number" class="poa-input" id="ects_workload" name="ects_workload"
+                            value="0" />
+                    </div>
+                </div>
+
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="contact_emails">Emails de contacto</label>
+                    </div>
+
+                    <div class="content-container mt-1">
+                        <input id="contact_emails" autocomplete="off" name="contact_emails"
+                            placeholder="Introduce emails de contacto" />
+                    </div>
+                </div>
+
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="lms_system_uid">LMS</label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <select class="poa-select w-full" id="lms_system_uid" name="lms_system_uid">
+                            <option value="" selected>Selecciona LMS</option>
+                            @foreach ($lmsSystems as $lms)
+                                <option value="{{ $lms->uid }}">
+                                    {{ $lms->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="lms_url">URL LMS</label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <input class="poa-input" placeholder="moodle url" type="text" id="lms_url"
+                            name="lms_url" />
+                    </div>
+                </div>
+
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="teachers-no-coordinators">Docentes coordinadores</label>
+                    </div>
+                    <div class="content-container mt-1" id="teachers-container">
+                        <select id="teachers-coordinators" class="mb-4" name="teacher_coordinators[]" multiple
+                            placeholder="Selecciona un docente coordinador..." autocomplete="off">
+                            @foreach ($teachers as $teacher)
+                                <option value="{{ $teacher['uid'] }}">
+                                    {{ $teacher['first_name'] }} {{ $teacher['last_name'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="teachers-no-coordinators">Docentes no coordinadores</label>
+                    </div>
+                    <div class="content-container mt-1" id="teachers-container">
+                        <select id="teachers-no-coordinators" class="mb-4" name="teacher_no_coordinators[]"
+                            multiple placeholder="Selecciona un docente no coordinador..." autocomplete="off">
+                            @foreach ($teachers as $teacher)
+                                <option value="{{ $teacher['uid'] }}">
+                                    {{ $teacher['first_name'] }} {{ $teacher['last_name'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <!-- CAMPOS NO PERTENECE PROGRAMA FORMATIVO -->
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="belongs_to_educational_program">¿Pertenece a un programa formativo?</label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <div class="checkbox">
+                            <label for="belongs_to_educational_program"
+                                class="inline-flex relative items-center cursor-pointer">
+                                <input type="checkbox" id="belongs_to_educational_program"
+                                    name="belongs_to_educational_program" class="sr-only peer">
+                                <div
+                                    class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <section id="min-required-students-container">
+                    <div class="field mt-2">
+                        <div class="label-container label-center">
+                            <label for="min_required_students">Mínimo de estudiantes requeridos</label>
+                        </div>
+
+                        <div class="content-container mt-1">
+                            <input type="number" class="poa-input" id="min_required_students"
+                                name="min_required_students" value="0" />
+                        </div>
+                    </div>
+                </section>
 
                 <section id="inscription-dates-container">
                     <div class="field mt-2">
@@ -212,7 +407,7 @@
                         </div>
 
                         <div class="content-container mt-1">
-                            <textarea placeholder="Los criterios de evaluación son los siguientes..." rows="5" class="poa-input"
+                            <textarea maxlength="1000" placeholder="Los criterios de evaluación son los siguientes..." rows="5" class="poa-input"
                                 id="evaluation_criteria" name="evaluation_criteria"></textarea>
                         </div>
                     </div>
@@ -300,116 +495,6 @@
                     </div>
                 </section>
 
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="realization_start_date">Fecha de inicio de realización <span
-                                class="text-danger">*</span></label>
-                    </div>
-                    <div class="content-container mt-1">
-                        <input type="datetime-local" class="poa-input" id="realization_start_date"
-                            name="realization_start_date" />
-                    </div>
-                </div>
-
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="realization_finish_date">Fecha de fin de realización <span
-                                class="text-danger">*</span></label>
-                    </div>
-                    <div class="content-container mt-1">
-                        <input type="datetime-local" class="poa-input" id="realization_finish_date"
-                            name="realization_finish_date" />
-                    </div>
-                </div>
-
-                <div class="field mt-2">
-                    <div class="label-container">
-                        <label for="image_input_file">Imagen</label>
-                    </div>
-                    <div class="content-container mt-1">
-
-                        <div class="poa-input-image">
-                            <img id="image_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}" />
-
-                            <span class="dimensions">*Dimensiones: Alto: 50px x Ancho: 300px. Formato: PNG, JPG. Tam.
-                                Máx.: 1MB</span>
-
-                            <div class="select-file-container">
-                                <input accept="image/*" type="file" id="image_input_file" name="image_input_file"
-                                    class="hidden" />
-
-                                <div class="flex items-center gap-[20px]">
-                                    <label for="image_input_file" class="btn btn-rectangular">
-                                        Subir {{ e_heroicon('arrow-up-tray', 'outline') }}
-                                    </label>
-
-                                    <span class="image-name text-[14px]">Ningún archivo seleccionado</span>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="calification_type">Tipo de calificación <span class="text-danger">*</span></label>
-                    </div>
-
-                    <div class="content-container mt-1">
-                        <div class="select-container">
-                            <select id="calification_type" name="calification_type" class="poa-select w-full">
-                                <option value="" selected>Selecciona tipo de calificación</option>
-                                <option value="NUMERICAL">Numérica</option>
-                                <option value="TEXTUAL">Textual</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="field mt-2" data-id="presentation_video_url">
-                    <div class="label-container label-center">
-                        <label for="presentation_video_url">URL Vídeo de presentación</label>
-                    </div>
-                    <div class="content-container mt-1">
-                        <input placeholder="https://youtube.com/" class="poa-input" type="text"
-                            id="presentation_video_url" name="presentation_video_url" />
-                    </div>
-                </div>
-
-                <div class="field mt-2">
-                    <div class="label-container">
-                        <label for="objectives">Objetivos</label>
-                    </div>
-                    <div class="content-container mt-1">
-                        <textarea placeholder="Los objetivos del curso son los siguientes..." rows="5" class="poa-input"
-                            id="objectives" name="objectives"></textarea>
-                    </div>
-                </div>
-
-                <div class="hidden mt-2" id="validation-information-field">
-                    <div class="label-container label-center">
-                        <label for="validation_information">Información de validación</label>
-                    </div>
-
-                    <div class="content-container">
-                        <textarea placeholder="Los estudiantes deberán cumplir los siguientes requisitos..." rows="5" class="poa-input"
-                            name="validation_information" id="validation_information"></textarea>
-                    </div>
-                </div>
-
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="ects_workload">Carga de trabajo ECTS</label>
-                    </div>
-
-                    <div class="content-container mt-1">
-                        <input type="number" class="poa-input" id="ects_workload" name="ects_workload"
-                            value="0" />
-                    </div>
-                </div>
-
                 <section id="tags-container">
                     <div class="field mt-2">
                         <div class="label-container label-center">
@@ -426,72 +511,6 @@
                         </div>
                     </div>
                 </section>
-
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="contact_emails">Emails de contacto</label>
-                    </div>
-
-                    <div class="content-container mt-1">
-                        <input id="contact_emails" autocomplete="off" name="contact_emails"
-                            placeholder="Introduce emails de contacto" />
-                    </div>
-                </div>
-
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="lms_system_uid">LMS</label>
-                    </div>
-                    <div class="content-container mt-1">
-                        <select class="poa-select w-full" id="lms_system_uid" name="lms_system_uid">
-                            <option value="" selected>Selecciona LMS</option>
-                            @foreach ($lmsSystems as $lms)
-                                <option value="{{ $lms->uid }}">
-                                    {{ $lms->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="lms_url">URL LMS</label>
-                    </div>
-                    <div class="content-container mt-1">
-                        <input class="poa-input" placeholder="moodle url" type="text" id="lms_url"
-                            name="lms_url" />
-                    </div>
-                </div>
-
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="teachers-no-coordinators">Docentes coordinadores</label>
-                    </div>
-                    <div class="content-container mt-1" id="teachers-container">
-                        <select id="teachers-coordinators" class="mb-4" name="teacher_coordinators[]" multiple
-                            placeholder="Selecciona un docente coordinador..." autocomplete="off">
-                            @foreach ($teachers as $teacher)
-                                <option value="{{ $teacher['uid'] }}">
-                                    {{ $teacher['first_name'] }} {{ $teacher['last_name'] }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="teachers-no-coordinators">Docentes no coordinadores</label>
-                    </div>
-                    <div class="content-container mt-1" id="teachers-container">
-                        <select id="teachers-no-coordinators" class="mb-4" name="teacher_no_coordinators[]"
-                            multiple placeholder="Selecciona un docente no coordinador..." autocomplete="off">
-                            @foreach ($teachers as $teacher)
-                                <option value="{{ $teacher['uid'] }}">
-                                    {{ $teacher['first_name'] }} {{ $teacher['last_name'] }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
 
                 <section id="categories-container">
                     <div class="field mt-2">
@@ -550,7 +569,7 @@
                             </div>
 
                             <div class="content-container mt-1">
-                                <textarea
+                                <textarea maxlength="1000"
                                     placeholder="La aportación más significativa del grado en bellas artes es la de formar artistas capaces de aportar criterios..."
                                     rows="5" class="poa-input" id="featured_big_carrousel_description"
                                     name="featured_big_carrousel_description"></textarea>
@@ -625,7 +644,7 @@
 
                 <h2 class="my-[40px]">Editar bloques y elementos</h2>
 
-                <div class=" mt-2" id="course-composition-block">
+                <div class="mt-2 max-h-[400px] overflow-auto" id="course-composition-block">
 
                     <div id="course-composition" class="space-y-4">
 
@@ -648,7 +667,7 @@
                                 <input type="text" class="block-name border-full border"
                                     placeholder="Nombre del bloque">
 
-                                <textarea class="block-description border-full " placeholder="Descripción del bloque"></textarea>
+                                <textarea maxlength="1000" class="block-description border-full " placeholder="Descripción del bloque"></textarea>
 
                                 <div class="block-competences border-primary border-x p-[15px] rounded-b border-b  max-h-[]"
                                     data-order="">
@@ -680,7 +699,7 @@
 
                                 <input type="text" class="input-field p-2 rounded border sub-block-name"
                                     placeholder="Nombre del Sub-Bloque">
-                                <textarea class="textarea-field p-2 rounded border sub-block-description" placeholder="Descripción del sub-bloque"></textarea>
+                                <textarea maxlength="1000" class="textarea-field p-2 rounded border sub-block-description" placeholder="Descripción del sub-bloque"></textarea>
                             </div>
                             <div class="elements ml-4"></div>
                             <button type="button" class="addElement btn btn-primary mt-4">Añadir elemento
@@ -697,7 +716,7 @@
 
                                 <input type="text" class="input-field p-2 rounded border element-name"
                                     placeholder="Nombre del elemento">
-                                <textarea class="textarea-field p-2 rounded border element-description" placeholder="Descripción del elemento"></textarea>
+                                <textarea maxlength="1000" class="textarea-field p-2 rounded border element-description" placeholder="Descripción del elemento"></textarea>
                             </div>
                             <div class="sub-elements ml-4"></div>
 
@@ -714,7 +733,7 @@
 
                                 <input type="text" class="input-field p-2 rounded border sub-element-name"
                                     placeholder="Nombre Sub-Elemento">
-                                <textarea class="textarea-field p-2 rounded border sub-element-description"
+                                <textarea maxlength="1000" class="textarea-field p-2 rounded border sub-element-description"
                                     placeholder="Descripción del Sub-Elemento"></textarea>
                             </div>
                         </div>

@@ -21,5 +21,7 @@ class EducationalProgramEmailContactsModel extends Model
         "uid", "educational_program_uid", "email"
     ];
 
+    public $timestamps = false;
+
 
 }

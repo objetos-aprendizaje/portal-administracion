@@ -77,7 +77,7 @@ class SendEducationalProgramNotificationToManagements implements ShouldQueue
         $filteredManagers = $this->filterManagers($managements, 'email');
 
         foreach ($filteredManagers as $manager) {
-            dispatch(new SendEmailJob($manager['email'], 'Nuevo programa educativo para revisar', $parameters, 'emails.educational_program_pending_approval_managements'));
+            dispatch(new SendEmailJob($manager['email'], 'Nuevo programa formativo para revisar', $parameters, 'emails.educational_program_pending_approval_managements'));
         }
     }
 

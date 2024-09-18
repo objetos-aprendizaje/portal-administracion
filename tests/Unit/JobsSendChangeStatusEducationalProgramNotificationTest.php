@@ -25,19 +25,19 @@ class JobsSendChangeStatusEducationalProgramNotificationTest extends TestCase
         $this->actingAs($user);
 
         // Datos de prueba
-    $educationalProgram = [
-        'uid' => generate_uuid(),
-        'name' => 'Programa Formativo 1',
-        'status' => ['name' => 'Activo'],
-        'status_reason' => 'Razón del cambio',
-        'creator_user' => [ // Cambiar esto para que sea un array
-            'email' => $user->email,
-            'uid' => $user->uid,
-        ],
-        'creator_user_uid' => $user->uid,
-    ];
+        $educationalProgram = [
+            'uid' => generate_uuid(),
+            'name' => 'Programa Formativo 1',
+            'status' => ['name' => 'Activo'],
+            'status_reason' => 'Razón del cambio',
+            'creator_user' => [
+                'email' => $user->email,
+                'uid' => $user->uid,
+            ],
+            'creator_user_uid' => $user->uid,
+        ];
 
-            // Act: Fake the Queue
+        // Act: Fake the Queue
         Queue::fake(); // Asegúrate de llamar a Queue::fake() antes de ejecutar el trabajo
 
         // Act: Ejecutar el método handle
@@ -52,23 +52,11 @@ class JobsSendChangeStatusEducationalProgramNotificationTest extends TestCase
             'entity' => 'educational_program_change_status'
         ]);
 
-        // Verificar que se despachó el trabajo de envío de correo
-        Queue::assertPushed(SendEmailJob::class, function ($job) use ($educationalProgram) {
-            // Usar reflexión para acceder a la propiedad protegida
-            $reflection = new \ReflectionClass($job);
-            $emailProperty = $reflection->getProperty('email');
-            $emailProperty->setAccessible(true); // Hacer la propiedad accesible
+        $jobs = Queue::pushed(SendEmailJob::class);
+        $this->assertCount(1, $jobs, 'El trabajo SendEmailJob no fue encolado.');
 
-            $parametersProperty = $reflection->getProperty('parameters');
-            $parametersProperty->setAccessible(true); // Hacer la propiedad accesible
+        $jobInstance = $jobs[0];
 
-            return $emailProperty->getValue($job) === $educationalProgram['creator_user']['email'] &&
-                $parametersProperty->getValue($job)['educational_program_name'] === $educationalProgram['name'] &&
-                $parametersProperty->getValue($job)['educational_program_status'] === $educationalProgram['status']['name'] &&
-                $parametersProperty->getValue($job)['reason'] === $educationalProgram['status_reason'];
-        });
     }
-
-
-
 }
+

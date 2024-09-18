@@ -300,7 +300,7 @@ function initializeEducationalProgramsTable() {
             title: "Estado",
             field: "status_name",
             formatter: function (cell, formatterParams, onRendered) {
-                const color = getStatusCourseColor(
+                const color = getStatusEducationalProgramColor(
                     cell.getRow().getData().status_code
                 );
                 return `
@@ -314,7 +314,7 @@ function initializeEducationalProgramsTable() {
             widthGrow: 2,
         },
         {
-            title: "Tipo de programa educativo",
+            title: "Tipo de programa formativo",
             field: "educational_program_type_name",
             widthGrow: 2,
         },
@@ -696,13 +696,8 @@ function toggleFieldAccessibility(shouldEnable) {
         "document-container",
         "payment_terms",
         "btns-save",
-        "generate-tags-btn",
     ];
     setDisabledSpecificDivFields(divsToToggleDisabled, !shouldEnable);
-
-    document
-        .getElementById("generate-tags-btn")
-        .classList.toggle("hidden", !shouldEnable);
 
     // Habilita o deshabilita los selectores TomSelect
     shouldEnable ? tomSelectCourses.enable() : tomSelectCourses.disable();
@@ -992,7 +987,7 @@ function previsualizeSlider() {
  * @param {*} statusCode
  * @returns Color de fondo que le coresponde a la etiqueta del estado
  */
-function getStatusCourseColor(statusCode) {
+function getStatusEducationalProgramColor(statusCode) {
     const statusColors = {
         INTRODUCTION: "#EBEBF4",
         PENDING_APPROVAL: "#F0F4EB",
@@ -1004,6 +999,7 @@ function getStatusCourseColor(statusCode) {
         UNDER_CORRECTION_PUBLICATION: "#F4EBEB",
         INSCRIPTION: "#EBEFF4",
         PENDING_INSCRIPTION: "#FBEDED",
+        ENROLLING: "#F3F4FF",
         DEVELOPMENT: "#EDF4FB",
         FINISHED: "#FBF4ED",
         RETIRED: "#FDF5FE",

@@ -27,7 +27,7 @@ class ChangeStatusToFinishedTest extends TestCase
         $statusEnrolling = CourseStatusesModel::factory()->create(['code' => 'ENROLLING']);
 
         // Crear un curso en estado 'DEVELOPMENT' que ha finalizado
-        $course = CoursesModel::factory()->create([
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
             'realization_finish_date' => now()->subDay(),
             'course_status_uid' => $statusDevelopment->uid,
             'belongs_to_educational_program' => 0,
@@ -79,7 +79,7 @@ class ChangeStatusToFinishedTest extends TestCase
         $statusDevelopment = CourseStatusesModel::where('code', 'DEVELOPMENT')->first();
 
         // Crear un curso en estado 'DEVELOPMENT' que ha finalizado sin estudiantes
-        $course = CoursesModel::factory()->create([
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
             'realization_finish_date' => now()->subDay(),
             'course_status_uid' => $statusDevelopment->uid,
             'belongs_to_educational_program' => 0,

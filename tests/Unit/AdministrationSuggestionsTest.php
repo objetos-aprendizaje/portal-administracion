@@ -318,7 +318,7 @@ class AdministrationSuggestionsTest extends TestCase
                 ->assertJson([
                     'message' => 'Hay campos incorrectos',
                     'errors' => [
-                        'educational_program_type_uid' => ['El tipo de programa educativo es obligatorio'],
+                        'educational_program_type_uid' => ['El tipo de programa formativo es obligatorio'],
                         'contact' => ['El contacto debe ser una URL válida.'],
                     ],
                 ]);

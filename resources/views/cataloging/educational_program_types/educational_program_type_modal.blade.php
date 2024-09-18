@@ -4,7 +4,7 @@
 
         <div class="modal-header">
             <div>
-                <h2 class="modal-title">Añade un nuevo tipo de programa educativo</h2>
+                <h2 class="modal-title">Añade un nuevo tipo de programa formativo</h2>
             </div>
 
             <div>
@@ -34,7 +34,7 @@
                         <label for="description">Descripción</label>
                     </div>
                     <div class="content-container">
-                        <textarea id="description" name="description" class="poa-input"></textarea>
+                        <textarea maxlength="1000" id="description" name="description" class="poa-input"></textarea>
                     </div>
                 </div>
 

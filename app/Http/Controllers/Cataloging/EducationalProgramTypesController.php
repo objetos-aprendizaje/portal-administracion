@@ -30,8 +30,8 @@ class EducationalProgramTypesController extends BaseController
         return view(
             'cataloging.educational_program_types.index',
             [
-                "page_name" => "Tipos de programas educativos",
-                "page_title" => "Tipos de programas educativos",
+                "page_name" => "Tipos de programas formativos",
+                "page_title" => "Tipos de programas formativos",
                 "resources" => [
                     "resources/js/cataloging_module/educational_program_types.js"
                 ],
@@ -82,7 +82,7 @@ class EducationalProgramTypesController extends BaseController
         $educational_program_type = EducationalProgramTypesModel::where('uid', $educational_program_type_uid)->first();
 
         if (!$educational_program_type) {
-            return response()->json(['message' => 'El tipo de programa educativo no existe'], 406);
+            return response()->json(['message' => 'El tipo de programa formativo no existe'], 406);
         }
 
         return response()->json($educational_program_type, 200);
@@ -99,7 +99,7 @@ class EducationalProgramTypesController extends BaseController
             'name.min' => 'El nombre no puede tener menos de 3 caracteres.',
             'name.max' => 'El nombre no puede tener más de 255 caracteres.',
             'name.unique' => 'El nombre del tipo ya está en uso.',
-            'educational_program_type_uid.exists' => 'El tipo de programa educativo no exite.',
+            'educational_program_type_uid.exists' => 'El tipo de programa formativo no exite.',
         ];
 
         $validator = Validator::make($request->all(), [
@@ -144,15 +144,15 @@ class EducationalProgramTypesController extends BaseController
         DB::transaction(function () use ($educational_program_type, $isNew) {
             $educational_program_type->save();
 
-            $messageLog = $isNew ? 'Añadir tipo de programa educativo' : 'Actualizar tipo de programa educativo';
-            LogsController::createLog($messageLog, 'Tipos de programas educativos', auth()->user()->uid);
+            $messageLog = $isNew ? 'Añadir tipo de programa formativo' : 'Actualizar tipo de programa formativo';
+            LogsController::createLog($messageLog, 'Tipos de programas formativo', auth()->user()->uid);
         });
 
         // Obtenemos todas los tipos
         $educational_program_types = EducationalProgramTypesModel::get()->toArray();
 
         return response()->json([
-            'message' => ($isNew) ? 'Tipo de programa educativo añadido correctamente' : 'Tipo de programa educativo actualizado correctamente',
+            'message' => ($isNew) ? 'Tipo de programa formativo añadido correctamente' : 'Tipo de programa formativo actualizado correctamente',
             'educational_program_types' => $educational_program_types
         ], 200);
     }
@@ -162,19 +162,19 @@ class EducationalProgramTypesController extends BaseController
 
         $uids = $request->input('uids');
 
-        $this->checkExistence(EducationalProgramsModel::class, $uids, 'No se pueden eliminar los tipos de programa educativo porque están siendo utilizados en programas educativos');
-        $this->checkExistence(CoursesModel::class, $uids, 'No se pueden eliminar los tipos de programa educativo porque están siendo utilizados en cursos');
-        $this->checkExistence(RedirectionQueriesEducationalProgramTypesModel::class, $uids, 'No se pueden eliminar los tipos de programa educativo porque están siendo utilizados en redirecciones de consulta');
-        $this->checkExistence(CallsEducationalProgramTypesModel::class, $uids, 'No se pueden eliminar los tipos de programa educativo porque están siendo utilizados en convocatorias');
+        $this->checkExistence(EducationalProgramsModel::class, $uids, 'No se pueden eliminar los tipos de programa formativo porque están siendo utilizados en programas formativos');
+        $this->checkExistence(CoursesModel::class, $uids, 'No se pueden eliminar los tipos de programa formativo porque están siendo utilizados en cursos');
+        $this->checkExistence(RedirectionQueriesEducationalProgramTypesModel::class, $uids, 'No se pueden eliminar los tipos de programa formativo porque están siendo utilizados en redirecciones de consulta');
+        $this->checkExistence(CallsEducationalProgramTypesModel::class, $uids, 'No se pueden eliminar los tipos de programa formativo porque están siendo utilizados en convocatorias');
 
         DB::transaction(function () use ($uids) {
             EducationalProgramTypesModel::destroy($uids);
-            LogsController::createLog('Eliminar tipos de programas educativos', 'Tipos de programas educativos', auth()->user()->uid);
+            LogsController::createLog('Eliminar tipos de programas formativo', 'Tipos de programas formativo', auth()->user()->uid);
         });
 
         $educational_program_types = EducationalProgramTypesModel::get()->toArray();
 
-        return response()->json(['message' => 'Tipos de programa educativo eliminados correctamente', 'educational_program_types' => $educational_program_types], 200);
+        return response()->json(['message' => 'Tipos de programa formativo eliminados correctamente', 'educational_program_types' => $educational_program_types], 200);
     }
 
     private function checkExistence($model, $uids, $errorMessage)

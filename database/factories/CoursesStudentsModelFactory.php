@@ -20,12 +20,31 @@ class CoursesStudentsModelFactory extends Factory
     {
         return [
             'uid'               => generate_uuid(),
-            'course_uid'        => CoursesModel::factory()->create()->first(), 
-            'user_uid'          => UsersModel  ::factory()->create()->first(), 
             'calification_type' => 'NUMERIC',
             'status'            => 'INSCRIBED',
             'acceptance_status' => 'PENDING',
-        ];//
-        
+        ];
+    }
+
+    public function withCourse(): Factory
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'course_uid'        => CoursesModel::factory()
+                ->withCourseStatus()
+                ->withCourseType()
+                ->create()
+                ->first(),
+            ];
+        });
+    }
+
+    public function withUser(): Factory
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'user_uid'          => UsersModel::factory()->create()->first(),
+            ];
+        });
     }
 }

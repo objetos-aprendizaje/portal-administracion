@@ -33,7 +33,7 @@
                         <label for="description">Descripción</label>
                     </div>
                     <div class="content-container">
-                        <textarea class="w-full poa-input" placeholder="La convocatoria de este año tratará de..." rows="5"
+                        <textarea maxlength="1000" class="w-full poa-input" placeholder="La convocatoria de este año tratará de..." rows="5"
                             id="description" name="description"></textarea>
                     </div>
                 </div>
@@ -164,7 +164,7 @@
                         </div>
 
                         <div class="content-container mt-1">
-                            <textarea placeholder="Los criterios de evaluación son los siguientes..." rows="5" class="poa-input"
+                            <textarea maxlength="1000" placeholder="Los criterios de evaluación son los siguientes..." rows="5" class="poa-input"
                                 id="evaluation_criteria" name="evaluation_criteria"></textarea>
                         </div>
                     </div>
@@ -347,7 +347,7 @@
                             </div>
 
                             <div class="content-container mt-1">
-                                <textarea
+                                <textarea maxlength="1000"
                                     placeholder="La aportación más significativa del grado en bellas artes es la de formar artistas capaces de aportar criterios..."
                                     rows="5" class="poa-input" id="featured_slider_description" name="featured_slider_description"></textarea>
                             </div>

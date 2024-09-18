@@ -57,13 +57,13 @@
                         <div class="flex">
                             <input type="checkbox" id="educational_programs_name" name="educational_programs_name"
                                 value="educational_programs_name" class="mr-[11px] w-[22px] h-[22px]">
-                            <label for="educational_programs_name">Programa educativo</label>
+                            <label for="educational_programs_name">Programa formativo</label>
                         </div>
                         <div class="flex">
                             <input type="checkbox" id="educational_program_types_name"
                                 name="educational_program_types_name" value="educational_program_types_name"
                                 class="mr-[11px] w-[22px] h-[22px]">
-                            <label for="educational_program_types_name">Tipo de programa educativo</label>
+                            <label for="educational_program_types_name">Tipo de programa formativo</label>
                         </div>
                         <div class="flex">
                             <input type="checkbox" id="course_types_name" name="course_types_name"

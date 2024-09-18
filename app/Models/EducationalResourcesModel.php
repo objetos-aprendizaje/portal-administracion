@@ -114,4 +114,8 @@ class EducationalResourcesModel extends Model
             'learning_result_uid'
         );
     }
+    public function accesses()
+    {
+        return $this->hasMany(EducationalResourcesAccesesModel::class, 'educational_resource_uid', 'uid');
+    }
 }

@@ -49,7 +49,7 @@ class EmailNotificationServiceTest extends TestCase
         $emailNotificationsService->processNotification($notification);
 
         // Verificar que el trabajo de envío de emails fue despachado
-        Queue::assertPushed(SendEmailJob::class, 10);
+        Queue::assertPushed(SendEmailJob::class, 11);
 
         // Verificar que la notificación fue marcada como enviada       
         $this->assertEquals(1, $notification->fresh()->sent);
@@ -100,7 +100,7 @@ class EmailNotificationServiceTest extends TestCase
         $emailNotificationsService->processNotification($notification);
 
         // Verificar que el trabajo de envío de emails fue despachado
-        Queue::assertPushed(SendEmailJob::class, 5);
+        Queue::assertPushed(SendEmailJob::class, 6);
 
         // Verificar que la notificación fue marcada como enviada      
         $this->assertEquals(1, $notification->fresh()->sent);

@@ -13,19 +13,44 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class CoursesModelFactory extends Factory
 {
-
     protected $model = CoursesModel::class;
 
     public function definition(): array
     {
+
+        // Contar el número de cursos existentes
+        $courseCount = CoursesModel::count();
+
+        // Generar el identificador en el formato 'CUR-0001'
+        $identifier = 'CUR-' . str_pad($courseCount + 1, 4, '0', STR_PAD_LEFT);
+
         return [
             'uid' => generate_uuid(),
+            'course_lms_uid' => generate_uuid(),
             'title' => $this->faker->sentence(),
-            'course_status_uid' => CourseStatusesModel::factory()->create()->first(),
-            'course_type_uid' => CourseTypesModel::factory()->create()->first(),
+            'description' => $this->faker->paragraph(),
             'ects_workload' => $this->faker->numberBetween(1, 10),
             'belongs_to_educational_program' => $this->faker->boolean(),
-            'identifier' => 'identifier',
+            'identifier' => $identifier,
+            'presentation_video_url' => $this->faker->url(),
+            'calification_type' => $this->faker->randomElement(['NUMERICAL', 'TEXTUAL']),
+            'lms_url' => $this->faker->url(),
+            'cost' => $this->faker->randomFloat(2, 0, 1000),
+
         ];
+    }
+
+    public function withCourseStatus(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'course_status_uid' => CourseStatusesModel::factory()->create()->first(),
+        ]);
+    }
+
+    public function withCourseType(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'course_type_uid' => CourseTypesModel::factory()->create()->first(),
+        ]);
     }
 }

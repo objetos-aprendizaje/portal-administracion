@@ -109,7 +109,7 @@ class LearningObjectProgramsEducationalSaveTest extends TestCase
         $programType = EducationalProgramTypesModel::factory()->create();
 
         // Crear un programa educativo existente
-        $existingProgram = EducationalProgramsModel::factory()->create([
+        $existingProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
             'name' => 'Programa Educativo Original',
         ]);
 

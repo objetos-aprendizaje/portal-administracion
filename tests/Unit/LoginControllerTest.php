@@ -41,21 +41,26 @@ class LoginControllerTest extends TestCase
     /** @test Autenticación*/
     public function testAuthenticateSuccessful()
     {
-        // Crea un usuario de prueba
         $user = UsersModel::factory()->create([
-            'password' => Hash::make('password123'), // Asegúrate de usar una contraseña hasheada
+            'password' => Hash::make('1234')
         ]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
         // Realiza una solicitud POST a la ruta de autenticación
         $response = $this->post('/login/authenticate', [
             'email' => $user->email,
-            'password' => 'password123',
+            'password' => '1234',
         ]);
 
-        // Verifica que la respuesta sea correcta
-        $response->assertStatus(200);
-        $this->assertEquals(['authenticated' => true], $response->json());
+
+    // Verifica que la respuesta sea correcta
+    $response->assertStatus(200);
+    $this->assertEquals(['authenticated' => true], $response->json());
+
     }
+
+
     /** @test Autenticación fallida*/
     public function testAuthenticateFailed()
     {

@@ -31,7 +31,7 @@ class ChangeStatusToDevelopmentEducationalProgramCommandTest extends TestCase
         $statusInscription = EducationalProgramStatusesModel::where('code', 'INSCRIPTION')->first();
         $statusPendingDecision = EducationalProgramStatusesModel::where('code', 'PENDING_DECISION')->first();
 
-        $educationalProgram = EducationalProgramsModel::factory()->create([
+        $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
             'realization_start_date' => now()->subDay(),
             'realization_finish_date' => now()->addDay(),
             'educational_program_status_uid' => $statusInscription->uid,
@@ -70,7 +70,7 @@ class ChangeStatusToDevelopmentEducationalProgramCommandTest extends TestCase
         $statusInscription = EducationalProgramStatusesModel::where('code', 'INSCRIPTION')->first();
         $statusPendingDecision = EducationalProgramStatusesModel::where('code', 'PENDING_DECISION')->first();
 
-        $educationalProgram = EducationalProgramsModel::factory()->create([
+        $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
             'realization_start_date' => now()->subDay(),
             'realization_finish_date' => now()->addDay(),
             'educational_program_status_uid' => $statusInscription->uid,

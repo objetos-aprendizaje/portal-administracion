@@ -302,7 +302,8 @@ function add_timestamp_name_file($file)
 
     return $filename;
 }
-function generateToken($longitud = 64) {
+function generateToken($longitud = 64)
+{
     $char = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ()';
     $charLong = strlen($char);
     $token = '';
@@ -315,9 +316,18 @@ function generateToken($longitud = 64) {
     return $token;
 }
 
-function formatDatetimeUser($datetime) {
+function formatDatetimeUser($datetime)
+{
     $date = new DateTime($datetime);
     $formatter = new IntlDateFormatter('es_ES', IntlDateFormatter::FULL, IntlDateFormatter::FULL);
     $formatter->setPattern('d \'de\' MMMM \'de\' Y \'a las\' H:mm');
     return $formatter->format($date);
+}
+
+// Aproxima la fecha actual a una fecha futura o pasada aleatoria
+function adjustDateRandomly($date, $randomDays = 5)
+{
+    $randomDays = rand(1, $randomDays);
+    $addOrSubtract = rand(0, 1) ? '+' : '-';
+    return date('Y-m-d H:i', strtotime("$date $addOrSubtract $randomDays days"));
 }

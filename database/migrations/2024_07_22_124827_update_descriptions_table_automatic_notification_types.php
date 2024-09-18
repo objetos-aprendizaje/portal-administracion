@@ -12,8 +12,8 @@ return new class extends Migration
     {
         DB::table('automatic_notification_types')->where('code', 'NEW_EDUCATIONAL_PROGRAMS')->update(
             [
-                'name' => 'Nuevos programas educativos',
-                'description' => 'Recibe notificaciones sobre programas educativos nuevos que coincidan con tus preferencias, incluyendo categorías y resultados de aprendizaje específicos que hayas configurado'
+                'name' => 'Nuevos programas formativos',
+                'description' => 'Recibe notificaciones sobre programas formativos nuevos que coincidan con tus preferencias, incluyendo categorías y resultados de aprendizaje específicos que hayas configurado'
             ]
         );
 
@@ -54,8 +54,8 @@ return new class extends Migration
 
         DB::table('automatic_notification_types')->where('code', 'CHANGE_STATUS_EDUCATIONAL_PROGRAM')->update(
             [
-                'name' => 'Cambio de estado de programas educativos creados',
-                'description' => 'Recibe notificaciones de cambio de estado relativas a los programas educativos que hayas creado, incluyendo información sobre el nuevo estado y motivo del cambio'
+                'name' => 'Cambio de estado de programas formativos creados',
+                'description' => 'Recibe notificaciones de cambio de estado relativas a los programas formativos que hayas creado, incluyendo información sobre el nuevo estado y motivo del cambio'
             ]
         );
 

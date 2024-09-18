@@ -28,14 +28,14 @@ class LoginController extends BaseController
         $loginCas = GeneralOptionsModel::where('option_name', 'cas_active')->first();
         $loginCasUrl = Saml2TenantsModel::where('key', 'cas')->first();
 
-        if($loginCas['option_value'] == 1) {
+        if ($loginCas['option_value'] == 1) {
             $urlCas = url('saml2/' . $loginCasUrl->uuid . '/login');
         } else $urlCas = false;
 
         $loginRediris = GeneralOptionsModel::where('option_name', 'rediris_active')->first();
         $loginRedirisUrl = Saml2TenantsModel::where('key', 'rediris')->first();
 
-        if($loginRediris['option_value'] == 1) {
+        if ($loginRediris['option_value'] == 1) {
             $urlRediris = url('saml2/' . $loginRedirisUrl->uuid . '/login');
         } else $urlRediris = false;
 
@@ -56,7 +56,12 @@ class LoginController extends BaseController
     {
         $credentials = $request->only('email', 'password');
 
-        $user = UsersModel::where('email', $credentials['email'])->first();
+        $user = UsersModel::with('roles')
+            ->whereHas('roles', function ($query) {
+                $query->whereIn('code', ['ADMINISTRATOR', 'MANAGEMENT', 'TEACHER']);
+            })
+            ->where('email', $credentials['email'])
+            ->first();
 
         if ($user && Hash::check($credentials['password'], $user->password)) {
             Auth::login($user);
@@ -141,25 +146,27 @@ class LoginController extends BaseController
         Session::flush();
         Auth::logout();
 
-        $url_logout = env('APP_URL')."/login";
+        $url_logout = env('APP_URL') . "/login";
 
         return redirect($url_logout);
     }
-    public function tokenLogin($token){
+    public function tokenLogin($token)
+    {
 
         $user = UsersModel::where('token_x509', $token)->first();
 
-        if ($user){
-            $url_logout = env('DOMINIO_PRINCIPAL')."/login";
+        if ($user) {
+            $url_logout = env('DOMINIO_PRINCIPAL') . "/login";
             Auth::login($user);
             $this->deleteTokenLogin($user);
             return redirect(env('DOMINIO_PRINCIPAL'));
-        }else{
+        } else {
             $this->deleteTokenLogin($user);
-            return redirect(env('DOMINIO_PRINCIPAL')."/login?e=certificate-error");
+            return redirect(env('DOMINIO_PRINCIPAL') . "/login?e=certificate-error");
         }
     }
-    private function deleteTokenLogin($user){
+    private function deleteTokenLogin($user)
+    {
         $user->token_x509 = "";
         $user->save();
     }

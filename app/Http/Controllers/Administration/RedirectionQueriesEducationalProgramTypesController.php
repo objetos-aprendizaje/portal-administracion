@@ -92,7 +92,7 @@ class RedirectionQueriesEducationalProgramTypesController extends BaseController
     {
 
         $messages = [
-            'educational_program_type_uid.required' => 'El tipo de programa educativo es obligatorio',
+            'educational_program_type_uid.required' => 'El tipo de programa formativo es obligatorio',
             'type' => 'required|string|in:web,email',
             'contact.required' => 'El contacto es obligatorio',
             'contact.max' => 'El contacto es demasiado largo',

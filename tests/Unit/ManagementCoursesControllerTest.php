@@ -47,11 +47,12 @@ class ManagementCoursesControllerTest extends TestCase
         $this->actingAs($user);
 
         // Crear un curso de prueba
-        $course = CoursesModel::factory()->create();
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
+            'belongs_to_educational_program' => false,
+        ]);
 
         // Crear un estado "INTRODUCTION" para los cursos
-        // $status = CourseStatusesModel::factory()->create(['uid' => generate_uuid(), 'code' => 'INTRODUCTION']);
-        $status = CourseStatusesModel::where('code', 'INTRODUCTION')->first();
+       $status = CourseStatusesModel::where('code', 'INTRODUCTION')->first();
 
         // Hacer la solicitud POST a la ruta de duplicación
         $response = $this->postJson("/learning_objects/courses/duplicate_course/{$course->uid}", [
@@ -76,6 +77,41 @@ class ManagementCoursesControllerTest extends TestCase
         $newCourse = CoursesModel::where('title', $course->title . " (copia)")->first();
         $this->assertNotEquals($course->uid, $newCourse->uid);
     }
+
+    public function testDuplicateACourseFail()
+{
+    // Crear un usuario de prueba
+    $user = UsersModel::factory()->create();
+
+    // Autenticar al usuario
+    $this->actingAs($user);
+
+    // Crear un curso de prueba que pertenezca a un programa formativo
+    $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
+        'belongs_to_educational_program' => true,
+    ]);
+
+    // Crear un estado "INTRODUCTION" para los cursos
+    $status = CourseStatusesModel::where('code', 'INTRODUCTION')->first();
+
+    // Hacer la solicitud POST a la ruta de duplicación
+    $response = $this->postJson("/learning_objects/courses/duplicate_course/{$course->uid}", [
+        'course_uid' => $course->uid,
+    ]);
+
+    // Verificar que la respuesta tenga un código de estado 422 (Unprocessable Entity)
+    $response->assertStatus(422);
+
+    // Verificar que la respuesta contenga el mensaje de error esperado
+    $response->assertJson([
+        'message' => 'No puedes duplicar un curso que pertenezca a un programa formativo',
+    ]);
+
+    // Verificar que no se haya duplicado el curso en la base de datos
+    $this->assertDatabaseMissing('courses', [
+        'title' => $course->title . " (copia)",
+    ]);
+}
 
 
     public function testStatusCourseEdition()
@@ -129,10 +165,8 @@ class ManagementCoursesControllerTest extends TestCase
     public function testApplyFilters()
     {
 
-
-
         // Crear tipos de programas educativos
-        $educational_programType1 = EducationalProgramTypesModel::factory()->create();
+        $educational_programType1 = EducationalProgramTypesModel::factory()->create()->latest()->first();
 
         $center1 = CentersModel::factory()->create([
             'uid'=>generate_uuid(),
@@ -180,7 +214,7 @@ class ManagementCoursesControllerTest extends TestCase
         $course1->update(['call_uid' => $call1->uid]);
 
 
-        $educational_program1 = EducationalProgramsModel::factory()->create()->first();
+        $educational_program1 = EducationalProgramsModel::factory()->withEducationalProgramType()->create()->first();
         $course1->update(['educational_program_uid' => $educational_program1->uid]);
 
 
@@ -200,8 +234,6 @@ class ManagementCoursesControllerTest extends TestCase
         $class = new ManagementCoursesController();
         $method = (new \ReflectionClass($class))->getMethod('applyFilters');
         $method->setAccessible(true);
-
-
 
         //Caso 2 Filtrar por fecha Inscription Rango
         $filtersDate = [['database_field' => 'inscription_date', 'value' => ['2023-01-01', '2023-12-31']]];
@@ -304,7 +336,7 @@ class ManagementCoursesControllerTest extends TestCase
         $query = CoursesModel::query();
         $method->invokeArgs($class, [ $filterscompetence, &$query]);
         $this->assertNotEmpty($query->get()); // Asegúrate de que el curso se cuenta
-      }
+    }
 
 
 

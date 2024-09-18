@@ -19,7 +19,7 @@ class CoursesTagsModelFactory extends Factory
     {
         return [
             'uid'        => generate_uuid(),
-            'course_uid' => CoursesModel::factory()->create()->first(),             
+            'course_uid' => CoursesModel::factory()->withCourseStatus()->withCourseType()->create()->first(),             
             'tag'        => $this->faker->word,
         ];
     }

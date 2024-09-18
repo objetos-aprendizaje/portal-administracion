@@ -46,7 +46,7 @@
                         <label for="name">Contenido <span class="text-red-500">*</span></label>
                     </div>
                     <div class="content-container">
-                        <textarea id="footer-page-content">Hello, World!</textarea>
+                        <textarea maxlength="1000" id="footer-page-content">Hello, World!</textarea>
                     </div>
                 </div>
 
