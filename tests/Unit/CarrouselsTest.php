@@ -19,7 +19,9 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
 use App\Http\Controllers\LogsController;
 use App\Models\EducationalProgramsModel;
+use App\Http\Controllers\SliderController;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Http\Controllers\Administration\CarrouselsController;
 use App\Http\Controllers\Management\ManagementCoursesController;
 
 class CarrouselsTest extends TestCase
@@ -402,4 +404,71 @@ class CarrouselsTest extends TestCase
         $this->assertNull($course_bd->featured_big_carrousel_description);
         $this->assertNull($course_bd->featured_big_carrousel_image_path);
     }
+
+    public function testShouldReturnCourseImageNotUploaded()
+    {
+        // Crea un curso con una imagen destacada
+        $course = CoursesModel::factory()->withCourseType()->withCourseStatus()->create([
+            'uid' => generate_uuid(),
+            'featured_big_carrousel_image_path' => 'images/test-images/743.jpg',
+        ]);
+
+        // Simula los datos que normalmente vendrían en la solicitud
+        $data = [
+            'learning_object_type' => 'course',
+            'course_uid' => $course->uid,
+        ];
+
+        // Crea una instancia de Request con los datos simulados
+        $request = Request::create('/sliders/save_previsualization', 'POST', $data);
+
+        // Llama al método privado usando reflexión
+        $sliderController = new CarrouselsController();
+
+        // Accede al método privado usando reflexión
+        $reflection = new \ReflectionClass($sliderController);
+        $method = $reflection->getMethod('getPrevisualizationImage');
+        $method->setAccessible(true);
+
+        // Llama al método y verifica el resultado
+        $imagePath = $method->invoke($sliderController, $request);
+
+        // Verifica que se haya devuelto la ruta correcta de la imagen
+        $this->assertEquals('images/test-images/743.jpg', $imagePath);
+    }
+
+    /** @test */
+    public function testShouldReturnProgramImageNotIsUploaded()
+    {
+        // Crea un programa educativo con una imagen destacada
+        $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
+            'uid' => generate_uuid(),
+            'featured_slider_image_path' => 'images/test-images/743.jpg',
+        ])->first();
+
+        // Simula los datos que normalmente vendrían en la solicitud
+        $data = [
+            'learning_object_type' => 'educational_program',
+            'educational_program_uid' => $educationalProgram->uid,
+        ];
+
+        // Crea una instancia de Request con los datos simulados
+        $request = Request::create('/sliders/save_previsualization', 'POST', $data);
+
+        // Llama al método privado usando reflexión
+        $sliderController = new CarrouselsController();
+
+        // Accede al método privado usando reflexión
+        $reflection = new \ReflectionClass($sliderController);
+        $method = $reflection->getMethod('getPrevisualizationImage');
+        $method->setAccessible(true);
+
+        // Llama al método y verifica el resultado
+        $imagePath = $method->invoke($sliderController, $request);
+
+        // Verifica que se haya devuelto la ruta correcta de la imagen
+        $this->assertEquals('images/test-images/743.jpg', $imagePath);
+    }
+
+
 }

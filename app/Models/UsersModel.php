@@ -20,7 +20,7 @@ class UsersModel extends Authenticatable
 
     public $incrementing = false;
 
-    protected $fillable = ['first_name', 'last_name', 'nif', 'email', 'user_rol_uid', 'curriculum', 'department_uid'];
+    protected $fillable = ['uid','first_name', 'last_name', 'nif', 'email', 'user_rol_uid', 'curriculum', 'department_uid'];
 
     public function rol()
     {

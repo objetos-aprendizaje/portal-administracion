@@ -672,15 +672,32 @@ class CatalogingCourseTest extends TestCase
 /**
 * @test Exporta CSV Competencias
 */
-    public function testExportCSV()
+    public function testExportCsv()
     {
 
         $user = UsersModel::factory()->create();
         $this->actingAs($user);
 
         // Crear competencias de prueba
-        $competence = CompetencesModel::factory()->create()->first();
+        $competence = CompetencesModel::factory()->create()->latest()->first();
         $this->assertDatabaseHas('competences', ['uid' => $competence->uid]);
+
+        // Crear subcompetencias asociadas a competence1
+        $subcompetence1 = CompetencesModel::factory()->create([
+            'uid' => generate_uuid(),
+            'name' => 'Subcompetence 1',
+            'parent_competence_uid' => $competence->uid // Establecer la relación padre
+        ])->first();
+
+        $subcompetence2 = CompetencesModel::factory()->create([
+            'uid' => generate_uuid(),
+            'name' => 'Subcompetence 2',
+            'parent_competence_uid' => $subcompetence1->uid // Establecer la relación padre
+        ])->first();
+
+
+        $competence2 = CompetencesModel::factory()->create(['uid' => generate_uuid(), 'name' => 'Competence 2'])->latest()->first();
+
 
         // Simular un request GET a la ruta
         $response = $this->getJson('/cataloging/export_csv');
@@ -693,10 +710,10 @@ class CatalogingCourseTest extends TestCase
                         'name',
                         'description',
                         'parent_competence_uid',
-                        'subcompetences',
+                        'allsubcompetences',
                     ],
                 ])
-                ->assertJsonCount(1) // Verificar que se devuelven 2 competencias
+                ->assertJsonCount(2) // Verificar que se devuelven 2 competencias
                 ->assertJsonFragment(['name' => $competence->name]);
 
     }

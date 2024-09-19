@@ -32,7 +32,6 @@ use Illuminate\Support\Facades\DB;
 use App\Models\CourseStatusesModel;
 use App\Models\EducationalProgramsModel;
 use App\Models\ElementsModel;
-use App\Models\GeneralOptionsModel;
 use App\Models\LmsSystemsModel;
 use App\Models\SubblocksModel;
 use App\Models\SubelementsModel;
@@ -263,8 +262,6 @@ class ManagementCoursesController extends BaseController
 
         if ($filters) $this->applyFilters($filters, $query);
 
-        //dd($query->get()->toArray());
-
         $data = $query->paginate($size);
 
         return response()->json($data, 200);
@@ -381,16 +378,15 @@ class ManagementCoursesController extends BaseController
                 $query->where('min_required_students', '>=', $filter['value']);
             } else if ($filter['database_field'] == 'max_required_students') {
                 $query->where('min_required_students', '<=', $filter['value']);
-            } else if ($filter['database_field'] == 'competences') {
+            }
+            else if ($filter['database_field'] == 'learning_results') {
                 $query->with([
-                    'blocks' => function ($query) {
-                        $query->orderBy('order', 'asc');
-                    },
-                    'blocks.competences'
-                ])->whereHas('blocks.competences', function ($query) use ($filter) {
-                    $query->whereIn('competences.uid', $filter['value']);
+                    'blocks.learningResults'
+                ])->whereHas('blocks.learningResults', function ($query) use ($filter) {
+                    $query->whereIn('learning_results.uid', $filter['value']);
                 });
-            } else {
+            }
+            else {
                 $query->where($filter['database_field'], $filter['value']);
             }
         }
@@ -744,6 +740,34 @@ class ManagementCoursesController extends BaseController
                 },
             ];
         }
+    }
+
+    public function calculateMedianEnrollingsCategories(Request $request)
+    {
+        $categoriesUids = $request->input("categories_uids");
+        $median = $this->getMedianInscribedCategories($categoriesUids);
+        return response()->json(['median' => $median], 200);
+    }
+
+    private function getMedianInscribedCategories($categoriesUids) {
+        $courses = CoursesModel::withCount([
+            "students" => function ($query) {
+                return $query->where("status", "ENROLLED")->where("acceptance_status", "ACCEPTED");
+            }
+        ])
+            ->whereHas("categories", function ($query) use ($categoriesUids) {
+                $query->whereIn("categories.uid", $categoriesUids);
+            })
+            ->whereHas("status", function ($query) {
+                $query->where("code", "FINISHED");
+            })
+            ->get();
+
+        $studentCounts = $courses->pluck('students_count');
+
+        $median = calculateMedian($studentCounts->toArray());
+
+        return $median;
     }
 
     private function addRulesIfBelongsToEducationalProgram(&$rules)

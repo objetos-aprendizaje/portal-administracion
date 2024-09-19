@@ -1181,6 +1181,36 @@ class EducationalProgramsController extends BaseController
 
         $this->duplicateCourseCategories($course_bd, $new_course_uid, $new_course);
     }
+
+
+    public function calculateMedianEnrollingsCategories(Request $request)
+    {
+        $categoriesUids = $request->input("categories_uids");
+        $median = $this->getMedianInscribedCategories($categoriesUids);
+        return response()->json(['median' => $median], 200);
+    }
+
+    private function getMedianInscribedCategories($categoriesUids) {
+        $courses = EducationalProgramsModel::withCount([
+            "students" => function ($query) {
+                return $query->where("status", "ENROLLED")->where("acceptance_status", "ACCEPTED");
+            }
+        ])
+            ->whereHas("categories", function ($query) use ($categoriesUids) {
+                $query->whereIn("categories.uid", $categoriesUids);
+            })
+            ->whereHas("status", function ($query) {
+                $query->where("code", "FINISHED");
+            })
+            ->get();
+
+        $studentCounts = $courses->pluck('students_count');
+
+        $median = calculateMedian($studentCounts->toArray());
+
+        return $median;
+    }
+
     private function duplicateEducationalProgramTags($educational_program_bd, $new_educational_program_uid)
     {
         $tags = $educational_program_bd->tags->pluck('tag')->toArray();

@@ -14,6 +14,7 @@ use App\Models\CompetenceFrameworksModel;
 use App\Models\LearningResultsModel;
 use Exception;
 use Illuminate\Http\Request;
+use App\Models\CompetenceFrameworksLevelsModel;
 
 class CompetencesLearningsResultsController extends BaseController
 {
@@ -47,6 +48,12 @@ class CompetencesLearningsResultsController extends BaseController
         ])->get();
 
         return response()->json($competenceFrameworks, 200);
+    }
+
+    public function searchLearningResults($query) {
+        $learningResults = LearningResultsModel::where('name', 'like', '%' . $query . '%')->select("uid", "name")->get();
+
+        return response()->json($learningResults);
     }
 
     public function getCompetence($competence_uid)
@@ -110,7 +117,7 @@ class CompetencesLearningsResultsController extends BaseController
             return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validator->errors()], 422);
         }
 
-        $competenceFrameworkUid = $request->get('competence_framework_uid');
+        $competenceFrameworkUid = $request->get('competence_framework_modal_uid');
 
         if ($competenceFrameworkUid) {
             $isNew = false;
@@ -129,12 +136,63 @@ class CompetencesLearningsResultsController extends BaseController
 
         $messageLog = $isNew ? 'Marco de competencias añadido' : 'Marco de competencias actualizado';
 
-        DB::transaction(function () use ($competenceFramework, $messageLog) {
+        DB::transaction(function () use ($isNew,$request,$competenceFramework, $messageLog) {
+            $competenceUid = $competenceFramework->uid;
             $competenceFramework->save();
+            if ($isNew == true && $request->get('has_levels') == "1"){
+                $this->saveLevels($competenceUid, $request['levels']);
+            }
+            if ($isNew == false && $request->get('has_levels') == "0"){
+                CompetenceFrameworksLevelsModel::where('competence_framework_uid', $competenceUid)->delete();
+            }
+            if ($isNew == false && $request->get('has_levels') == "1"){
+                $this->saveLevels($competenceUid, $request['levels']);
+            }
             LogsController::createLog($messageLog, 'Marcos de competencias', auth()->user()->uid);
         });
 
         return response()->json(['message' => $isNew ? 'Marco de competencias añadido correctamente' : 'Marco de competencias modificado correctamente'], 200);
+    }
+
+    public function saveLevels($uid, $levels){
+
+        $levels = json_decode($levels, true);
+
+        $oldLevels = CompetenceFrameworksLevelsModel::where('competence_framework_uid', $uid)->get()->toArray();
+
+        if (count($levels) < count($oldLevels)){
+            $uidsArray1 = array_column($levels, 'uid');
+            $uidsArray2 = array_column($oldLevels, 'uid');
+
+            // Paso 2: Encontrar los UID que no están en ambos arrays
+            $uidsOnlyInArray1 = array_diff($uidsArray1, $uidsArray2);
+            $uidsOnlyInArray2 = array_diff($uidsArray2, $uidsArray1);
+
+            // Unir los resultados para obtener los UIDs que no están en ambos arrays
+            $uidsNotInBoth = array_merge($uidsOnlyInArray1, $uidsOnlyInArray2);
+
+            foreach ($uidsNotInBoth as $todelete){
+                CompetenceFrameworksLevelsModel::where('uid', $todelete)->delete();
+            }
+        }
+
+        foreach ($levels as $level){
+
+            if ($level['uid']) {
+                $levelData = CompetenceFrameworksLevelsModel::find($level['uid']);
+            } else {
+                $levelData = new CompetenceFrameworksLevelsModel();
+                $levelData->uid = generate_uuid();
+            }
+
+            $levelData->competence_framework_uid = $uid;
+            $levelData->name = $level['name'];
+            $levelData->origin_code = "";
+
+            $levelData->save();
+
+        }
+
     }
 
     /**
@@ -655,7 +713,7 @@ class CompetencesLearningsResultsController extends BaseController
     public function exportCSV()
     {
         $competences_anidated = CompetencesModel::whereNull('parent_competence_uid')
-            ->with(['subcompetences'])
+            ->with(['allsubcompetences'])
             ->orderBy('name', 'ASC')
             ->get()->toArray();
 

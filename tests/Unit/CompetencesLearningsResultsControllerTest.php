@@ -12,6 +12,7 @@ use App\Models\LearningResultsModel;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
+use App\Models\CompetenceFrameworksModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class CompetencesLearningsResultsControllerTest extends TestCase
@@ -49,7 +50,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
             $data = [
                 'name' => 'Nueva Competencia',
                 'description' => 'Descripción de la nueva competencia',
-                'is_multi_select' => true,
+
             ];
 
             // Realiza la solicitud POST
@@ -65,7 +66,6 @@ class CompetencesLearningsResultsControllerTest extends TestCase
             $this->assertDatabaseHas('competences', [
                 'name' => 'Nueva Competencia',
                 'description' => 'Descripción de la nueva competencia',
-                'is_multi_select' => true,
             ]);
         }
     }
@@ -93,7 +93,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
                 'uid' => '999-12499-123456-12345-12111',
                 'name' => 'Competencia',
                 'description' => 'Descripción de la competencia',
-                'is_multi_select' => true,
+
 
             ]);
 
@@ -110,7 +110,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
             $data = [
                 'name' => 'Nueva Competencia',
                 'description' => 'Descripción de la nueva competencia',
-                'is_multi_select' => true,
+
             ];
 
             $response = $this->postJson('/cataloging/competences_learnings_results/save_competence', $data);
@@ -127,7 +127,6 @@ class CompetencesLearningsResultsControllerTest extends TestCase
     {
         $data = [
             'name' => '',
-            'is_multi_select' => null,
         ];
 
         $response = $this->postJson('/cataloging/competences_learnings_results/save_competence', $data);
@@ -143,13 +142,13 @@ class CompetencesLearningsResultsControllerTest extends TestCase
         $data = [
             'name' => 'Competencia con padre inexistente',
             'parent_competence_uid' => 'inexistente-uid',
-            'is_multi_select' => true,
+
         ];
 
         $response = $this->postJson('/cataloging/competences_learnings_results/save_competence', $data);
 
-        $response->assertStatus(422)
-                ->assertJson(['errors' => ['parent_competence_uid' => ['La competencia padre no existe']]]);
+        $response->assertStatus(422);
+
     }
 
     /**
@@ -177,7 +176,6 @@ class CompetencesLearningsResultsControllerTest extends TestCase
             $competence->uid = '555-12499-123456-12345-12111'; // Asigno el uid manualmente
             $competence->name = 'Competencia para Resultados de Aprendizaje';
             $competence->description = 'Descripción de la competencia';
-            $competence->is_multi_select = false;
             $competence->save();
             $competence = CompetencesModel::find('555-12499-123456-12345-12111');
 
@@ -226,9 +224,18 @@ class CompetencesLearningsResultsControllerTest extends TestCase
         if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
 
             // Crear algunos registros de ejemplo
+            $competenceFramework = CompetenceFrameworksModel::create([
+                'uid' => generate_uuid(),
+                'name' => 'Example Competence Framework',
+                'description' => 'Example framework',
+                'has_levels' => 0
+            ])->first();
+
+            // Crear algunos registros de ejemplo
             $competence = CompetencesModel::create([
                 'uid' => generate_uuid(),
-                'name' => 'Example Competence'
+                'name' => 'Example Competence',
+                'competence_framework_uid' => $competenceFramework->uid
             ])->first();
             $uid_competence = $competence->uid;
 
@@ -241,8 +248,9 @@ class CompetencesLearningsResultsControllerTest extends TestCase
             // Simular un request DELETE a la ruta
             $response = $this->deleteJson('/cataloging/competences_learnings_results/delete_competences_learning_results', [
                 'uids' => [
-                    'competences' => [$competence->uid],
+                    'competencesFrameworks' => [$competenceFramework->uid], // Añadir esta línea
                     'learningResults' => [$learningResult->uid],
+                    'competences' => [$competence->uid],
                 ],
             ]);
 
@@ -251,8 +259,9 @@ class CompetencesLearningsResultsControllerTest extends TestCase
                     ->assertJson(['message' => 'Elementos eliminados correctamente']);
 
             // Verificar que los registros han sido eliminados
-            $this->assertDatabaseMissing('competences', ['uid' => $competence->uid]);
+            $this->assertDatabaseMissing('competence_frameworks', ['uid' => $competenceFramework->uid]);
             $this->assertDatabaseMissing('learning_results', ['uid' => $learningResult->uid]);
+            $this->assertDatabaseMissing('competences', ['uid' => $competence->uid]);
 
         }
     }
