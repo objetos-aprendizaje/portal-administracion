@@ -7,6 +7,7 @@ use Tests\TestCase;
 
 use App\Models\UsersModel;
 use App\Services\KafkaService;
+use Illuminate\Support\Carbon;
 use App\Models\GeneralOptionsModel;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\View;
@@ -19,8 +20,8 @@ class ChangeStatusToDevelopmentEducationalProgramCommandTest extends TestCase
 {
     use RefreshDatabase;
 
-    
-    /** 
+
+    /**
      * @test
      * Este test verifica que el comando cambia el estado de los programas formativos a 'PENDING_DECISION'
      * cuando no se alcanza el número mínimo de estudiantes.
@@ -32,9 +33,9 @@ class ChangeStatusToDevelopmentEducationalProgramCommandTest extends TestCase
         $statusPendingDecision = EducationalProgramStatusesModel::where('code', 'PENDING_DECISION')->first();
 
         $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
-            'realization_start_date' => now()->subDay(),
-            'realization_finish_date' => now()->addDay(),
-            'educational_program_status_uid' => $statusInscription->uid,
+            'realization_start_date' => Carbon::now()->addDays(61)->format('Y-m-d\TH:i'),
+            'realization_finish_date' => Carbon::now()->addDays(90)->format('Y-m-d\TH:i'),
+            'educational_program_status_uid' => $statusPendingDecision->uid,
             'min_required_students' => 5,
         ]);
 
@@ -59,21 +60,23 @@ class ChangeStatusToDevelopmentEducationalProgramCommandTest extends TestCase
         $this->assertEquals('PENDING_DECISION', $educationalProgram->status->code);
     }
 
-    /** 
+    /**
      * @test
      * Este test verifica que el comando cambia el estado de los programas formativos a 'PENDING_DECISION'
      * cuando el número mínimo de estudiantes se cumple.
      */
-    public function testChangesStatusoftheeducationalprogramToFDevelopmentIfMinStudentsComplied()
+    public function testChangesStatusoftheeducationalprogramToDevelopmentIfMinStudentsComplied()
     {
         // Crear un programa educativo en estado de inscripción que cumple con el mínimo requerido de estudiantes
         $statusInscription = EducationalProgramStatusesModel::where('code', 'INSCRIPTION')->first();
-        $statusPendingDecision = EducationalProgramStatusesModel::where('code', 'PENDING_DECISION')->first();
+        $statusdevelopment = EducationalProgramStatusesModel::where('code', 'DEVELOPMENT')->first();
 
         $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
-            'realization_start_date' => now()->subDay(),
-            'realization_finish_date' => now()->addDay(),
-            'educational_program_status_uid' => $statusInscription->uid,
+            'enrolling_start_date' => Carbon::now()->addDays(30)->format('Y-m-d\TH:i'),
+            'enrolling_finish_date' => Carbon::now()->addDays(60)->format('Y-m-d\TH:i'),
+            'realization_start_date' => Carbon::now()->addDays(61)->format('Y-m-d\TH:i'),
+            'realization_finish_date' => Carbon::now()->addDays(90)->format('Y-m-d\TH:i'),
+            'educational_program_status_uid' => $statusdevelopment->uid,
             'min_required_students' => 5,
         ]);
 

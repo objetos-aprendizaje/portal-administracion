@@ -94,8 +94,7 @@ class ManagerTest extends TestCase
 
         // Crear un solo registro de aprobación automática de recursos por profesor
         $autoApproval1 = AutomaticResourceAprovalUsersModel::factory()->create(['user_uid' => $teacher1->uid]);
-        // Elimina la segunda creación para evitar duplicados
-        // $autoApproval2 = AutomaticResourceAprovalUsersModel::factory()->create(['user_uid' => $teacher2->uid]);
+
 
         // Simular el inicio de sesión como administrador
         Auth::login($admin);
@@ -108,12 +107,7 @@ class ManagerTest extends TestCase
         // Verificar que la respuesta sea 200 (OK)
         $response->assertStatus(200);
 
-        // Verificar que la vista tenga los datos correctos para 'teachers'
-        // $response->assertViewHas('teachers', function ($viewTeachers) use ($teacher1, $teacher2) {
-        //     return !empty($viewTeachers);
-        // });
 
-        // Verificar que la vista tenga los datos correctos para 'uids_teachers_automatic_aproval_resources'
         $response->assertViewHas('uids_teachers_automatic_aproval_resources', function ($uids) use ($teacher1) {
             return in_array($teacher1->uid, $uids); // Solo verifica el primer profesor
         });
@@ -754,7 +748,7 @@ class ManagerTest extends TestCase
                 [
                     'uid' => $educationalProgramType1->uid,
                     // Agrega otros campos si es necesario
-                ],                
+                ],
             ],
             // Agrega otros campos de la convocatoria si es necesario
         ]);

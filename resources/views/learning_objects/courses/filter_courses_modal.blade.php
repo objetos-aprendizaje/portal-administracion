@@ -261,11 +261,13 @@
 
                 <div>
                     <div class="label-container label-center">
-                        <label for="filter_creators">Competencias</label>
+                        <label for="filter_learning_results">Resultados de aprendizaje</label>
                     </div>
 
                     <div class="content-container mt-1">
-                        <div class="custom-treeselect" id="treeselect-competences"></div>
+                        <select id="filter_learning_results" class="mb-4" name="learning_results[]" multiple
+                            placeholder="Selecciona resultados de aprendizaje..." autocomplete="off">
+                        </select>
                     </div>
                 </div>
 

@@ -331,3 +331,17 @@ function adjustDateRandomly($date, $randomDays = 5)
     $addOrSubtract = rand(0, 1) ? '+' : '-';
     return date('Y-m-d H:i', strtotime("$date $addOrSubtract $randomDays days"));
 }
+
+function calculateMedian($numbersArray)
+{
+    $count = count($numbersArray);
+    $numbers = collect($numbersArray)->sort()->values();
+
+    if ($count % 2 === 0) {
+        $middleValues = $numbers->slice($count / 2 - 1, 2);
+        return round($middleValues->avg());
+    } else {
+        return $numbers->get(floor($count / 2));
+    }
+
+}

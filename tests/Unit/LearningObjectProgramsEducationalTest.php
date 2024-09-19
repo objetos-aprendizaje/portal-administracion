@@ -955,24 +955,29 @@ class LearningObjectProgramsEducationalTest extends TestCase
      */
     public function testGetAllCompetencesEducationalProgramType()
     {
-        // Crear datos de prueba
-        UsersModel::factory()->create();
+        $user = UsersModel::factory()->create();
+        $this->actingAs($user);
 
-        // Crear datos de prueba
-        $competences = CompetencesModel::factory()->create([
+        // Crear competencias de prueba
+        $competence = CompetencesModel::factory()->create()->latest()->first();
+        $this->assertDatabaseHas('competences', ['uid' => $competence->uid]);
+
+        // Crear subcompetencias asociadas a competence1
+        $subcompetence1 = CompetencesModel::factory()->create([
             'uid' => generate_uuid(),
-            'name' => 'Competencia 1',
-            'description' => 'Descripción de la competencia 1',
-            'type' => 'educational_program',
-            'parent_competence_uid' => null
-        ])->latest()->first();
+            'name' => 'Subcompetence 1',
+            'parent_competence_uid' => $competence->uid // Establecer la relación padre
+        ])->first();
 
-        // Crear subcompetencias para la competencia principal
-        $subcompetences = CompetencesModel::factory()->count(2)->create([
-            'parent_competence_uid' => $competences->uid
-        ]);
+        $subcompetence2 = CompetencesModel::factory()->create([
+            'uid' => generate_uuid(),
+            'name' => 'Subcompetence 2',
+            'parent_competence_uid' => $subcompetence1->uid // Establecer la relación padre
+        ])->first();
 
-        $competences->subcompetences()->saveMany($subcompetences);
+
+        $competence2 = CompetencesModel::factory()->create(['uid' => generate_uuid(), 'name' => 'Competence 2'])->latest()->first();
+
 
         // Realizar la solicitud a la ruta
         $response = $this->get('/learning_objects/educational_programs/get_educational_program_type');

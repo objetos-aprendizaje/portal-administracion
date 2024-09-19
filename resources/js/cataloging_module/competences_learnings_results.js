@@ -131,6 +131,22 @@ async function initHandlers() {
         .addEventListener("click", function () {
             exportCSV();
         });
+
+    document
+        .getElementById("has_levels")
+        .addEventListener("click", function () {
+            addTemplate();
+        });
+
+    document
+        .getElementById("btn-add-level")
+        .addEventListener("click", function () {
+            addLevel();
+        });
+
+    document
+        .getElementById("level-list")
+        .addEventListener("click", removeLevel);
 }
 
 function submitCompetencesFrameworkForm() {
@@ -138,6 +154,9 @@ function submitCompetencesFrameworkForm() {
 
     const hasLevels = document.getElementById("has_levels");
     formData.append("has_levels", hasLevels.checked ? 1 : 0);
+
+    const levels = getLevels();
+    formData.append("levels", JSON.stringify(levels));
 
     const params = {
         url: "/cataloging/competences_learnings_results/save_competence_framework",
@@ -445,6 +464,7 @@ function loadLearningResultModal(learningResultUid) {
             learning_result_uid: data.uid,
         };
         fillFormWithObject(fillFieldsForm, "learning-result-form");
+
         showModal("learning-result-modal", "Editar resultado de aprendizaje");
     });
 }
@@ -564,6 +584,8 @@ function submitFormCompetence() {
     const opennedNodes = treeCompetencesLearningResults.getOpenNodes();
     resetFormErrors("competence-form");
 
+
+
     apiFetch(params)
         .then(() => {
             hideModal("competence-modal");
@@ -596,6 +618,7 @@ async function newCompetence(
 function newCompetenceFramework() {
     resetFormFields("competence-framework-form");
     document.getElementById("has_levels").checked = false;
+    document.getElementById("level-list").innerHTML = "";
     showModal("competence-framework-modal", "Nuevo marco de competencias");
 }
 
@@ -637,9 +660,11 @@ function loadCompetenceFrameworkModal(competenceFrameworkUid) {
 
     apiFetch(params).then((data) => {
         document.getElementById("has_levels").checked = data.has_levels;
-        document.getElementById("competence_framework_uid").value = data.uid;
+        document.getElementById("competence_framework_modal_uid").value = data.uid;
+
 
         fillFormWithObject(data, "competence-framework-form");
+        loadLevels(data['levels'], data['uid']);
         showModal("competence-framework-modal", "Editar marco de competencias");
     });
 }
@@ -749,5 +774,87 @@ function submitImportFrameworkForm() {
         })
         .catch((data) => {
             showFormErrors(data.errors);
+        });
+}
+
+function addTemplate(){
+
+    const hasLevel = document.getElementById("has_levels").checked;
+    if (hasLevel == true){
+        const levelList = document.getElementById("level-list").innerHTML;
+        if (levelList == ""){
+            addLevel();
+        }
+        document.getElementById("level").classList.remove("hidden");
+    }else{
+        document.getElementById("level").classList.add("hidden");
+    }
+}
+
+function addLevel() {
+    const template = document
+        .getElementById("level-template")
+        .content.cloneNode(true);
+    document.getElementById("level-list").appendChild(template);
+}
+
+function removeLevel(event) {
+
+    var elements = document.getElementsByClassName('level');
+    var count = elements.length;
+
+    if (count > 1){
+        let target = event.target;
+
+        if (!target.classList.contains(".btn-remove-level")) {
+            target = target.closest(".btn-remove-level");
+        }
+
+        if (target) {
+            target.closest(".level").remove();
+        }
+    }
+}
+
+function getLevels(){
+
+    const levels = document
+        .getElementById("level-list")
+        .querySelectorAll(".level");
+
+    const levelsData = [];
+
+    levels.forEach((level) => {
+        let levelData = {
+            uid: level.dataset.levelUid ?? null,
+            name: level.querySelector(".level-name").value,
+        };
+
+        levelsData.push(levelData);
+    });
+
+    return levelsData;
+
+}
+
+function loadLevels(levels, uid){
+
+        const containerLevels = document.getElementById("level-list");
+        containerLevels.innerHTML = "";
+
+
+        levels.forEach((level) => {
+            const levelTemplate = document
+                .getElementById("level-template")
+                .content.cloneNode(true);
+
+            levelTemplate.querySelector(".level").dataset.levelUid = level.uid;
+
+            levelTemplate.querySelector(".level-name").value = level.name;
+
+            containerLevels.appendChild(levelTemplate);
+
+            document.getElementById("level").classList.remove("hidden");
+
         });
 }

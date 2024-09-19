@@ -966,6 +966,14 @@ export function showElement(element, show) {
     else element.classList.add("hidden");
 }
 
+export function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
 function getAllLabelsOfPage() {
     const labels = document.querySelectorAll("label");
     labels.forEach((label, index) => {

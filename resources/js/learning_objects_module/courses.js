@@ -39,6 +39,7 @@ import {
     fillFormWithObject,
     changeColorColoris,
     updateInputFile,
+    debounce,
 } from "../app.js";
 import { heroicon } from "../heroicons.js";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
@@ -64,6 +65,7 @@ let tomSelectCategories;
 let tomSelectContactEmails;
 
 let tomSelectCategoriesFilter;
+let tomSelectLearningResultsFilter;
 
 let tomSelectNoCoordinatorsTeachersFilter;
 let tomSelectCoordinatorsTeachersFilter;
@@ -80,7 +82,6 @@ let flatpickrRealizationDate;
 let filters = [];
 
 let selectedCompetencesFilter = [];
-let competencesTreeSelect;
 
 let selectedCourseUid = null;
 
@@ -887,13 +888,12 @@ function controlDeleteFilters(deleteBtn) {
         flatpickrInscriptionDate.clear();
     else if (filterKey == "filter_realization_date")
         flatpickrRealizationDate.clear();
-    else if (filterKey == "filter_competences") {
-        selectedCompetencesFilter = [];
-        competencesTreeSelect.updateValue([]);
-    } else if (filterKey == "coordinators_teachers")
+    else if (filterKey == "coordinators_teachers")
         tomSelectCoordinatorsTeachersFilter.clear();
     else if (filterKey == "no_coordinators_teachers")
         tomSelectNoCoordinatorsTeachersFilter.clear();
+    else if (filterKey == "learning_results")
+        tomSelectLearningResultsFilter.clear();
     else document.getElementById(filterKey).value = "";
 
     showFilters();
@@ -912,8 +912,8 @@ function resetFilters() {
     flatpickrInscriptionDate.clear();
     flatpickrRealizationDate.clear();
     tomSelectNoCoordinatorsTeachersFilter.clear();
+    tomSelectLearningResultsFilter.clear();
     tomSelectCoordinatorsTeachersFilter.clear();
-    competencesTreeSelect.updateValue([]);
     tomSelectCategoriesFilter.clear();
     tomSelectEducationalProgramsFilter.clear();
 
@@ -1164,6 +1164,25 @@ function collectFilters() {
             );
     }
 
+    if (tomSelectLearningResultsFilter) {
+        const learningResults = tomSelectLearningResultsFilter.getValue();
+
+        if (learningResults.length) {
+            const selectedLearningResultsLabel =
+                getOptionsSelectedTomSelectInstance(
+                    tomSelectLearningResultsFilter
+                );
+
+            addFilter(
+                "Resultados de aprendizaje",
+                tomSelectLearningResultsFilter.getValue(),
+                selectedLearningResultsLabel,
+                "learning_results",
+                "learning_results"
+            );
+        }
+    }
+
     if (tomSelectCreatorsFilter) {
         const creators = tomSelectCreatorsFilter.items;
 
@@ -1330,6 +1349,14 @@ function initializeTomSelect() {
 
     tomSelectCategories = getMultipleTomSelectInstance("#select-categories");
 
+    const debouncedUpdateMedianInscriptionsLabel = debounce(
+        updateMedianInscriptionsLabel,
+        1000
+    );
+    tomSelectCategories.on("change", function (value) {
+        debouncedUpdateMedianInscriptionsLabel(value);
+    });
+
     tomSelectCategoriesFilter =
         getMultipleTomSelectInstance("#filter_categories");
 
@@ -1338,6 +1365,17 @@ function initializeTomSelect() {
     );
     tomSelectNoCoordinatorsTeachersFilter = getMultipleTomSelectInstance(
         "#filter_no_coordinators_teachers"
+    );
+
+    tomSelectLearningResultsFilter = getLiveSearchTomSelectInstance(
+        "#filter_learning_results",
+        "/searcher/get_learning_results/",
+        function (entry) {
+            return {
+                value: entry.uid,
+                text: entry.name,
+            };
+        }
     );
 
     tomSelectCourseStatusesFilter = getMultipleTomSelectInstance(
@@ -1402,6 +1440,35 @@ function controlsHandlerModalCourse() {
         });
 }
 
+function updateMedianInscriptionsLabel(value) {
+    const categoriesMedianInscriptionsLabel = document.getElementById(
+        "categories-median-inscriptions"
+    );
+
+    if (!value.length) {
+        categoriesMedianInscriptionsLabel.innerText =
+            "Seleccione una o varias categorías para calcular la mediana de inscripciones";
+        return;
+    }
+
+    const params = {
+        url: `/learning_objects/courses/calculate_median_enrollings_categories`,
+        method: "POST",
+        stringify: true,
+        body: {
+            categories_uids: value,
+        },
+    };
+
+    apiFetch(params).then((data) => {
+        categoriesMedianInscriptionsLabel.innerText =
+            "Se estima una mediana de inscripciones de " +
+            data.median +
+            " estudiante" +
+            (data.median !== 1 ? "s" : "");
+    });
+}
+
 /**
  * Inicializa la tabla de cursos utilizando 'Tabulator'.
  * Configura las columnas, las opciones de ajax y otros ajustes de la tabla.
@@ -1441,13 +1508,13 @@ function initializeCoursesTable() {
             headerSort: false,
             width: 60,
         },
-        { title: "Título", field: "title", resizable: true, widthgrow: 3 },
+        { title: "Título", field: "title", resizable: true, widthGrow: 3 },
         {
             title: "Identificador",
             field: "identifier",
             visible: false,
             resizable: true,
-            widthgrow: 2,
+            widthGrow: 2,
         },
         {
             title: "Estado",
@@ -1462,7 +1529,7 @@ function initializeCoursesTable() {
                 }</div>
                 `;
             },
-            widthgrow: 2,
+            widthGrow: 2,
         },
         {
             title: "Fecha de inicio de realización",
@@ -1472,7 +1539,7 @@ function initializeCoursesTable() {
                 if (!isoDate) return "";
                 return formatDateTime(isoDate);
             },
-            widthgrow: 2,
+            widthGrow: 2,
         },
         {
             title: "Fecha de fin de realización",
@@ -1482,7 +1549,7 @@ function initializeCoursesTable() {
                 if (!isoDate) return "";
                 return formatDateTime(isoDate);
             },
-            widthgrow: 2,
+            widthGrow: 2,
         },
         {
             title: "Convocatoria",
@@ -1491,7 +1558,7 @@ function initializeCoursesTable() {
                 const data = cell.getValue();
                 return data;
             },
-            widthgrow: 2,
+            widthGrow: 2,
         },
         {
             title: "Programa formativo",
@@ -1500,7 +1567,7 @@ function initializeCoursesTable() {
                 const data = cell.getValue();
                 return data;
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
         },
         {
@@ -1510,7 +1577,7 @@ function initializeCoursesTable() {
                 const data = cell.getValue();
                 return data;
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
         },
         {
@@ -1520,7 +1587,7 @@ function initializeCoursesTable() {
                 const data = cell.getValue();
                 return data;
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
         },
         {
@@ -1530,7 +1597,7 @@ function initializeCoursesTable() {
                 const data = cell.getValue();
                 return data;
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
         },
         {
@@ -1540,7 +1607,7 @@ function initializeCoursesTable() {
                 const data = cell.getValue();
                 return data;
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
         },
         {
@@ -1551,7 +1618,7 @@ function initializeCoursesTable() {
                 if (!isoDate) return "";
                 return formatDateTime(isoDate);
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
         },
         {
@@ -1562,7 +1629,7 @@ function initializeCoursesTable() {
                 if (!isoDate) return "";
                 return formatDateTime(isoDate);
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
         },
         {
@@ -1573,7 +1640,7 @@ function initializeCoursesTable() {
                 if (!isoDate) return "";
                 return formatDateTime(isoDate);
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
         },
         {
@@ -1584,7 +1651,7 @@ function initializeCoursesTable() {
                 if (!isoDate) return "";
                 return formatDateTime(isoDate);
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
         },
         {
@@ -1598,7 +1665,7 @@ function initializeCoursesTable() {
                     return "Textual";
                 }
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
         },
         {
@@ -1610,7 +1677,7 @@ function initializeCoursesTable() {
                     return "<a href='" + data + "' target='_blank'>Enlace</a>";
                 }
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
         },
         {
@@ -1620,7 +1687,7 @@ function initializeCoursesTable() {
                 const data = cell.getValue();
                 return data;
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
         },
         {
@@ -1630,7 +1697,7 @@ function initializeCoursesTable() {
                 const data = cell.getValue();
                 return data;
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
         },
         {
@@ -1644,7 +1711,7 @@ function initializeCoursesTable() {
                 });
                 return tagsArray.join(", ");
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
             headerSort: false,
         },
@@ -1659,7 +1726,7 @@ function initializeCoursesTable() {
                 });
                 return emailsArray.join(", ");
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
             headerSort: false,
         },
@@ -1672,7 +1739,7 @@ function initializeCoursesTable() {
                     return "<a href='" + data + "' target='_blank'>Enlace</a>";
                 }
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
         },
         {
@@ -1687,7 +1754,7 @@ function initializeCoursesTable() {
                 const concatenatedNames = fullNames.join(", ");
                 return concatenatedNames;
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
             headerSort: false,
         },
@@ -1703,7 +1770,7 @@ function initializeCoursesTable() {
                 const concatenatedNames = fullNames.join(", ");
                 return concatenatedNames;
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
             headerSort: false,
         },
@@ -1718,7 +1785,7 @@ function initializeCoursesTable() {
                 });
                 return categoriesArray.join(", ");
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
             headerSort: false,
         },
@@ -1729,7 +1796,7 @@ function initializeCoursesTable() {
                 const data = cell.getValue();
                 return data + " €";
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
         },
         {
@@ -1743,7 +1810,7 @@ function initializeCoursesTable() {
                     return "Si";
                 }
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
         },
         {
@@ -1757,7 +1824,7 @@ function initializeCoursesTable() {
                     return "Si";
                 }
             },
-            widthgrow: 2,
+            widthGrow: 2,
             visible: false,
         },
         {
@@ -2637,6 +2704,9 @@ function resetModal() {
         "feature-main-carrousel-container"
     );
     showArea(featureMainCarrouselContainer, true);
+
+    document.getElementById("categories-median-inscriptions").innerText =
+        "Seleccione una o varias categorías para calcular la mediana de inscripciones";
 
     updatePaymentMode("SINGLE_PAYMENT");
     document.getElementById("payment-terms-list").innerHTML = "";

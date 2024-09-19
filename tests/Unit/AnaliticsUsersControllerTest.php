@@ -58,11 +58,12 @@ class AnaliticsUsersControllerTest extends TestCase
 
         // Verificar que la respuesta es correcta
         $response->assertStatus(200);
-        $response->assertViewIs('analytics.index');
+        $response->assertViewIs('analytics.users_per_role.index');
         $response->assertViewHas('page_name', 'Analíticas de usuarios');
         $response->assertViewHas('page_title', 'Analíticas de usuarios');
         $response->assertViewHas('resources', [
-            "resources/js/analytics_module/analytics_users.js"
+            "resources/js/analytics_module/analytics_users.js",
+            "resources/js/analytics_module/d3.js"
         ]);
         $response->assertViewHas('total_users', 7);
         $response->assertViewHas('tabulator', true);
@@ -92,6 +93,55 @@ class AnaliticsUsersControllerTest extends TestCase
         $responseData = $response->json();
         $this->assertIsArray($responseData, 'La respuesta no es un array.');
 
+
+    }
+
+    public function testGetUsersRolesGraph()
+    {
+        $user = UsersModel::factory()->create()->latest()->first();
+        Auth::login($user);
+
+        // Arrange: Create a role and users with that role
+        $roles1 = UserRolesModel::firstOrCreate(['name' => 'Gestor','code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);
+        $roles2 = UserRolesModel::firstOrCreate(['name' => 'Administrador','code' => 'ADMNINISTRATOR'], ['uid' => generate_uuid()]);
+        $user->roles()->attach($roles1->uid, ['uid' => generate_uuid()]);
+
+
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles1);
+
+         // Simula datos de TooltipTextsModel
+         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+         View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+
+
+        $response = $this->getJson(route('analytics-users-roles-graph'));
+
+
+        $response->assertStatus(200);
+
+    }
+
+    public function testGetUsersRolesWithSorting()
+    {
+        // Prepara los datos necesarios para la prueba
+        $roles1 = UserRolesModel::firstOrCreate(['name' => 'Gestor','code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);
+        $roles2 = UserRolesModel::firstOrCreate(['name' => 'Administrador','code' => 'ADMNINISTRATOR'], ['uid' => generate_uuid()]);
+
+        // Define los parámetros de ordenación
+        $sort = [
+            ['field' => 'name', 'dir' => 'asc'], // Ordenar por el campo name
+        ];
+
+        // Realiza la solicitud a la ruta con parámetros de ordenación
+        $response = $this->get(route('analytics-users-roles', ['sort' => $sort]));
+
+        // Verifica que la respuesta sea un JSON y tenga el código de estado 200
+        $response->assertStatus(200);
 
     }
 

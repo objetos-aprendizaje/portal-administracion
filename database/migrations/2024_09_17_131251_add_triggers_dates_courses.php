@@ -12,6 +12,8 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Temporalmente se inhabilita
+        /*
         $tablePrefix = DB::getTablePrefix();
         $tableName = $tablePrefix . (new CoursesModel())->getTable();
 
@@ -125,7 +127,7 @@ return new class extends Migration
                     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'The realization finish date cannot be earlier than the realization start date';
                 END IF;
             END
-        ");
+        "); */
     }
 
     /**

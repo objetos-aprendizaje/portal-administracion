@@ -24,6 +24,7 @@ import {
     getMultipleFreeEmailsTomSelectInstance,
     updateInputFile,
     fillFormWithObject,
+    debounce,
 } from "../app";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
 import { showToast } from "../toast.js";
@@ -245,6 +246,15 @@ function initializeTomSelect() {
 
     tomSelectTags = getMultipleFreeTomSelectInstance("#tags");
     tomSelectCategories = getMultipleTomSelectInstance("#select-categories");
+
+    const debouncedUpdateMedianInscriptionsLabel = debounce(
+        updateMedianInscriptionsLabel,
+        1000
+    );
+    tomSelectCategories.on("change", function (value) {
+        debouncedUpdateMedianInscriptionsLabel(value);
+    });
+
     tomSelectContactEmails =
         getMultipleFreeEmailsTomSelectInstance("#contact_emails");
 }
@@ -865,6 +875,35 @@ function addDocument() {
         .getElementById("document-template")
         .content.cloneNode(true);
     document.getElementById("document-list").appendChild(template);
+}
+
+function updateMedianInscriptionsLabel(value) {
+    const categoriesMedianInscriptionsLabel = document.getElementById(
+        "categories-median-inscriptions"
+    );
+
+    if (!value.length) {
+        categoriesMedianInscriptionsLabel.innerText =
+            "Seleccione una o varias categorías para calcular la mediana de inscripciones";
+        return;
+    }
+
+    const params = {
+        url: `/learning_objects/educational_programs/calculate_median_enrollings_categories`,
+        method: "POST",
+        stringify: true,
+        body: {
+            categories_uids: value,
+        },
+    };
+
+    apiFetch(params).then((data) => {
+        categoriesMedianInscriptionsLabel.innerText =
+            "Se estima una mediana de inscripciones de " +
+            data.median +
+            " estudiante" +
+            (data.median !== 1 ? "s" : "");
+    });
 }
 
 function removeDocument(event) {

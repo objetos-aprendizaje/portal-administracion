@@ -183,8 +183,6 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/administration/departments/get_department/{license_uid}', [DepartmentsController::class, 'getDepartment']);
         Route::get('/administration/departments/get_departments', [DepartmentsController::class, 'getDepartments']);
         Route::delete('/administration/departments/delete_departments', [DepartmentsController::class, 'deleteDepartments']);
-
-
     });
 
     Route::middleware(['role:ADMINISTRATOR,MANAGEMENT'])->group(function () {
@@ -278,6 +276,8 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::post('notifications/email/save_email_notification', [EmailNotificationsController::class, 'saveEmailNotification'])->name('save-notification-email');
         Route::get('notifications/email/get_email_notification/{notification_email_uid}', [EmailNotificationsController::class, 'getEmailNotification'])->name('get-notification-email');
         Route::delete('/notifications/email/delete_email_notifications', [EmailNotificationsController::class, 'deleteEmailNotifications']);
+
+        Route::get('/searcher/get_learning_results/{query}', [CompetencesLearningsResultsController::class, 'searchLearningResults']);
     });
 
     Route::middleware(['role:ADMINISTRATOR,MANAGEMENT,TEACHER'])->group(function () {
@@ -290,6 +290,7 @@ Route::middleware(['combined.auth'])->group(function () {
 
     Route::middleware(['role:ADMINISTRATOR,MANAGEMENT,TEACHER'])->group(function () {
         Route::post('/learning_objects/courses/save_course', [ManagementCoursesController::class, 'saveCourse']);
+        Route::post('/learning_objects/courses/calculate_median_enrollings_categories', [ManagementCoursesController::class, 'calculateMedianEnrollingsCategories']);
         Route::post('/learning_objects/courses/filter_courses', [ManagementCoursesController::class, 'filterCourses']);
         Route::get('/learning_objects/courses/get_course/{course_uid}', [ManagementCoursesController::class, 'getCourse']);
         Route::get('/learning_objects/courses/get_course_students/{course_uid}', [ManagementCoursesController::class, 'getCourseStudents']);
@@ -326,6 +327,7 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/learning_objects/educational_resources/get_resources', [EducationalResourcesController::class, 'getResources']);
         Route::get('/learning_objects/educational_programs/get_educational_programs', [EducationalProgramsController::class, 'getEducationalPrograms']);
         Route::post('/learning_objects/educational_programs/save_educational_program', [EducationalProgramsController::class, 'saveEducationalProgram']);
+        Route::post('/learning_objects/educational_programs/calculate_median_enrollings_categories', [EducationalProgramsController::class, 'calculateMedianEnrollingsCategories']);
         Route::get('/learning_objects/educational_programs/get_educational_program/{educational_program_uid}', [EducationalProgramsController::class, 'getEducationalProgram']);
         Route::delete('/learning_objects/educational_programs/delete_educational_programs', [EducationalProgramsController::class, 'deleteEducationalPrograms']);
         Route::get('/learning_objects/educational_programs/search_courses_without_educational_program/{search}', [EducationalProgramsController::class, 'searchCoursesWithoutEducationalProgram']);

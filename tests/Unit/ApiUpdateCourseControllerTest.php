@@ -25,12 +25,13 @@ class ApiUpdateCourseControllerTest extends TestCase
         $admin = UsersModel::factory()->create();
         $this->actingAs($admin);
 
-        // Datos de para genera la key de la api 
+        // Datos de para genera la key de la api
         $apikey = ApiKeysModel::factory()->create()->first();
 
         $this->assertDatabaseHas('api_keys', ['uid' => $apikey->uid]);
 
         $edu_program = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
+
             'enrolling_finish_date' => Carbon::now()->addDays(30)->format('Y-m-d\TH:i'),
         ])->first();
 
@@ -56,8 +57,8 @@ class ApiUpdateCourseControllerTest extends TestCase
             'realization_start_date' =>  Carbon::now()->addDays(40)->format('Y-m-d\TH:i'),
             'realization_finish_date' => Carbon::now()->addDays(50)->format('Y-m-d\TH:i'),
             'educational_program_uid' => $edu_program->uid,
-        ];      
-        
+        ];
+
         // Realizar la solicitud POST con los datos de actualización del curso
         $response = $this->postJson('/api/update_course', $updateData, [
             'API-KEY' => $apikey->api_key
@@ -88,7 +89,7 @@ class ApiUpdateCourseControllerTest extends TestCase
         $admin = UsersModel::factory()->create();
         $this->actingAs($admin);
 
-        // Datos de para genera la key de la api 
+        // Datos de para genera la key de la api
         $apikey = ApiKeysModel::factory()->create()->first();
 
         $this->assertDatabaseHas('api_keys', ['uid' => $apikey->uid]);
@@ -125,7 +126,7 @@ class ApiUpdateCourseControllerTest extends TestCase
         $admin = UsersModel::factory()->create();
         $this->actingAs($admin);
 
-        // Datos de para genera la key de la api 
+        // Datos de para genera la key de la api
         $apikey = ApiKeysModel::factory()->create()->first();
 
         $this->assertDatabaseHas('api_keys', ['uid' => $apikey->uid]);

@@ -53,6 +53,25 @@
                     </div>
                 </div>
 
+                <div id="level" class="hidden">
+                    <div id="level" class="field">
+                        <div class="label-container label-center">
+                            <label for="level">Niveles</label>
+                        </div>
+                        <div class="content-container items-center">
+                            <div id="level-list"></div>
+
+                            <div class="flex justify-end">
+                                <div>
+                                    <button type="button" class="btn-icon" id="btn-add-level">
+                                        {{ e_heroicon('plus', 'outline') }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="btn-block">
                     <button type="submit" class="btn btn-primary">Guardar
                         {{ e_heroicon('paper-airplane', 'outline') }}</button>
@@ -63,9 +82,24 @@
                 </div>
 
 
-                <input type="hidden" id="competence_framework_uid" name="competence_framework_uid" value="" />
+                <input type="hidden" id="competence_framework_modal_uid" name="competence_framework_modal_uid" value="" />
             </form>
         </div>
     </div>
 
 </div>
+
+<template id="level-template">
+    <div class="level mb-2">
+
+        <div class="mb-2">
+            <input type="text" class="poa-input level-name" placeholder="Nombre del nivel" />
+        </div>
+
+        <button class="w-[32px] h-[32px] btn-icon btn-remove-level" type="button">
+            {{ e_heroicon('trash', 'outline') }}
+        </button>
+
+        <input type="hidden" class="level_uid" name="level_uid" value="" />
+    </div>
+</template>

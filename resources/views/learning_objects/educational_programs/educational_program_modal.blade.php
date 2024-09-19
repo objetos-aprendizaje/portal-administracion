@@ -78,6 +78,8 @@
                                     {{ $category['name'] }}</option>
                             @endforeach
                         </select>
+
+                        <small id="categories-median-inscriptions">Seleccione una o varias categorías para calcular la mediana de inscripciones</small>
                     </div>
                 </div>
 
