@@ -239,7 +239,7 @@ class CallsController extends BaseController
         $query = CallsModel::query();
 
         if ($search) {
-            $query->where('name', 'LIKE', "%{$search}%");
+            $query->where('name', 'ILIKE', "%{$search}%");
         }
 
         if (isset($sort) && !empty($sort)) {

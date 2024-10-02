@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('educational_programs_email_contacts', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('educational_program_uid', 36);
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('educational_program_uid', 36);
             $table->foreign('educational_program_uid', 'edu_prog_em_uid_fk') // Shortened name for the foreign key
                   ->references('uid')->on('educational_programs')
                   ->onDelete('cascade');

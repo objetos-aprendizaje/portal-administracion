@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\GeneralOptionsModel;
 use App\Models\Saml2TenantsModel;
+use App\Models\UsersAccessesModel;
 use App\Models\UsersModel;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
@@ -11,7 +12,6 @@ use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Cache;
 
 
 class LoginController extends BaseController
@@ -56,93 +56,48 @@ class LoginController extends BaseController
     {
         $credentials = $request->only('email', 'password');
 
-        $user = UsersModel::with('roles')
-            ->whereHas('roles', function ($query) {
-                $query->whereIn('code', ['ADMINISTRATOR', 'MANAGEMENT', 'TEACHER']);
-            })
-            ->where('email', $credentials['email'])
-            ->first();
+        try {
+            $this->loginUser($credentials['email']);
+        } catch (\Exception $e) {
+            return response()->json(['authenticated' => false, 'error' => $e->getMessage()])->setStatusCode(401);
+        }
+
+        $user = $this->getUser($credentials['email']);
 
         if ($user && Hash::check($credentials['password'], $user->password)) {
             Auth::login($user);
 
+            $this->saveUserAccess($user);
+
             return response()->json(['authenticated' => true]);
+        } else {
+            return response()->json(['authenticated' => false, 'error' => 'No se ha encontrado ninguna cuenta con esas credenciales'])->setStatusCode(401);
+        }
+    }
+
+    public function handleSocialCallback($loginMethod)
+    {
+        $this->validateLoginMethod($loginMethod);
+
+        $userSocialLogin = Socialite::driver($loginMethod)->user();
+
+        try {
+            $this->loginUser($userSocialLogin->email);
+        } catch (\Exception $e) {
+            return redirect('login')->withErrors($e->getMessage());
         }
 
-        return response()->json(['authenticated' => false, 'error' => 'No se ha encontrado ninguna cuenta con esas credenciales'])->setStatusCode(401);
-    }
-
-    public function redirectToGoogle()
-    {
-        return Socialite::driver('google')->redirect();
-    }
-
-    public function handleGoogleCallback()
-    {
-        $user_google = Socialite::driver('google')->user();
-
-        session(['email' => $user_google->email, 'google_id' => $user_google->id, 'token_google' => $user_google->token]);
-
         return redirect('/');
     }
 
-    public function redirectToTwitter()
+    public function redirectToSocialLogin($loginMethod)
     {
-        return Socialite::driver('twitter')->redirect();
-    }
-
-    public function handleTwitterCallback()
-    {
-        $user_twitter = Socialite::driver('twitter')->user();
-
-        session(['email' => $user_twitter->email, 'twitter_id' => $user_twitter->id, 'token_twitter' => $user_twitter->token]);
-
-        return redirect('/');
-    }
-
-    public function redirectToFacebook()
-    {
-        return Socialite::driver('facebook')->redirect();
-    }
-
-    public function handleFacebookCallback()
-    {
-        $user_facebook = Socialite::driver('facebook')->user();
-
-        session(['email' => $user_facebook->email, 'facebook_id' => $user_facebook->id, 'token_facebook' => $user_facebook->token]);
-
-        return redirect('/#');
-    }
-
-    public function redirectToLinkedin()
-    {
-        return Socialite::driver('linkedin-openid')->redirect();
-    }
-
-    public function handleLinkedinCallback()
-    {
-        $user_linkedin = Socialite::driver('linkedin-openid')->user();
-
-        session(['email' => $user_linkedin->email, 'linkedin_id' => $user_linkedin->id, 'token_linkedin' => $user_linkedin->token]);
-
-        return redirect('/');
+        $this->validateLoginMethod($loginMethod);
+        return Socialite::driver($loginMethod)->redirect();
     }
 
     public function logout()
     {
-        if (Session::get('google_id')) {
-            $token = Session::get('token_google');
-
-            $client = new \GuzzleHttp\Client();
-
-            try {
-                $client->post('https://oauth2.googleapis.com/revoke', [
-                    'form_params' => ['token' => $token]
-                ]);
-            } catch (\GuzzleHttp\Exception\ClientException $e) {
-            }
-        }
-
         Session::flush();
         Auth::logout();
 
@@ -169,5 +124,44 @@ class LoginController extends BaseController
     {
         $user->token_x509 = "";
         $user->save();
+    }
+
+    private function loginUser($email)
+    {
+        $user = $this->getUser($email);
+        $this->saveUserAccess($user);
+        Auth::login($user);
+    }
+
+    private function getUser($email)
+    {
+        $user = UsersModel::with('roles')
+            ->whereHas('roles', function ($query) {
+                $query->whereIn('code', ['ADMINISTRATOR', 'MANAGEMENT', 'TEACHER']);
+            })
+            ->where('email', $email)
+            ->first();
+
+        if (!$user) {
+            throw new \Exception('No hay ninguna cuenta asociada al email');
+        }
+
+        return $user;
+    }
+
+    private function saveUserAccess($user)
+    {
+        UsersAccessesModel::insert([
+            'uid' => generate_uuid(),
+            'user_uid' => $user->uid,
+            'date' => date('Y-m-d H:i:s')
+        ]);
+    }
+
+    private function validateLoginMethod($loginMethod)
+    {
+        if (!in_array($loginMethod, ['google', 'twitter', 'facebook', 'linkedin-openid'])) {
+            throw new \Exception('Método de login no válido');
+        }
     }
 }

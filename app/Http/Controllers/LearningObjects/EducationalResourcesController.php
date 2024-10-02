@@ -27,9 +27,17 @@ use Illuminate\Routing\Controller as BaseController;
 use App\Models\EducationalResourcesEmailContactsModel;
 use App\Models\GeneralNotificationsAutomaticUsersModel;
 use App\Models\EducationalResourcesLearningResultsModel;
+use App\Services\EmbeddingsService;
 
 class EducationalResourcesController extends BaseController
 {
+    protected $embeddingsService;
+
+    public function __construct(EmbeddingsService $embeddingsService)
+    {
+        $this->embeddingsService = $embeddingsService;
+    }
+
     public function index()
     {
 
@@ -81,8 +89,8 @@ class EducationalResourcesController extends BaseController
         $filters = $request->get('filters');
 
         if ($search) {
-            $query->where('title', 'LIKE', "%{$search}%")
-                ->orWhere('educational_resources.description', 'LIKE', "%{$search}%")
+            $query->where('title', 'ILIKE', "%{$search}%")
+                ->orWhere('educational_resources.description', 'ILIKE', "%{$search}%")
                 ->orWhere('identifier', $search);
         }
 
@@ -179,11 +187,16 @@ class EducationalResourcesController extends BaseController
         $resource->license_type_uid = $request->input('license_type_uid');
 
         return DB::transaction(function () use ($request, $resource, $isNew) {
+            $embeddings = $this->generateResourceEmbeddings($request, $resource);
 
             $this->handleResourceImage($request, $resource);
             $this->fillResourceDetails($request, $resource);
             $this->handleResourceWay($request, $resource);
             $resource->save();
+
+            $resource->embeddings = $embeddings;
+            $resource->save();
+
             $this->handleTags($request, $resource);
             $this->handleMetadata($request, $resource);
             $this->handleCategories($request, $resource);
@@ -193,6 +206,25 @@ class EducationalResourcesController extends BaseController
 
             return response()->json(['message' => 'Recurso añadido correctamente']);
         }, 5);
+    }
+
+    /**
+     *
+     * Si el recurso no tiene embeddings, se generan.
+     * Si el título o la descripción han cambiado, se generan nuevos embeddings.
+     * Si no se cumplen las condiciones anteriores o falla la API, se devuelven los embeddings actuales.
+     */
+    private function generateResourceEmbeddings($request, $resourceBd)
+    {
+        $title = $request->input('title');
+        $description = $request->input('description');
+
+        if (!$resourceBd->embeddings || $title != $resourceBd->title || $description != $resourceBd->description) {
+            $embeddings = $this->embeddingsService->getEmbedding($title . ' ' . $description);
+            return $embeddings ?: $resourceBd->embeddings;
+        }
+
+        return $resourceBd->embeddings;
     }
 
     private function handleLearningResults($request, $resource)

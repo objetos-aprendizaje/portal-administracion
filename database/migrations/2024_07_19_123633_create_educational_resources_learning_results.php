@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('educational_resources_learning_results', function (Blueprint $table) {
-            $table->string('educational_resource_uid', 36);
-            $table->string('learning_result_uid', 36);
+            $table->uuid('educational_resource_uid', 36);
+            $table->uuid('learning_result_uid', 36);
 
             $table->foreign('educational_resource_uid', 'edu_res_uid_fk')
                 ->references('uid')->on('educational_resources')

@@ -36,26 +36,17 @@
                         <label for="slug">Slug <span class="text-red-500">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input maxlength="255" class="required poa-input" placeholder="aviso-legal" type="text" id="slug"
-                            name="slug" />
+                        <input maxlength="255" class="required poa-input" placeholder="aviso-legal" type="text"
+                            id="slug" name="slug" />
                     </div>
                 </div>
 
                 <div class="field">
-                    <div class="label-container label-center">
-                        <label for="name">Contenido <span class="text-red-500">*</span></label>
+                    <div class="label-container">
+                        <label for="footer-page-content">Contenido <span class="text-red-500">*</span></label>
                     </div>
                     <div class="content-container">
                         <textarea maxlength="1000" id="footer-page-content">Hello, World!</textarea>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <div class="label-container label-center">
-                        <label for="order">Orden <span class="text-danger">*</span></label>
-                    </div>
-                    <div class="content-container">
-                        <input placeholder="1" type="number" id="order" name="order" class="poa-input" />
                     </div>
                 </div>
 
@@ -68,15 +59,22 @@
                     </div>
                 </div>
 
-                <div class="checkbox mb-2">
-                    <label for="acceptance_required" class="inline-flex relative items-center cursor-pointer">
-                        <input type="checkbox" id="acceptance_required"
-                            name="acceptance_required" class="sr-only peer">
-                        <div
-                            class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
+                <div class="field">
+                    <div class="label-container">
+                        <label for="acceptance_required">Aceptación requerida</label>
+                    </div>
+                    <div class="content-container">
+                        <div class="checkbox mb-2">
+                            <label for="acceptance_required" class="inline-flex relative items-center cursor-pointer">
+                                <input type="checkbox" id="acceptance_required" name="acceptance_required"
+                                    class="sr-only peer">
+                                <div
+                                    class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
+                                </div>
+                                <div class="checkbox-name"></div>
+                            </label>
                         </div>
-                        <div class="checkbox-name">Aceptación requerida</div>
-                    </label>
+                    </div>
                 </div>
 
                 <div class="flex justify-center mt-8 gap-4">

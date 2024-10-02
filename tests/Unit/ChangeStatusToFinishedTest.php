@@ -16,61 +16,62 @@ class ChangeStatusToFinishedTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** 
-     * @test 
+    /**
+     * @test
      * Este test verifica que el comando cambia el estado de los cursos a 'ENROLLING' cuando cumplen con las condiciones.
      */
     public function testChangesCourseStatusToEnrolling()
     {
         // Crear un estado 'DEVELOPMENT' y 'ENROLLING'
-        $statusDevelopment = CourseStatusesModel::factory()->create(['code' => 'DEVELOPMENT'])->latest()->first();
-        $statusEnrolling = CourseStatusesModel::factory()->create(['code' => 'ENROLLING']);
+    $statusDevelopment = CourseStatusesModel::factory()->create(['code' => 'DEVELOPMENT']);
+    $statusEnrolling = CourseStatusesModel::factory()->create(['code' => 'ENROLLING']);
 
-        // Crear un curso en estado 'DEVELOPMENT' que ha finalizado
-        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
-            'realization_finish_date' => now()->subDay(),
-            'course_status_uid' => $statusDevelopment->uid,
-            'belongs_to_educational_program' => 0,
+    // Crear un curso en estado 'DEVELOPMENT' que ha finalizado
+    $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
+        'realization_finish_date' => now()->subDay(),
+        'course_status_uid' => $statusDevelopment->uid,
+        'belongs_to_educational_program' => 0,
+    ]);
+
+    // Crear tipo de notificación automática
+    AutomaticNotificationTypesModel::factory()->create([
+        'code' => 'COURSE_ENROLLMENT_COMMUNICATIONS',
+    ]);
+
+    // Asociar estudiantes al curso
+    $students = UsersModel::factory()->count(3)->create();
+    foreach ($students as $student) {
+        $course->students()->attach($student, [
+            'status' => 'ENROLLED',
+            'acceptance_status' => 'ACCEPTED',
+            'uid' => generate_uuid(),
         ]);
-
-        AutomaticNotificationTypesModel::factory()->create([
-            'code' => 'COURSE_ENROLLMENT_COMMUNICATIONS',
-        ]);
-
-        // Asociar estudiantes al curso
-        $students = UsersModel::factory()->count(3)->create();
-        foreach ($students as $student) {
-            $course->students()->attach($student, [
-                'status' => 'ENROLLED',
-                'acceptance_status' => 'ACCEPTED',
-                'uid' => generate_uuid(),
-            ]);
-        }
-
-        // Fake para evitar el envío real de correos y notificaciones
-        Queue::fake();
-
-        // Ejecutar el comando
-        Artisan::call('app:change-status-to-finished');
-
-        // Refrescar el modelo del curso
-        $course->refresh();
-
-        // Verificar que el estado del curso se haya cambiado a 'ENROLLING'
-        $this->assertEquals('ENROLLING', $course->status->code);
-
-        // Verificar que se haya enviado una notificación general
-        $this->assertDatabaseHas('general_notifications_automatic', [
-            'entity_uid' => $course->uid,
-            'title' => 'Curso finalizado',
-        ]);
-
-        // Verificar que se hayan despachado los trabajos de envío de email
-        Queue::assertPushed(SendEmailJob::class, 3); // Asegurarse de que se despacharon trabajos para todos los estudiantes
     }
 
-    /** 
-     * @test 
+    // Fake para evitar el envío real de correos y notificaciones
+    Queue::fake();
+
+    // Ejecutar el comando
+    Artisan::call('app:change-status-to-finished');
+
+    // Refrescar el modelo del curso
+    $course->refresh();
+
+    // Verificar que el estado del curso se haya cambiado a 'ENROLLING'
+    $this->assertEquals('ENROLLING', $course->status->code);
+
+    // Verificar que se haya enviado una notificación general
+    $this->assertDatabaseHas('general_notifications_automatic', [
+        'entity_uid' => $course->uid,
+        'title' => 'Curso finalizado',
+    ]);
+
+    // Verificar que se hayan despachado los trabajos de envío de email
+    Queue::assertPushed(SendEmailJob::class, 3); // Asegurarse de que se despacharon trabajos para todos los estudiantes
+    }
+
+    /**
+     * @test
      * Este test verifica que no se envían notificaciones si no hay estudiantes o no cumplen las condiciones.
      */
     public function testDoesNotSendNotificationsIfNoStudents()

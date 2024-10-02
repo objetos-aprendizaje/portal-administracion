@@ -67,8 +67,8 @@ class CourseTypesController extends BaseController
         $query = CourseTypesModel::query();
 
         if ($search) {
-            $query->where('name', 'LIKE', "%{$search}%")
-                ->orWhere('description', 'LIKE', "%{$search}%");
+            $query->where('name', 'ILIKE', "%{$search}%")
+                ->orWhere('description', 'ILIKE', "%{$search}%");
         }
 
         if (isset($sort) && !empty($sort)) {

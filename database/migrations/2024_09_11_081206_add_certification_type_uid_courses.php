@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('courses', function (Blueprint $table) {
-            $table->string('certification_type_uid', 36)->nullable();
+            $table->uuid('certification_type_uid', 36)->nullable();
 
             $table->foreign('certification_type_uid')
                 ->references('uid')

@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
             EducationalResourceTypesSeeder::class,
             LicenseTypesSeeder::class,
             EducationalResourcesSeeder::class,
+            UserAccessesSeeder::class
         ]);
     }
 }

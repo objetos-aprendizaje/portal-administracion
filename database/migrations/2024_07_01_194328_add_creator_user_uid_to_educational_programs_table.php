@@ -13,7 +13,7 @@ class AddCreatorUserUidToEducationalProgramsTable extends Migration
     public function up()
     {
         Schema::table('educational_programs', function (Blueprint $table) {
-            $table->string('creator_user_uid', 36)->nullable();
+            $table->uuid('creator_user_uid', 36)->nullable();
             $table->foreign('creator_user_uid')->references('uid')->on('users')->onDelete('set null');
         });
     }

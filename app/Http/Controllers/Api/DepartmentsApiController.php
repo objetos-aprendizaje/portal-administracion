@@ -1,7 +1,9 @@
 <?php
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\OperationFailedException;
 use App\Models\DepartmentsModel;
+use App\Models\UsersModel;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -40,7 +42,7 @@ class DepartmentsApiController extends BaseController
 
         $data = $request->all();
 
-        $department->name = $data[0]['name'];
+        $department->name = $data['name'];
         $department->save();
 
         return response()->json(['message' => 'Departamento actualizado correctamente'], 200);
@@ -52,6 +54,12 @@ class DepartmentsApiController extends BaseController
 
         if(!$department) {
             return response()->json(['message' => 'Departamento no encontrado'], 404);
+        }
+
+        // Se comprueba si está vinculado a usuarios
+        $existsUsers = UsersModel::where('department_uid', $uid)->exists();
+        if($existsUsers) {
+            throw new OperationFailedException('No se puede eliminar el departamento porque está vinculado a usuarios');
         }
 
         $department->delete();

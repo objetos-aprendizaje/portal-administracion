@@ -43,8 +43,8 @@ class ApiKeysController extends BaseController
         $query = ApiKeysModel::query();
 
         if ($search) {
-            $query->where('name', 'LIKE', "%{$search}%")
-                ->orWhere('api_key', 'LIKE', "%{$search}%");
+            $query->where('name', 'ILIKE', "%{$search}%")
+                ->orWhere('api_key', 'ILIKE', "%{$search}%");
         }
 
         if (isset($sort) && !empty($sort)) {

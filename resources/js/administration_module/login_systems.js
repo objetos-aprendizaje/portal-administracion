@@ -23,32 +23,38 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function submitGoogleForm() {
     const formData = new FormData(this);
-    submitForm(formData, "/administration/login_systems/save_google_login", this.id);
+    submitForm(
+        formData,
+        "/administration/login_systems/save_google_login",
+        this.id
+    );
 }
 
 function submitFacebookForm() {
     const formData = new FormData(this);
-    submitForm(formData, "/administration/login_systems/save_facebook_login", this.id);
+    submitForm(
+        formData,
+        "/administration/login_systems/save_facebook_login",
+        this.id
+    );
 }
 
 function submitTwitterForm() {
     const formData = new FormData(this);
-    submitForm(formData, "/administration/login_systems/save_twitter_login", this.id);
+    submitForm(
+        formData,
+        "/administration/login_systems/save_twitter_login",
+        this.id
+    );
 }
 
 function submitLinkedinForm() {
     const formData = new FormData(this);
-    submitForm(formData, "/administration/login_systems/save_linkedin_login", this.id);
-}
-
-function submitCasForm() {
-    const formData = new FormData(this);
-    submitForm(formData, "/administration/login_systems/save_cas_login", this.id);
-}
-
-function submitRedirisForm() {
-    const formData = new FormData(this);
-    submitForm(formData, "/administration/login_systems/save_rediris_login", this.id);
+    submitForm(
+        formData,
+        "/administration/login_systems/save_linkedin_login",
+        this.id
+    );
 }
 
 function submitForm(formData, url, formId) {
@@ -87,7 +93,103 @@ function submitForm(formData, url, formId) {
 
     resetFormErrors(formId);
 
-    apiFetch(params).catch((data) => {
-        showFormErrors(data.errors);
-    });
+    apiFetch(params)
+        .then((data) => {
+            const viewMetadataCas =
+                document.getElementById("view-metadata-cas");
+
+            if (data.urlCasMetadata) {
+                viewMetadataCas.href = data.urlCasMetadata;
+                viewMetadataCas.classList.remove("hidden");
+            } else {
+                viewMetadataCas.href = data.urlCasMetadata;
+                viewMetadataCas.classList.add("hidden");
+            }
+
+            const viewMetadataRediris = document.getElementById(
+                "view-metadata-rediris"
+            );
+
+            if (data.urlRedirisMetadata) {
+                viewMetadataRediris.href = data.urlRedirisMetadata;
+                viewMetadataRediris.classList.remove("hidden");
+            } else {
+                viewMetadataRediris.href = data.urlRedirisMetadata;
+                viewMetadataRediris.classList.add("hidden");
+            }
+        })
+        .catch((data) => {
+            showFormErrors(data.errors);
+        });
+}
+
+function submitCasForm() {
+    const formData = new FormData(this);
+    formData.append(
+        "cas_login_active",
+        document.getElementById("cas_login_active").checked ? 1 : 0
+    );
+
+    const params = {
+        url: "/administration/login_systems/save_cas_login",
+        method: "POST",
+        body: formData,
+        toast: true,
+        loader: true,
+    };
+
+    resetFormErrors("cas-login-form");
+
+    apiFetch(params)
+        .then((data) => {
+            const viewMetadataCas =
+                document.getElementById("view-metadata-cas");
+
+            if (data.urlCasMetadata) {
+                viewMetadataCas.href = data.urlCasMetadata;
+                viewMetadataCas.classList.remove("hidden");
+            } else {
+                viewMetadataCas.href = data.urlCasMetadata;
+                viewMetadataCas.classList.add("hidden");
+            }
+        })
+        .catch((data) => {
+            showFormErrors(data.errors);
+        });
+}
+
+function submitRedirisForm() {
+    const formData = new FormData(this);
+    formData.append(
+        "rediris_login_active",
+        document.getElementById("rediris_login_active").checked ? 1 : 0
+    );
+
+    const params = {
+        url: "/administration/login_systems/save_rediris_login",
+        method: "POST",
+        body: formData,
+        toast: true,
+        loader: true,
+    };
+
+    resetFormErrors("rediris-login-form");
+
+    apiFetch(params)
+        .then((data) => {
+            const viewMetadataRediris = document.getElementById(
+                "view-metadata-rediris"
+            );
+
+            if (data.urlRedirisMetadata) {
+                viewMetadataRediris.href = data.urlRedirisMetadata;
+                viewMetadataRediris.classList.remove("hidden");
+            } else {
+                viewMetadataRediris.href = data.urlRedirisMetadata;
+                viewMetadataRediris.classList.add("hidden");
+            }
+        })
+        .catch((data) => {
+            showFormErrors(data.errors);
+        });
 }

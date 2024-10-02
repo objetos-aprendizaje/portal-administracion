@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('courses_tags', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('course_uid', 36)->index('course_uid');
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('course_uid', 36)->index('course_uid');
             $table->string('tag', 36);
             $table->timestamps();
         });

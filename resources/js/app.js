@@ -149,10 +149,18 @@ export function loadJSONFile(path) {
         .catch((error) => console.error(error));
 }
 
-export function showFormErrors(errors) {
+export function showFormErrors(errors, formId = null) {
     Object.keys(errors).forEach((field) => {
         errors[field].forEach((error) => {
-            const element = document.getElementById(field);
+            let element;
+
+            if (formId) {
+                const form = document.getElementById(formId);
+                if (!form) return;
+                element = form.querySelector(`[id="${field}"]`);
+            } else {
+                element = document.getElementById(field);
+            }
 
             if (!element) return;
 

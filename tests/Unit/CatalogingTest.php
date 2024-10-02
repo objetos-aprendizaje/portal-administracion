@@ -519,19 +519,19 @@ class CatalogingTest extends TestCase
 
         if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
 
+            $uid = generate_uuid();
             $response = $this->postJson('/cataloging/course_types/save_course_type', [
-                'uid' => '24ce6gp8-4f8e-9999-a5e0-b0a4608c1236',
+                'uid' => $uid,
                 'name' => 'Tipo de curso',
                 'description' => 'Descripción de tipo curso',
 
             ]);
 
             $response->assertStatus(200);
-            $typeUid = '24ce6gp8-4f8e-9999-a5e0-b0a4608c1236';
 
             // Realiza la solicitud DELETE
             $responseDelete = $this->deleteJson('/cataloging/course_types/delete_course_types', [
-                'uids' => [$typeUid],
+                'uids' => [$uid],
             ]);
 
             // Verifica que la respuesta sea correcta
@@ -539,7 +539,7 @@ class CatalogingTest extends TestCase
             $responseDelete->assertJson(['message' => 'Tipos de curso eliminados correctamente']);
 
 
-            $this->assertDatabaseMissing('course_types', ['uid' => $typeUid]);
+            $this->assertDatabaseMissing('course_types', ['uid' => $uid]);
         }
     }
 
@@ -621,8 +621,9 @@ class CatalogingTest extends TestCase
         $this->actingAs($admin);
 
         if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
+            $uidResource = generate_uuid();
             $response = $this->postJson('/cataloging/educational_resources_types/save_educational_resource_type', [
-                'uid' => '555-12499-123456-12345-12111',
+                'uid' => $uidResource,
                 'name' => 'Nuevo recurso educativo',
                 'description' => 'Descripción del recurso educativo',
 
@@ -633,8 +634,7 @@ class CatalogingTest extends TestCase
                 ->assertJson(['message' => 'Tipo de recurso educativo añadido correctamente']);
 
             // Obtiene el uid del recurso recién creada
-            $uid_tc = '555-12499-123456-12345-12111';
-            $this->assertNotNull($uid_tc, 'Tipo de recurso educativo no se creó correctamente.');
+            $this->assertNotNull($uidResource, 'Tipo de recurso educativo no se creó correctamente.');
 
 
             // Actualiza el recurso
@@ -670,26 +670,26 @@ class CatalogingTest extends TestCase
 
         if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
 
+            $uidResource = generate_uuid();
             $response = $this->postJson('/cataloging/course_types/save_course_type', [
-                'uid' => '24ce9lp8-4f8e-9999-a5e0-b0a4608c1236',
+                'uid' => $uidResource,
                 'name' => 'Recurso',
                 'description' => 'Descripción Recurso',
 
             ]);
 
             $response->assertStatus(200);
-            $typeUid = '24ce9lp8-4f8e-9999-a5e0-b0a4608c1236';
 
             // Realiza la solicitud DELETE
             $responseDelete = $this->deleteJson('/cataloging/educational_resources_types/delete_educational_resource_types', [
-                'uids' => [$typeUid],
+                'uids' => [$uidResource],
             ]);
 
             // Verifica que la respuesta sea correcta
             $responseDelete->assertStatus(200);
             $responseDelete->assertJson(['message' => 'Tipos de recurso educativo eliminados correctamente']);
 
-            $this->assertDatabaseMissing('educational_resource_types', ['uid' => $typeUid]);
+            $this->assertDatabaseMissing('educational_resource_types', ['uid' => $uidResource]);
         }
     }
 

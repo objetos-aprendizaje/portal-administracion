@@ -13,7 +13,7 @@ class MakeNotificationTypeUidNullableInGeneralNotificationsTable extends Migrati
     public function up()
     {
         Schema::table('general_notifications', function (Blueprint $table) {
-            $table->string('notification_type_uid')->nullable()->change();
+            $table->uuid('notification_type_uid', 36)->nullable()->change();
         });
     }
 
@@ -26,7 +26,7 @@ class MakeNotificationTypeUidNullableInGeneralNotificationsTable extends Migrati
     {
         Schema::table('general_notifications', function (Blueprint $table) {
             // Assuming the default value for 'notification_type_uid' was an empty string ('')
-            $table->string('notification_type_uid')->nullable(false)->change();
+            $table->uuid('notification_type_uid', 36)->nullable(false)->change();
         });
     }
 }

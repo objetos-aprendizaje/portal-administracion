@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-
+use Illuminate\Support\Str;
 
 
 
@@ -184,7 +184,7 @@ class AdministrationTooltipTextTest extends TestCase {
 
 /**
  * @test Elimina Tool Tip sin uid existente */
-    public function testDeleteTooltipTextsWithNonExistingUids()
+     public function testDeleteTooltipTextsWithNonExistingUids()
     {
 
         $user = UsersModel::factory()->create();
@@ -193,7 +193,7 @@ class AdministrationTooltipTextTest extends TestCase {
 
         // Intentar eliminar textos de tooltip que no existen
         $response = $this->deleteJson('/administration/tooltip_texts/delete_tooltip_texts', [
-            'uids' => ['non-existing-uid-1', 'non-existing-uid-2'],
+            'uids' => [Str::uuid(), Str::uuid()],
         ]);
 
         // Verificar que la respuesta sea correcta

@@ -20,7 +20,7 @@ class FooterPagesController extends BaseController
     public function index()
     {
 
-        $pages = FooterPagesModel::whereNull('footer_page_uid')->with('parentPage')->get();
+        $pages = FooterPagesModel::get();
 
         return view(
             'administration.footer_pages.index',
@@ -59,12 +59,10 @@ class FooterPagesController extends BaseController
 
         $query = FooterPagesModel::query();
 
-        $query = $query->with('parentPageName');
-
         if ($search) {
             $query->where(function ($subQuery) use ($search) {
-                $subQuery->whereRaw("name like ?", ["%$search%"])
-                    ->orWhere('content', 'like', "%$search%");
+                $subQuery->whereRaw("name ILIKE ?", ["%$search%"])
+                    ->orWhere('content', 'ILIKE', "%$search%");
             });
         }
 
@@ -90,12 +88,10 @@ class FooterPagesController extends BaseController
     {
 
         $messages = [
-            'order.numeric' => 'El campo Orden debe ser numérico.',
             'slug.regex' => 'El campo Slug solo puede contener letras minúsculas, números, guiones y guiones bajos.'
         ];
 
         $validator_rules = [
-            'order' => 'required|numeric',
             'slug' => ['required', 'regex:/^[a-z0-9_-]+$/i', 'max:255'],
         ];
 
@@ -137,8 +133,6 @@ class FooterPagesController extends BaseController
         $footer_page->name = $request->input('name');
         $footer_page->content = $request->input('content');
         $footer_page->slug = $request->input('slug');
-        $footer_page->order = $request->input('order');
-        $footer_page->footer_page_uid = $request->input('parent_page_uid');
         $footer_page->version = $request->input('version');
         $footer_page->acceptance_required = $request->input('acceptance_required');
         $footer_page->save();
@@ -154,11 +148,5 @@ class FooterPagesController extends BaseController
 
         return response()->json(['message' => 'Páginas de footer eliminadas correctamente']);
     }
-    public function getFooterPagesSelect(){
 
-        $pages = FooterPagesModel::whereNull('footer_page_uid')->with('parentPage')->get();
-
-        return response()->json($pages, 200);
-
-    }
 }

@@ -1,4 +1,5 @@
 <?php
+
 namespace Tests\Unit;
 
 use Tests\TestCase;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 
 class AdministrationHeaderPageTest extends TestCase
 {
@@ -19,7 +21,8 @@ class AdministrationHeaderPageTest extends TestCase
     /**
      * @testdox Inicialización de inicio de sesión
      */
-    public function setUp(): void {
+    public function setUp(): void
+    {
         parent::setUp();
         $this->withoutMiddleware();
         // Asegúrate de que la tabla 'qvkei_settings' existe
@@ -33,25 +36,25 @@ class AdministrationHeaderPageTest extends TestCase
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-         $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
-         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
-         // Autenticar al usuario
-         Auth::login($user);
+        // Autenticar al usuario
+        Auth::login($user);
 
-         // Compartir la variable de roles manualmente con la vista
-         View::share('roles', $roles);
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
 
-         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
         View::share('general_options', $general_options);
 
-         // Simula datos de TooltipTextsModel
-         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
-         View::share('tooltip_texts', $tooltip_texts);
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
 
-         // Simula notificaciones no leídas
-         $unread_notifications = $user->notifications->where('read_at', null);
-         View::share('unread_notifications', $unread_notifications);
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
 
 
         // Simular la ruta
@@ -72,13 +75,12 @@ class AdministrationHeaderPageTest extends TestCase
         $response->assertViewHas('tinymce', true);
         $response->assertViewHas('tabulator', true);
         $response->assertViewHas('submenuselected', 'header-pages');
-
     }
 
 
 
     /**
-    * @test Crear Header Page*/
+     * @test Crear Header Page*/
     public function testCreateHeaderPage()
     {
         // Datos de prueba para crear una nueva página de encabezado
@@ -95,7 +97,7 @@ class AdministrationHeaderPageTest extends TestCase
 
         // Verificar el estado de la respuesta
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Página de header creada correctamente']);
+            ->assertJson(['message' => 'Página de header creada correctamente']);
 
         // Verificar que la página de encabezado se haya guardado en la base de datos
         $this->assertDatabaseHas('header_pages', [
@@ -105,21 +107,21 @@ class AdministrationHeaderPageTest extends TestCase
     }
 
     /**
-    * @test Error al eliminar Header Page*/
+     * @test Error al eliminar Header Page*/
     public function testDeleteHeaderPagesNotFound()
     {
         // Intentar eliminar páginas que no existen
         $response = $this->deleteJson('/administration/header_pages/delete_header_pages', [
-            'uids' => ['non-existent-uid-1'],
+            'uids' => Str::uuid(),
         ]);
 
         // Verificar el estado de la respuesta
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Páginas de header eliminadas correctamente']);
+            ->assertJson(['message' => 'Páginas de header eliminadas correctamente']);
     }
 
     /**
-    * @test Elimina Header Page*/
+     * @test Elimina Header Page*/
     public function testDeleteHeaderPages()
     {
         // Crear manual páginas de encabezado para eliminar
@@ -141,17 +143,16 @@ class AdministrationHeaderPageTest extends TestCase
 
         // Verificar el estado de la respuesta
         $response->assertStatus(200)
-        ->assertJson(['message' => 'Páginas de header eliminadas correctamente']);
+            ->assertJson(['message' => 'Páginas de header eliminadas correctamente']);
 
         // Verificar que las páginas de encabezado ya no existan en la base de datos
         $this->assertDatabaseMissing('header_pages', [
-        'uid' => $headerPage1Uid,
+            'uid' => $headerPage1Uid,
         ]);
-
     }
 
     /**
-    * @test Actualiza Header Page*/
+     * @test Actualiza Header Page*/
     public function testUpdateHeaderPages()
     {
         // Datos de prueba para crear una nueva página de encabezado
@@ -168,19 +169,18 @@ class AdministrationHeaderPageTest extends TestCase
 
         // Verificar el estado de la respuesta
         $response->assertStatus(200)
-                    ->assertJson(['message' => 'Página de header creada correctamente']);
+            ->assertJson(['message' => 'Página de header creada correctamente']);
 
         // Verificar que la página de encabezado se haya guardado en la base de datos
         $this->assertDatabaseHas('header_pages', [
             'slug' => 'nueva-pagina',
             'name' => 'Nueva Página',
         ]);
-
     }
 
     public function testGetHeaderPages()
     {
-        $headerPageUid= generate_uuid();
+        $headerPageUid = generate_uuid();
 
         HeaderPagesModel::insert([
             'uid' => $headerPageUid,
@@ -214,8 +214,6 @@ class AdministrationHeaderPageTest extends TestCase
         // Verificar que solo se devuelvan las páginas sin parent
         $this->assertCount(1, $response->json());
         $this->assertEquals('Página 3', $response->json()[0]['name']);
-
-
     }
 
     /** @test Obtener Header Pages*/
@@ -229,21 +227,21 @@ class AdministrationHeaderPageTest extends TestCase
 
         // Verificar la respuesta
         $response->assertStatus(200)
-                 ->assertJsonStructure([
-                     'current_page',
-                     'data' => [
-                         '*' => [
-                             'uid',
-                             'name',
-                             'content',
-                             'parent_page_name',
-                             // Agrega otros campos que esperas en la respuesta
-                         ],
-                     ],
-                     'last_page',
-                     'per_page',
-                     'total',
-                 ]);
+            ->assertJsonStructure([
+                'current_page',
+                'data' => [
+                    '*' => [
+                        'uid',
+                        'name',
+                        'content',
+                        'parent_page_name',
+                        // Agrega otros campos que esperas en la respuesta
+                    ],
+                ],
+                'last_page',
+                'per_page',
+                'total',
+            ]);
     }
 
     /** @test */
@@ -251,7 +249,10 @@ class AdministrationHeaderPageTest extends TestCase
     {
         // Crear datos de prueba
         HeaderPagesModel::factory()->create([
-            'uid' => generate_uuid(), 'name' => 'Test Page 1', 'content' => 'Some content']);
+            'uid' => generate_uuid(),
+            'name' => 'Test Page 1',
+            'content' => 'Some content'
+        ]);
         HeaderPagesModel::factory()->create(['uid' => generate_uuid(), 'name' => 'Another Page', 'content' => 'Different content']);
         HeaderPagesModel::factory()->create(['uid' => generate_uuid(), 'name' => ' Page 2', 'content' => 'More content']);
 
@@ -262,7 +263,7 @@ class AdministrationHeaderPageTest extends TestCase
 
         // Verificar la respuesta
         $response->assertStatus(200)
-                 ->assertJsonCount(1, 'data'); // Esperamos 1 resultados que coinciden con "Test"
+            ->assertJsonCount(1, 'data'); // Esperamos 1 resultados que coinciden con "Test"
     }
 
 
@@ -279,27 +280,27 @@ class AdministrationHeaderPageTest extends TestCase
 
         // Verificar la respuesta
         $response->assertStatus(200)
-             ->assertJsonStructure([
-                 'current_page',
-                 'data' => [
-                     '*' => [
-                         'uid',
-                         'order',
-                         'name',
-                         'content',
-                     ],
-                 ],
-                 'last_page',
-                 'per_page',
-                 'total',
-             ]);
+            ->assertJsonStructure([
+                'current_page',
+                'data' => [
+                    '*' => [
+                        'uid',
+                        'order',
+                        'name',
+                        'content',
+                    ],
+                ],
+                'last_page',
+                'per_page',
+                'total',
+            ]);
 
-    // Verificar el orden de los resultados
-    $data = $response->json('data');
+        // Verificar el orden de los resultados
+        $data = $response->json('data');
 
-    $this->assertEquals('A Page', $data[0]['name']);
-    $this->assertEquals('B Page', $data[1]['name']);
-    $this->assertEquals('C Page', $data[2]['name']);
+        $this->assertEquals('A Page', $data[0]['name']);
+        $this->assertEquals('B Page', $data[1]['name']);
+        $this->assertEquals('C Page', $data[2]['name']);
     }
 
 
@@ -314,8 +315,8 @@ class AdministrationHeaderPageTest extends TestCase
             'order' => 2
         ])->latest()->first();
 
-           // Realiza una solicitud GET a la ruta que invoca el método getHeaderPage
-        $response = $this->getJson('/administration/header_pages/get_header_page/'.$headerPage->uid);
+        // Realiza una solicitud GET a la ruta que invoca el método getHeaderPage
+        $response = $this->getJson('/administration/header_pages/get_header_page/' . $headerPage->uid);
 
 
         // Verifica que la respuesta sea exitosa (código 200)
@@ -330,9 +331,4 @@ class AdministrationHeaderPageTest extends TestCase
 
         ]);
     }
-
-
-
-
-
 }

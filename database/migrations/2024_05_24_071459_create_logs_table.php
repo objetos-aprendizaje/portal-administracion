@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('logs', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
+            $table->uuid('uid', 36)->primary();
             $table->text('info');
             $table->timestamp('created_at')->nullable();
             $table->string('entity', 200)->nullable();
-            $table->string('user_uid', 36)->nullable();
+            $table->uuid('user_uid', 36)->nullable();
         });
     }
 

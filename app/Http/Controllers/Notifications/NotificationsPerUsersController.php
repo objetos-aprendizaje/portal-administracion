@@ -43,7 +43,7 @@ class NotificationsPerUsersController extends BaseController
         $query = UsersModel::query();
 
         if ($search) {
-            $query->where('first_name', 'LIKE', "%{$search}%")->orWhere('last_name', 'LIKE', "%{$search}%");
+            $query->where('first_name', 'ILIKE', "%{$search}%")->orWhere('last_name', 'ILIKE', "%{$search}%");
         }
 
         if (isset($sort) && !empty($sort)) {
@@ -75,8 +75,8 @@ class NotificationsPerUsersController extends BaseController
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', '%' . $search . '%')
-                    ->orWhere('description', 'like', '%' . $search . '%');
+                $q->where('title', 'ILIKE', '%' . $search . '%')
+                    ->orWhere('description', 'ILIKE', '%' . $search . '%');
             });
         }
 

@@ -26,6 +26,15 @@
                     </div>
                 </div>
 
+                <div id="field-has-embeddings" class="hidden">
+                    <div class="field">
+                        <div class="label-container label-center">
+                            <label for="has-embeddings">Embeddings generados</label>
+                        </div>
+                        <div id="has-embeddings"></div>
+                    </div>
+                </div>
+
                 <div class="field">
                     <div class="label-container label-center">
                         <label for="title">Título <span class="text-danger">*</span></label>

@@ -90,21 +90,21 @@ class AnalyticsAbandonedController extends BaseController
     public function getAbandonedGraph() {
 
         $query = CoursesModel::select(
-                'courses.*',
-                DB::raw('DATE_ADD(realization_start_date, INTERVAL 30 DAY) as abandoned_date'),
-            )
-            ->with(['accesses', 'status', 'students' => function ($query) {
-                $query->where('status', 'ENROLLED')
-                    ->where('acceptance_status', 'ACCEPTED');
-            }])
-            ->withCount(['students as enrolled_accepted_students_count' => function ($query) {
-                $query->where('status', 'ENROLLED')
-                    ->where('acceptance_status', 'ACCEPTED');
-            }])
-            ->whereHas('status', function ($query) {
-                $query->where('code', 'DEVELOPMENT');
-            })
-            ->whereNotNull('lms_url')->get()->toArray();
+            'courses.*',
+            DB::raw("realization_start_date + interval '30 days' as abandoned_date")
+        )
+        ->with(['accesses', 'status', 'students' => function ($query) {
+            $query->where('status', 'ENROLLED')
+                ->where('acceptance_status', 'ACCEPTED');
+        }])
+        ->withCount(['students as enrolled_accepted_students_count' => function ($query) {
+            $query->where('status', 'ENROLLED')
+                ->where('acceptance_status', 'ACCEPTED');
+        }])
+        ->whereHas('status', function ($query) {
+            $query->where('code', 'DEVELOPMENT');
+        })
+        ->whereNotNull('lms_url')->get()->toArray();
 
 
         $new_data = [];

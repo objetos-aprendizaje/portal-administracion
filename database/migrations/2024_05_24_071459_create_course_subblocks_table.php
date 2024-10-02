@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('course_subblocks', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('block_uid', 36)->index('qvkei_course_subblocks_block_uid_foreign');
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('block_uid', 36)->index('qvkei_course_subblocks_block_uid_foreign');
             $table->string('name');
             $table->text('description')->nullable();
             $table->integer('order');

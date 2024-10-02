@@ -44,19 +44,19 @@ class LoginSystemsConfigServiceProvider extends ServiceProvider
         config([
             'services.google.client_id' => $parameters_login_systems['google_client_id'],
             'services.google.client_secret' => $parameters_login_systems['google_client_secret'],
-            'services.google.redirect' => env('APP_URL') . '/auth/google/callback',
+            'services.google.redirect' => env('GOOGLE_REDIRECT_URL'),
 
             'services.facebook.client_id' => $parameters_login_systems['facebook_client_id'],
             'services.facebook.client_secret' => $parameters_login_systems['facebook_client_secret'],
-            'services.facebook.redirect' => env('APP_URL') . '/auth/facebook/callback',
+            'services.facebook.redirect' => env('FACEBOOK_REDIRECT_URL'),
 
             'services.twitter.client_id' => $parameters_login_systems['twitter_client_id'],
             'services.twitter.client_secret' => $parameters_login_systems['twitter_client_secret'],
-            'services.twitter.redirect' => env('APP_URL') . '/auth/twitter/callback',
+            'services.twitter.redirect' => env('TWITTER_REDIRECT_URL'),
 
             'services.linkedin-openid.client_id' => $parameters_login_systems['linkedin_client_id'],
             'services.linkedin-openid.client_secret' => $parameters_login_systems['linkedin_client_secret'],
-            'services.linkedin-openid.redirect' => env('APP_URL') . '/auth/linkedin/callback'
+            'services.linkedin-openid.redirect' => env('LINKEDIN_REDIRECT_URL')
         ]);
 
         View::share('parameters_login_systems', $parameters_login_systems);

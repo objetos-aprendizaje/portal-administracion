@@ -63,8 +63,8 @@ class EmailNotificationsController extends BaseController
 
         if ($search) {
             $query->where(function ($query) use ($search) {
-                $query->where('subject', 'LIKE', "%{$search}%")
-                    ->orWhere('body', 'LIKE', "%{$search}%");
+                $query->where('subject', 'ILIKE', "%{$search}%")
+                    ->orWhere('body', 'ILIKE', "%{$search}%");
             });
         }
 

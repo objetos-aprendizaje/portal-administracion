@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user_learning_results_preferences', function (Blueprint $table) {
-            $table->string('learning_result_uid', 36);
-            $table->string('user_uid', 36);
+            $table->uuid('learning_result_uid', 36);
+            $table->uuid('user_uid', 36);
 
             // Establecer las claves foráneas con nombres explícitos más cortos
             $table->foreign('learning_result_uid', 'lr_uid_fk')

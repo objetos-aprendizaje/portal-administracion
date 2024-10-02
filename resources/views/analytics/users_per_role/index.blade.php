@@ -15,6 +15,9 @@
 
         <div class="table-container mt-6">
             <h2>Gráfico</h2>
+            <p>
+                Este gráfico representa la distrubución de roles con respecto al total de los usuarios registrados en la plataforma.
+            </p>
             <div id="d3_graph"></div>
         </div>
     </div>

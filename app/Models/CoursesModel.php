@@ -25,7 +25,7 @@ class CoursesModel extends Model
         'validate_student_registrations', 'lms_url', 'lms_system_uid', 'cost', 'featured_big_carrousel',
         'featured_big_carrousel_title', 'featured_big_carrousel_description', 'featured_small_carrousel', 'structure',
         'calification_type', 'belongs_to_educational_program', 'enrolling_start_date', 'enrolling_finish_date', 'evaluation_criteria',
-        'payment_mode','creator_user_uid','identifier', 'certification_type_uid'
+        'payment_mode','creator_user_uid','identifier', 'certification_type_uid','embeddings'
     ];
 
     public function call()

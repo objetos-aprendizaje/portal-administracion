@@ -15,7 +15,7 @@ class AddEducationalProgramUidToEducationalProgramsTable extends Migration
     {
         Schema::table('educational_programs', function (Blueprint $table) {
             // Agregar el nuevo campo que puede ser nulo
-            $table->string('educational_program_origin_uid', 36)->nullable()->after('uid');
+            $table->uuid('educational_program_origin_uid', 36)->nullable()->after('uid');
 
             // Use a more unique name for the foreign key constraint
             $table->foreign('educational_program_origin_uid', 'edu_prog_self_ref_fk')->references('uid')->on('educational_programs')->onDelete('set null');

@@ -12,8 +12,8 @@ class CreateAutomaticNotificationTypesRolesRelationshipTable extends Migration
     public function up()
     {
         Schema::create('automatic_notification_types_roles_relationship', function (Blueprint $table) {
-            $table->string('automatic_notification_type_uid', 36);
-            $table->string('user_role_uid', 36);
+            $table->uuid('automatic_notification_type_uid', 36);
+            $table->uuid('user_role_uid', 36);
 
             $table->foreign('automatic_notification_type_uid', 'ant_uid_foreign')->references('uid')->on('automatic_notification_types')->onDelete('cascade');
             $table->foreign('user_role_uid', 'user_uid_foreign')->references('uid')->on('user_roles')->onDelete('cascade');

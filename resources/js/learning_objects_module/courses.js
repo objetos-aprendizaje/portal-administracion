@@ -601,6 +601,10 @@ function initHandlers() {
     if (generateTagsBtn) {
         generateTagsBtn.addEventListener("click", () => {
             generateTags();
+            generateTagsBtn.classList.add("hidden");
+            setTimeout(() => {
+                generateTagsBtn.classList.remove("hidden");
+            }, 10000);
         });
     }
 }
@@ -806,10 +810,10 @@ function getStructureCourseJSON() {
     blocks.forEach((block) => {
         const blockOrder = parseInt(block.dataset.order);
         const blockObj = {
+            uid: block.dataset.uid != "" ? block.dataset.uid : null,
             type: block.querySelector(".block-type").value,
             name: block.querySelector(".block-name").value,
             description: block.querySelector(".block-description").value,
-            uid: block.dataset.uid ?? null,
             order: blockOrder,
             learningResults: Trees.getSelectedNodesByOrder(blockOrder),
         };
@@ -820,10 +824,10 @@ function getStructureCourseJSON() {
 
         subBlocks.forEach((subBlock) => {
             const subBlockObj = {
+                uid: subBlock.dataset.uid ? subBlock.dataset.uid : null,
                 name: subBlock.querySelector(".sub-block-name").value,
                 description: subBlock.querySelector(".sub-block-description")
                     .value,
-                uid: subBlock.dataset.uid ?? null,
                 order: subBlock.dataset.order,
             };
 
@@ -832,10 +836,10 @@ function getStructureCourseJSON() {
             if (elements.length) subBlockObj.elements = [];
             elements.forEach((element) => {
                 const elementObj = {
+                    uid: element.dataset.uid != "" ? element.dataset.uid : null,
                     name: element.querySelector(".element-name").value,
                     description: element.querySelector(".element-description")
                         .value,
-                    uid: element.dataset.uid ?? null,
                     order: element.dataset.order,
                 };
 
@@ -843,12 +847,15 @@ function getStructureCourseJSON() {
                 if (subElements.length) elementObj.subElements = [];
                 subElements.forEach((subElement) => {
                     const subElementObj = {
+                        uid:
+                            subElement.dataset.uid != ""
+                                ? subElement.dataset.uid
+                                : null,
                         name: subElement.querySelector(".sub-element-name")
                             .value,
                         description: subElement.querySelector(
                             ".sub-element-description"
                         ).value,
-                        uid: subElement.dataset.uid ?? null,
                         order: subElement.dataset.order,
                     };
                     elementObj.subElements.push(subElementObj);
@@ -2114,6 +2121,11 @@ function fillFormCourseModal(course) {
         createdByDiv.innerText = "No disponible";
     }
 
+    document.getElementById("field-has-embeddings").classList.remove("hidden");
+    const hasEmbeddingsDiv = document.getElementById("has-embeddings");
+
+    hasEmbeddingsDiv.innerText = course.embeddings ? "Sí" : "No";
+
     document.getElementById("course_uid").value = course.uid;
 
     fillFormWithObject(course, "course-form");
@@ -2636,6 +2648,7 @@ function resetModal() {
 
     // Reseteo de previsualicion de imagen
     document.getElementById("field-created-by").classList.add("hidden");
+    document.getElementById("field-has-embeddings").classList.add("hidden");
     document.getElementById("image_path_preview").src = defaultImagePreview;
     document.getElementById("featured_big_carrousel_image_path_preview").src =
         defaultImagePreview;

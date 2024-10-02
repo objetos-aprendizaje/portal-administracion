@@ -193,12 +193,13 @@ class LogsTest extends TestCase
 
     public function testGetLogsAppliesDateRangeFilter()
     {
+        $user = UsersModel::factory()->create()->latest()->first();
         // Crear registros de logs en diferentes fechas
         $log1 = LogsModel::create([
             'uid' => generate_uuid(),
             'info' => 'Log de prueba 1',
             'entity' => 'Entidad 1',
-            'user_uid' => 'user1',
+            'user_uid' => $user->uid,
             'created_at' => now()->subDays(3), // Fecha anterior al rango
         ]);
 
@@ -206,7 +207,7 @@ class LogsTest extends TestCase
             'uid' => generate_uuid(),
             'info' => 'Log de prueba 2',
             'entity' => 'Entidad 2',
-            'user_uid' => 'user2',
+            'user_uid' => $user->uid,
             'created_at' => now()->subDays(1), // Dentro del rango
         ]);
 
@@ -214,7 +215,7 @@ class LogsTest extends TestCase
             'uid' => generate_uuid(),
             'info' => 'Log de prueba 3',
             'entity' => 'Entidad 3',
-            'user_uid' => 'user3',
+            'user_uid' => $user->uid,
             'created_at' => now(), // Dentro del rango
         ]);
 
@@ -238,7 +239,6 @@ class LogsTest extends TestCase
         $user = UsersModel::factory()->create()->latest()->first();
         Auth::login($user);
 
-
         // Crear registros de logs en diferentes fechas
         $log1 = LogsModel::create([
             'uid' => generate_uuid(),
@@ -252,7 +252,7 @@ class LogsTest extends TestCase
             'uid' => generate_uuid(),
             'info' => 'Log de prueba 2',
             'entity' => 'Entidad 2',
-            'user_uid' => 'user2',
+            'user_uid' => $user->uid,
             'created_at' => now()->subDays(3), // Fuera de la fecha
         ]);
 
@@ -267,7 +267,7 @@ class LogsTest extends TestCase
 
         // Verificar que la respuesta es correcta
         $response->assertStatus(200)
-                ->assertJsonCount(1, 'data'); // Debería devolver solo log1
+            ->assertJsonCount(1, 'data'); // Debería devolver solo log1
 
         // Verificar que el log devuelto es el esperado
         $this->assertEquals($log1->uid, $response->json('data.0.uid'));
@@ -277,6 +277,8 @@ class LogsTest extends TestCase
     public function testGetLogsWithNoFiltersReturnsAllLogs()
     {
 
+        $user1 = UsersModel::factory()->create()->latest()->first();
+        Auth::login($user1);
         $user2 = UsersModel::factory()->create()->latest()->first();
         Auth::login($user2);
         // Crear algunos registros de logs para la prueba
@@ -284,7 +286,7 @@ class LogsTest extends TestCase
             'uid' => generate_uuid(),
             'info' => 'Log de prueba 1',
             'entity' => 'Entidad 1',
-            'user_uid' => $user2->uid,
+            'user_uid' => $user1->uid,
             'created_at' => now()->subDays(1),
         ]);
 
@@ -292,7 +294,7 @@ class LogsTest extends TestCase
             'uid' => generate_uuid(),
             'info' => 'Log de prueba 2',
             'entity' => 'Entidad 2',
-            'user_uid' => 'user2',
+            'user_uid' => $user2->uid,
             'created_at' => now(),
         ]);
 
@@ -301,7 +303,7 @@ class LogsTest extends TestCase
 
         // Verificar que la respuesta es correcta
         $response->assertStatus(200)
-                 ->assertJsonCount(1, 'data'); // Debería devolver ambos logs
+            ->assertJsonCount(1, 'data'); // Debería devolver ambos logs
     }
 
 
@@ -348,7 +350,7 @@ class LogsTest extends TestCase
 
         // Verificar que la respuesta es correcta
         $response->assertStatus(200)
-                 ->assertJsonCount(1, 'data'); // Debería devolver solo log1
+            ->assertJsonCount(1, 'data'); // Debería devolver solo log1
 
         // Verificar que el log devuelto es el esperado
         $this->assertEquals($log1->uid, $response->json('data.0.uid'));
@@ -359,7 +361,7 @@ class LogsTest extends TestCase
         $this->logsController = new LogsController();
         $this->queryMock = Mockery::mock(Builder::class);
 
-          $filters = [
+        $filters = [
             [
                 'database_field' => 'date',
                 'value' => ['2023-01-01', '2023-12-31']
@@ -384,13 +386,13 @@ class LogsTest extends TestCase
         $this->invokePrivateMethod('applyFilters', [$filters, &$queryRef]);
     }
 
-      public function testApplyFiltersWithSingleDate()
+    public function testApplyFiltersWithSingleDate()
     {
 
         $this->logsController = new LogsController();
         $this->queryMock = Mockery::mock(Builder::class);
 
-          $filters = [
+        $filters = [
             [
                 'database_field' => 'date',
                 'value' => ['2023-01-01', '2023-01-01']

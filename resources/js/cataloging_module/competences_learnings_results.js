@@ -176,7 +176,7 @@ function submitCompetencesFrameworkForm() {
             reloadTreeCompetencesLearningResults(opennedNodes);
         })
         .catch((data) => {
-            showFormErrors(data.errors);
+            showFormErrors(data.errors, "competence-framework-form");
         });
 }
 
@@ -619,6 +619,7 @@ function newCompetenceFramework() {
     resetFormFields("competence-framework-form");
     document.getElementById("has_levels").checked = false;
     document.getElementById("level-list").innerHTML = "";
+    document.getElementById("level").classList.add("hidden");
     showModal("competence-framework-modal", "Nuevo marco de competencias");
 }
 

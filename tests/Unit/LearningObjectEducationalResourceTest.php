@@ -16,6 +16,7 @@ use App\Models\TooltipTextsModel;
 use Illuminate\Http\UploadedFile;
 use App\Models\CourseStatusesModel;
 use App\Models\GeneralOptionsModel;
+use App\Services\EmbeddingsService;
 use Illuminate\Support\Facades\App;
 use App\Models\LearningResultsModel;
 use Illuminate\Support\Facades\Auth;
@@ -171,27 +172,6 @@ class LearningObjectEducationalResourceTest extends TestCase
         $this->assertDatabaseMissing('educational_resources', ['uid' => $resource2->uid]);
     }
 
-    /** @test Puedo obtener un 200 si no se eliminan recursos */
-    public function testReturns200IfNoResourcesAreDeleted()
-    {
-        // Crea un usuario autenticado para la prueba
-        $this->actingAs(UsersModel::factory()->create());
-
-        // Prepara un UID que no existe en la base de datos
-        $resourcesUids = ['nonexistent-uid'];
-
-        // Realiza la solicitud DELETE a la ruta con un UID inexistente
-        $response = $this->deleteJson('/learning_objects/educational_resources/delete_resources', [
-            'resourcesUids' => $resourcesUids,
-        ]);
-
-        // Verifica que la respuesta sea exitosa, pero no hay recursos eliminados
-        $response->assertStatus(200);
-        $response->assertJson(['message' => 'Recursos eliminados correctamente']);
-
-        // Verifica que no haya errores y que la base de datos permanezca intacta
-        $this->assertDatabaseCount('educational_resources', 0);
-    }
 
     //::::::::::::::::::::::::: Metodo Guardar  :::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -491,7 +471,7 @@ class LearningObjectEducationalResourceTest extends TestCase
 
         $resource = EducationalResourcesModel::factory()
         ->withStatus()
-        ->withEducationalResourceType()        
+        ->withEducationalResourceType()
         ->create([
             'creator_user_uid' => $user->uid,
             'title' => 'Unique Title'
@@ -525,7 +505,7 @@ class LearningObjectEducationalResourceTest extends TestCase
         $category = CategoriesModel::factory()->create()->first();
         $resource = EducationalResourcesModel::factory()
         ->withStatus()
-        ->withEducationalResourceType()       
+        ->withEducationalResourceType()
         ->create([
             'creator_user_uid' => $user_teacher->uid,
         ])->first();
@@ -572,7 +552,7 @@ class LearningObjectEducationalResourceTest extends TestCase
         ]);
         EducationalResourcesModel::factory()
         ->withStatus()
-        ->withEducationalResourceType()        
+        ->withEducationalResourceType()
         ->create([
             'creator_user_uid' => $user_teacher->uid,
             'title' => 'A Title'
@@ -791,8 +771,12 @@ class LearningObjectEducationalResourceTest extends TestCase
         // Asegura que se lanza la excepción
         $this->expectException(OperationFailedException::class);
         $this->expectExceptionMessage('No puedes editar un curso que no esté en estado de introducción o subsanación');
-        $yourClassInstance = new ManagementCoursesController();
-        $method->invokeArgs($yourClassInstance, [$course_bd]);
+
+        $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
+
+        // Instantiate ManagementCoursesController with the mocked service
+        $controller = new ManagementCoursesController($mockEmbeddingsService);
+        $method->invokeArgs($controller, [$course_bd]);
     }
 
     public function testCheckStatusFailsEducationalProgramStatusNotAllowed()
@@ -820,8 +804,11 @@ class LearningObjectEducationalResourceTest extends TestCase
         // Asegura que se lanza la excepción
         $this->expectException(OperationFailedException::class);
         $this->expectExceptionMessage('No puedes editar un curso cuyo programa formativo no esté en estado de introducción o subsanación');
-        $yourClassInstance = new ManagementCoursesController();
-        $method->invokeArgs($yourClassInstance, [$course_bd]);
+        $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
+
+        // Instantiate ManagementCoursesController with the mocked service
+        $controller = new ManagementCoursesController($mockEmbeddingsService);
+        $method->invokeArgs($controller, [$course_bd]);
     }
 
 

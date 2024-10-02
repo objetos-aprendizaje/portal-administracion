@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('email_notifications_automatic', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
+            $table->uuid('uid', 36)->primary();
             $table->string('subject');
             $table->string('template');
-            $table->string('user_uid', 36);
+            $table->uuid('user_uid', 36);
             $table->text('parameters');
             $table->boolean('sent')->default(false);
             $table->integer('sending_attempts')->default(0);

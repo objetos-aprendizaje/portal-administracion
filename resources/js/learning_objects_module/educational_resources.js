@@ -128,10 +128,13 @@ function initHandlers() {
         });
 
     const generateTagsBtn = document.getElementById("generate-tags-btn");
-
     if (generateTagsBtn) {
-        generateTagsBtn.addEventListener("click", function () {
+        generateTagsBtn.addEventListener("click", () => {
             generateTags();
+            generateTagsBtn.classList.add("hidden");
+            setTimeout(() => {
+                generateTagsBtn.classList.remove("hidden");
+            }, 10000);
         });
     }
 
@@ -644,6 +647,11 @@ function fillFormResourceModal(resource) {
         createdByDiv.innerText = "No disponible";
     }
 
+    document.getElementById("field-has-embeddings").classList.remove("hidden");
+    document.getElementById("has-embeddings").innerText = resource.embeddings
+        ? "Sí"
+        : "No";
+
     document.getElementById("educational_resource_uid").value = resource.uid;
     document.getElementById("title").value = resource.title;
     document.getElementById("description").value = resource.description;
@@ -833,6 +841,7 @@ function resetModal() {
     const form = document.getElementById("educational-resource-form");
     form.reset();
     document.getElementById("field-created-by").classList.add("hidden");
+    document.getElementById("field-has-embeddings").classList.add("hidden");
     document.getElementById("educational_resource_uid").value = "";
     resetFormErrors();
 

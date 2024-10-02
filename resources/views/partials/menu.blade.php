@@ -230,6 +230,8 @@
                                 href="{{ route('analytics-users') }}">Usuarios registrados</a></li>
                         <li><a class="{{ isset($submenuselected) && $submenuselected == 'analytics-abandoned' ? 'submenu-selected' : '' }}"
                                 href="{{ route('analytics-abandoned') }}">Abandonos de cursos</a></li>
+                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'analytics-top-categories' ? 'submenu-selected' : '' }}"
+                                href="{{ route('analytics-top-categories') }}">TOP Categorias</a></li>
                     </ul>
                 </div>
             </div>

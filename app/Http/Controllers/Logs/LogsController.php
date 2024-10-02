@@ -69,10 +69,10 @@ class LogsController extends BaseController
 
         if ($search) {
             $query->where(function ($query) use ($search) {
-                $query->Where('entity', 'LIKE', "%{$search}%")
-                    ->orWhere('info', 'LIKE', "%{$search}%")
-                    ->orWhere('users.last_name', 'LIKE', "%{$search}%")
-                    ->orWhere('users.first_name', 'LIKE', "%{$search}%");
+                $query->Where('entity', 'ILIKE', "%{$search}%")
+                    ->orWhere('info', 'ILIKE', "%{$search}%")
+                    ->orWhere('users.last_name', 'ILIKE', "%{$search}%")
+                    ->orWhere('users.first_name', 'ILIKE', "%{$search}%");
             });
         }
 

@@ -5,7 +5,6 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Event;
-use Slides\Saml2\Events\SignedIn;
 use Slides\Saml2\Events\SignedOut;
 use Illuminate\Support\Facades\Auth;
 use App\Models\UsersModel;
@@ -13,6 +12,7 @@ use App\Models\UserRolesModel;
 use App\Models\UserRoleRelationshipsModel;
 use Illuminate\Support\Facades\Redirect;
 use App\Models\Saml2TenantsModel;
+use App\Models\UsersAccessesModel;
 use Illuminate\Support\Facades\DB;
 
 class AppServiceProvider extends ServiceProvider
@@ -51,7 +51,7 @@ class AppServiceProvider extends ServiceProvider
                 'assertion' => $samlUser->getRawSamlAssertion()
             ];
 
-            $dataLogin = $this->getDataLogin($userDataSaml);
+            $dataLogin = $this->getDataLogin($userDataSaml, $event);
 
             if (!$dataLogin["email"]) Redirect::to('/')->send();
 
@@ -65,6 +65,13 @@ class AppServiceProvider extends ServiceProvider
             DB::transaction(function () use ($dataLogin, &$user) {
                 if (!$user) $user = $this->registerCasRediris($dataLogin);
                 if (!$user->hasAnyRole(['TEACHER'])) $this->addRoleTeacher($user);
+
+                // Registro de la sesión
+                UsersAccessesModel::insert([
+                    'uid' => generate_uuid(),
+                    'user_uid' => $user->uid,
+                    'date' => date('Y-m-d H:i:s')
+                ]);
             });
 
             Auth::login($user);
@@ -99,7 +106,7 @@ class AppServiceProvider extends ServiceProvider
         $rol_relation->save();
     }
 
-    private function getDataLogin($userDataSaml)
+    private function getDataLogin($userDataSaml, $event)
     {
         $loginSystem = $this->detectLoginSystem();
         $dataLogin = [];
@@ -110,6 +117,24 @@ class AppServiceProvider extends ServiceProvider
                 "nif" => $userDataSaml['attributes']['sPUID'][0],
             ];
         } else if ($loginSystem == "rediris") {
+            $xml = $event->getAuth()->getBase();
+            $xml = $xml->getLastResponseXML();
+            $xmlObj = simplexml_load_string($xml, null, null, "urn:oasis:names:tc:SAML:2.0:assertion", true);
+            // Busca todos los elementos de AuthenticatingAuthority
+            $namespaces = $xmlObj->getNamespaces(true);
+            $authAuthorities = $xmlObj->xpath('//saml:AuthenticatingAuthority');
+            $results = [];
+            $access = false;
+            if ($authAuthorities) {
+                foreach ($authAuthorities as $authority) {
+                    $results[] = $authority;
+                    $temp = explode("/", $authority);
+                    if ($temp[count($temp) - 1] == "UMCAS") {
+                        $access = true;
+                    }
+                }
+            }
+            if ($access == false) Redirect::to('/')->send();
             $dataLogin = [
                 "email" => $userDataSaml['attributes']['urn:oid:0.9.2342.19200300.100.1.3'][0],
             ];

@@ -51,7 +51,7 @@ class CompetencesLearningsResultsController extends BaseController
     }
 
     public function searchLearningResults($query) {
-        $learningResults = LearningResultsModel::where('name', 'like', '%' . $query . '%')->select("uid", "name")->get();
+        $learningResults = LearningResultsModel::where('name', 'ILIKE', '%' . $query . '%')->select("uid", "name")->get();
 
         return response()->json($learningResults);
     }
@@ -84,7 +84,7 @@ class CompetencesLearningsResultsController extends BaseController
         $query = CompetencesModel::with('parentCompetence');
 
         if ($search) {
-            $query->where('name', 'LIKE', "%{$search}%");
+            $query->where('name', 'ILIKE', "%{$search}%");
         }
 
         if (isset($sort) && !empty($sort)) {

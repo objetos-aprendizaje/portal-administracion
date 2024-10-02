@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('automatic_resource_approval_users', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('user_uid', 36)->unique();
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('user_uid', 36)->unique();
             $table->timestamps();
         });
     }

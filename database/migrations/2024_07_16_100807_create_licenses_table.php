@@ -14,7 +14,7 @@ class CreateLicensesTable extends Migration
     public function up()
     {
         Schema::create('license_types', function (Blueprint $table) {
-            $table->string('uid', 36)->primary(); // Campo 'uid' como clave primaria y tipo de dato Big Integer
+            $table->uuid('uid', 36)->primary(); // Campo 'uid' como clave primaria y tipo de dato Big Integer
             $table->string('name'); // Campo 'name' de tipo string
             $table->timestamps(); // Campos 'created_at' y 'updated_at'
         });

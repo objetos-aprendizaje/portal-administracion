@@ -1,4 +1,5 @@
 import { showToast } from "./toast.js";
+import { apiFetch } from "./app.js";
 
 document.addEventListener("DOMContentLoaded", function () {
     setImageBackgroundHeight();
@@ -9,13 +10,24 @@ document.addEventListener("DOMContentLoaded", function () {
     login("loginFormMobile");
 
     checkErrorMessages();
-});
+
+    const resendEmailConfirmationLinks = document.querySelectorAll(
+        ".resend-email-confirmation"
+    );
+
+    resendEmailConfirmationLinks.forEach(function (link) {
+        link.addEventListener("click", function () {
+            const email = this.getAttribute("data-email-account");
+            resendEmailConfirmation(email);
+        });
+    });});
 
 function login(formId) {
     document
         .getElementById(formId)
         .addEventListener("submit", function (event) {
             event.preventDefault();
+
 
             const email = event.target.elements.email.value;
             const password = event.target.elements.password.value;
@@ -109,4 +121,17 @@ function checkErrorMessages() {
             showToast("Error de acceso mediante certificado digital");
         }
 
+}
+
+function resendEmailConfirmation(email) {
+    const params = {
+        method: "POST",
+        url: "/register/resend_email_confirmation",
+        body: { email },
+        toast: true,
+        stringify: true,
+        loader: true,
+    };
+
+    apiFetch(params);
 }

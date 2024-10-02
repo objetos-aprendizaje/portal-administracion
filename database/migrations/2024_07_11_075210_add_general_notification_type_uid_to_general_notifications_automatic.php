@@ -16,7 +16,7 @@ return new class extends Migration
 
             DB::table('general_notifications_automatic')->delete();
 
-            $table->string("automatic_notification_type_uid", 36);
+            $table->uuid("automatic_notification_type_uid", 36);
             $table->foreign(['automatic_notification_type_uid'], 'fk_aut_not_typ_uid_gen_notf_autom')->references(['uid'])->on('automatic_notification_types')->onUpdate('cascade')->onDelete('cascade');
         });
     }

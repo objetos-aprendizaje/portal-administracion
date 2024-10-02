@@ -14,12 +14,13 @@ use App\Models\TooltipTextsModel;
 use Illuminate\Http\UploadedFile;
 use App\Models\CourseStatusesModel;
 use App\Models\GeneralOptionsModel;
+use App\Services\EmbeddingsService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
-use App\Http\Controllers\LogsController;
 use App\Models\EducationalProgramsModel;
 use App\Http\Controllers\SliderController;
+use App\Exceptions\OperationFailedException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Http\Controllers\Administration\CarrouselsController;
 use App\Http\Controllers\Management\ManagementCoursesController;
@@ -139,6 +140,35 @@ class CarrouselsTest extends TestCase
         $this->assertNotNull($response->json('previsualizationUid'));
     }
 
+    /**
+     * @test Error 422 Imagen no existe     *
+     */
+    public function testException422WhenImageIsNotProvided()
+    {
+        $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
+            'uid' => generate_uuid(),
+            'featured_slider_image_path' => '',
+        ])->first();
+
+        // Simula los datos que normalmente vendrían en la solicitud
+        $data = [
+            'title' => 'Sample Slider',
+            'description' => 'This is a sample slider description.',
+            'color' => '#8a3838',
+            'learning_object_type' => 'educational_program',
+            'educational_program_uid' => $educationalProgram->uid,
+        ];
+        // Realizar la solicitud POST
+        $response = $this->postJson('/sliders/save_previsualization', $data);
+
+        // Verificar que se lanza una excepción con el mensaje correcto
+        $response->assertStatus(422)
+            ->assertJson([
+                'message' => 'Debes adjuntar una imagen',
+            ]);
+
+    }
+
     /** @test Guardar Carrusel Grande Aprobado  */
     public function testSavesBigCarrouselApprovals()
     {
@@ -210,12 +240,6 @@ class CarrouselsTest extends TestCase
             'featured_slider_approved' => false,
         ]);
 
-        // Verificar que se creó un registro en los logs
-        // $this->assertDatabaseHas('logs', [
-        //     'action' => 'Actualizar carrouseles grandes',
-        //     'module' => 'Administración carrouseles',
-        //     'user_uid' => $user->uid,
-        // ]);
     }
 
     /** @test */
@@ -320,8 +344,12 @@ class CarrouselsTest extends TestCase
             'belongs_to_educational_program' => true,
         ]);
 
-        // Creamos una instancia del controlador
-        $controller = new ManagementCoursesController();
+        // Create a mock for EmbeddingsService
+
+        $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
+
+        // Instantiate ManagementCoursesController with the mocked service
+        $controller = new ManagementCoursesController($mockEmbeddingsService);
 
         // Usamos reflexión para acceder al método privado
         $reflection = new \ReflectionClass($controller);
@@ -355,8 +383,13 @@ class CarrouselsTest extends TestCase
             'featured_big_carrousel_image_path' => 'image.jpg',
         ]);
 
-        // Creamos una instancia del controlador
-        $controller = new ManagementCoursesController();
+
+         // Create a mock for EmbeddingsService
+         $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
+
+        // Instantiate ManagementCoursesController with the mocked service
+        $controller = new ManagementCoursesController($mockEmbeddingsService);
+
 
         // Usamos reflexión para acceder al método privado
         $reflection = new \ReflectionClass($controller);
@@ -388,8 +421,12 @@ class CarrouselsTest extends TestCase
             'featured_big_carrousel_image_path' => null,
         ]);
 
-        // Creamos una instancia del controlador
-        $controller = new ManagementCoursesController();
+
+        // Create a mock for EmbeddingsService
+        $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
+
+        // Instantiate ManagementCoursesController with the mocked service
+        $controller = new ManagementCoursesController($mockEmbeddingsService);
 
         // Usamos reflexión para acceder al método privado
         $reflection = new \ReflectionClass($controller);
@@ -468,6 +505,36 @@ class CarrouselsTest extends TestCase
 
         // Verifica que se haya devuelto la ruta correcta de la imagen
         $this->assertEquals('images/test-images/743.jpg', $imagePath);
+    }
+
+    /**
+     * @test Error Validación por cualquier campo     *
+     */
+    public function testThrowsExceptionWhenTitleIsMissing()
+    {
+
+        // Crea un objeto Request con datos inválidos
+        $request = new Request([
+            'title' => '', // Título vacío, debería fallar
+            'description' => 'Descripción válida',
+            'color' => 'blue',
+        ]);
+
+        // Espera que se lance una excepción OperationFailedException
+        $this->expectException(OperationFailedException::class);
+
+        // Instancia de la clase que contiene el método a probar
+        $carrouselsController = new CarrouselsController();
+
+        // Usar reflexión para acceder al método privado
+        $reflection = new \ReflectionClass($carrouselsController);
+        $method = $reflection->getMethod('validatePrevisualizationSlider');
+        $method->setAccessible(true); // Hacerlo accesible
+
+        // Llamar al método privado con el request inválido
+        $method->invoke($carrouselsController, $request);
+
+
     }
 
 

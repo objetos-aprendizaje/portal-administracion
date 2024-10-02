@@ -100,36 +100,45 @@ class CertificateAccessControllerTest extends TestCase
 
     public function testIndexCreatesNewUserAndRedirects()
     {
-        // Simulamos que $_SERVER["REDIRECT_SSL_CLIENT_VERIFY"] es "SUCCESS"
-        $_SERVER["REDIRECT_SSL_CLIENT_VERIFY"] = "SUCCESS";
+         // Simulamos que $_SERVER["REDIRECT_SSL_CLIENT_VERIFY"] es "SUCCESS"
+    $_SERVER["REDIRECT_SSL_CLIENT_VERIFY"] = "SUCCESS";
 
-        // Simulamos datos de certificado SSL en $_SERVER
-        $_SERVER["REDIRECT_SSL_CLIENT_S_DN_G"] = "Test Name";
-        $_SERVER["SSL_CLIENT_S_DN_CN"] = "CN=Some Info - 12345678A";
-        $_SERVER["REDIRECT_SSL_CLIENT_SAN_Email_0"] = "test@example.com";
+    // Simulamos datos de certificado SSL en $_SERVER
+    $_SERVER["REDIRECT_SSL_CLIENT_S_DN_G"] = "Test Name";
+    $_SERVER["SSL_CLIENT_S_DN_CN"] = "CN=Some Info - 12345678A";
+    $_SERVER["REDIRECT_SSL_CLIENT_SAN_Email_0"] = "test@example.com";
 
-        // Simulamos que no existe un usuario con el email proporcionado
-        $this->assertDatabaseMissing('users', [
-            'email' => 'test@example.com',
-        ]);
-        $role = UserRolesModel::where('code', 'TEACHER')->first();
 
-        // Hacemos una petición GET a la ruta '/certificate-access'
-        $response = $this->get('/certificate-access');
+    // Verificamos que no existe un usuario con el email proporcionado
+    $this->assertDatabaseMissing('users', [
+        'email' => 'test@example.com',
+    ]);
 
-        // Verificamos que el usuario se ha creado correctamente en la base de datos
-        $this->assertDatabaseHas('users', [
-            'email' => 'test@example.com',
-            'first_name' => 'Test Name',
-            'last_name' => 'Test Name',
-            'nif' => '12345678A',
-            'logged_x509' => 1,
-        ]);
+    // Hacemos una petición GET a la ruta '/certificate-access'
+    $response = $this->get('/certificate-access');
 
-        // Verificamos que la relación de rol se ha creado correctamente
-        $user = UsersModel::where('email', 'test@example.com')->first();
-        $this->assertNotNull($user->uid);
-        $this->assertMatchesRegularExpression('/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/', $user->uid);
+    // Verificamos que el usuario se ha creado correctamente en la base de datos
+    $this->assertDatabaseHas('users', [
+        'email' => 'test@example.com',
+        'first_name' => 'Test Name',
+        'last_name' => 'Test Name',
+        'nif' => '12345678A',
+        'logged_x509' => true,
+    ]);
+
+    // Verificamos que la relación de rol se ha creado correctamente
+    $user = UsersModel::where('email', 'test@example.com')->first();
+
+    $this->assertNotNull($user->uid);
+    $this->assertMatchesRegularExpression('/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/', $user->uid);
+
+    // Verificamos que el rol se haya asignado correctamente
+    $roleRelation = UserRoleRelationshipsModel::where('user_uid', $user->uid)->first();
+    $this->assertNotNull($roleRelation);
+    $this->assertEquals($roleRelation->user_role_uid, UserRolesModel::where('code', 'TEACHER')->first()->uid);
+
+
+
     }
 
     public function testIndexRedirectsToLoginOnCertificateError()

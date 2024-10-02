@@ -14,7 +14,7 @@ return new class extends Migration
     {
         Schema::table('courses', function (Blueprint $table) {
             DB::table('courses')
-                ->where('inscription_start_date', '0000-00-00 00:00:00')
+                ->where('inscription_start_date', '0001-01-01 00:00:00') // TODO: Check for this migration
                 ->update(['inscription_start_date' => null]);
 
             $table->string('payment_mode')->nullable()->change();

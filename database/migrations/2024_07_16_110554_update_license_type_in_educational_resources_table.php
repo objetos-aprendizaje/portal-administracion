@@ -20,7 +20,7 @@ class UpdateLicenseTypeInEducationalResourcesTable extends Migration
 
         Schema::table('educational_resources', function (Blueprint $table) {
             // Añadir la nueva columna license_type_uid como varchar de 36 caracteres
-            $table->string('license_type_uid', 36)->nullable();
+            $table->uuid('license_type_uid', 36)->nullable();
         });
     }
 

@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('competences', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
+            $table->uuid('uid', 36)->primary();
             $table->string('name');
             $table->text('description')->nullable();
             $table->boolean('is_multi_select')->nullable();
-            $table->string('parent_competence_uid', 36)->nullable()->index();
+            $table->uuid('parent_competence_uid', 36)->nullable()->index();
             $table->string('origin_code')->nullable();
             $table->timestamps();
         });

@@ -10,10 +10,34 @@
         <div class="w-1/2 justify-center flex items-center">
             <div class="w-[530px] mb-[25px]">
                 <div class="rounded-[20px] border py-[20px] px-[40px]">
-                    <img class="mx-auto block max-w-[211px] max-h-[80px] mb-[15px]"
-                        src="{{ $general_options['poa_logo_1'] ?? asset('images/logo_login.jpg')  }}" />
+
+                    @if ($general_options['poa_logo_1'])
+                        <img class="mx-auto block max-w-[211px] max-h-[80px] mb-[15px]"
+                            src="{{ $general_options['poa_logo_1'] }}" />
+                    @endif
 
                     <div class="text-[28px] font-bold text-center mb-[15px]">Inicia sesión</div>
+
+                    @if (session('sent_email_recover_password'))
+                        <div class="bg-[#E7ECF3] py-[12px] px-[27px] rounded-[8px] mb-[15px] text-center">
+                            <p>Se ha enviado un link para reestablecer la contraseña</p>
+                            <p>
+                                ¿No has recibido nada? <a href="javascript:void(0)"
+                                    data-email-account="{{ session('email') }}"
+                                    class="text-color_1 resend-email-confirmation">Reenviar email</a>
+                            </p>
+                        </div>
+                    @endif
+
+                    @if (session('link_recover_password_expired'))
+                        <div class="bg-[#E7ECF3] py-[12px] px-[27px] rounded-[8px] mb-[15px] text-center">
+                            <p>El link de reestablecimiento de contraseña ha expirado</p>
+                            <p>
+                                <a href="javascript:void(0)" data-email-account="{{ session('email') }}"
+                                    class="text-color_1 resend-email-confirmation">Reenviar email</a>
+                            </p>
+                        </div>
+                    @endif
 
                     <form id="loginFormDesktop" action="/login/authenticate" method="POST">
                         @csrf
@@ -22,15 +46,13 @@
                                 <label class="px-3 mb-[8px]">Correo</label>
                                 <input
                                     class="border-[1.5px] border-solid border-primary rounded-full p-3 focus:border-primary h-[60px]"
-                                    type="text" name="email"
-                                    value="" />
+                                    type="text" name="email" value="" />
                             </div>
 
                             <div class="flex flex-col mb-[8px]">
                                 <label class="px-3 mb-[8px]">Contraseña</label>
                                 <input class="border-[1.5px] border-solid border-primary rounded-full h-[60px] p-3"
-                                    name="password" type="password"
-                                     />
+                                    name="password" type="password" />
                             </div>
 
                             <a href="{{ route('recover-password') }}" id="recover-password"
@@ -102,7 +124,7 @@
                                 @if ($parameters_login_systems['linkedin_login_active'])
                                     <button type="button"
                                         class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
-                                        <a href="/auth/linkedin"><img class="w-[32px] h-[32px]"
+                                        <a href="/auth/linkedin-openid"><img class="w-[32px] h-[32px]"
                                                 src="data/images/login_icons/linkedin_icon.png" /></a>
                                     </button>
                                 @endif
@@ -142,10 +164,31 @@
     </section>
 
     <section class="md:hidden p-[20px]">
-        <img class="mx-auto block max-w-[146px] h-[51px] mb-[15px]"
-            src="{{ $general_options['poa_logo_1'] ?? asset('images/logo_login.jpg') }}" />
+        @if ($general_options['poa_logo_1'])
+            <img class="mx-auto block max-w-[146px] h-[51px] mb-[15px]" src="{{ $general_options['poa_logo_1'] }}" />
+        @endif
 
         <div class="text-[28px] font-bold text-center mb-[15px]">Inicia sesión</div>
+
+        @if (session('sent_email_recover_password'))
+            <div class="bg-[#E7ECF3] py-[12px] px-[27px] rounded-[8px] mb-[15px] text-center">
+                <p>Se ha enviado un link para reestablecer la contraseña</p>
+                <p>
+                    ¿No has recibido nada? <a href="javascript:void(0)" data-email-account="{{ session('email') }}"
+                        class="text-color_1 resend-email-confirmation">Reenviar email</a>
+                </p>
+            </div>
+        @endif
+
+        @if (session('link_recover_password_expired'))
+            <div class="bg-[#E7ECF3] py-[12px] px-[27px] rounded-[8px] mb-[15px] text-center">
+                <p>El link de reestablecimiento de contraseña ha expirado</p>
+                <p>
+                    <a href="javascript:void(0)" data-email-account="{{ session('email') }}"
+                        class="text-color_1 resend-email-confirmation">Reenviar email</a>
+                </p>
+            </div>
+        @endif
 
         <div class="mb-[25px]">
             <form id="loginFormMobile" action="/login/authenticate" method="POST">
@@ -154,15 +197,17 @@
                     <label class="px-3 mb-[8px]">Correo</label>
                     <input
                         class="border-[1.5px] border-solid border-primary rounded-full h-[60px] p-3 focus:border-primary "
-                        type="text" />
+                        type="text" name="email" />
                 </div>
 
                 <div class="flex flex-col mb-[8px]">
                     <label class="px-3 mb-[8px]">Contraseña</label>
-                    <input class="border-[1.5px] border-solid border-primary rounded-full h-[60px] p-3" type="password" />
+                    <input class="border-[1.5px] border-solid border-primary rounded-full h-[60px] p-3" name="password"
+                        type="password" />
                 </div>
 
-                <a href="{{ route('recover-password') }}" class="text-primary block px-3 mb-[20px] text-[16px]">¿Olvidaste
+                <a href="{{ route('recover-password') }}"
+                    class="text-primary block px-3 mb-[20px] text-[16px]">¿Olvidaste
                     la
                     contraseña?</a>
 
@@ -236,7 +281,7 @@
                 @if ($parameters_login_systems['linkedin_login_active'])
                     <button type="button"
                         class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
-                        <a href="/auth/linkedin"><img class="max-w-[32px] max-h-[32px]"
+                        <a href="/auth/linkedin-openid"><img class="max-w-[32px] max-h-[32px]"
                                 src="data/images/login_icons/linkedin_icon.png" /></a>
                     </button>
                 @endif

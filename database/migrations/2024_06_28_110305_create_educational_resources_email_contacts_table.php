@@ -14,8 +14,8 @@ class CreateEducationalResourcesEmailContactsTable extends Migration
     public function up()
     {
         Schema::create('educational_resources_email_contacts', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('educational_resource_uid', 36);
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('educational_resource_uid', 36);
             $table->string('email', 255);
 
             // Define la clave foránea

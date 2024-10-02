@@ -93,7 +93,7 @@ class CategoriesController extends BaseController
         $query = CategoriesModel::with('parentCategory');
 
         if ($search) {
-            $query->where('name', 'LIKE', "%{$search}%");
+            $query->where('name', 'ILIKE', "%{$search}%");
         }
 
         if (isset($sort) && !empty($sort)) {
@@ -193,8 +193,8 @@ class CategoriesController extends BaseController
         // Si se proporcionó un término de búsqueda, lo aplicamos
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('description', 'like', '%' . $search . '%');
+                $q->where('name', 'ILIKE', '%' . $search . '%')
+                    ->orWhere('description', 'ILIKE', '%' . $search . '%');
             });
         } else {
             $query->whereNull('parent_category_uid')->with('subcategories');

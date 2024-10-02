@@ -36,6 +36,7 @@ class CoursesModelFactory extends Factory
             'calification_type' => $this->faker->randomElement(['NUMERICAL', 'TEXTUAL']),
             'lms_url' => $this->faker->url(),
             'cost' => $this->faker->randomFloat(2, 0, 1000),
+            'payment_mode' => $this->faker->randomElement(['SINGLE_PAYMENT', 'INSTALLMENT_PAYMENT']),
 
         ];
     }

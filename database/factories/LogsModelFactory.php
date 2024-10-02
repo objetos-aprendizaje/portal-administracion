@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\UsersModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,7 +20,14 @@ class LogsModelFactory extends Factory
         return [
             'uid' => generate_uuid(),
             'info' => 'Pruebas unitarias',
-            'entity' => 'Entity',            
+            'entity' => 'Entity',
         ];
+    }
+
+    private function withUser(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'user_uid' => UsersModel::factory()->create()->first(),
+        ]);
     }
 }

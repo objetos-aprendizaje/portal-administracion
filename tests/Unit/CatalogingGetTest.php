@@ -21,7 +21,6 @@ use App\Models\EducationalResourceTypesModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Http\Controllers\Cataloging\CategoriesController;
 
-
 class CatalogingGetTest extends TestCase
 {
 
@@ -151,7 +150,8 @@ class CatalogingGetTest extends TestCase
         $user = UsersModel::factory()->create();
         $this->actingAs($user);
         // Simular un request GET a la ruta con un UID que no existe
-        $response = $this->getJson('/cataloging/certification_types/get_certification_type/non-existing-uid');
+        $uid = generate_uuid();
+        $response = $this->getJson('/cataloging/certification_types/get_certification_type/' . $uid);
 
         // Verificar que la respuesta sea un error 406
         $response->assertStatus(406)

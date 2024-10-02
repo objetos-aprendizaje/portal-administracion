@@ -61,8 +61,8 @@ class GeneralNotificationsController extends BaseController
 
         if ($search) {
             $query->where(function ($query) use ($search) {
-                $query->where('title', 'LIKE', "%{$search}%")
-                    ->orWhere('description', 'LIKE', "%{$search}%");
+                $query->where('title', 'ILIKE', "%{$search}%")
+                    ->orWhere('description', 'ILIKE', "%{$search}%");
             });
         }
         if (isset($sort) && !empty($sort)) {
@@ -186,9 +186,9 @@ class GeneralNotificationsController extends BaseController
 
         if ($search) {
             $query->where(function ($query) use ($search) {
-                $query->where('user.first_name', 'LIKE', "%{$search}%")
-                    ->orWhere('user.last_name', 'LIKE', "%{$search}%")
-                    ->orWhere('user.email', 'LIKE', "%{$search}%");
+                $query->where('user.first_name', 'ILIKE', "%{$search}%")
+                    ->orWhere('user.last_name', 'ILIKE', "%{$search}%")
+                    ->orWhere('user.email', 'ILIKE', "%{$search}%");
             });
         }
 
@@ -216,7 +216,7 @@ class GeneralNotificationsController extends BaseController
         $user_uid = Auth::user()['uid'];
 
         $general_notification = GeneralNotificationsModel::where('uid', $notification_general_uid)->addSelect([
-            'is_read' => UserGeneralNotificationsModel::select(DB::raw('IF(COUNT(*), 1, 0)'))
+            'is_read' => UserGeneralNotificationsModel::select(DB::raw('CAST(CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END AS INTEGER)'))
                 ->whereColumn('user_general_notifications.general_notification_uid', 'general_notifications.uid')
                 ->where('user_general_notifications.user_uid', $user_uid)
                 ->limit(1)

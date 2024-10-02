@@ -13,7 +13,7 @@ class AddLmsSystemUidToCoursesTable extends Migration
     public function up()
     {
         Schema::table('courses', function (Blueprint $table) {
-            $table->string('lms_system_uid', 36)->nullable();
+            $table->uuid('lms_system_uid', 36)->nullable();
             $table->foreign('lms_system_uid')->references('uid')->on('lms_systems')->onDelete('cascade');
         });
     }

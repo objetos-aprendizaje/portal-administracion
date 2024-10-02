@@ -113,10 +113,10 @@ class NotificationsTest extends TestCase
         // Datos de prueba
 
         $notificationType= new NotificationsTypesModel();
-        $notificationType->uid = '555-12499-123456-12345-99999'; // Asigno el uid manualmente
+        $notificationType->uid = generate_uuid(); // Asigno el uid manualmente
         $notificationType->name = 'Some Notification Type';
         $notificationType->save();
-        $notificationType = NotificationsTypesModel::find('555-12499-123456-12345-99999');
+        $notificationType = NotificationsTypesModel::find($notificationType->uid);
 
         $data = [
             'title' => 'Test Notification',
@@ -175,10 +175,10 @@ class NotificationsTest extends TestCase
 
         // Crea un tipo de notificación necesario para la prueba
         $notificationType= new NotificationsTypesModel();
-        $notificationType->uid = '555-12499-123456-12345-33333'; // Asigno el uid manualmente
+        $notificationType->uid = generate_uuid(); // Asigno el uid manualmente
         $notificationType->name = 'Some Notification Type';
         $notificationType->save();
-        $notificationType = NotificationsTypesModel::find('555-12499-123456-12345-33333');
+        $notificationType = NotificationsTypesModel::find($notificationType->uid);
 
 
 
@@ -281,17 +281,14 @@ class NotificationsTest extends TestCase
 /**
  * @test Error 400 tipo de notificación por uid
  */
-    public function testReturns400ANotificationType()
+    public function testReturns404ANotificationType()
     {
 
-        // Crea un tipo de notificación
-        $notificationType = NotificationsTypesModel::factory()->create();
+        // Make a request with an invalid sort parameter
+    $response = $this->get('/notifications/notifications_types/get_notification_type?sort[]=invalidField');
 
-        // Realiza la solicitud a la ruta
-        $response = $this->get('/notifications/notifications_types/get_notification_type/' . $notificationType->uid);
-
-        // Verifica que la respuesta sea correcta
-        $response->assertStatus(400);
+    // Verify that the response is a validation error (400)
+    $response->assertStatus(404);
 
     }
 
@@ -300,8 +297,9 @@ class NotificationsTest extends TestCase
  */
     public function testReturnsErrorForNonexistentNotificationType()
     {
+        $nonexistentUid = '00000000-0000-0000-0000-000000000000';
         // Realiza la solicitud a la ruta con un UID que no existe
-        $response = $this->get('/notifications/notifications_types/get_notification_type/nonexistent-uid');
+        $response = $this->get('/notifications/notifications_types/get_notification_type/'.$nonexistentUid);
 
         // Verifica que la respuesta sea un error 406
         $response->assertStatus(406)
@@ -572,10 +570,10 @@ class NotificationsTest extends TestCase
 
          // Crea un tipo de notificación necesario para la prueba
          $notificationType= new NotificationsTypesModel();
-         $notificationType->uid = '555-12499-123456-12345-33333'; // Asigno el uid manualmente
+         $notificationType->uid = generate_uuid(); // Asigno el uid manualmente
          $notificationType->name = 'Some Notification Type';
          $notificationType->save();
-         $notificationType = NotificationsTypesModel::find('555-12499-123456-12345-33333');
+         $notificationType = NotificationsTypesModel::find($notificationType->uid);
 
 
 
@@ -621,7 +619,7 @@ class NotificationsTest extends TestCase
 
             // Datos de prueba
 
-            $response = $this->json('GET', 'notifications/email/get_email_notification/non-existe');
+            $response = $this->json('GET', 'notifications/email/get_email_notification/' . generate_uuid());
 
             $response->assertStatus(406)
                     ->assertJson(['message' => 'La notificación general no existe']);

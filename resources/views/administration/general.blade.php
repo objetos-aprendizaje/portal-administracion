@@ -33,7 +33,8 @@
                                         </div>
 
                                         <div class="w-1/2">
-                                            <button class="btn btn-primary mb-[14px] min-w-0 restore_poa_logo" data-field="poa_logo_1">Eliminar
+                                            <button class="btn btn-primary mb-[14px] min-w-0 restore_poa_logo"
+                                                data-field="poa_logo_1">Eliminar
                                                 {{ e_heroicon('trash', 'outline') }}</button>
 
                                             <label for="poa_logo_1" class="btn btn-primary min-w-0">Subir
@@ -45,7 +46,8 @@
                                         </div>
                                     </div>
 
-                                    <small class="text-center text-[#C7C7C7] mt-8">*Dimensiones recomendadas: Alto: 75px x Ancho: 215px.
+                                    <small class="text-center text-[#C7C7C7] mt-8">*Dimensiones recomendadas: Alto: 75px x
+                                        Ancho: 215px.
                                         Formato: PNG,
                                         JPG. Tam. Máx.: 1MB</small>
                                 </div>
@@ -74,7 +76,8 @@
                                         </div>
 
                                         <div class="w-1/2">
-                                            <button class="btn btn-primary mb-[14px] min-w-0 restore_poa_logo" data-field="poa_logo_2">Eliminar
+                                            <button class="btn btn-primary mb-[14px] min-w-0 restore_poa_logo"
+                                                data-field="poa_logo_2">Eliminar
                                                 {{ e_heroicon('trash', 'outline') }}</button>
 
                                             <label for="poa_logo_2" class="btn btn-primary min-w-0">Subir
@@ -85,7 +88,8 @@
                                         </div>
                                     </div>
 
-                                    <small class="text-center text-[#C7C7C7] mt-8">*Dimensiones recomendadas: Alto: 75px x Ancho: 215px.
+                                    <small class="text-center text-[#C7C7C7] mt-8">*Dimensiones recomendadas: Alto: 75px x
+                                        Ancho: 215px.
                                         Formato: PNG,
                                         JPG. Tam. Máx.: 1MB</small>
                                 </div>
@@ -114,7 +118,8 @@
                                         </div>
 
                                         <div class="w-1/2">
-                                            <button class="btn btn-primary mb-[14px] min-w-0 restore_poa_logo" data-field="poa_logo_3">Eliminar
+                                            <button class="btn btn-primary mb-[14px] min-w-0 restore_poa_logo"
+                                                data-field="poa_logo_3">Eliminar
                                                 {{ e_heroicon('trash', 'outline') }}</button>
 
                                             <label for="poa_logo_3" class="btn btn-primary min-w-0">Subir
@@ -125,7 +130,8 @@
                                         </div>
                                     </div>
 
-                                    <small class="text-center text-[#C7C7C7] mt-8">*Dimensiones recomendadas: Alto: 75px x Ancho: 215px.
+                                    <small class="text-center text-[#C7C7C7] mt-8">*Dimensiones recomendadas: Alto: 75px x
+                                        Ancho: 215px.
                                         Formato: PNG,
                                         JPG. Tam. Máx.: 1MB</small>
                                 </div>
@@ -1275,7 +1281,12 @@
         <h2>Configuración de API de OpenAI</h2>
 
         <p class="mt-2 mb-4">
-            Se usará la API de OpenAI para la generación de etiquetas
+            Se usará la API de OpenAI para la generación de etiquetas.
+        </p>
+
+        <p class="mt-2 mb-4">
+            Si hay cursos o recursos educativos que no tienen embeddings, puedes regenerarlos todos pulsando el botón de
+            abajo.
         </p>
 
         <form id="openai-form">
@@ -1283,7 +1294,7 @@
             <div class="poa-form">
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="openai_key">Clave API<span class="text-danger">*</span></label>
+                        <label for="openai_key">Clave API <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input placeholder="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" class="poa-input"
@@ -1293,8 +1304,13 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary" id="save-openai-btn">Guardar
-                {{ e_heroicon('paper-airplane', 'outline') }}</button>
+            <div class="flex gap-2">
+                <button type="submit" class="btn btn-primary" id="save-openai-btn">Guardar
+                    {{ e_heroicon('paper-airplane', 'outline') }}</button>
+
+                <button type="button" class="btn btn-secondary" id="regenerate-embeddings-btn">Regenerar embeddings
+                    {{ e_heroicon('arrow-path', 'outline') }}</button>
+            </div>
         </form>
 
     </div>

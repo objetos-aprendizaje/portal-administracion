@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('destinations_email_notifications_users', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('user_uid', 36)->index('user_fk');
-            $table->string('email_notification_uid', 36)->index('email_notification_fk');
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('user_uid', 36)->index('user_fk');
+            $table->uuid('email_notification_uid', 36)->index('email_notification_fk');
 
             $table->unique(['user_uid', 'email_notification_uid'], 'unique_user_uid_email_notification_uid');
         });

@@ -13,7 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('lanes', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
+            $table->uuid('uid', 36)->primary();
             $table->boolean('active');
             $table->timestamps();
             $table->string('code');

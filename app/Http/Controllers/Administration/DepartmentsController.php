@@ -48,7 +48,7 @@ class DepartmentsController extends BaseController
         $query = DepartmentsModel::query();
 
         if ($search) {
-            $query->where('name', 'LIKE', "%{$search}%");
+            $query->where('name', 'ILIKE', "%{$search}%");
         }
 
         if (isset($sort) && !empty($sort)) {

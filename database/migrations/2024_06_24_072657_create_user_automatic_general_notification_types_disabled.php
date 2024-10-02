@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user_automatic_general_notification_types_disabled', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('user_uid', 36);
-            $table->string('automatic_notification_type_uid', 36);
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('user_uid', 36);
+            $table->uuid('automatic_notification_type_uid', 36);
 
             $table->foreign('user_uid', 'auto_gene_notif_type_user_uid_fk')
                 ->references('uid')->on('users')

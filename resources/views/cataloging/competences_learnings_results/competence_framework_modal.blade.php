@@ -33,7 +33,8 @@
                     </div>
 
                     <div class="content-container">
-                        <textarea maxlength="1000" placeholder="Descripción" rows="4" id="description" name="description" class="poa-input"></textarea>
+                        <textarea maxlength="1000" placeholder="Descripción" rows="4" id="description" name="description"
+                            class="poa-input"></textarea>
                     </div>
                 </div>
 
@@ -55,7 +56,7 @@
 
                 <div id="level" class="hidden">
                     <div id="level" class="field">
-                        <div class="label-container label-center">
+                        <div class="label-container">
                             <label for="level">Niveles</label>
                         </div>
                         <div class="content-container items-center">
@@ -82,7 +83,8 @@
                 </div>
 
 
-                <input type="hidden" id="competence_framework_modal_uid" name="competence_framework_modal_uid" value="" />
+                <input type="hidden" id="competence_framework_modal_uid" name="competence_framework_modal_uid"
+                    value="" />
             </form>
         </div>
     </div>
@@ -92,13 +94,13 @@
 <template id="level-template">
     <div class="level mb-2">
 
-        <div class="mb-2">
+        <div class="flex gap-2 mb-2">
             <input type="text" class="poa-input level-name" placeholder="Nombre del nivel" />
-        </div>
 
-        <button class="w-[32px] h-[32px] btn-icon btn-remove-level" type="button">
-            {{ e_heroicon('trash', 'outline') }}
-        </button>
+            <button class="w-[32px] h-[32px] btn-icon btn-remove-level" type="button">
+                {{ e_heroicon('trash', 'outline') }}
+            </button>
+        </div>
 
         <input type="hidden" class="level_uid" name="level_uid" value="" />
     </div>

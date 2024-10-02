@@ -40,9 +40,9 @@ class TeachersCredentialsController extends BaseController
         });
 
         if ($search) {
-            $query->where('first_name', 'LIKE', "%{$search}%")
-                ->orWhere('last_name', 'LIKE', "%{$search}%")
-                ->orWhere('email', 'LIKE', "%{$search}%");
+            $query->where('first_name', 'ILIKE', "%{$search}%")
+                ->orWhere('last_name', 'ILIKE', "%{$search}%")
+                ->orWhere('email', 'ILIKE', "%{$search}%");
         }
 
         if (isset($sort) && !empty($sort)) {
@@ -66,7 +66,7 @@ class TeachersCredentialsController extends BaseController
         $query = $user->coursesTeachers();
 
         if ($search) {
-            $query->where('title', 'LIKE', "%{$search}%");
+            $query->where('title', 'ILIKE', "%{$search}%");
         }
 
         if (isset($sort) && !empty($sort)) {

@@ -631,7 +631,8 @@ class CatalogingCourseTest extends TestCase
     public function testGetEducationalProgramTypeNotFound()
     {
         // Hacer una solicitud GET a la ruta con un uid que no existe
-        $response = $this->get('/cataloging/educational_program_types/get_educational_program_type/non-existent-uid');
+        $uuid = generate_uuid();
+        $response = $this->get('/cataloging/educational_program_types/get_educational_program_type/' . $uuid);
 
         // Verificar que la respuesta tenga un código de estado 406 (Not Acceptable)
         $response->assertStatus(406);

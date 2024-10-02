@@ -14,7 +14,7 @@ class MakeEntityAndEntityUidNullableInGeneralNotificationsAutomaticTable extends
     {
         Schema::table('general_notifications_automatic', function (Blueprint $table) {
             $table->string('entity')->nullable()->change();
-            $table->string('entity_uid', 36)->nullable()->change();
+            $table->uuid('entity_uid', 36)->nullable()->change();
         });
     }
 
@@ -27,7 +27,7 @@ class MakeEntityAndEntityUidNullableInGeneralNotificationsAutomaticTable extends
     {
         Schema::table('general_notifications_automatic', function (Blueprint $table) {
             $table->string('entity')->nullable(false)->change();
-            $table->string('entity_uid', 36)->nullable(false)->change();
+            $table->uuid('entity_uid', 36)->nullable(false)->change();
         });
     }
 }
