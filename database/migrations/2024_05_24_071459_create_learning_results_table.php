@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('learning_results', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
+            $table->uuid('uid', 36)->primary();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->string('competence_uid', 36)->index('qvkei_learning_results_competence_uid_foreign');
+            $table->uuid('competence_uid', 36)->index('qvkei_learning_results_competence_uid_foreign');
             $table->string('origin_code')->nullable();
             $table->timestamps();
         });

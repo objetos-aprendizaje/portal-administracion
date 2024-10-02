@@ -45,9 +45,15 @@ class ListUsersController extends BaseController
 
     public function getUserRoles()
     {
-        $user_roles = UserRolesModel::orderByRaw("FIELD(code, 'ADMINISTRATOR', 'MANAGEMENT', 'TEACHER', 'STUDENT')")
-            ->get()
-            ->toArray();
+        $user_roles = UserRolesModel::orderByRaw("
+            CASE
+                WHEN code = 'ADMINISTRATOR' THEN 1
+                WHEN code = 'MANAGEMENT' THEN 2
+                WHEN code = 'TEACHER' THEN 3
+                WHEN code = 'STUDENT' THEN 4
+                ELSE 5
+            END
+        ")->get()->toArray();
 
         return response()->json($user_roles, 200);
     }
@@ -64,10 +70,10 @@ class ListUsersController extends BaseController
 
         if ($search) {
             $users_query->where(function ($query) use ($search) {
-                $query->where('first_name', 'LIKE', "%{$search}%")
-                    ->orWhere('last_name', 'LIKE', "%{$search}%")
-                    ->orWhere('email', 'LIKE', "%{$search}%")
-                    ->orWhere('nif', 'LIKE', "%{$search}%");
+                $query->where('first_name', 'ILIKE', "%{$search}%")
+                    ->orWhere('last_name', 'ILIKE', "%{$search}%")
+                    ->orWhere('email', 'ILIKE', "%{$search}%")
+                    ->orWhere('nif', 'ILIKE', "%{$search}%");
             });
         }
 
@@ -87,10 +93,10 @@ class ListUsersController extends BaseController
 
         if ($search) {
             $query->where(function ($query) use ($search) {
-                $query->where('first_name', 'LIKE', "%{$search}%")
-                    ->orWhere('last_name', 'LIKE', "%{$search}%")
-                    ->orWhere('email', 'LIKE', "%{$search}%")
-                    ->orWhere('nif', 'LIKE', "%{$search}%");
+                $query->where('first_name', 'ILIKE', "%{$search}%")
+                    ->orWhere('last_name', 'ILIKE', "%{$search}%")
+                    ->orWhere('email', 'ILIKE', "%{$search}%")
+                    ->orWhere('nif', 'ILIKE', "%{$search}%");
             });
         }
 
@@ -158,7 +164,12 @@ class ListUsersController extends BaseController
         }
 
         $user->fill($request->only([
-            'first_name', 'last_name', 'nif', 'email', 'curriculum', 'department_uid'
+            'first_name',
+            'last_name',
+            'nif',
+            'email',
+            'curriculum',
+            'department_uid'
         ]));
 
         $photoFile = $request->file('photo_path');
@@ -225,7 +236,8 @@ class ListUsersController extends BaseController
         return $validator->errors();
     }
 
-    private function syncUserRoles($request, $user) {
+    private function syncUserRoles($request, $user)
+    {
         $roles = $request->input('roles');
         $roles = json_decode($roles, true);
 
@@ -268,7 +280,8 @@ class ListUsersController extends BaseController
 
         // Insertar el token en la tabla password_reset_tokens
         DB::table('reset_password_tokens')->insert([
-            'uid_user' => $user->uid, // Asegurarse de que se proporcione el uid del usuario
+            'uid' => generate_uuid(),
+            'uid_user' => $user->uid,
             'email' => $user->email,
             'token' => $token,
             'created_at' => now(),
@@ -287,11 +300,12 @@ class ListUsersController extends BaseController
     }
 
     // Si tiene el rol de estudiante, lo mandamos al front. Si no tiene estudiante lo mandamos al back
-    private function generateUrlRestorePassword($isStudent, $token, $user) {
+    private function generateUrlRestorePassword($isStudent, $token, $user)
+    {
 
         $originalUrl = config('app.url');
 
-        if($isStudent) {
+        if ($isStudent) {
             URL::forceRootUrl(env('FRONT_URL'));
         }
 
@@ -367,10 +381,10 @@ class ListUsersController extends BaseController
 
         if ($search) {
             $users_query->where(function ($query) use ($search) {
-                $query->where('first_name', 'LIKE', "%{$search}%")
-                    ->orWhere('last_name', 'LIKE', "%{$search}%")
-                    ->orWhere('email', 'LIKE', "%{$search}%")
-                    ->orWhere('nif', 'LIKE', "%{$search}%");
+                $query->where('first_name', 'ILIKE', "%{$search}%")
+                    ->orWhere('last_name', 'ILIKE', "%{$search}%")
+                    ->orWhere('email', 'ILIKE', "%{$search}%")
+                    ->orWhere('nif', 'ILIKE', "%{$search}%");
             });
         }
 
@@ -387,10 +401,10 @@ class ListUsersController extends BaseController
                 $query->whereIn('code', ['STUDENT']);
             })
             ->where(function ($query) use ($search) {
-                $query->where('first_name', 'LIKE', "%{$search}%")
-                    ->orWhere('last_name', 'LIKE', "%{$search}%")
-                    ->orWhere('email', 'LIKE', "%{$search}%")
-                    ->orWhere('nif', 'LIKE', "%{$search}%");
+                $query->where('first_name', 'ILIKE', "%{$search}%")
+                    ->orWhere('last_name', 'ILIKE', "%{$search}%")
+                    ->orWhere('email', 'ILIKE', "%{$search}%")
+                    ->orWhere('nif', 'ILIKE', "%{$search}%");
             })
             ->whereDoesntHave('coursesStudents', function ($query) use ($course) {
                 $query->where('course_uid', $course);
@@ -410,10 +424,10 @@ class ListUsersController extends BaseController
                 $query->whereIn('code', ['STUDENT']);
             })
             ->where(function ($query) use ($search) {
-                $query->where('first_name', 'LIKE', "%{$search}%")
-                    ->orWhere('last_name', 'LIKE', "%{$search}%")
-                    ->orWhere('email', 'LIKE', "%{$search}%")
-                    ->orWhere('nif', 'LIKE', "%{$search}%");
+                $query->where('first_name', 'ILIKE', "%{$search}%")
+                    ->orWhere('last_name', 'ILIKE', "%{$search}%")
+                    ->orWhere('email', 'ILIKE', "%{$search}%")
+                    ->orWhere('nif', 'ILIKE', "%{$search}%");
             })
             ->whereDoesntHave('EducationalProgramsStudents', function ($query) use ($course) {
                 $query->where('educational_program_uid', $course);

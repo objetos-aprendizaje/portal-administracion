@@ -14,9 +14,9 @@ class CreateEducationalProgramsPaymentsTable extends Migration
     public function up()
     {
         Schema::create('educational_programs_payments', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('user_uid', 36);
-            $table->string('educational_program_uid', 36);
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('user_uid', 36);
+            $table->uuid('educational_program_uid', 36);
             $table->string('order_number', 12);
             $table->text('info')->nullable();
             $table->tinyInteger('is_paid');

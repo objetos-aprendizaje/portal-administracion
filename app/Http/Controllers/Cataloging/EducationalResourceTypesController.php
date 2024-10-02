@@ -69,7 +69,7 @@ class EducationalResourceTypesController extends BaseController
         $query = EducationalResourceTypesModel::query();
 
         if ($search) {
-            $query->where('name', 'LIKE', "%{$search}%");
+            $query->where('name', 'ILIKE', "%{$search}%");
         }
 
         if (isset($sort) && !empty($sort)) {

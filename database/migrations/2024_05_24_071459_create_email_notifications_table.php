@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('email_notifications', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
+            $table->uuid('uid', 36)->primary();
             $table->string('subject');
             $table->text('body');
             $table->enum('type', ['ROLES', 'USERS', 'ALL_USERS'])->nullable();
             $table->dateTime('send_date')->nullable();
             $table->boolean('sent')->default(false);
-            $table->string('notification_type_uid')->nullable()->index('notification_type_uid');
+            $table->uuid('notification_type_uid', 36)->nullable()->index('notification_type_uid');
             $table->timestamps();
         });
     }

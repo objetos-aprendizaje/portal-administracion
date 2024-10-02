@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user_policies_accepted', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('footer_page_uid', 36);
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('footer_page_uid', 36);
 
             $table->foreign('footer_page_uid', 'usr_pol_acep_foot_pag_uid_fk')
                 ->references('uid')->on('footer_pages')
                 ->onDelete('cascade');
-            $table->string("user_uid", 36);
+            $table->uuid("user_uid", 36);
 
             $table->foreign('user_uid', 'usr_pol_acep_user_uid_fk')
                 ->references('uid')->on('users')

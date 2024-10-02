@@ -10,9 +10,13 @@ RUN apt-get update && apt install --fix-missing -y \
 	&& apt install --no-install-recommends -y libpq-dev \
 	&& docker-php-ext-install intl \
 	&& docker-php-ext-install mysqli \
+	&& docker-php-ext-install pgsql \
 	&& docker-php-ext-enable mysqli \
+	&& docker-php-ext-enable pgsql \
 	&& docker-php-ext-install pdo_mysql \
+	&& docker-php-ext-install pdo_pgsql \
     && docker-php-ext-enable pdo_mysql \
+    && docker-php-ext-enable pdo_pgsql \
     && docker-php-ext-install fileinfo \
     && docker-php-ext-enable fileinfo
 
@@ -48,7 +52,7 @@ RUN rm -rf /var/lib/apt/lists/*
 RUN echo "upload_max_filesize = 140M"  > /usr/local/etc/php/conf.d/custom.ini
 RUN echo "post_max_size = 140M"  >> /usr/local/etc/php/conf.d/custom.ini
 
-ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf

@@ -39,7 +39,8 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="google_client_secret">Clave secreta de cliente <span class="text-danger">*</span></label>
+                        <label for="google_client_secret">Clave secreta de cliente <span
+                                class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['google_client_secret'] }}" class="poa-input" type="text"
@@ -87,9 +88,8 @@
                         <label for="facebook_client_id">ID Cliente <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
-                        <input value="{{ $general_options['facebook_client_id'] }}"
-                            placeholder=".apps.facebook.com" class="poa-input" type="text"
-                            id="facebook_client_id" name="facebook_client_id" />
+                        <input value="{{ $general_options['facebook_client_id'] }}" placeholder=".apps.facebook.com"
+                            class="poa-input" type="text" id="facebook_client_id" name="facebook_client_id" />
                     </div>
                 </div>
 
@@ -129,8 +129,8 @@
                     <div class="content-container little">
                         <div class="checkbox">
                             <label for="twitter_login_active" class="inline-flex relative items-center cursor-pointer">
-                                <input {{ $general_options['twitter_login_active'] ? 'checked' : '' }}
-                                    type="checkbox" id="twitter_login_active" name="twitter_login_active" class="sr-only peer">
+                                <input {{ $general_options['twitter_login_active'] ? 'checked' : '' }} type="checkbox"
+                                    id="twitter_login_active" name="twitter_login_active" class="sr-only peer">
                                 <div
                                     class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
                                 </div>
@@ -152,7 +152,8 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="twitter_client_secret">Clave secreta de cliente <span class="text-danger">*</span></label>
+                        <label for="twitter_client_secret">Clave secreta de cliente <span
+                                class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['twitter_client_secret'] }}" class="poa-input" type="text"
@@ -187,8 +188,8 @@
                     <div class="content-container little">
                         <div class="checkbox">
                             <label for="linkedin_login_active" class="inline-flex relative items-center cursor-pointer">
-                                <input {{ $general_options['linkedin_login_active'] ? 'checked' : '' }}
-                                    type="checkbox" id="linkedin_login_active" name="linkedin_login_active" class="sr-only peer">
+                                <input {{ $general_options['linkedin_login_active'] ? 'checked' : '' }} type="checkbox"
+                                    id="linkedin_login_active" name="linkedin_login_active" class="sr-only peer">
                                 <div
                                     class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
                                 </div>
@@ -210,7 +211,8 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="linkedin_client_secret">Clave secreta de cliente <span class="text-danger">*</span></label>
+                        <label for="linkedin_client_secret">Clave secreta de cliente <span
+                                class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['linkedin_client_secret'] }}" class="poa-input" type="text"
@@ -244,13 +246,16 @@
                     <div class="content-container little">
                         <div class="checkbox">
                             <label for="cas_login_active" class="inline-flex relative items-center cursor-pointer">
-                                <input {{ $cas_active ? 'checked' : '' }}
-                                    type="checkbox" id="cas_login_active" name="cas_login_active" class="sr-only peer">
+                                <input {{ $cas_active ? 'checked' : '' }} type="checkbox" id="cas_login_active"
+                                    name="cas_login_active" class="sr-only peer">
                                 <div
                                     class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
                                 </div>
                             </label>
                         </div>
+
+                        <a class="{{ $urlCasMetadata ? 'block' : 'hidden' }}" id="view-metadata-cas"
+                            href="{{ $urlCasMetadata }}" target="_blank">Ver metadata</a>
                     </div>
                 </div>
 
@@ -321,13 +326,16 @@
                     <div class="content-container little">
                         <div class="checkbox">
                             <label for="rediris_login_active" class="inline-flex relative items-center cursor-pointer">
-                                <input {{ $rediris_active ? 'checked' : '' }}
-                                    type="checkbox" id="rediris_login_active" name="rediris_login_active" class="sr-only peer">
+                                <input {{ $rediris_active ? 'checked' : '' }} type="checkbox" id="rediris_login_active"
+                                    name="rediris_login_active" class="sr-only peer">
                                 <div
                                     class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
                                 </div>
                             </label>
                         </div>
+
+                        <a class="{{ $urlRedirisMetadata ? 'block' : 'hidden' }}" id="view-metadata-rediris"
+                            href="{{ $urlRedirisMetadata }}" target="_blank">Ver metadata</a>
                     </div>
                 </div>
 
@@ -336,8 +344,9 @@
                         <label for="rediris_entity_id">Entity ID <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
-                        <input maxlength="255" value="{{ $rediris ? $rediris['idp_entity_id'] : '' }}" placeholder="Entity ID"
-                            class="poa-input" type="text" id="rediris_entity_id" name="rediris_entity_id" />
+                        <input maxlength="255" value="{{ $rediris ? $rediris['idp_entity_id'] : '' }}"
+                            placeholder="Entity ID" class="poa-input" type="text" id="rediris_entity_id"
+                            name="rediris_entity_id" />
                     </div>
                 </div>
 
@@ -346,8 +355,9 @@
                         <label for="rediris_login_url">Login URL <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
-                        <input maxlength="255" value="{{ $rediris ? $rediris['idp_login_url'] : '' }}" placeholder="Login URL"
-                            class="poa-input" type="text" id="rediris_login_url" name="rediris_login_url" />
+                        <input maxlength="255" value="{{ $rediris ? $rediris['idp_login_url'] : '' }}"
+                            placeholder="Login URL" class="poa-input" type="text" id="rediris_login_url"
+                            name="rediris_login_url" />
                     </div>
                 </div>
 
@@ -356,8 +366,9 @@
                         <label for="rediris_logout_url">Logout URL <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
-                        <input maxlength="255" value="{{ $rediris ? $rediris['idp_logout_url'] : '' }}" placeholder="Logout URL"
-                            class="poa-input" type="text" id="rediris_logout_url" name="rediris_logout_url" />
+                        <input maxlength="255" value="{{ $rediris ? $rediris['idp_logout_url'] : '' }}"
+                            placeholder="Logout URL" class="poa-input" type="text" id="rediris_logout_url"
+                            name="rediris_logout_url" />
                     </div>
                 </div>
 
@@ -379,5 +390,4 @@
 
 
     </div>
-
 @endsection

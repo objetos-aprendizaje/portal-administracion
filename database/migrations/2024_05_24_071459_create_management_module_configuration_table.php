@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('management_module_configuration', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
+            $table->uuid('uid', 36)->primary();
             $table->boolean('course_approval_required');
             $table->boolean('resource_approval_required');
             $table->boolean('course_state_change_managers');

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('educational_programs_students', function (Blueprint $table) {
             $table->uuid('uid')->primary();
             $table->uuid('educational_program_uid');
-            $table->uuid('user_uid');
+            $table->uuid('user_uid', 36);
             $table->enum('calification_type', ['NUMERIC', 'TEXTUAL'])->nullable();
             $table->string('calification')->nullable();
             $table->timestamps();

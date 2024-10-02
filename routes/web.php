@@ -32,7 +32,7 @@ use App\Http\Controllers\Users\ListUsersController;
 use App\Http\Controllers\Analytics\AnalyticsUsersController;
 use App\Http\Controllers\Analytics\AnalyticsPoaController;
 use App\Http\Controllers\Analytics\AnalyticsAbandonedController;
-use App\Http\Controllers\Api\AddDepartmentsController;
+use App\Http\Controllers\Analytics\AnalyticsTopCategoriesController;
 use App\Http\Controllers\Api\ConfirmCourseCreationController;
 use App\Http\Controllers\Api\GetCourseController;
 use App\Http\Controllers\Api\RegisterUserController;
@@ -60,6 +60,7 @@ use App\Http\Controllers\LearningObjects\LearningObjetsController;
 use App\Http\Controllers\Administration\TooltipTextsController;
 use App\Http\Controllers\Api\DepartmentsApiController;
 use App\Http\Controllers\Administration\DepartmentsController;
+use App\Jobs\SendEmailJob;
 
 /*
 |--------------------------------------------------------------------------
@@ -71,6 +72,10 @@ use App\Http\Controllers\Administration\DepartmentsController;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
+
+
+
+
 Route::middleware(['combined.auth'])->group(function () {
 
     Route::get('/', function () {
@@ -160,14 +165,8 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::post('/administration/carrousels/save_big_carrousels_approvals', [CarrouselsController::class, 'save_big_carrousels_approvals']);
         Route::post('/administration/carrousels/save_small_carrousels_approvals', [CarrouselsController::class, 'save_small_carrousels_approvals']);
 
-
-        Route::get('/notifications/notifications_types', [NotificationsTypesController::class, 'index'])->name('notifications-types');
-        Route::get('/notifications/notifications_types/get_list_notification_types', [NotificationsTypesController::class, 'getNotificationsTypes']);
-        Route::get('/notifications/notifications_types/get_notification_type/{notification_type_uid}', [NotificationsTypesController::class, 'getNotificationType']);
-        Route::post('/notifications/notifications_types/save_notification_type', [NotificationsTypesController::class, 'saveNotificationType']);
-        Route::delete('/notifications/notifications_types/delete_notifications_types', [NotificationsTypesController::class, 'deleteNotificationsTypes']);
-
         Route::post('/administration/save_openai_form', [GeneralAdministrationController::class, 'saveOpenai']);
+        Route::post('/administration/regenerate_embeddings', [GeneralAdministrationController::class, 'regenerateEmbeddings']);
 
 
         Route::get('/administration/tooltip_texts/tooltip_texts', [TooltipTextsController::class, 'index'])->name('tooltip-texts');
@@ -199,7 +198,6 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/administration/footer_pages/get_footer_page/{footer_page_uid}', [FooterPagesController::class, 'getFooterPage']);
         Route::post('/administration/footer_pages/save_footer_page', [FooterPagesController::class, 'saveFooterPage']);
         Route::delete('/administration/footer_pages/delete_footer_pages', [FooterPagesController::class, 'deleteFooterPages']);
-        Route::get('/administration/footer_pages/get_footer_pages_select', [FooterPagesController::class, 'getFooterPagesSelect']);
 
 
         Route::post('/administration/header_pages/get_header_pages', [HeaderPagesController::class, 'getHeaderPages']);
@@ -258,24 +256,8 @@ Route::middleware(['combined.auth'])->group(function () {
     });
 
     Route::middleware(['role:ADMINISTRATOR,MANAGEMENT,TEACHER'])->group(function () {
-
-        Route::get('/notifications/general', [GeneralNotificationsController::class, 'index'])->name('notifications-general');
-        Route::get('/notifications/email', [EmailNotificationsController::class, 'index'])->name('notifications-email');
-        Route::get('/notifications/general/get_list_general_notifications', [GeneralNotificationsController::class, 'getGeneralNotifications']);
-        Route::get('/notifications/general/get_general_notification/{notification_general_uid}', [GeneralNotificationsController::class, 'getGeneralNotification']);
-        Route::get('/notifications/general/get_general_notification_user/{notification_general_uid}', [GeneralNotificationsController::class, 'getGeneralNotificationUser']);
-
         Route::get('/notifications/notifications_statuses_courses/get_notifications_statuses_courses/{status_notification_uid}', [NotificationsChangesStatusesCoursesController::class, 'getNotificationsChangesStatusesCoursesController']);
-
         Route::get('/notifications/notifications_statuses_courses/get_general_notification_automatic/{uid}', [GeneralNotificationsController::class, 'getGeneralAutomaticNotificationUser']);
-
-        Route::post('/notifications/general/save_general_notifications', [GeneralNotificationsController::class, 'saveGeneralNotification']);
-        Route::delete('/notifications/general/delete_general_notifications', [GeneralNotificationsController::class, 'deleteGeneralNotifications']);
-        Route::get('/notifications/general/get_users_views_general_notification/{notification_general_uid}', [GeneralNotificationsController::class, 'getUserViewsGeneralNotification']);
-        Route::get('notifications/email/get_list_email_notifications', [EmailNotificationsController::class, 'getEmailNotifications'])->name('get-notifications-email');
-        Route::post('notifications/email/save_email_notification', [EmailNotificationsController::class, 'saveEmailNotification'])->name('save-notification-email');
-        Route::get('notifications/email/get_email_notification/{notification_email_uid}', [EmailNotificationsController::class, 'getEmailNotification'])->name('get-notification-email');
-        Route::delete('/notifications/email/delete_email_notifications', [EmailNotificationsController::class, 'deleteEmailNotifications']);
 
         Route::get('/searcher/get_learning_results/{query}', [CompetencesLearningsResultsController::class, 'searchLearningResults']);
     });
@@ -356,6 +338,8 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/analytics/users', [AnalyticsUsersController::class, 'index'])->name('analytics-users');
         Route::get('/analytics/poa', [AnalyticsPoaController::class, 'index'])->name('analytics-poa');
         Route::get('/analytics/abandoned', [AnalyticsAbandonedController::class, 'index'])->name('analytics-abandoned');
+        Route::get('/analytics/top_categories', [AnalyticsTopCategoriesController::class, 'index'])->name('analytics-top-categories');
+
 
         Route::get('/logs/list_logs/get_logs', [LogsController::class, 'getLogs']);
 
@@ -364,21 +348,49 @@ Route::middleware(['combined.auth'])->group(function () {
 
         Route::get('/analytics/users/get_poa_get', [AnalyticsPoaController::class, 'getPoa'])->name('analytics-poa-get');
         Route::get('/analytics/users/get_poa_graph', [AnalyticsPoaController::class, 'getPoaGraph'])->name('analytics-poa-graph');
+        Route::get('/analytics/users/get_poa_accesses', [AnalyticsPoaController::class, 'getPoaAccesses'])->name('analytics-poa-accesses');
 
         Route::get('/analytics/users/get_poa_resources', [AnalyticsPoaController::class, 'getPoaResources'])->name('analytics-poa-resources');
         Route::get('/analytics/users/get_poa_graph_resources', [AnalyticsPoaController::class, 'getPoaGraphResources'])->name('analytics-poa-graph-resources');
+        Route::get('/analytics/users/get_poa_resources_accesses', [AnalyticsPoaController::class, 'getPoaResourcesAccesses'])->name('analytics-poa-resources-accesses');
 
         Route::get('/analytics/users/get_abandoned', [AnalyticsAbandonedController::class, 'getAbandoned'])->name('analytics-abandoned-get');
         Route::get('/analytics/users/get_abandoned_graph', [AnalyticsAbandonedController::class, 'getAbandonedGraph'])->name('analytics-abandoned-graph');
+
+        Route::get('/analytics/users/get_top_table', [AnalyticsTopCategoriesController::class, 'getTopCategories'])->name('get-top-categories');
+
+        Route::get('/analytics/users/get_top_graph', [AnalyticsTopCategoriesController::class, 'getTopCategoriesGraph'])->name('get-top-categories-graph');
 
         Route::post('/learning_objects/educational_resources/change_statuses_resources', [EducationalResourcesController::class, 'changeStatusesResources']);
     });
 
     Route::middleware(['role:MANAGEMENT,TEACHER'])->group(function () {
+        Route::get('/notifications/general', [GeneralNotificationsController::class, 'index'])->name('notifications-general');
+        Route::post('/notifications/general/save_general_notifications', [GeneralNotificationsController::class, 'saveGeneralNotification']);
+        Route::delete('/notifications/general/delete_general_notifications', [GeneralNotificationsController::class, 'deleteGeneralNotifications']);
+        Route::get('/notifications/general/get_users_views_general_notification/{notification_general_uid}', [GeneralNotificationsController::class, 'getUserViewsGeneralNotification']);
+
+        Route::get('/notifications/general/get_list_general_notifications', [GeneralNotificationsController::class, 'getGeneralNotifications']);
+        Route::get('/notifications/general/get_general_notification/{notification_general_uid}', [GeneralNotificationsController::class, 'getGeneralNotification']);
+
         Route::get('/notifications/notifications_per_users', [NotificationsPerUsersController::class, 'index'])->name('notifications-per-users');
         Route::get('/notifications/notifications_per_users/get_list_users', [NotificationsPerUsersController::class, 'getNotificationsPerUsers']);
         Route::get('/notifications/notifications_per_users/get_notifications/{user_uid}', [NotificationsPerUsersController::class, 'getNotificationsPerUser']);
+
+        Route::get('/notifications/email', [EmailNotificationsController::class, 'index'])->name('notifications-email');
+        Route::get('notifications/email/get_list_email_notifications', [EmailNotificationsController::class, 'getEmailNotifications'])->name('get-notifications-email');
+        Route::post('notifications/email/save_email_notification', [EmailNotificationsController::class, 'saveEmailNotification'])->name('save-notification-email');
+        Route::get('notifications/email/get_email_notification/{notification_email_uid}', [EmailNotificationsController::class, 'getEmailNotification'])->name('get-notification-email');
+        Route::delete('/notifications/email/delete_email_notifications', [EmailNotificationsController::class, 'deleteEmailNotifications']);
+
+        Route::get('/notifications/notifications_types', [NotificationsTypesController::class, 'index'])->name('notifications-types');
+        Route::get('/notifications/notifications_types/get_list_notification_types', [NotificationsTypesController::class, 'getNotificationsTypes']);
+        Route::get('/notifications/notifications_types/get_notification_type/{notification_type_uid}', [NotificationsTypesController::class, 'getNotificationType']);
+        Route::post('/notifications/notifications_types/save_notification_type', [NotificationsTypesController::class, 'saveNotificationType']);
+        Route::delete('/notifications/notifications_types/delete_notifications_types', [NotificationsTypesController::class, 'deleteNotificationsTypes']);
     });
+
+    Route::get('/notifications/general/get_general_notification_user/{notification_general_uid}', [GeneralNotificationsController::class, 'getGeneralNotificationUser']);
 
     Route::get('/users/list_users', [ListUsersController::class, 'index'])->name('list-users');
     Route::get('/users/list_users/get_users', [ListUsersController::class, 'getUsers']);
@@ -426,17 +438,9 @@ Route::middleware('guest')->group(function () {
 
     Route::post('/login/authenticate', [LoginController::class, 'authenticate']);
 
-    Route::get('auth/google', [LoginController::class, 'redirectToGoogle']);
-    Route::get('auth/google/callback', [LoginController::class, 'handleGoogleCallback']);
+    Route::get('auth/{login_method}', [LoginController::class, 'redirectToSocialLogin']);
 
-    Route::get('auth/twitter', [LoginController::class, 'redirectToTwitter']);
-    Route::get('auth/twitter/callback', [LoginController::class, 'handleTwitterCallback']);
-
-    Route::get('auth/linkedin',  [LoginController::class, 'redirectToLinkedin']);
-    Route::get('auth/linkedin/callback',  [LoginController::class, 'handleLinkedinCallback']);
-
-    Route::get('auth/facebook', [LoginController::class, 'redirectToFacebook']);
-    Route::get('auth/facebook/callback', [LoginController::class, 'handleFacebookCallback']);
+    Route::get('/auth/callback/{login_method}', [LoginController::class, 'handleSocialCallback']);
 });
 Route::get('/logout', [LoginController::class, 'logout']);
 
@@ -446,11 +450,9 @@ Route::post('/recover_password/send', [RecoverPasswordController::class, 'recove
 Route::get('/reset_password/{token}', [ResetPasswordController::class, 'index'])->name('reset-password');
 Route::post('/reset_password/send', [ResetPasswordController::class, 'resetPassword']);
 
+Route::post('/register/resend_email_confirmation', [RecoverPasswordController::class, 'resendEmailPasswordReset']);
 
 Route::middleware(['api_auth'])->group(function () {
-    Route::post('/webhook/update_user_image', [UpdateUserImageController::class, 'index']);
-    Route::post('/api/upload_file', [FileController::class, 'uploadFile']);
-
     Route::post('/api/register_user', [RegisterUserController::class, 'index']);
     Route::post('/api/confirm_course_creation', [ConfirmCourseCreationController::class, 'index']);
     Route::post('/api/update_course', [UpdateCourseController::class, 'index']);
@@ -459,8 +461,13 @@ Route::middleware(['api_auth'])->group(function () {
 
     Route::post('/api/departments/add', [DepartmentsApiController::class, 'addDepartment']);
     Route::get('/api/departments/get', [DepartmentsApiController::class, 'getDepartments']);
-    Route::post('/api/departments/update/{department_uid}', [DepartmentsApiController::class, 'updateDepartment']);
+    Route::put('/api/departments/update/{department_uid}', [DepartmentsApiController::class, 'updateDepartment']);
     Route::delete('/api/departments/delete/{department_uid}', [DepartmentsApiController::class, 'deleteDepartment']);
+});
+
+Route::middleware(['api_front_auth'])->group(function () {
+    Route::post('/webhook/update_user_image', [UpdateUserImageController::class, 'index']);
+    Route::post('/api/upload_file', [FileController::class, 'uploadFile']);
 });
 
 Route::get('/certificate-access', [CertificateAccessController::class, 'index'])->name('certificate-access');

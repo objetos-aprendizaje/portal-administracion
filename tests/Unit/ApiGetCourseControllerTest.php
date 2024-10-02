@@ -11,6 +11,7 @@ use App\Models\CoursesStudentsModel;
 use Illuminate\Support\Facades\View;
 use App\Models\EducationalProgramsModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 
 class ApiGetCourseControllerTest extends TestCase
 {
@@ -30,8 +31,9 @@ class ApiGetCourseControllerTest extends TestCase
 
         $this->assertDatabaseHas('api_keys', ['uid' => $apikey->uid]);
 
+        $uid = Str::uuid();
         // Realizar la solicitud GET con un `course_lms_uid` que no existe
-        $response = $this->getJson('/api/get_course/nonexistent-uid',[
+        $response = $this->getJson('/api/get_course/' . $uid,[
             'API-KEY' => $apikey->api_key
         ]);
 
@@ -70,7 +72,7 @@ class ApiGetCourseControllerTest extends TestCase
 
         // Crear un curso de prueba con datos relacionados
         $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
-            'course_lms_uid' => 'lms-uid-123',
+            'course_lms_uid' => generate_uuid(),
             'title' => 'Curso de prueba',
             'description' => 'Descripción del curso de prueba',
             'ects_workload' => 10,
@@ -138,7 +140,7 @@ class ApiGetCourseControllerTest extends TestCase
 
         // Crear un curso de prueba con datos relacionados
         $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
-            'course_lms_uid' => 'lms-uid-123',
+            'course_lms_uid' => generate_uuid(),
             'title' => 'Curso de prueba',
             'description' => 'Descripción del curso de prueba',
             'ects_workload' => 10,

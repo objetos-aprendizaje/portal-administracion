@@ -39,14 +39,12 @@
 </head>
 
 <body>
-    @if (session('success'))
-        @foreach (session('success') as $message)
-            {{ $message }}
-        @endforeach
-    @endif
-
     @yield('content')
 
+    <div id="fullscreen-loader" class="fullscreen-loader">
+        <div class="spinner"></div>
+        <div class="text-primary text-[19px]">Cargando...</div>
+    </div>
 </body>
 
 </html>

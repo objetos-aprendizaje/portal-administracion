@@ -14,7 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 class FileControllerTest extends TestCase
 {
     use RefreshDatabase;
-    
+
     /**
      * @test Verifica que el archivo se sube correctamente y se guarda en la ruta esperada.
      */
@@ -24,17 +24,16 @@ class FileControllerTest extends TestCase
         $admin = UsersModel::factory()->create();
         $this->actingAs($admin);
 
-        // Datos de para genera la key de la api 
-        $apikey = ApiKeysModel::factory()->create()->first();
-
-        $this->assertDatabaseHas('api_keys', ['uid' => $apikey->uid]);
 
         // Crear un archivo simulado para subir
         $file = UploadedFile::fake()->image('test-file.jpg');
 
+        // Establecer temporalmente la API key para las pruebas
+        config(['API_KEY_FRONT' => env('API_KEY_FRONT')]);
+
         // Realizar la solicitud POST para subir el archivo
         $response = $this->postJson('/api/upload_file', ['file' => $file], [
-            'API-KEY' => $apikey->api_key
+              'API-KEY' => env('API_KEY_FRONT')
         ]);
 
         // Verificar que la respuesta sea 200 (OK)

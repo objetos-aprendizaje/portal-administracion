@@ -69,7 +69,7 @@ class RedirectionQueriesEducationalProgramTypesController extends BaseController
             ]);
 
         if ($search) {
-            $query->where('contact', 'LIKE', "%{$search}%");
+            $query->where('contact', 'ILIKE', "%{$search}%");
         }
 
         if (isset($sort) && !empty($sort)) {

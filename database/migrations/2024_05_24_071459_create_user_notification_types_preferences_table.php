@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user_notification_types_preferences', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('user_uid', 36)->index('qvkei_user_notification_types_preferences_user_uid_foreign');
-            $table->string('notification_type_uid', 36)->index('nt_uid_foreign');
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('user_uid', 36)->index('qvkei_user_notification_types_preferences_user_uid_foreign');
+            $table->uuid('notification_type_uid', 36)->index('nt_uid_foreign');
         });
     }
 

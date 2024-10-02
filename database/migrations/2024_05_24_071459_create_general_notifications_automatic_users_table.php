@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('general_notifications_automatic_users', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('general_notifications_automatic_uid', 36)->index('gnau_uid_foreign');
-            $table->string('user_uid', 36)->index('qvkei_general_notifications_automatic_users_user_uid_foreign');
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('general_notifications_automatic_uid', 36)->index('gnau_uid_foreign');
+            $table->uuid('user_uid', 36)->index('qvkei_general_notifications_automatic_users_user_uid_foreign');
             $table->boolean('is_read')->default(false);
             $table->timestamps();
         });

@@ -33,7 +33,8 @@ class EducationalResourcesModel extends Model
         'course_uid',
         'license_type',
         'resource_way',
-        'resource_url'
+        'resource_url',
+        'embeddings'
     ];
 
     public function status()

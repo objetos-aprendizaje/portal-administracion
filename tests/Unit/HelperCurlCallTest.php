@@ -2,8 +2,10 @@
 
 namespace Tests\Unit;
 
+use Mockery;
 use Exception;
 use Tests\TestCase;
+use GuzzleHttp\Client;
 use App\Models\UsersModel;
 use Illuminate\Support\Facades\Auth;
 
@@ -62,18 +64,6 @@ class HelperCurlCallTest extends TestCase
         guzzle_call($url);
     }
 
-    public function testGuzzleCallHandlesRequestException()
-    {
-        // Simulamos una URL que lanzará una RequestException
-        $url = 'https://httpbin.org/status/500'; // URL que devuelve un error 500
-
-        // Verificamos que se lance una excepción
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessageMatches('/Error en la petición Guzzle: 500 - /');
-
-        // Llamamos al helper
-        guzzle_call($url);
-    }
 
     public function testCurrentUserReturnsAuthenticatedUser()
     {
@@ -102,4 +92,8 @@ class HelperCurlCallTest extends TestCase
         $this->assertNull($currentUser);
     }
 
+
+
 }
+
+

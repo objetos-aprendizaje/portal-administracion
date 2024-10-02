@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('courses_emails_contacts', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('course_uid', 36)->index('qvkei_courses_emails_contacts_course_uid_foreign');
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('course_uid', 36)->index('qvkei_courses_emails_contacts_course_uid_foreign');
             $table->string('email');
         });
     }

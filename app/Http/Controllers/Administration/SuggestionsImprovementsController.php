@@ -70,7 +70,7 @@ class SuggestionsImprovementsController extends BaseController
         $query = SuggestionSubmissionEmailsModel::query();
 
         if ($search) {
-            $query->where('email', 'LIKE', "%{$search}%");
+            $query->where('email', 'ILIKE', "%{$search}%");
         }
 
         if (isset($sort) && !empty($sort)) {

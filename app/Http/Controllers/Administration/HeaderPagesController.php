@@ -63,8 +63,8 @@ class HeaderPagesController extends BaseController
 
         if ($search) {
             $query->where(function ($subQuery) use ($search) {
-                $subQuery->whereRaw("name like ?", ["%$search%"])
-                    ->orWhere('content', 'like', "%$search%");
+                $subQuery->whereRaw("name ILIKE ?", ["%$search%"])
+                    ->orWhere('content', 'ILIKE', "%$search%");
             });
         }
 

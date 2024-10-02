@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('categories', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
+            $table->uuid('uid', 36)->primary();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->string('parent_category_uid', 36)->nullable()->index('qvkei_categories_parent_category_uid_foreign');
+            $table->uuid('parent_category_uid', 36)->nullable()->index('qvkei_categories_parent_category_uid_foreign');
             $table->string('color');
             $table->string('image_path');
             $table->timestamps();

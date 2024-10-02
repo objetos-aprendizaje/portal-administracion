@@ -85,8 +85,8 @@ class EducationalProgramsController extends BaseController
 
         if ($search) {
             $query->where(function ($query) use ($search) {
-                $query->where('educational_programs.name', 'LIKE', "%{$search}%")
-                    ->orWhere('educational_programs.description', 'LIKE', "%{$search}%")
+                $query->where('educational_programs.name', 'ILIKE', "%{$search}%")
+                    ->orWhere('educational_programs.description', 'ILIKE', "%{$search}%")
                     ->orWhere('identifier', $search);
             });
         }
@@ -396,9 +396,16 @@ class EducationalProgramsController extends BaseController
     private function fillEducationalProgramEdition($request, $educational_program)
     {
         $baseFields = [
-            "min_required_students", "inscription_start_date", "inscription_finish_date",
-            "validate_student_registrations", "cost", "realization_start_date",
-            "realization_finish_date", "featured_slider", "featured_slider", "payment_mode"
+            "min_required_students",
+            "inscription_start_date",
+            "inscription_finish_date",
+            "validate_student_registrations",
+            "cost",
+            "realization_start_date",
+            "realization_finish_date",
+            "featured_slider",
+            "featured_slider",
+            "payment_mode"
         ];
 
         $conditionalFieldsGeneral = [
@@ -406,7 +413,8 @@ class EducationalProgramsController extends BaseController
         ];
 
         $conditionalFieldsDates = [
-            "enrolling_start_date", "enrolling_finish_date"
+            "enrolling_start_date",
+            "enrolling_finish_date"
         ];
 
         $conditionalRestFields = [
@@ -439,10 +447,22 @@ class EducationalProgramsController extends BaseController
     private function fillEducationalProgram($request, $educational_program)
     {
         $baseFields = [
-            'name', 'description', 'educational_program_type_uid', 'call_uid',
-            'inscription_start_date', 'inscription_finish_date', 'min_required_students', 'validate_student_registrations',
-            'featured_slider', 'featured_slider_title', 'featured_slider_description', 'featured_slider_color_font',
-            'featured_main_carrousel', 'realization_start_date', 'realization_finish_date', 'payment_mode'
+            'name',
+            'description',
+            'educational_program_type_uid',
+            'call_uid',
+            'inscription_start_date',
+            'inscription_finish_date',
+            'min_required_students',
+            'validate_student_registrations',
+            'featured_slider',
+            'featured_slider_title',
+            'featured_slider_description',
+            'featured_slider_color_font',
+            'featured_main_carrousel',
+            'realization_start_date',
+            'realization_finish_date',
+            'payment_mode'
         ];
 
         $conditionalFieldsGeneral = ['cost'];
@@ -762,8 +782,8 @@ class EducationalProgramsController extends BaseController
 
         if ($search) {
             $courses_query->where(function ($query) use ($search) {
-                $query->where('title', 'LIKE', "%{$search}%")
-                    ->orWhere('description', 'LIKE', "%{$search}%");
+                $query->where('title', 'ILIKE', "%{$search}%")
+                    ->orWhere('description', 'ILIKE', "%{$search}%");
             });
         }
 
@@ -849,8 +869,8 @@ class EducationalProgramsController extends BaseController
 
         if ($search) {
             $query->where(function ($subQuery) use ($search) {
-                $subQuery->whereRaw("concat(first_name, ' ', last_name) like ?", ["%$search%"])
-                    ->orWhere('nif', 'like', "%$search%");
+                 $subQuery->whereRaw("concat(first_name, ' ', last_name) ILIKE ?", ["%$search%"])
+                    ->orWhere('nif', 'ILIKE', "%$search%");
             });
         }
 
@@ -878,7 +898,7 @@ class EducationalProgramsController extends BaseController
 
         $users = $request->get('usersToEnroll');
 
-        if(!$users || !count($users)){
+        if (!$users || !count($users)) {
             throw new OperationFailedException('No se han seleccionado alumnos');
         }
 
@@ -1134,7 +1154,9 @@ class EducationalProgramsController extends BaseController
 
             $this->duplicateEducationalProgramsCategories($educational_program_bd, $new_educational_program_uid, $new_educational_program);
 
-            $this->duplicateEducationalProgramsPaymentTerms($educational_program_bd, $new_educational_program_uid);
+            if ($educational_program_bd->payment_mode == "INSTALLMENT_PAYMENT") {
+                $this->duplicateEducationalProgramsPaymentTerms($educational_program_bd, $new_educational_program_uid);
+            }
 
             if ($action === "edition") $logMessage = 'Creación de edición de programa formativo';
             else $logMessage = 'Duplicación de programa formativo';
@@ -1168,7 +1190,7 @@ class EducationalProgramsController extends BaseController
 
         $introduction_status = CourseStatusesModel::where('code', 'ADDED_EDUCATIONAL_PROGRAM')->first();
         $new_course->course_status_uid = $introduction_status->uid;
-        $new_course->belongs_to_educational_program = 1;
+        $new_course->belongs_to_educational_program = true;
 
         $new_course_uid = generate_uuid();
         $new_course->uid = $new_course_uid;
@@ -1190,7 +1212,8 @@ class EducationalProgramsController extends BaseController
         return response()->json(['median' => $median], 200);
     }
 
-    private function getMedianInscribedCategories($categoriesUids) {
+    private function getMedianInscribedCategories($categoriesUids)
+    {
         $courses = EducationalProgramsModel::withCount([
             "students" => function ($query) {
                 return $query->where("status", "ENROLLED")->where("acceptance_status", "ACCEPTED");

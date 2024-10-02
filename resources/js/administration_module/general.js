@@ -66,6 +66,10 @@ function initHandlers() {
     document
         .getElementById("openai-form")
         .addEventListener("submit", submitOpenaiForm);
+
+    document
+        .getElementById("regenerate-embeddings-btn")
+        .addEventListener("click", regenerateEmbeddings);
 }
 
 function saveScripts() {
@@ -307,6 +311,17 @@ function submitOpenaiForm() {
         url: "/administration/save_openai_form",
         method: "POST",
         body: formData,
+        loader: true,
+        toast: true,
+    };
+
+    apiFetch(params);
+}
+
+function regenerateEmbeddings() {
+    const params = {
+        url: "/administration/regenerate_embeddings",
+        method: "POST",
         loader: true,
         toast: true,
     };

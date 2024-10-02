@@ -107,7 +107,7 @@ class NotificationsGeneralTest extends TestCase
     {
         // Crear un usuario de prueba
         $user = UsersModel::factory()->create([
-                'uid' => 'nonexistent-uid',
+                'uid' => generate_uuid(),
                 ])->first();
 
         // Verificar si $user es null antes de intentar acceder a sus propiedades
@@ -444,7 +444,7 @@ class NotificationsGeneralTest extends TestCase
             'course_uid' => $course->uid,
             'course_status_uid' => $courseStatus->uid,
             'date' => Carbon::now()->format('Y-m-d\TH:i'),
-            'is_read' => 1,
+            'is_read' => true,
         ])->first();
 
         // Realizar la petición GET a la ruta
@@ -457,7 +457,7 @@ class NotificationsGeneralTest extends TestCase
         $response->assertJsonFragment([
             'uid' => $notification->uid,
             'user_uid' => $user->uid,
-            'is_read' => 1,
+            'is_read' => true,
         ]);
 
         // Verificar que la notificación se haya marcado como leída
@@ -892,7 +892,7 @@ class NotificationsGeneralTest extends TestCase
         Auth::login($user);
 
         // Intentar obtener una notificación que no existe
-        $response = $this->get('/notifications/email/get_email_notification/non-existing-uid');
+        $response = $this->get('/notifications/email/get_email_notification/' . generate_uuid());
 
         // Verificar que la respuesta tenga el código 406 (Not Acceptable)
         $response->assertStatus(406);

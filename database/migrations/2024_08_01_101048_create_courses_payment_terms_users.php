@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('courses_payment_terms_users', function (Blueprint $table) {
             $table->uuid('course_payment_term_uid');
-            $table->uuid('user_uid');
+            $table->uuid('user_uid', 36);
             $table->dateTime('payment_date');
 
             $table->primary(['course_payment_term_uid', 'user_uid']);

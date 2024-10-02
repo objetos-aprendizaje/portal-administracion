@@ -13,9 +13,9 @@ class CreateUserEmailNotificationTypesDisabledTable extends Migration
     public function up()
     {
         Schema::create('user_email_notification_types_disabled', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('user_uid', 36);
-            $table->string('notification_type_uid', 36);
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('user_uid', 36);
+            $table->uuid('notification_type_uid', 36);
 
             $table->foreign('user_uid', 'user_email_notif_user_uid_fk')->references('uid')->on('users')->onDelete('cascade');
             $table->foreign('notification_type_uid', 'user_email_notif_type_uid_fk')->references('uid')->on('notifications_types')->onDelete('cascade');

@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('notifications_changes_statuses_courses', function (Blueprint $table) {
-            $table->char('uid', 36)->primary();
-            $table->char('user_uid', 36)->index('ncsc_user_fk');
-            $table->char('course_uid', 36)->index('ncsc_course_fk');
-            $table->char('course_status_uid', 36)->index('ncsc_status_fk');
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('user_uid', 36)->index('ncsc_user_fk');
+            $table->uuid('course_uid', 36)->index('ncsc_course_fk');
+            $table->uuid('course_status_uid', 36)->index('ncsc_status_fk');
             $table->timestamp('date')->useCurrent();
             $table->boolean('is_read')->default(false);
         });

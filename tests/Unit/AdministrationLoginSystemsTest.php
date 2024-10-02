@@ -392,7 +392,7 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Login de REDIRIS guardado correctamente']);
+                ->assertJson(['message' => 'Login de Rediris guardado correctamente']);
 
         // Check if the data is saved in the database
         $this->assertDatabaseHas('saml2_tenants', [
@@ -436,7 +436,7 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Login de REDIRIS guardado correctamente']);
+                ->assertJson(['message' => 'Login de Rediris guardado correctamente']);
     }
 
 /** @test  Submit Rediris existente */
@@ -468,7 +468,7 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Login de REDIRIS guardado correctamente']);
+                ->assertJson(['message' => 'Login de Rediris guardado correctamente']);
 
         // Check if the data is updated in the database
         $this->assertDatabaseHas('saml2_tenants', [

@@ -141,7 +141,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
     {
         $data = [
             'name' => 'Competencia con padre inexistente',
-            'parent_competence_uid' => 'inexistente-uid',
+            'parent_competence_uid' => generate_uuid(),
 
         ];
 
@@ -173,11 +173,11 @@ class CompetencesLearningsResultsControllerTest extends TestCase
             // Datos de prueba
         // Crea una competencia para asociar el resultado de aprendizaje
             $competence = new CompetencesModel();
-            $competence->uid = '555-12499-123456-12345-12111'; // Asigno el uid manualmente
+            $competence->uid = generate_uuid(); // Asigno el uid manualmente
             $competence->name = 'Competencia para Resultados de Aprendizaje';
             $competence->description = 'Descripción de la competencia';
             $competence->save();
-            $competence = CompetencesModel::find('555-12499-123456-12345-12111');
+            $competence = CompetencesModel::find($competence->uid);
 
             // Datos para crear un nuevo resultado de aprendizaje
             $data = [

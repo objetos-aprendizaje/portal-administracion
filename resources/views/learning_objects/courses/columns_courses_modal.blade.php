@@ -51,7 +51,7 @@
                         </div>
                         <div class="flex">
                             <input type="checkbox" id="calls_name" name="calls_name" value="calls_name"
-                                class="mr-[11px] w-[22px] h-[22px]">
+                                class="mr-[11px] w-[22px] h-[22px]" checked>
                             <label for="calls_name">Convocatoria</label>
                         </div>
                         <div class="flex">

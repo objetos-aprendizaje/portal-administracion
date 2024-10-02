@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('educational_resource_access', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('user_uid')->nullable();
-            $table->string('educational_resource_uid', 36)->index('educational_resource_uid');
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('user_uid', 36)->nullable();
+            $table->uuid('educational_resource_uid', 36)->index('educational_resource_uid');
             $table->dateTime('date');
             $table->timestamps();
         });

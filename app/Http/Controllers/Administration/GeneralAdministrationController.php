@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Administration;
 
+use App\Exceptions\OperationFailedException;
 use App\Http\Controllers\Logs\LogsController;
+use App\Jobs\RegenerateAllEmbeddingsJob;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
@@ -297,5 +299,24 @@ class GeneralAdministrationController extends BaseController
         GeneralOptionsModel::where('option_name', 'openai_key')->update(['option_value' => $openAiKey]);
 
         return response()->json(['message' => 'Clave de OpenAI guardada correctamente']);
+    }
+
+    public function regenerateEmbeddings() {
+        $openaiKey = app('general_options')['openai_key'];
+
+        if(!$openaiKey) {
+            throw new OperationFailedException('No se ha configurado la clave de OpenAI');
+        }
+
+        $pendingJob = DB::table('jobs')->where('payload', 'like', '%RegenerateAllEmbeddingsJob%')->exists();
+
+        if($pendingJob) {
+            throw new OperationFailedException('Ya se están regenerando los embeddings. Espere unos minutos.');
+        }
+
+        dispatch(new RegenerateAllEmbeddingsJob());
+
+        return response()->json(['message' => 'Embeddings regenerados correctamente']);
+
     }
 }

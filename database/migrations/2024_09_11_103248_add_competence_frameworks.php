@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('competence_frameworks', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
+            $table->uuid('uid', 36)->primary();
             $table->boolean('has_levels')->default(false);
             $table->string('name', 255);
             $table->text('description');

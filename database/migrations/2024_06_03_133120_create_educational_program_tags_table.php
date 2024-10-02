@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('educational_program_tags', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('educational_program_uid', 36);
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('educational_program_uid', 36);
             $table->string('tag', 255);
             $table->timestamps();
 

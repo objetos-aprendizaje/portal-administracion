@@ -14,7 +14,7 @@ class CreateAutomaticNotificationTypesTable extends Migration
     public function up()
     {
         Schema::create('automatic_notification_types', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
+            $table->uuid('uid', 36)->primary();
             $table->string('name', 255);
             $table->timestamps();
         });

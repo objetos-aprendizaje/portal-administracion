@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('educational_program_types', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
+            $table->uuid('uid', 36)->primary();
             $table->string('name');
             $table->text('description')->nullable();
             $table->boolean('managers_can_emit_credentials')->default(false);

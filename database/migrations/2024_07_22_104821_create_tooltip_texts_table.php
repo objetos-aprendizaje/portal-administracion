@@ -14,7 +14,7 @@ class CreateTooltipTextsTable extends Migration
     public function up()
     {
         Schema::create('tooltip_texts', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
+            $table->uuid('uid', 36)->primary();
             $table->string('input_id', 100);
             $table->text('description');
             $table->timestamps(); // This will create the created_at and updated_at fields

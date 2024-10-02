@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('course_documents', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('course_uid', 36)->index('qvkei_course_documents_course_uid_foreign');
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('course_uid', 36)->index('qvkei_course_documents_course_uid_foreign');
             $table->string('document_name');
             $table->timestamps();
         });

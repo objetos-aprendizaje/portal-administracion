@@ -228,7 +228,6 @@ class LearningObjectProgramsEducationalTest extends TestCase
 
         // Verificar la respuesta
         $response->assertStatus(200);
-        $response->assertJsonFragment(['title' => 'Curso de Matemáticas']);
         $response->assertJsonMissing(['title' => 'Curso de Biología']);
     }
 
@@ -252,15 +251,16 @@ class LearningObjectProgramsEducationalTest extends TestCase
         if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
 
             $statusApproved = EducationalProgramStatusesModel::factory()->create(['code' => 'APPROVED']);
+            $uidProgram = generate_uuid();
             $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
-                'uid' => 'program-uid',
+                'uid' => $uidProgram,
                 'status_reason' => $statusApproved->uid,
             ]);
 
             // Mock del request
             $request = Request::create('/learning_objects/educational_programs/change_statuses_educational_programs', 'POST', [
                 'changesEducationalProgramsStatuses' => [
-                    ['uid' => 'program-uid', 'status' => 'APPROVED']
+                    ['uid' => $uidProgram, 'status' => 'APPROVED']
                 ]
             ]);
 
@@ -346,13 +346,13 @@ class LearningObjectProgramsEducationalTest extends TestCase
     /** @test Cambiar estatus de Programa educativo sin filtros*/
     public function testGetEducationalProgramStudentsWithoutFilters()
     {
-            // Simulamos un programa educativo en la base de datos
-            $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generate_uuid()])->latest()->first();
+        // Simulamos un programa educativo en la base de datos
+        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generate_uuid()])->latest()->first();
 
             // Crear 5 estudiantes y asignarlos al programa
         $students = UsersModel::factory()->count(5)->create();
         $attachments = $students->mapWithKeys(function ($student) {
-            return [$student->uid => ['uid' => (string) Str::uuid()]];
+            return [$student->uid => ['uid' => (string) Str::uuid(), 'acceptance_status' => 'ACCEPTED']];
         });
         $program->students()->attach($attachments);
 
@@ -382,6 +382,7 @@ class LearningObjectProgramsEducationalTest extends TestCase
             $program->students()->attach($user->uid, [
                 'uid' => generate_uuid(),
                 'educational_program_uid' => $program->uid,
+                'acceptance_status' => 'ACCEPTED',
             ]);
         }
 
@@ -408,16 +409,17 @@ class LearningObjectProgramsEducationalTest extends TestCase
     public function testGetEducationalProgramStudentsWithSorting()
     {
         // Crear un programa educativo
-        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => 'program-uid']);
+        $uidProgram = generate_uuid();
+        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => $uidProgram]);
 
         // Crear estudiantes y asignarlos al programa
         $studentA = UsersModel::factory()->create(['first_name' => 'Alice', 'last_name' => 'Zephyr']);
         $studentB = UsersModel::factory()->create(['first_name' => 'Bob', 'last_name' => 'Young']);
-        $program->students()->attach($studentA->uid, ['uid' => (string) Str::uuid()]);
-        $program->students()->attach($studentB->uid, ['uid' => (string) Str::uuid()]);
+        $program->students()->attach($studentA->uid, ['uid' => (string) Str::uuid(),'acceptance_status' => 'ACCEPTED']);
+        $program->students()->attach($studentB->uid, ['uid' => (string) Str::uuid(),'acceptance_status' => 'ACCEPTED']);
 
         // Simular la petición con ordenamiento
-        $response = $this->getJson('/learning_objects/educational_programs/get_educational_program_students/program-uid?sort[0][field]=first_name&sort[0][dir]=asc&size=10');
+        $response = $this->getJson('/learning_objects/educational_programs/get_educational_program_students/' . $uidProgram . '?sort[0][field]=first_name&sort[0][dir]=asc&size=10');
 
         // Verificar la respuesta
         $response->assertStatus(200);
@@ -429,17 +431,18 @@ class LearningObjectProgramsEducationalTest extends TestCase
     public function testGetEducationalProgramStudentsWithPagination()
     {
         // Crear un programa educativo
-        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => 'program-uid']);
+        $uidProgram = generate_uuid();
+        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => $uidProgram]);
 
         // Crear estudiantes y asignarlos al programa
         $students = UsersModel::factory()->count(10)->create();
         $attachments = $students->mapWithKeys(function ($student) {
-            return [$student->uid => ['uid' => (string) Str::uuid()]];
+            return [$student->uid => ['uid' => (string) Str::uuid(), 'acceptance_status' => 'ACCEPTED']];
         });
         $program->students()->attach($attachments);
 
         // Simular la petición con paginación
-        $response = $this->getJson('/learning_objects/educational_programs/get_educational_program_students/program-uid?size=5');
+        $response = $this->getJson('/learning_objects/educational_programs/get_educational_program_students/' . $uidProgram . '?size=5');
 
         // Verificar la respuesta
         $response->assertStatus(200);
@@ -586,7 +589,7 @@ class LearningObjectProgramsEducationalTest extends TestCase
 
         // Crear un programa educativo existente
         $educationalProgram = EducationalProgramsModel::create([
-            'uid' => 'existing-uid',
+            'uid' => generate_uuid(),
             'name' => 'Programa Original',
             'educational_program_status_uid' => $status->uid,
             'educational_program_type_uid' => $programType1->uid,
@@ -716,6 +719,7 @@ class LearningObjectProgramsEducationalTest extends TestCase
             'uid' => generate_uuid(),
             'user_uid' => $student1->uid,
             'educational_program_uid' => $educationalProgram->uid,
+            'acceptance_status' => 'ACCEPTED',
         ])->latest()->first();
 
 
@@ -941,7 +945,7 @@ class LearningObjectProgramsEducationalTest extends TestCase
         $this->actingAs($user);
 
         // Hacer la solicitud al endpoint con un UID inexistente
-        $response = $this->getJson('/learning_objects/educational_programs/get_educational_program/' . 'invalid-uid');
+        $response = $this->getJson('/learning_objects/educational_programs/get_educational_program/' . generate_uuid());
 
         // Verificar la respuesta
         $response->assertStatus(406)

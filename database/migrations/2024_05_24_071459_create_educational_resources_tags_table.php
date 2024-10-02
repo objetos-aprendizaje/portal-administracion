@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('educational_resources_tags', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('educational_resource_uid', 36)->index('educational_resource_uid');
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('educational_resource_uid', 36)->index('qvkei_educational_resource_uid');
             $table->string('tag', 36);
             $table->timestamps();
         });

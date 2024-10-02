@@ -4,7 +4,6 @@ namespace Tests\Unit;
 
 use Tests\TestCase;
 use App\Models\UsersModel;
-use Illuminate\Support\Str;
 use App\Models\UserRolesModel;
 use App\Models\FooterPagesModel;
 use App\Models\TooltipTextsModel;
@@ -12,7 +11,6 @@ use App\Models\GeneralOptionsModel;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Request;
 use App\Exceptions\OperationFailedException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -88,7 +86,6 @@ class AdministrationFooterPageTest extends TestCase
         $response = $this->postJson('/administration/footer_pages/save_footer_page', [
             'legalAdvice' => 'Texto legal actualizado',
             'name' => 'nombre footer',
-            'order' => 1,
             'slug' => 'texto-legal',
             'content' => 'content',
             'acceptance_required' => 0
@@ -204,42 +201,6 @@ class AdministrationFooterPageTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function testGetFooterPagesForSelect()
-    {
-        $user = UsersModel::factory()->create();
-        Auth::login($user);
-
-        // Arrange: Crea registros de FooterPagesModel
-        $parentPage1 = FooterPagesModel::factory()->create([
-            'uid' => generate_uuid(),
-            'name' => 'Parent Page 1',
-            'footer_page_uid' => null,
-            'content' => 'Contenido original del pie de página',
-        ])->latest()->first();
-
-        FooterPagesModel::factory()->create([
-            'uid' => generate_uuid(),
-            'name' => 'Child Page 1',
-            'footer_page_uid' => $parentPage1->uid
-        ])->latest()->first();
-
-        $parentPage2 = FooterPagesModel::factory()->create([
-            'uid' => generate_uuid(),
-            'name' => 'Parent Page 2',
-            'footer_page_uid' => null,
-            'content' => 'Contenido original del pie de página',
-        ])->latest()->first();
-
-        // Realiza la solicitud GET
-        $response = $this->getJson('/administration/footer_pages/get_footer_pages_select');
-
-        // Verifica que la respuesta sea correcta
-        $response->assertStatus(200);
-        $response->assertJsonCount(2);
-
-    }
-
     /** @test Elimina Footer Page*/
     public function testDeleteFooterPages()
     {
@@ -305,16 +266,13 @@ class AdministrationFooterPageTest extends TestCase
             'name' => 'Footer Page Original',
             'content' => 'Contenido original del pie de página',
             'slug' => 'footer-page-original',
-            'order' => 1,
         ])->latest()->first();
 
         // Datos de entrada inválidos
         $data = [
-            'footer_page_uid' => $footerPageUid1,
             'name' => '',
             'content' => 'Contenido del pie de página',
             'slug' => 'invalid slug', // Slug inválido
-            'order' => 'not a number', // Orden no numérico
             'parent_page_uid' => null,
         ];
 
@@ -334,8 +292,6 @@ class AdministrationFooterPageTest extends TestCase
             'name' => 'Página de Footer Existente',
             'content' => 'Contenido existente',
             'slug' => 'pagina-existente',
-            'order' => 1,
-            'footer_page_uid' => null, // No tiene página padre
             'version' => '1.0',
             'acceptance_required' => false,
         ])->first();
@@ -345,8 +301,6 @@ class AdministrationFooterPageTest extends TestCase
             'slug' => 'pagina-existente', // Slug que ya existe
             'name' => 'Nueva Página de Footer',
             'content' => 'Contenido de la nueva página de footer',
-            'order' => 1,
-            'footer_page_uid' => null, // No tiene página padre
             'version' => '1.0',
             'acceptance_required' => false,
         ];
@@ -368,14 +322,12 @@ class AdministrationFooterPageTest extends TestCase
 
     public function testUpdateFooterPageWithExistingSlug()
     {
-            // Crear una página de footer existente
+    // Crear una página de footer existente
     $existingFooterPage = FooterPagesModel::factory()->create([
         'uid' => generate_uuid(),
         'name' => 'Página de Footer Existente',
         'content' => 'Contenido existente',
         'slug' => 'pagina-existente',
-        'order' => 1,
-        'footer_page_uid' => null, // No tiene página padre
         'version' => '1.0',
         'acceptance_required' => false,
     ])->first();
@@ -386,19 +338,15 @@ class AdministrationFooterPageTest extends TestCase
         'name' => 'Otra Página de Footer',
         'content' => 'Contenido de otra página',
         'slug' => 'pagina-existente', // Este slug ya existe
-        'order' => 2,
-        'footer_page_uid' => null,
         'version' => '1.0',
         'acceptance_required' => false,
     ]);
 
     // Preparar datos de prueba para la actualización
     $requestData = [
-        'footer_page_uid' => $existingFooterPage->uid, // UID de la página existente
         'name' => 'Página de Footer Actualizada',
         'content' => 'Contenido actualizado',
         'slug' => 'pagina-existente', // Este slug ya existe, debe causar un conflicto
-        'order' => 1,
         'version' => '1.1',
         'acceptance_required' => false,
     ];

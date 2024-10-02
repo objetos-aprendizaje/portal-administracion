@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('competences_blocks', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('competence_uid', 36)->index('qvkei_competences_blocks_competence_uid_foreign');
-            $table->string('course_block_uid', 36)->index('qvkei_competences_blocks_course_block_uid_foreign');
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('competence_uid', 36)->index('qvkei_competences_blocks_competence_uid_foreign');
+            $table->uuid('course_block_uid', 36)->index('qvkei_competences_blocks_course_block_uid_foreign');
         });
     }
 

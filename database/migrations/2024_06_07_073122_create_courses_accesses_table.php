@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('courses_accesses', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('course_uid', 36);
-            $table->string('user_uid', 36);
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('course_uid', 36);
+            $table->uuid('user_uid', 36);
             $table->dateTime('access_date');
 
             $table->foreign('course_uid')->references('uid')->on('courses');

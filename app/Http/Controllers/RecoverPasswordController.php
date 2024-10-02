@@ -2,22 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\OperationFailedException;
 use App\Jobs\SendEmailJob;
 use App\Models\ResetPasswordTokensModel;
 use App\Models\UsersModel;
-use App\Services\MailService;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Log;
 
 class RecoverPasswordController extends BaseController
 {
 
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     public function index()
     {
@@ -39,7 +36,24 @@ class RecoverPasswordController extends BaseController
         if ($user) $this->sendEmailRecoverPassword($user);
 
         return redirect()->route('login')->with([
-            'success' => ['Se ha enviado un email para reestablecer la contraseña'],
+            'sent_email_recover_password' => true,
+            'email' => $user->email
+        ]);
+    }
+
+    public function resendEmailPasswordReset(Request $request)
+    {
+        $email = $request->input('email');
+        $user = UsersModel::where('email', $email)->first();
+
+        if (!$user) throw new OperationFailedException('No se ha encontrado el usuario con el email proporcionado');
+
+        ResetPasswordTokensModel::where('uid_user', $user->uid)->delete();
+
+        $this->sendEmailRecoverPassword($user);
+
+        return response()->json([
+            'message' => 'Se ha reenviado el email de restablecimiento de contraseña'
         ]);
     }
 
@@ -65,7 +79,7 @@ class RecoverPasswordController extends BaseController
         );
 
         $parameters = [
-            'url' => $url
+            'url' => $url,
         ];
 
         dispatch(new SendEmailJob($user->email, 'Restablecer contraseña', $parameters, 'emails.reset_password_new'));

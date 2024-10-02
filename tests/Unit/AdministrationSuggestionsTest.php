@@ -85,11 +85,11 @@ class AdministrationSuggestionsTest extends TestCase
 
     /**
      * @test Elimina Footer error*/
-    public function testDeleteNonExistingFooterPages()
+     public function testDeleteNonExistingFooterPages()
     {
         // Datos de entrada para la eliminación de un UID que no existe
         $data = [
-            'uids' => ['non-existing-uid'],
+            'uids' => Str::uuid(),
         ];
 
         // Realiza la solicitud DELETE
@@ -182,7 +182,7 @@ class AdministrationSuggestionsTest extends TestCase
 
         // Attempt to delete non-existing email IDs
         $response = $this->postJson('/administration/suggestions_improvements/delete_emails', [
-            'uidsEmails' => [999, 1000], // Assuming these IDs do not exist
+            'uidsEmails' => [generate_uuid(), generate_uuid()], // Assuming these IDs do not exist
         ]);
 
         $response->assertStatus(200) // Assuming the method does not throw an error for non-existing IDs

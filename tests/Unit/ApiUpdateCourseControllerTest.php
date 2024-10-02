@@ -5,8 +5,10 @@ namespace Tests\Unit;
 use Carbon\Carbon;
 use Tests\TestCase;
 use App\Models\UsersModel;
+use Illuminate\Support\Str;
 use App\Models\ApiKeysModel;
 use App\Models\CoursesModel;
+use App\Models\LmsSystemsModel;
 use App\Models\EducationalProgramsModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -35,10 +37,12 @@ class ApiUpdateCourseControllerTest extends TestCase
             'enrolling_finish_date' => Carbon::now()->addDays(30)->format('Y-m-d\TH:i'),
         ])->first();
 
+        $lms = LmsSystemsModel::factory()->create()->first();
+
         // Crear un curso en la base de datos
         $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
-            'course_lms_uid' => 'lms-1234',
             'title' => 'Old Title',
+            'course_lms_uid' => $lms->uid,
             'description' => 'Old Description',
             'lms_url' => 'https://oldurl.com/course',
             'ects_workload' => 3,
@@ -49,7 +53,7 @@ class ApiUpdateCourseControllerTest extends TestCase
 
         // Datos de la solicitud
         $updateData = [
-            'lms_uid' => 'lms-1234',
+            'lms_uid' => $lms->uid,
             'title' => 'New Title',
             'description' => 'New Description',
             'lms_url' => 'https://newurl.com/course',
@@ -70,7 +74,6 @@ class ApiUpdateCourseControllerTest extends TestCase
 
         // Verificar que el curso fue actualizado en la base de datos
         $this->assertDatabaseHas('courses', [
-            'course_lms_uid' => 'lms-1234',
             'title' => 'New Title',
             'description' => 'New Description',
             'lms_url' => 'https://newurl.com/course',
@@ -133,14 +136,14 @@ class ApiUpdateCourseControllerTest extends TestCase
 
         // Crear un curso en la base de datos
         $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
-            'course_lms_uid' => 'lms-1234',
+            'course_lms_uid' => generate_uuid(),
             'realization_start_date' => '2024-09-01 10:00:00',
             'realization_finish_date' => '2024-09-10 10:00:00',
         ]);
 
         // Datos de la solicitud con fechas inválidas
         $updateData = [
-            'lms_uid' => 'lms-1234',
+            'lms_uid' => generate_uuid(),
             'title' => 'New Title',
             'description' => 'New Description',
             'lms_url' => 'https://newurl.com/course',

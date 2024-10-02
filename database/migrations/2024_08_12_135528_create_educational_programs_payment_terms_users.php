@@ -16,7 +16,7 @@ return new class extends Migration
             $table->uuid('educational_program_payment_term_uid');
             $table->foreign('educational_program_payment_term_uid', 'euptu_edu_payment_term_uid_fk')
                 ->references('uid')->on('educational_programs_payment_terms')->cascadeOnDelete();
-            $table->uuid('user_uid');
+            $table->uuid('user_uid', 36);
             $table->foreign('user_uid', 'euptu_user_uid_fk')
                 ->references('uid')->on('users')->cascadeOnDelete();
 

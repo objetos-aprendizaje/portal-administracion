@@ -46,6 +46,8 @@ class CertidigitalConfigurationController extends BaseController {
             'certidigital_client_secret' => $request->input('certidigital_client_secret'),
             'certidigital_username' => $request->input('certidigital_username'),
             'certidigital_password' => $request->input('certidigital_password'),
+            'certidigital_url_token' => $request->input('certidigital_url_token'),
+            'certidigital_center_id' => $request->input('certidigital_center_id'),
         ];
 
         DB::transaction(function () use ($updateData) {

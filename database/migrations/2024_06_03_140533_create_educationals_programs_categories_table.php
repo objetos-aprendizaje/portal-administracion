@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('educationals_programs_categories', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('educational_program_uid', 36);
-            $table->string('category_uid', 36);
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('educational_program_uid', 36);
+            $table->uuid('category_uid', 36);
             $table->timestamps();
 
             $table->foreign('educational_program_uid', 'epc_ep_uid_foreign')->references('uid')->on('educational_programs')->onDelete('cascade');

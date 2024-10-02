@@ -19,7 +19,7 @@ return new class extends Migration
             $table->integer('order')->default(0);
 
             // Añadir el campo 'footer_page_uid'
-            $table->string('footer_page_uid')->nullable();
+            $table->uuid('footer_page_uid', 36)->nullable();
         });
     }
 

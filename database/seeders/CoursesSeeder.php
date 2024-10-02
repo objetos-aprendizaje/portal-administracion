@@ -24,9 +24,11 @@ use App\Models\LmsSystemsModel;
 use App\Models\SubblocksModel;
 use App\Models\SubelementsModel;
 use App\Models\UsersModel;
+use App\Models\CoursesAccesesModel;
 use Illuminate\Database\Seeder;
 use Faker\Factory as Faker;
 use Illuminate\Support\Facades\File;
+use Carbon\Carbon;
 
 class CoursesSeeder extends Seeder
 {
@@ -70,6 +72,7 @@ class CoursesSeeder extends Seeder
                 return str_replace(base_path('public/'), '', $file->getPathname());
             })->toArray();
         $this->learningResults = LearningResultsModel::all()->pluck('uid');
+
     }
 
     /**
@@ -96,7 +99,9 @@ class CoursesSeeder extends Seeder
             'realization_finish_date' => adjustDateRandomly('+2 year'),
         ];
 
-        $this->createCourses($customData, 'INSCRIPTION');
+        $courses = $this->getCoursesDataset(0, 30);
+
+        $this->createCourses($customData, 'INSCRIPTION', $courses);
     }
 
     private function addEnrollingCourses()
@@ -112,7 +117,9 @@ class CoursesSeeder extends Seeder
             'realization_finish_date' => adjustDateRandomly('+2 year'),
         ];
 
-        $this->createCourses($customData, 'ENROLLING');
+        $courses = $this->getCoursesDataset(30, 30);
+
+        $this->createCourses($customData, 'ENROLLING', $courses);
     }
 
     private function addRealizationCourses()
@@ -128,7 +135,9 @@ class CoursesSeeder extends Seeder
             'realization_finish_date' => adjustDateRandomly('+1 year'),
         ];
 
-        $this->createCourses($customData, 'DEVELOPMENT');
+        $courses = $this->getCoursesDataset(60, 30);
+
+        $this->createCourses($customData, 'DEVELOPMENT', $courses);
     }
 
     private function addFinishedCourses()
@@ -144,15 +153,19 @@ class CoursesSeeder extends Seeder
             'realization_finish_date' => adjustDateRandomly('-1 month'),
         ];
 
-        $this->createCourses($customData, 'FINISHED');
+        $courses = $this->getCoursesDataset(90, 30);
+
+        $this->createCourses($customData, 'FINISHED', $courses);
     }
 
-    private function createCourses($customData, $status, $numberCourses = 20)
+    private function createCourses($customData, $status, $courses)
     {
-        for ($i = 1; $i <= $numberCourses; $i++) {
+        foreach ($courses as $course) {
             $baseData = $this->buildCourseBaseData($status);
             $data = array_merge($baseData, $customData);
 
+            $data['title'] = $course['title'];
+            $data['description'] = $course['description'];
             CoursesModel::factory()->create($data);
 
             $this->addCategories($data['uid']);
@@ -161,6 +174,12 @@ class CoursesSeeder extends Seeder
             $this->addBlocks($data['uid']);
 
             $studentsUids = $this->addStudents($data['uid'], $status);
+
+            if($status == "DEVELOPMENT"){
+
+                $this->AddCourseAccesses($data['uid'],$studentsUids);
+
+            }
 
             // Añadir los documentos necesarios para la validación del curso
             if ($data['validate_student_registrations']) {
@@ -172,6 +191,10 @@ class CoursesSeeder extends Seeder
             if ($data['payment_mode'] == 'INSTALLMENT_PAYMENT') {
                 $this->addPaymentTerms($data['uid'], $customData['realization_start_date'], $customData['realization_finish_date']);
             }
+
+            //
+
+
         }
     }
 
@@ -223,6 +246,15 @@ class CoursesSeeder extends Seeder
         $data['evaluation_criteria'] = $data['validate_student_registrations'] ? $this->faker->paragraph : null;
 
         return $data;
+    }
+
+    private function getCoursesDataset($start, $end)
+    {
+        $csv = readCsv('database/seeders/dataset_learning_objects.csv');
+
+        // Filtrar los cursos que se encuentran entre las posiciones start y end
+        $courses = array_slice($csv, $start, $end);
+        return $courses;
     }
 
     private function addCategories($courseUid)
@@ -404,5 +436,22 @@ class CoursesSeeder extends Seeder
         }
 
         return $documentsAddedUids;
+    }
+
+    private function AddCourseAccesses($courseUid,$studentsUids){
+
+        $date = Carbon::now();
+
+        foreach ($studentsUids as $index => $student) {
+
+            $date = ($index === 0) ? $date : $date->copy()->subDays(20 * $index);
+
+            CoursesAccesesModel::factory()->create([
+                'course_uid' => $courseUid,
+                'user_uid' => $student,
+                'access_date' => $date,
+            ]);
+        }
+
     }
 }

@@ -22,7 +22,6 @@ class FooterPagesModelFactory extends Factory
             'name' => $this->faker->unique()->sentence(3),
             'content' => 'Contenido original del pie de página',
             'slug' => 'footer-page-original',
-            'order' => 1,
             'acceptance_required' => 1,
         ];
     }

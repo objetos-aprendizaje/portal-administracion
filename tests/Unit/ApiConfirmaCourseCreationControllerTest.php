@@ -7,11 +7,11 @@ use App\Models\UsersModel;
 use App\Models\ApiKeysModel;
 use App\Models\CoursesModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-
+use Illuminate\Support\Str;
 class ApiConfirmaCourseCreationControllerTest extends TestCase
 {
     use RefreshDatabase;
-    
+
     /**
      * @test  Verifica que un curso se confirma correctamente.
      */
@@ -22,7 +22,7 @@ class ApiConfirmaCourseCreationControllerTest extends TestCase
         $admin = UsersModel::factory()->create();
         $this->actingAs($admin);
 
-        // Datos de para genera la key de la api 
+        // Datos de para genera la key de la api
         $apikey = ApiKeysModel::factory()->create()->first();
 
         $this->assertDatabaseHas('api_keys', ['uid' => $apikey->uid]);
@@ -34,9 +34,10 @@ class ApiConfirmaCourseCreationControllerTest extends TestCase
             'lms_url' => null,
         ]);
 
+        $lmsUid = Str::uuid();
         // Datos de la solicitud
         $courseConfirm = [
-            'lms_uid' => 'lms-1234',
+            'lms_uid' => $lmsUid,
             'poa_uid' => $course->uid,
             'lms_url' => 'https://example.com/course',
         ];
@@ -53,7 +54,7 @@ class ApiConfirmaCourseCreationControllerTest extends TestCase
         // Verificar que el curso fue actualizado en la base de datos
         $this->assertDatabaseHas('courses', [
             'uid' => $course->uid,
-            'course_lms_uid' => 'lms-1234',
+            'course_lms_uid' => $lmsUid,
             'lms_url' => 'https://example.com/course',
         ]);
     }
@@ -67,7 +68,7 @@ class ApiConfirmaCourseCreationControllerTest extends TestCase
         $admin = UsersModel::factory()->create();
         $this->actingAs($admin);
 
-        // Datos de para genera la key de la api 
+        // Datos de para genera la key de la api
         $apikey = ApiKeysModel::factory()->create()->first();
 
         $this->assertDatabaseHas('api_keys', ['uid' => $apikey->uid]);
@@ -97,21 +98,21 @@ class ApiConfirmaCourseCreationControllerTest extends TestCase
     /**
      * @test  Verifica que la validación falla cuando el poa_uid no existe.
      */
-    public function testValidationFailsWhenPoaUidDoesNotExist()
+     public function testValidationFailsWhenPoaUidDoesNotExist()
     {
         // Crea un usuario y actúa como él
         $admin = UsersModel::factory()->create();
         $this->actingAs($admin);
 
-        // Datos de para genera la key de la api 
+        // Datos de para genera la key de la api
         $apikey = ApiKeysModel::factory()->create()->first();
 
         $this->assertDatabaseHas('api_keys', ['uid' => $apikey->uid]);
 
         // Datos de la solicitud con un poa_uid que no existe
         $courseConfirm = [
-            'lms_uid' => 'lms-1234',
-            'poa_uid' => 'non-existing-uid',
+            'lms_uid' => Str::uuid(),
+            'poa_uid' => Str::uuid(),
             'lms_url' => 'https://example.com/course',
         ];
 

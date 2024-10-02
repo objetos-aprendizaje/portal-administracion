@@ -343,5 +343,18 @@ function calculateMedian($numbersArray)
     } else {
         return $numbers->get(floor($count / 2));
     }
+}
 
+function readCsv($routeCsv)
+{
+    // Carga un documento csv
+    $csv = array_map('str_getcsv', file($routeCsv));
+
+    // PAsar el csv a un array asociativo
+    $keys = array_shift($csv);
+    foreach ($csv as $i => $row) {
+        $csv[$i] = array_combine($keys, $row);
+    }
+
+    return $csv;
 }

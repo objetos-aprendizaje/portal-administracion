@@ -57,7 +57,7 @@ class TooltipTextsController extends BaseController
         $query = TooltipTextsModel::query();
 
         if ($search) {
-            $query->where('description', 'LIKE', "%{$search}%");
+            $query->where('description', 'ILIKE', "%{$search}%");
         }
 
         if (isset($sort) && !empty($sort)) {

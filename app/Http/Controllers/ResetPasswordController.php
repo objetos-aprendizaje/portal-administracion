@@ -2,24 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use App\Exceptions\OperationFailedException;
-use App\Models\GeneralOptionsModel;
 use App\Models\ResetPasswordTokensModel;
 use App\Models\UsersModel;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 
 class ResetPasswordController extends BaseController
 {
 
     public function index(Request $request, $token = null)
     {
+
+        // Comprobar si el token es válido
+        $resetPasswordToken = ResetPasswordTokensModel::where('token', $token)->first();
+
+        if ($resetPasswordToken->expiration_date < date("Y-m-d H:i:s")) {
+            return redirect()->route('login')->with([
+                'link_recover_password_expired' => true,
+                'email' => $resetPasswordToken->email
+            ]);
+        }
+
         return view('non_authenticated.reset_password', [
             "resources" => [
                 "resources/js/reset_password.js",

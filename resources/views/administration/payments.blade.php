@@ -67,7 +67,7 @@
 
                         <div class="content-container little">
                             <input value="{{ $general_options['redsys_encryption_key'] }}"
-                                placeholder="sq7HjrUOBfKmC576ILgskD5srU870gJ7" type="text" id="redsys_encryption_key"
+                                placeholder="sq7HjrUOsdafKmC534CACLgED5srU870gJ7" type="text" id="redsys_encryption_key"
                                 name="redsys_encryption_key" class="poa-input" />
                         </div>
 

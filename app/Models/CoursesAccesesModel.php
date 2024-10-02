@@ -16,6 +16,7 @@ class CoursesAccesesModel extends Model
     protected $primaryKey = 'uid';
     protected $keyType = 'string';
     public $incrementing = false; // Si los UID no son auto-incrementales
+    public $timestamps = false;
 
     // Campos asignables en la base de datos
     protected $fillable = ['uid', 'course_uid', 'user_uid', 'access_date'];

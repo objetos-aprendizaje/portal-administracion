@@ -24,6 +24,20 @@ class LoginSystemsController extends BaseController
         $rediris = Saml2TenantsModel::where('key', 'rediris')->first();
         $rediris_active = GeneralOptionsModel::where('option_name', 'rediris_active')->where('option_value', 1)->first();
 
+        $loginSaml = Saml2TenantsModel::whereIn('key', ['cas', 'rediris'])->get()->keyBy('key');
+
+        if ($cas_active) {
+            $urlCasMetadata = url('saml2/' . $loginSaml['cas']->uuid . '/metadata');
+        } else {
+            $urlCasMetadata = false;
+        }
+
+        if ($rediris_active) {
+            $urlRedirisMetadata = url('saml2/' . $loginSaml['rediris']->uuid . '/metadata');
+        } else {
+            $urlRedirisMetadata = false;
+        }
+
         return view(
             'administration.login_systems',
             [
@@ -36,6 +50,8 @@ class LoginSystemsController extends BaseController
                 'rediris' => $rediris,
                 'cas_active' => $cas_active,
                 'rediris_active' => $rediris_active,
+                'urlCasMetadata' => $urlCasMetadata,
+                'urlRedirisMetadata' => $urlRedirisMetadata,
                 "submenuselected" => "login-systems",
             ]
         );
@@ -190,148 +206,122 @@ class LoginSystemsController extends BaseController
 
     public function submitCasForm(Request $request)
     {
-        $messages = [
-            'cas_entity_id.required' => 'El Entity ID es obligatorio',
-            'cas_login_url.required' => 'La url de login es obligatoria',
-            'cas_logout_url.required' => 'La url de logout es obligatoria',
-            'cas_certificate.required' => 'El certificado es obligatorio',
-        ];
 
-        $validator = Validator::make($request->all(), [
-            'cas_entity_id' => 'required|string',
-            'cas_login_url' => 'required|string',
-            'cas_logout_url' => 'required|string',
-            'cas_certificate' => 'required|string',
+        $validatorErrors = $this->validateCasForm($request);
 
-        ], $messages);
-
-        $validatorErrors = $validator->errors();
-
-        if (!$validator->errors()->isEmpty()) {
+        if (!$validatorErrors->isEmpty()) {
             return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validatorErrors], 422);
-        }
-
-        $active = intval($request->input('cas_login_active'));
-
-        if ($active) {
-            GeneralOptionsModel::where('option_name', 'cas_active')->update(['option_value' => $active]);
-        } else {
-            GeneralOptionsModel::where('option_name', 'cas_active')->update(['option_value' => $active]);
         }
 
         $cas = Saml2TenantsModel::where('key', 'cas')->first();
 
-        if ($cas) {
-
-            DB::transaction(function () use ($cas, $request) {
-
-                $cas->idp_entity_id = $request->input('cas_entity_id');
-                $cas->idp_login_url = $request->input('cas_login_url');
-                $cas->idp_logout_url = $request->input('cas_logout_url');
-                $cas->idp_x509_cert = $request->input('cas_certificate');
-                $cas->metadata = '[]';
-                $cas->name_id_format = 'persistent';
-
-                $cas->save();
-
-                LogsController::createLog('Actualización de inicio de sesión en CAS', 'Sistemas de inicio de sesión', auth()->user()->uid);
-            });
-            return response()->json(['message' => 'Login de CAS guardado correctamente']);
-        } else {
-
-            DB::transaction(function () use ($request) {
-                $uid = generate_uuid();
-
-                $new_data = new Saml2TenantsModel();
-                $new_data->uuid = $uid;
-                $new_data->key = 'cas';
-                $new_data->idp_entity_id = $request->input('cas_entity_id');
-                $new_data->idp_login_url = $request->input('cas_login_url');
-                $new_data->idp_logout_url = $request->input('cas_logout_url');
-                $new_data->idp_x509_cert = $request->input('cas_certificate');
-                $new_data->metadata = '[]';
-                $new_data->name_id_format = 'persistent';
-
-                $new_data->save();
-
-                LogsController::createLog('Actualización de inicio de sesión en CAS', 'Sistemas de inicio de sesión', auth()->user()->uid);
-            });
-
-            return response()->json(['message' => 'Login de CAS guardado correctamente']);
+        if (!$cas) {
+            $cas = new Saml2TenantsModel();
+            $cas->key = 'cas';
+            $cas->uuid = generate_uuid();
+            $cas->name_id_format = 'persistent';
+            $cas->metadata = '[]';
         }
+
+        $cas->idp_entity_id = $request->input('cas_entity_id');
+        $cas->idp_login_url = $request->input('cas_login_url');
+        $cas->idp_logout_url = $request->input('cas_logout_url');
+        $cas->idp_x509_cert = $request->input('cas_certificate');
+
+        $active = intval($request->input('cas_login_active'));
+
+        DB::transaction(function () use ($cas, $active) {
+            GeneralOptionsModel::where('option_name', 'cas_active')->update(['option_value' => $active]);
+            $cas->save();
+            LogsController::createLog('Actualización de inicio de sesión en CAS', 'Sistemas de inicio de sesión', auth()->user()->uid);
+        });
+
+        if ($active) {
+            $urlCasMetadata = url('saml2/' . $cas->uuid . '/metadata');
+        } else {
+            $urlCasMetadata = false;
+        }
+
+        return response()->json(['message' => 'Login de CAS guardado correctamente', 'urlCasMetadata' => $urlCasMetadata]);
+    }
+
+    private function validateCasForm($request)
+    {
+        $messages = [
+            'cas_entity_id.required_if' => 'El Entity ID es obligatorio',
+            'cas_login_url.required_if' => 'La url de login es obligatoria',
+            'cas_logout_url.required_if' => 'La url de logout es obligatoria',
+            'cas_certificate.required_if' => 'El certificado es obligatorio',
+        ];
+
+        $validator = Validator::make($request->all(), [
+            'cas_entity_id' => 'required_if:cas_login_active,1',
+            'cas_login_url' => 'required_if:cas_login_active,1',
+            'cas_logout_url' => 'required_if:cas_login_active,1',
+            'cas_certificate' => 'required_if:cas_login_active,1',
+
+        ], $messages);
+
+        return $validator->errors();
     }
 
     public function submitRedirisForm(Request $request)
     {
+        $validatorErrors = $this->validateRedirisForm($request);
 
-        $messages = [
-            'rediris_entity_id.required' => 'El Entity ID es obligatorio',
-            'rediris_login_url.required' => 'La url de login es obligatoria',
-            'rediris_logout_url.required' => 'La url de logout es obligatoria',
-            'rediris_certificate.required' => 'El certificado es obligatorio',
-        ];
-
-        $validator = Validator::make($request->all(), [
-            'rediris_entity_id' => 'required|string',
-            'rediris_login_url' => 'required|string',
-            'rediris_logout_url' => 'required|string',
-            'rediris_certificate' => 'required|string',
-
-        ], $messages);
-
-        $validatorErrors = $validator->errors();
-
-        if (!$validator->errors()->isEmpty()) {
+        if (!$validatorErrors->isEmpty()) {
             return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validatorErrors], 422);
-        }
-
-        $active = intval($request->input('rediris_login_active'));
-
-        if ($active) {
-            GeneralOptionsModel::where('option_name', 'rediris_active')->update(['option_value' => $active]);
-        } else {
-            GeneralOptionsModel::where('option_name', 'rediris_active')->update(['option_value' => $active]);
         }
 
         $rediris = Saml2TenantsModel::where('key', 'rediris')->first();
 
-        if ($rediris) {
-
-            DB::transaction(function () use ($rediris, $request) {
-
-                $rediris->idp_entity_id = $request->input('rediris_entity_id');
-                $rediris->idp_login_url = $request->input('rediris_login_url');
-                $rediris->idp_logout_url = $request->input('rediris_logout_url');
-                $rediris->idp_x509_cert = $request->input('rediris_certificate');
-                $rediris->metadata = '[]';
-                $rediris->name_id_format = 'persistent';
-
-                $rediris->save();
-
-                LogsController::createLog('Actualización de inicio de sesión en REDIRIS', 'Sistemas de inicio de sesión', auth()->user()->uid);
-            });
-            return response()->json(['message' => 'Login de REDIRIS guardado correctamente']);
-        } else {
-
-            DB::transaction(function () use ($request) {
-                $uid = generate_uuid();
-
-                $new_data = new Saml2TenantsModel();
-                $new_data->uuid = $uid;
-                $new_data->key = 'rediris';
-                $new_data->idp_entity_id = $request->input('rediris_entity_id');
-                $new_data->idp_login_url = $request->input('rediris_login_url');
-                $new_data->idp_logout_url = $request->input('rediris_logout_url');
-                $new_data->idp_x509_cert = $request->input('rediris_certificate');
-                $new_data->metadata = '[]';
-                $new_data->name_id_format = 'persistent';
-
-                $new_data->save();
-
-                LogsController::createLog('Actualización de inicio de sesión en REDIRIS', 'Sistemas de inicio de sesión', auth()->user()->uid);
-            });
-
-            return response()->json(['message' => 'Login de REDIRIS guardado correctamente']);
+        if (!$rediris) {
+            $rediris = new Saml2TenantsModel();
+            $rediris->uuid = generate_uuid();
+            $rediris->key = 'rediris';
+            $rediris->metadata = '[]';
+            $rediris->name_id_format = 'persistent';
         }
+
+        $rediris->idp_entity_id = $request->input('rediris_entity_id');
+        $rediris->idp_login_url = $request->input('rediris_login_url');
+        $rediris->idp_logout_url = $request->input('rediris_logout_url');
+        $rediris->idp_x509_cert = $request->input('rediris_certificate');
+
+        $active = intval($request->input('rediris_login_active'));
+
+        DB::transaction(function () use ($rediris, $active) {
+            GeneralOptionsModel::where('option_name', 'rediris_active')->update(['option_value' => $active]);
+            $rediris->save();
+            LogsController::createLog('Actualización de inicio de sesión en Rediris', 'Sistemas de inicio de sesión', auth()->user()->uid);
+        });
+
+        if ($active) {
+            $urlRedirisMetadata = url('saml2/' . $rediris->uuid . '/metadata');
+        } else {
+            $urlRedirisMetadata = false;
+        }
+
+        return response()->json(['message' => 'Login de Rediris guardado correctamente', 'urlRedirisMetadata' => $urlRedirisMetadata]);
+    }
+
+    private function validateRedirisForm($request)
+    {
+        $messages = [
+            'rediris_entity_id.required_if' => 'El Entity ID es obligatorio',
+            'rediris_login_url.required_if' => 'La url de login es obligatoria',
+            'rediris_logout_url.required_if' => 'La url de logout es obligatoria',
+            'rediris_certificate.required_if' => 'El certificado es obligatorio',
+        ];
+
+        $validator = Validator::make($request->all(), [
+            'rediris_entity_id' => 'required_if:rediris_login_active,1',
+            'rediris_login_url' => 'required_if:rediris_login_active,1',
+            'rediris_logout_url' => 'required_if:rediris_login_active,1',
+            'rediris_certificate' => 'required_if:rediris_login_active,1',
+
+        ], $messages);
+
+        return $validator->errors();
     }
 }

@@ -47,7 +47,7 @@ class LicensesController extends BaseController
         $query = LicenseTypesModel::query();
 
         if ($search) {
-            $query->where('name', 'LIKE', "%{$search}%");
+            $query->where('name', 'ILIKE', "%{$search}%");
         }
 
         if (isset($sort) && !empty($sort)) {

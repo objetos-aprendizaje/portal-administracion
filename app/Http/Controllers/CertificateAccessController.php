@@ -35,7 +35,7 @@ class CertificateAccessController extends BaseController
                 $nif_temp = explode(" - ",$_SERVER["SSL_CLIENT_S_DN_CN"]);
                 $user->nif = $nif_temp[1];
                 $user->email = $_SERVER["REDIRECT_SSL_CLIENT_SAN_Email_0"];
-                $user->logged_x509 = 1;
+                $user->logged_x509 = true;
                 $user->save();
 
                 $rol = UserRolesModel::where("code", "TEACHER")->first();

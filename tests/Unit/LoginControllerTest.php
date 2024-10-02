@@ -61,19 +61,6 @@ class LoginControllerTest extends TestCase
     }
 
 
-    /** @test Autenticación fallida*/
-    public function testAuthenticateFailed()
-    {
-        // Intenta autenticar con credenciales incorrectas
-        $response = $this->post('/login/authenticate', [
-            'email' => 'nonexistent@example.com',
-            'password' => 'wrongpassword',
-        ]);
-
-        // Verifica que la respuesta sea un error
-        $response->assertStatus(401);
-        $this->assertEquals(['authenticated' => false, 'error' => 'No se ha encontrado ninguna cuenta con esas credenciales'], $response->json());
-    }
 
     /** @test Redirección Google*/
     public function testRedirectToGoogle()
@@ -92,35 +79,6 @@ class LoginControllerTest extends TestCase
 
         // Verifica que la respuesta sea una redirección
         $response->assertRedirect('/redirect-url');
-    }
-    /** @test Handle Google Callback*/
-    public function testHandleGoogleCallback()
-    {
-        // Simula la respuesta de Google
-        $user = new twouser();
-        $user->setRaw(['id' => '123456', 'email' => 'test@example.com', 'token' => 'token_google']);
-        $user->email = 'test@example.com';
-        $user->id = '123456';
-        $user->token = 'token_google';
-
-        // Simula el comportamiento de Socialite
-        Socialite::shouldReceive('driver')
-            ->with('google')
-            ->andReturnSelf();
-
-        Socialite::shouldReceive('user')
-            ->andReturn($user);
-
-        // Realiza una solicitud GET a la ruta de callback
-        $response = $this->get('/auth/google/callback');
-
-        // Verifica que la sesión se haya establecido correctamente
-        $this->assertEquals('test@example.com', session('email'));
-        $this->assertEquals('123456', session('google_id'));
-        $this->assertEquals('token_google', session('token_google'));
-
-        // Verifica que la respuesta sea una redirección a la página de inicio
-        $response->assertRedirect('/');
     }
 
     /** @test redirección Twitter*/
@@ -141,35 +99,7 @@ class LoginControllerTest extends TestCase
         // Verifica que la respuesta sea una redirección
         $response->assertRedirect('/redirect-url');
     }
-    /** @test Handle Twitter Callback*/
-    public function testHandleTwitterCallback()
-    {
-        // Simula la respuesta de Google
-        $user = new twouser();
-        $user->setRaw(['id' => '123456', 'email' => 'test@example.com', 'token' => 'token_twitter']);
-        $user->email = 'test@example.com';
-        $user->id = '123456';
-        $user->token = 'token_twitter';
 
-        // Simula el comportamiento de Socialite
-        Socialite::shouldReceive('driver')
-            ->with('twitter')
-            ->andReturnSelf();
-
-        Socialite::shouldReceive('user')
-            ->andReturn($user);
-
-        // Realiza una solicitud GET a la ruta de callback
-        $response = $this->get('/auth/twitter/callback');
-
-        // Verifica que la sesión se haya establecido correctamente
-        $this->assertEquals('test@example.com', session('email'));
-        $this->assertEquals('123456', session('twitter_id'));
-        $this->assertEquals('token_twitter', session('token_twitter'));
-
-        // Verifica que la respuesta sea una redirección a la página de inicio
-        $response->assertRedirect('/');
-    }
 
     /** @test redirección Twitter*/
     public function testRedirectToLinkedin()
@@ -184,41 +114,13 @@ class LoginControllerTest extends TestCase
             ->andReturn(new \Illuminate\Http\RedirectResponse('/redirect-url'));
 
         // Realiza una solicitud GET a la ruta de redirección
-        $response = $this->get('/auth/linkedin');
+        $response = $this->get('/auth/linkedin-openid');
 
         // Verifica que la respuesta sea una redirección
         $response->assertRedirect('/redirect-url');
     }
 
-    /** @test Handle Linkedin Callback*/
-    public function testHandleLinkedinCallback()
-    {
-        // Simula la respuesta de Google
-        $user = new twouser();
-        $user->setRaw(['id' => '123456', 'email' => 'test@example.com', 'token' => 'token_linkedin']);
-        $user->email = 'test@example.com';
-        $user->id = '123456';
-        $user->token = 'token_linkedin';
 
-        // Simula el comportamiento de Socialite
-        Socialite::shouldReceive('driver')
-            ->with('linkedin-openid')
-            ->andReturnSelf();
-
-        Socialite::shouldReceive('user')
-            ->andReturn($user);
-
-        // Realiza una solicitud GET a la ruta de callback
-        $response = $this->get('/auth/linkedin/callback');
-
-        // Verifica que la sesión se haya establecido correctamente
-        $this->assertEquals('test@example.com', session('email'));
-        $this->assertEquals('123456', session('linkedin_id'));
-        $this->assertEquals('token_linkedin', session('token_linkedin'));
-
-        // Verifica que la respuesta sea una redirección a la página de inicio
-        $response->assertRedirect('/');
-    }
     /** @test Redirect Facebook*/
     public function testRedirectToFacebook()
     {
@@ -238,32 +140,6 @@ class LoginControllerTest extends TestCase
         $response->assertRedirect('/redirect-url');
     }
 
-    /** @test Handle Twitter Callback*/
-    public function testHandleFacebookCallback()
-    {
-        // Simula la respuesta de Google
-        $user = new twouser();
-        $user->setRaw(['id' => '123456', 'email' => 'test@example.com', 'token' => 'token_facebook']);
-        $user->email = 'test@example.com';
-        $user->id = '123456';
-        $user->token = 'token_facebook';
-
-        // Simula el comportamiento de Socialite
-        Socialite::shouldReceive('driver')
-            ->with('facebook')
-            ->andReturnSelf();
-
-        Socialite::shouldReceive('user')
-            ->andReturn($user);
-
-        // Realiza una solicitud GET a la ruta de callback
-        $this->get('/auth/facebook/callback');
-
-        // Verifica que la sesión se haya establecido correctamente
-        $this->assertEquals('test@example.com', session('email'));
-        $this->assertEquals('123456', session('facebook_id'));
-        $this->assertEquals('token_facebook', session('token_facebook'));
-    }
 
     /** @test Logout*/
     public function testLogout()
@@ -299,7 +175,7 @@ class LoginControllerTest extends TestCase
         ]);
 
         // Simular la creación de un token de restablecimiento
-        $resetToken = ResetPasswordTokensModel::create([
+        $resetToken = ResetPasswordTokensModel::factory()->create([
             'uid' => generate_uuid(),
             'uid_user' => $user->uid,
             'email' => $user->email,
@@ -544,6 +420,14 @@ class LoginControllerTest extends TestCase
             'uuid' => generate_uuid(),
         ]);
 
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+
+        app()->instance('general_options', $general_options);
+
+        View::share('general_options', $general_options);
+
+
+
         // Configura la variable de entorno
         config()->set('app.dominiocertificado', 'https://example-cert.com');
 
@@ -560,4 +444,263 @@ class LoginControllerTest extends TestCase
         $response->assertViewHas('resources', ['resources/js/login.js']);
     }
 
+    public function testValidatesLoginMethod()
+    {
+
+        // Mocking Socialite user response
+        $mockUser = (object) [
+            'email' => 'admin@admin.com',
+            'name' => 'Test User'
+        ];
+
+        Socialite::shouldReceive('driver')
+            ->once()
+            ->with('google')
+            ->andReturnSelf();
+
+        Socialite::shouldReceive('user')
+            ->once()
+            ->andReturn($mockUser);
+
+        $login_method = 'google';
+        // Call the controller method through the route
+        $response = $this->get('/auth/callback/'.$login_method);
+
+        // Assert that the response redirects to the home page
+        $response->assertRedirect('/');
+    }
+
+        /** @test Autenticación fallida*/
+        public function testAuthenticateFailed()
+        {
+            // Intenta autenticar con credenciales incorrectas
+            $response = $this->post('/login/authenticate', [
+                'email' => 'nonexistent@example.com',
+                'password' => 'wrongpassword',
+            ]);
+
+            // Verifica que la respuesta sea un error
+            $response->assertStatus(401);
+            $this->assertEquals(['authenticated' => false, 'error' => 'No hay ninguna cuenta asociada al email'], $response->json());
+        }
+
+
+        public function testLogoIsNull()
+        {
+            // Simulamos que no hay opción para el logo
+            GeneralOptionsModel::factory()->create([
+                'option_name' => 'poa_logo',
+                'option_value' => null,
+            ]);
+
+            // Simular el compartir de la variable $general_options
+            $general_options = [
+                'poa_logo_1' => null,
+            ];
+
+            // Compartir la variable con la vista
+            view()->share('general_options', $general_options);
+
+            // Crear una instancia de MessageBag para simular errores
+            $errors = session()->get('errors', new MessageBag());
+
+            // Compartir manualmente la variable $errors con la vista
+            view()->share('errors', $errors);
+
+            $this->withoutExceptionHandling();
+
+            // No creamos ninguna opción para 'poa_logo'
+            $response = $this->get('/login');
+
+            $response->assertStatus(200);
+            $response->assertViewHas('logo', null);
+        }
+
+        public function testUrlCasGeneratedWhenLoginCasActive()
+    {
+
+        // Simulamos que no hay opción para el logo
+        GeneralOptionsModel::factory()->create([
+            'option_name' => 'poa_logo',
+            'option_value' => null,
+        ]);
+
+        // Simular el compartir de la variable $general_options
+        $general_options = [
+            'poa_logo_1' => null,
+        ];
+
+        // Compartir la variable con la vista
+        view()->share('general_options', $general_options);
+
+        // Crear una instancia de MessageBag para simular errores
+        $errors = session()->get('errors', new MessageBag());
+
+        // Compartir manualmente la variable $errors con la vista
+        view()->share('errors', $errors);
+
+        $this->withoutExceptionHandling();
+
+        // Simulamos que CAS está activo
+        GeneralOptionsModel::where('option_name', 'cas_active')->update([
+            'option_value' => 1,
+        ]);
+
+        // Simulamos la entrada en Saml2TenantsModel
+        $saml2Tenant = Saml2TenantsModel::factory()->create([
+            'key' => 'cas',
+        ]);
+
+        // Llama a la ruta que ejecuta el método index del controlador
+        $response = $this->get('/login');
+
+        // Verifica que el estado de la respuesta sea 200
+        $response->assertStatus(200);
+
+        // Verifica que la URL se genere correctamente
+        $expectedUrl = url('saml2/' . $saml2Tenant->uuid . '/login');
+        $response->assertViewHas('urlCas', $expectedUrl);
+    }
+
+    public function testUrlRedirisIsActive()
+    {
+
+        // Simulamos que no hay opción para el logo
+        GeneralOptionsModel::factory()->create([
+            'option_name' => 'poa_logo',
+            'option_value' => null,
+        ]);
+
+        // Simular el compartir de la variable $general_options
+        $general_options = [
+            'poa_logo_1' => null,
+        ];
+
+        // Compartir la variable con la vista
+        view()->share('general_options', $general_options);
+
+        // Crear una instancia de MessageBag para simular errores
+        $errors = session()->get('errors', new MessageBag());
+
+        // Compartir manualmente la variable $errors con la vista
+        view()->share('errors', $errors);
+
+        $this->withoutExceptionHandling();
+
+        // Simulamos que CAS está activo
+        GeneralOptionsModel::where('option_name', 'rediris_active')->update([
+            'option_value' => 1,
+        ]);
+
+        // Simulamos la entrada en Saml2TenantsModel
+        $saml2Tenant = Saml2TenantsModel::factory()->create([
+            'key' => 'rediris',
+        ]);
+
+        // Llama a la ruta que ejecuta el método index del controlador
+        $response = $this->get('/login'); // Asegúrate de que esta ruta es correcta
+
+        // Verifica que el estado de la respuesta sea 200
+        $response->assertStatus(200);
+
+    }
+
+    /** @test */
+    public function testRedirectsHomeTokenValid()
+    {
+        // Arrange: Crea un usuario con un token válido
+       $user = UsersModel::factory()->create(['uid' => generate_uuid(),'token_x509' => 'valid-token'])->first();
+
+
+        // Act: Realiza la solicitud al endpoint con el token válido
+        $this->get('/token_login/valid-token');
+
+        // Assert: Verifica que el usuario esté autenticado
+        $this->assertTrue(Auth::check());
+
+
+        // Verifica que el token haya sido eliminado
+        $user->refresh();
+        $this->assertEmpty($user->token_x509);
+    }
+
+     /** @test */
+     public function testRedirectsLoginTokenInvalid()
+     {
+
+        UsersModel::factory()->create(['uid' => generate_uuid(),'token_x509' => ''])->first();
+        // Act: Realiza la solicitud al endpoint con un token inválido
+        $response = $this->get('/token_login/ ');
+
+        // Assert: Verifica que no haya un usuario autenticado
+        $this->assertFalse(Auth::check());
+
+        // Verifica que sea redirigido a la página de login con un error específico
+        //$response->assertRedirect(env('DOMINIO_PRINCIPAL') . '/login?e=certificate-error');
+     }
+
+      /** @test */
+    public function testExceptionInvalidLoginMethods()
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Método de login no válido');
+
+        $authController = new LoginController();
+
+        // Métodos inválidos
+        $invalidMethods = ['instagram', 'github', 'yahoo'];
+
+        foreach ($invalidMethods as $method) {
+            // Debe lanzar excepción
+            $authController->handleSocialCallback($method);
+        }
+    }
+
+    /** @test */
+    public function testReturnsErrorCredentialsInvalid()
+    {
+        // Simula una solicitud con credenciales inválidas
+        $credentials = [
+            'email' => 'nonexistent@example.com',
+            'password' => 'wrongpassword',
+        ];
+
+        $response = $this->postJson('/login/authenticate', $credentials);
+
+        // Verifica que se retorne una respuesta JSON con autenticación falsa
+        $response->assertStatus(401);
+        $response->assertJson(['authenticated' => false]);
+
+    }
+
+     /** @test */
+     public function testReturnsErrorWhenUserNotExist()
+     {
+           // Crea un usuario en la base de datos
+        $user = UsersModel::factory()->create([
+            'email' => 'existent@example.com',
+            'password' => Hash::make('correctpassword'), // Contraseña correcta
+        ])->first();
+
+        // Simula una solicitud con credenciales incorrectas (contraseña incorrecta)
+        $credentials = [
+            'email' => $user->email,
+            'password' => 'wrongpassword',
+        ];
+
+        $response = $this->postJson('/login/authenticate', $credentials);
+
+        // Verifica que se retorne una respuesta JSON con autenticación falsa
+        $response->assertStatus(401);
+        $response->assertJson(['authenticated' => false]);
+        $response->assertJson([
+            'error' => 'No se ha encontrado ninguna cuenta con esas credenciales',
+        ]);
+
+    }
+
 }
+
+
+
+

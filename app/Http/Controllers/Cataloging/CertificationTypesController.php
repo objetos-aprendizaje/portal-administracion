@@ -56,8 +56,8 @@ class CertificationTypesController extends BaseController
         $query = CertificationTypesModel::query();
 
         if ($search) {
-            $query->where('name', 'LIKE', "%{$search}%")
-                ->orWhere('description', 'LIKE', "%{$search}%");
+            $query->where('name', 'ILIKE', "%{$search}%")
+                ->orWhere('description', 'ILIKE', "%{$search}%");
         }
 
         if (isset($sort) && !empty($sort)) {

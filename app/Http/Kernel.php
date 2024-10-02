@@ -76,6 +76,7 @@ class Kernel extends HttpKernel
         'combined.auth' => \App\Http\Middleware\CombinedAuthMiddleware::class,
         'role' => \App\Http\Middleware\CheckRole::class,
         'api_auth' => \App\Http\Middleware\CheckApiKey::class,
+        'api_front_auth' => \App\Http\Middleware\CheckApiKeyFront::class,
     ];
 
 }

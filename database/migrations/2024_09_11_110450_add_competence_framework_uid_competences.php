@@ -14,7 +14,7 @@ return new class extends Migration
     {
 
         Schema::table('competences', function (Blueprint $table) {
-            $table->string('competence_framework_uid', 36)->nullable();
+            $table->uuid('competence_framework_uid', 36)->nullable();
 
             $table->foreign('competence_framework_uid')
                 ->references('uid')

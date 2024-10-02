@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('educational_programs_students_documents', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('user_uid', 36);
-            $table->string('educational_program_uid', 36);
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('user_uid', 36);
+            $table->uuid('educational_program_uid', 36);
             $table->text('document_path');
             $table->timestamps();
 

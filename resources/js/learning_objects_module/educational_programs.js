@@ -186,10 +186,13 @@ function initHandlers() {
         });
 
     const generateTagsBtn = document.getElementById("generate-tags-btn");
-
     if (generateTagsBtn) {
-        generateTagsBtn.addEventListener("click", function () {
+        generateTagsBtn.addEventListener("click", () => {
             generateTags();
+            generateTagsBtn.classList.add("hidden");
+            setTimeout(() => {
+                generateTagsBtn.classList.remove("hidden");
+            }, 10000);
         });
     }
 

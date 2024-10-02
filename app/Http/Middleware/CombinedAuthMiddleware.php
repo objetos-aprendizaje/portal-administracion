@@ -19,23 +19,14 @@ class CombinedAuthMiddleware
         // Comprobamos si tenemos usuario
         if (Auth::check()) {
             try {
-                $this->loadUserData(Auth::user()->email);
+                $this->loadUserData(Auth::user());
             } catch (\Exception $e) {
                 return redirect('login')->withErrors($e->getMessage());
             }
 
             return $next($request);
-        } elseif ($this->isAuthenticatedWithGoogle($request) || $this->isAuthenticatedWithTwitter($request) || $this->isAuthenticatedWithFacebook($request) || $this->isAuthenticatedWithLinkedin($request)) {
-            try {
-                $email_user = $request->session()->get('email');
-                $this->loadUserData($email_user);
-                return $next($request);
-            } catch (\Exception $e) {
-                return redirect('login')->withErrors($e->getMessage());
-            }
         }
 
-        // Redirigir a la página de inicio de sesión o mostrar un mensaje de error
         return redirect('login');
     }
 
@@ -59,18 +50,10 @@ class CombinedAuthMiddleware
         return $request->session()->has('facebook_id');
     }
 
-    private function loadUserData($user_email)
+    private function loadUserData($user)
     {
-        $user = UsersModel::with('roles')
-            ->whereHas('roles', function ($query) {
-                $query->whereIn('code', ['ADMINISTRATOR', 'MANAGEMENT', 'TEACHER']);
-            })
-            ->where('email', $user_email)
-            ->first();
 
-        if (!$user) {
-            throw new \Exception('No hay ninguna cuenta asociada al email');
-        }
+        $user = Auth::user()->with("roles")->first();
 
         $notifications = $this->getNotifications($user);
 
@@ -81,7 +64,6 @@ class CombinedAuthMiddleware
         View::share('notifications', $notifications);
         View::share('unread_notifications', $unread_notifications);
         View::share('roles', $user['roles']->toArray());
-        Auth::login($user);
     }
 
     private function getNotifications($user)
@@ -99,7 +81,6 @@ class CombinedAuthMiddleware
 
     private function getGeneralNotifications($user)
     {
-
         $user_array = $user->toArray();
 
         $uids_roles = array_map(function ($item) {
@@ -139,7 +120,7 @@ class CombinedAuthMiddleware
                 'general_notifications.created_at as date',
                 DB::raw("'general' as type"),
                 // Subconsulta para determinar si la notificación ha sido leída por el usuario
-                'is_read' => UserGeneralNotificationsModel::select(DB::raw('IF(COUNT(*), 1, 0)'))
+                'is_read' => UserGeneralNotificationsModel::select(DB::raw('CAST(CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END AS INTEGER)'))
                     ->whereColumn('user_general_notifications.general_notification_uid', 'general_notifications.uid')
                     ->where('user_general_notifications.user_uid', $user_uid)
                     ->limit(1),
@@ -152,7 +133,7 @@ class CombinedAuthMiddleware
     {
         $generalNotificationsAutomaticQuery = GeneralNotificationsAutomaticModel::leftJoin('automatic_notification_types', 'automatic_notification_types.uid', '=', 'general_notifications_automatic.automatic_notification_type_uid')
             ->leftJoin('general_notifications_automatic_users', 'general_notifications_automatic_users.general_notifications_automatic_uid', '=', 'general_notifications_automatic.uid')
-            ->select('general_notifications_automatic.uid', 'general_notifications_automatic.title', 'general_notifications_automatic.description', 'general_notifications_automatic.created_at as date', DB::raw("'automatic' as type"), 'general_notifications_automatic_users.is_read')
+            ->select('general_notifications_automatic.uid', 'general_notifications_automatic.title', 'general_notifications_automatic.description', 'general_notifications_automatic.created_at as date', DB::raw("'automatic' as type"), DB::raw('CAST(general_notifications_automatic_users.is_read AS INTEGER) as is_read'))
             ->where('general_notifications_automatic_users.user_uid', $user->uid);
 
         return $generalNotificationsAutomaticQuery;

@@ -44,11 +44,19 @@ use League\Csv\Reader;
 
 use App\Rules\NifNie;
 use App\Services\KafkaService;
+use App\Services\EmbeddingsService;
 use DateTime;
 
 class ManagementCoursesController extends BaseController
 {
     use AuthorizesRequests, ValidatesRequests;
+
+    protected $embeddingsService;
+
+    public function __construct(EmbeddingsService $embeddingsService)
+    {
+        $this->embeddingsService = $embeddingsService;
+    }
 
     public function index()
     {
@@ -249,8 +257,7 @@ class ManagementCoursesController extends BaseController
         }
 
         if ($search) {
-            $query->where('title', 'LIKE', "%{$search}%")
-                ->orWhere('courses.uid', $search)
+            $query->where('title', 'ILIKE', "%{$search}%")
                 ->orWhere('courses.identifier', $search);
         }
 
@@ -316,7 +323,7 @@ class ManagementCoursesController extends BaseController
     {
         foreach ($filters as $filter) {
             if ($filter['database_field'] == "center") {
-                $query->where("center", 'LIKE', "%{$filter['value']}%");
+                $query->where("center", 'ILIKE', "%{$filter['value']}%");
             } elseif ($filter['database_field'] == 'inscription_date') {
                 if (count($filter['value']) == 2) {
                     // Si recibimos un rango de fechas
@@ -378,15 +385,13 @@ class ManagementCoursesController extends BaseController
                 $query->where('min_required_students', '>=', $filter['value']);
             } else if ($filter['database_field'] == 'max_required_students') {
                 $query->where('min_required_students', '<=', $filter['value']);
-            }
-            else if ($filter['database_field'] == 'learning_results') {
+            } else if ($filter['database_field'] == 'learning_results') {
                 $query->with([
                     'blocks.learningResults'
                 ])->whereHas('blocks.learningResults', function ($query) use ($filter) {
                     $query->whereIn('learning_results.uid', $filter['value']);
                 });
-            }
-            else {
+            } else {
                 $query->where($filter['database_field'], $filter['value']);
             }
         }
@@ -493,6 +498,10 @@ class ManagementCoursesController extends BaseController
                 $course_bd->course_status_uid = $newCourseStatus->uid;
             }
 
+            // Antes de actualizar el título y descripción del curso, se comprueba si hay cambios y se generan embeddings
+            // Fixit
+            $embeddings = $this->generateCourseEmbeddings($request, $course_bd);
+
             // En función de si el curso pertenece a una nueva edición o no y no es gestor, se actualizarán o no ciertos campos
             if ($course_bd->course_origin_uid && !$isManagement) {
                 $this->updateCourseFieldsNewEdition($request, $course_bd);
@@ -515,12 +524,33 @@ class ManagementCoursesController extends BaseController
                 dispatch(new SendCourseNotificationToManagements($course_bd->toArray()));
             }
 
+            $course_bd->embeddings = $embeddings;
+
             $course_bd->save();
 
             LogsController::createLog(($isNew) ? 'Curso añadido' : 'Curso actualizado', 'Cursos', auth()->user()->uid);
         }, 5);
 
         return response()->json(['message' => ($isNew) ? 'Se ha añadido el curso correctamente' : 'Se ha actualizado el curso correctamente'], 200);
+    }
+
+    /**
+     *
+     * Si el curso no tiene embeddings, se generan.
+     * Si el título o la descripción han cambiado, se generan nuevos embeddings.
+     * Si no se cumplen las condiciones anteriores o falla la API, se devuelven los embeddings actuales.
+     */
+    private function generateCourseEmbeddings($request, $course_bd)
+    {
+        $title = $request->input('title');
+        $description = $request->input('description');
+
+        if (!$course_bd->embeddings || $title != $course_bd->title || $description != $course_bd->description) {
+            $embeddings = $this->embeddingsService->getEmbedding($title . ' ' . $description);
+            return $embeddings ?: $course_bd->embeddings;
+        }
+
+        return $course_bd->embeddings;
     }
 
     private function checkRealizationDatesCourseAddEducationalProgram($request, $course_bd)
@@ -749,7 +779,8 @@ class ManagementCoursesController extends BaseController
         return response()->json(['median' => $median], 200);
     }
 
-    private function getMedianInscribedCategories($categoriesUids) {
+    private function getMedianInscribedCategories($categoriesUids)
+    {
         $courses = CoursesModel::withCount([
             "students" => function ($query) {
                 return $query->where("status", "ENROLLED")->where("acceptance_status", "ACCEPTED");
@@ -1380,8 +1411,8 @@ class ManagementCoursesController extends BaseController
 
         if ($search) {
             $query->where(function ($subQuery) use ($search) {
-                $subQuery->whereRaw("concat(first_name, ' ', last_name) like ?", ["%$search%"])
-                    ->orWhere('nif', 'like', "%$search%");
+                $subQuery->whereRaw("concat(first_name, ' ', last_name) ILIKE ?", ["%$search%"])
+                    ->orWhere('nif', 'ILIKE', "%$search%");
             });
         }
 
@@ -1598,6 +1629,7 @@ class ManagementCoursesController extends BaseController
             'categories',
             'blocks',
             'courseDocuments',
+            'paymentTerms',
             'blocks.competences',
             'blocks.subBlocks',
             'blocks.subBlocks.elements',
@@ -1624,6 +1656,23 @@ class ManagementCoursesController extends BaseController
         $this->duplicateCourseCategories($courseBd, $newCourse);
         $this->duplicateStructure($courseBd, $newCourse);
         $this->duplicateCourseDocuments($courseBd, $newCourse);
+
+        if ($courseBd->payment_mode == "INSTALLMENT_PAYMENT") {
+            $this->duplicateCoursePaymentTerms($courseBd, $newCourse);
+        }
+    }
+
+    private function duplicateCoursePaymentTerms($courseBd, $newCourse)
+    {
+
+        $paymentTerms = $courseBd->paymentTerms;
+
+        foreach ($paymentTerms as $paymentTerm) {
+            $newPaymentTerm = $paymentTerm->replicate();
+            $newPaymentTerm->uid = generate_uuid();
+            $newPaymentTerm->course_uid = $newCourse->uid;
+            $newPaymentTerm->save();
+        }
     }
 
     private function duplicateCourseDocuments($courseBd, $newCourse)

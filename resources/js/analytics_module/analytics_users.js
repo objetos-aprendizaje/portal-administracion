@@ -58,6 +58,8 @@ function graficar(datas){
     height = 600,
     margin = 110;
 
+    const colores = ['#2C4C7E', '#7E5E2C', '#2C7E5E', '#7E2C4C'];
+
     // The radius of the pieplot is half the width or half the height (smallest one). I subtract a bit of margin.
     const radius = Math.min(width, height) / 2 - margin
 
@@ -100,7 +102,13 @@ function graficar(datas){
     .data(data_ready)
     .join('path')
     .attr('d', arc)
-    .attr('fill', d => color(d.data[1]))
+    .attr('fill', function (d){
+
+        console.log(d.index);
+
+        return colores[d.index];
+
+    })
     .attr("stroke", "white")
     .style("stroke-width", "2px")
     .style("opacity", 0.7)

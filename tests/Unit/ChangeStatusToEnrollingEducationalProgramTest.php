@@ -21,8 +21,6 @@ class ChangeStatusToEnrollingEducationalProgramTest extends TestCase
     public function testChangesEducationalProgramsStatusToEnrolling()
     {
 
-        // Prepara el estado inicial
-
         $statusInscription = EducationalProgramStatusesModel::where('code', 'INSCRIPTION')->first();
 
         $statusEnrolling = EducationalProgramStatusesModel::where('code', 'ENROLLING')->first();
@@ -61,9 +59,12 @@ class ChangeStatusToEnrollingEducationalProgramTest extends TestCase
             $attachData[$student->uid] = ['uid' => Str::uuid()]; // Generar un nuevo UUID para cada relación
         }
 
-        // Usar attach para agregar estudiantes al programa educativo
-        $educationalProgram->students()->attach($attachData);
-
+        foreach ($students as $student) {
+            $attachData[$student->uid] = [
+                'uid' => Str::uuid(),
+                'acceptance_status' => 'INSCRIBED'
+            ];
+        }
 
         // Esperar que la cola de trabajos se llene
         Queue::fake();
@@ -82,5 +83,10 @@ class ChangeStatusToEnrollingEducationalProgramTest extends TestCase
         $this->assertTrue($educationalPrograms->count() > 0, 'No hay programas educativos en estado INSCRIPTION para cambiar a ENROLLING.');
 
     }
+
+
+
+
+
 }
 

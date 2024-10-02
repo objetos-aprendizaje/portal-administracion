@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use Illuminate\Support\Carbon;
 use App\Models\CoursesTeachersModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,6 +19,8 @@ class CoursesTeachersModelFactory extends Factory
 
         return [
             'uid' => generate_uuid(),
+            'created_at' => Carbon::now()->format('Y-m-d\TH:i'),
+            'updated_at' => Carbon::now()->format('Y-m-d\TH:i'),
         ];
     }
 }

@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('educational_resources_metadata', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('educational_resources_uid', 36)->index('fk_educ_resources_meta');
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('educational_resources_uid', 36)->index('fk_educ_resources_meta');
             $table->text('metadata_key');
             $table->text('metadata_value');
             $table->timestamps();

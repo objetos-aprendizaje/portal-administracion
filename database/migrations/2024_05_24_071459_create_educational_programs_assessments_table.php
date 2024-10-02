@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('educational_programs_assessments', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('user_uid', 36)->index('qvkei_educational_programs_assessments_user_uid_foreign');
-            $table->string('educational_program_uid', 36)->index('edu_prog_uid_fk');
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('user_uid', 36)->index('qvkei_educational_programs_assessments_user_uid_foreign');
+            $table->uuid('educational_program_uid', 36)->index('edu_prog_uid_fk');
             $table->integer('calification');
             $table->timestamps();
 

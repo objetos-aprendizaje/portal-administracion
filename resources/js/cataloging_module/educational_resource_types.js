@@ -57,6 +57,7 @@ function initHandlers() {
 }
 
 function newEducationalResourceType() {
+    resetFormErrors("educational-resource-type-form");
     resetModal();
     showModal("educational-resource-types-modal", "Añade un nuevo tipo de recurso educativo");
 }
@@ -219,7 +220,7 @@ function resetModal() {
     // Reseteamos solo este campo y no todos los hidden porque si no nos cargamos el campo del token csrf
     document.getElementById("educational_resource_type_uid").value = "";
 
-    resetFormErrors();
+    resetFormErrors("educational-resource-type-form");
 }
 
 /**

@@ -21,7 +21,7 @@ class NotificationsChangesStatusesCoursesController extends BaseController
         }])->with('status')->where('uid', $status_notification_uid)->where('user_uid', Auth::user()['uid'])->select('notifications_changes_statuses_courses.*')->first();
 
         // La marcamos como leída
-        $notification->is_read = 1;
+        $notification->is_read = true;
         $notification->save();
 
         return response()->json($notification->toArray());

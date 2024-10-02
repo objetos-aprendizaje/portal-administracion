@@ -69,7 +69,7 @@ class LearningObjectProgramsEducationalSaveTest extends TestCase
             'payment_mode' => 'SINGLE_PAYMENT',
             'cost' => 100,
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
-            'categories' => json_encode(['category1', 'category2']),
+            'categories' => json_encode([generate_uuid(), generate_uuid()]),
             'documents' => json_encode([]),
             //Asegúrate de pasar un JSON válido o un array vacío
         ];
@@ -131,9 +131,15 @@ class LearningObjectProgramsEducationalSaveTest extends TestCase
             'payment_mode' => 'SINGLE_PAYMENT',
             'cost' => 150,
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
-            'categories' => json_encode(['category1', 'category2']),
             'documents' => json_encode([]),
         ];
+
+        $randomNumberCategories = rand(1, 5);
+        for ($i = 0; $i < $randomNumberCategories; $i++) {
+            $data['categories'][] = generate_uuid();
+        }
+
+        $data['categories'] = json_encode($data['categories']);
 
         // Realizar la solicitud POST
         $response = $this->postJson('/learning_objects/educational_programs/save_educational_program', $data);

@@ -8,9 +8,9 @@ class CreateLearningResultsBlocksTable extends Migration
     public function up()
     {
         Schema::create('learning_results_blocks', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('learning_result_uid', 36);
-            $table->string('course_block_uid', 36);
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('learning_result_uid', 36);
+            $table->uuid('course_block_uid', 36);
 
             $table->foreign('learning_result_uid')->references('uid')->on('learning_results')->onDelete('cascade');
             $table->foreign('course_block_uid')->references('uid')->on('course_blocks')->onDelete('cascade');

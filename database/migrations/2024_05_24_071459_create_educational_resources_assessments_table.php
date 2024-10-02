@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('educational_resources_assessments', function (Blueprint $table) {
-            $table->string('uid', 36)->primary();
-            $table->string('user_uid', 36)->index('qvkei_educational_resources_assessments_user_uid_foreign');
-            $table->string('educational_resources_uid', 36)->index('edu_res_fk');
-            $table->integer('calification');
+            $table->uuid('uid', 36)->primary();
+            $table->uuid('user_uid', 36)->index('qvkei_educational_resources_assessments_user_uid_foreign');
+            $table->uuid('educational_resources_uid', 36)->index('edu_res_fk');
+            $table->decimal('calification');
             $table->timestamps();
 
             $table->unique(['user_uid', 'educational_resources_uid'], 'unique_user_uid_educational_resources_uid');
