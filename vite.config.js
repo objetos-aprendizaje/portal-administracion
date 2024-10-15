@@ -72,6 +72,9 @@ export default defineConfig({
                 "resources/js/administration_module/licenses.js",
                 "resources/js/administration_module/tooltip_texts.js",
                 "resources/js/administration_module/departments.js",
+                "resources/js/analytics_module/analytics_abandoned.js",
+                "resources/js/analytics_module/analytics_poa.js",
+                "resources/js/analytics_module/analytics_top_categories.js"
             ],
             refresh: true,
         }),

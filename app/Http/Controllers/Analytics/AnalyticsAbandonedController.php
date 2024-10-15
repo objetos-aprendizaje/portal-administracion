@@ -27,8 +27,7 @@ class AnalyticsAbandonedController extends BaseController
                 "page_name" => "Abandonos de cursos",
                 "page_title" => "Abandonos de cursos",
                 "resources" => [
-                    "resources/js/analytics_module/analytics_abandoned.js",
-                    "resources/js/analytics_module/d3.js"
+                    "resources/js/analytics_module/analytics_abandoned.js"
                 ],
                 "tabulator" => true,
                 "submenuselected" => "analytics-abandoned",
@@ -90,10 +89,11 @@ class AnalyticsAbandonedController extends BaseController
     public function getAbandonedGraph() {
 
         $query = CoursesModel::select(
-            'courses.*',
+            'courses.uid',
+            'courses.title',
             DB::raw("realization_start_date + interval '30 days' as abandoned_date")
         )
-        ->with(['accesses', 'status', 'students' => function ($query) {
+        ->with(['accesses', 'students' => function ($query) {
             $query->where('status', 'ENROLLED')
                 ->where('acceptance_status', 'ACCEPTED');
         }])
@@ -104,8 +104,8 @@ class AnalyticsAbandonedController extends BaseController
         ->whereHas('status', function ($query) {
             $query->where('code', 'DEVELOPMENT');
         })
+        ->whereHas('accesses')
         ->whereNotNull('lms_url')->get()->toArray();
-
 
         $new_data = [];
         $fechaHoy = new DateTime();
@@ -118,8 +118,8 @@ class AnalyticsAbandonedController extends BaseController
 
                 //verificamos accesos
 
-                //Si no hay ningun acceso es que todos los alumnos han abandonado
                 if (!isset($course['accesses'])){
+                    //Si no hay ningun acceso es que todos los alumnos han abandonado
                     $course['abandoned'] = $course['enrolled_accepted_students_count'];
                 }else{
                     //existen accesos, verificamos que usuarios han accedido y cuales no para crear un nuevo array de datos
@@ -133,12 +133,14 @@ class AnalyticsAbandonedController extends BaseController
                         $course['abandoned_users'] = $data;
                     }else{
                         $course['abandoned'] = 0;
+                        $course['abandoned_users'] = "";
                     }
                 }
             }
             $new_data[$index] = $course;
 
         }
+
         return response()->json($new_data, 200);
     }
 

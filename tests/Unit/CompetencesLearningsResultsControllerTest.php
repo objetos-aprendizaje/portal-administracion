@@ -234,6 +234,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
             // Crear algunos registros de ejemplo
             $competence = CompetencesModel::create([
                 'uid' => generate_uuid(),
+                'description'=>'Example Competence',
                 'name' => 'Example Competence',
                 'competence_framework_uid' => $competenceFramework->uid
             ])->first();

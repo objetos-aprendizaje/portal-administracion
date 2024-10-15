@@ -104,7 +104,9 @@ class EducationalProgramTypesController extends BaseController
 
         $validator = Validator::make($request->all(), [
             'name' => [
-                'required', 'min:3', 'max:255',
+                'required',
+                'min:3',
+                'max:255',
                 Rule::unique('educational_program_types', 'name')->ignore($request->get('educational_program_type_uid'), 'uid'),
             ],
             'description' => 'nullable',
@@ -144,7 +146,8 @@ class EducationalProgramTypesController extends BaseController
         DB::transaction(function () use ($educational_program_type, $isNew) {
             $educational_program_type->save();
 
-            $messageLog = $isNew ? 'Añadir tipo de programa formativo' : 'Actualizar tipo de programa formativo';
+            $messageLog = $isNew ? 'Añadir tipo de programa formativo: ' : 'Actualizar tipo de programa formativo: ';
+            $messageLog .= $educational_program_type->name;
             LogsController::createLog($messageLog, 'Tipos de programas formativo', auth()->user()->uid);
         });
 
@@ -167,9 +170,12 @@ class EducationalProgramTypesController extends BaseController
         $this->checkExistence(RedirectionQueriesEducationalProgramTypesModel::class, $uids, 'No se pueden eliminar los tipos de programa formativo porque están siendo utilizados en redirecciones de consulta');
         $this->checkExistence(CallsEducationalProgramTypesModel::class, $uids, 'No se pueden eliminar los tipos de programa formativo porque están siendo utilizados en convocatorias');
 
-        DB::transaction(function () use ($uids) {
-            EducationalProgramTypesModel::destroy($uids);
-            LogsController::createLog('Eliminar tipos de programas formativo', 'Tipos de programas formativo', auth()->user()->uid);
+        $educationalProgramTypes = EducationalProgramTypesModel::whereIn('uid', $uids)->get();
+        DB::transaction(function () use ($educationalProgramTypes) {
+            foreach ($educationalProgramTypes as $educationalProgramType) {
+                $educationalProgramType->delete();
+                LogsController::createLog('Eliminar tipo de programa formativo: ' . $educationalProgramType->name, 'Tipos de programas formativo', auth()->user()->uid);
+            }
         });
 
         $educational_program_types = EducationalProgramTypesModel::get()->toArray();

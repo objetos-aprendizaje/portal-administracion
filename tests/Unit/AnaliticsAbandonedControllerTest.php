@@ -62,8 +62,7 @@ class AnaliticsAbandonedControllerTest extends TestCase
         $response->assertViewHas('page_name', 'Abandonos de cursos');
         $response->assertViewHas('page_title', 'Abandonos de cursos');
         $response->assertViewHas('resources', [
-            'resources/js/analytics_module/analytics_abandoned.js',
-            'resources/js/analytics_module/d3.js'
+            "resources/js/analytics_module/analytics_abandoned.js"            
         ]);
         $response->assertViewHas('tabulator', true);
         $response->assertViewHas('submenuselected', 'analytics-abandoned');

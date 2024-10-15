@@ -134,9 +134,7 @@ class CompetencesLearningsResultsController extends BaseController
             'description'
         ]));
 
-        $messageLog = $isNew ? 'Marco de competencias añadido' : 'Marco de competencias actualizado';
-
-        DB::transaction(function () use ($isNew,$request,$competenceFramework, $messageLog) {
+        DB::transaction(function () use ($isNew,$request,$competenceFramework) {
             $competenceUid = $competenceFramework->uid;
             $competenceFramework->save();
             if ($isNew == true && $request->get('has_levels') == "1"){
@@ -148,6 +146,10 @@ class CompetencesLearningsResultsController extends BaseController
             if ($isNew == false && $request->get('has_levels') == "1"){
                 $this->saveLevels($competenceUid, $request['levels']);
             }
+
+            $messageLog = $isNew ? 'Marco de competencias añadido: ' : 'Marco de competencias actualizado: ';
+            $messageLog .= $competenceFramework->name;
+
             LogsController::createLog($messageLog, 'Marcos de competencias', auth()->user()->uid);
         });
 
@@ -233,7 +235,8 @@ class CompetencesLearningsResultsController extends BaseController
             'name', 'description', 'parent_competence_uid', 'competence_framework_uid'
         ]));
 
-        $messageLog = $isNew ? 'Competencia añadida' : 'Competencia actualizada';
+        $messageLog = $isNew ? 'Competencia añadida: ' : 'Competencia actualizada: ';
+        $messageLog .= $competence->name;
 
         DB::transaction(function () use ($competence, $messageLog) {
             $competence->save();
@@ -443,15 +446,7 @@ class CompetencesLearningsResultsController extends BaseController
         $parent_level_1_uuid = "";
         $parent_level_2_uuid = "";
 
-        $uid_esco = generate_uuid();
-        $hierarchy[] = [
-            "uid" => $uid_esco,
-            "name" => "ESCO",
-            "description" => "",
-            "parent_competence_uid" => NULL,
-            'is_multi_select' => '1',
-            'origin_code' => ""
-        ];
+        $uid_esco = $this->createEsco();
 
         foreach ($data as $row) {
             // Si no está correcta la fila
@@ -465,8 +460,8 @@ class CompetencesLearningsResultsController extends BaseController
                     "uid" => $level0_uid,
                     "name" => $row[1],
                     "description" => $row[8],
-                    "parent_competence_uid" => $uid_esco,
-                    'origin_code' => $row[0]
+                    'origin_code' => $row[0],
+                    'competence_framework_uid' => $uid_esco,
                 ];
 
                 $parent_level_0_uuid = $level0_uid;
@@ -744,11 +739,13 @@ class CompetencesLearningsResultsController extends BaseController
 
         $data = json_decode($jsonContent, true);
 
-
         DB::beginTransaction();
+
+        $esco_uid = $this->createEsco();
+
         try {
             foreach ($data as $item) {
-                $this->importCompetence(null, $item);
+                $this->importCompetence(null, $item, $esco_uid);
             }
             DB::commit();
         } catch (\Exception $e) {
@@ -760,7 +757,7 @@ class CompetencesLearningsResultsController extends BaseController
         return response()->json(['message' => 'Importación realizada']);
     }
 
-    private function importCompetence($parentUid, $item)
+    private function importCompetence($parentUid, $item, $esco_uid)
     {
 
         $first_uid = generate_uuid();
@@ -769,13 +766,20 @@ class CompetencesLearningsResultsController extends BaseController
             'uid' => $first_uid,
             'name' => $item['name'],
             'description' => $item['description'] ?? '',
-            'is_multi_select' => $item['is_multi_select'],
             'parent_competence_uid' => $parentUid,
             'origin_code' => $item['origin_code'] ?? '',
+            'competence_framework_uid' => $esco_uid
         ]);
 
-        foreach ($item['subcompetences'] as $sub) {
-            $this->importCompetence($first_uid, $sub);
+        if (isset($item['allsubcompetences']) && $item['allsubcompetences'] != null) {
+            foreach ($item['allsubcompetences'] as $sub) {
+                $this->importCompetence($first_uid, $sub, null);
+            }
+        }
+        if (isset($item['all_subcompetences']) && $item['all_subcompetences'] != null) {
+            foreach ($item['allsubcompetences'] as $sub) {
+                $this->importCompetence($first_uid, $sub, null);
+            }
         }
 
         if (isset($item['learning_results']) && $item['learning_results'] != null) {
@@ -793,5 +797,19 @@ class CompetencesLearningsResultsController extends BaseController
                 ]);
             }
         }
+    }
+    private function createEsco(){
+
+        $competence_framework_uid = generate_uuid();
+
+        $competence_framework = CompetenceFrameworksModel::create([
+            'uid' => $competence_framework_uid,
+            'has_level' => 1,
+            'name' => "ESCO",
+            'description' => '',
+            'origin_code' => '',
+        ]);
+
+        return $competence_framework_uid;
     }
 }

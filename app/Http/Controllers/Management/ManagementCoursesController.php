@@ -21,6 +21,8 @@ use App\Models\CentersModel;
 use App\Models\CertificationTypesModel;
 use App\Models\CompetenceFrameworksModel;
 use App\Models\CourseCategoriesModel;
+use App\Models\CourseLearningResultCalificationsModel;
+use App\Models\CoursesBlocksLearningResultsCalificationsModel;
 use App\Models\CoursesEmailsContactsModel;
 use App\Models\CoursesPaymentTermsModel;
 use App\Models\CoursesStudentDocumentsModel;
@@ -271,6 +273,8 @@ class ManagementCoursesController extends BaseController
 
         $data = $query->paginate($size);
 
+        adaptDatesCourseEducationalProgram($data, true);
+
         return response()->json($data, 200);
     }
 
@@ -437,6 +441,7 @@ class ManagementCoursesController extends BaseController
         ])
             ->first();
 
+        adaptDatesCourseEducationalProgram($course);
         if (!$course) {
             return response()->json(['message' => 'El curso no existe'], 406);
         }
@@ -525,10 +530,8 @@ class ManagementCoursesController extends BaseController
             }
 
             $course_bd->embeddings = $embeddings;
-
+            $this->saveLogMessageSaveCourse($isNew, $course_bd->title);
             $course_bd->save();
-
-            LogsController::createLog(($isNew) ? 'Curso añadido' : 'Curso actualizado', 'Cursos', auth()->user()->uid);
         }, 5);
 
         return response()->json(['message' => ($isNew) ? 'Se ha añadido el curso correctamente' : 'Se ha actualizado el curso correctamente'], 200);
@@ -600,6 +603,97 @@ class ManagementCoursesController extends BaseController
             $necessaryApprovalEditions = app('general_options')['necessary_approval_editions'];
             return $necessaryApprovalEditions ? $statuses['PENDING_APPROVAL'] : $statuses['ACCEPTED_PUBLICATION'];
         } else return null;
+    }
+
+    public function getCourseCalifications(Request $request, $courseUid)
+    {
+        $size = $request->get('size', 1);
+        $search = $request->get('search');
+        $sort = $request->get('sort');
+
+        $course = CoursesModel::where("uid", $courseUid)->first();
+
+        // Alumnos del curso
+        $coursesStudentsQuery = $course->students()->with(["courseBlocksLearningResultsCalifications", "courseBlocksLearningResultsCalifications.block" => function ($query) use ($courseUid) {
+            return $query->where("course_uid", $courseUid);
+        }, "courseLearningResultCalifications" => function ($query) use ($courseUid) {
+            return $query->where("course_uid", $courseUid);
+        }]);
+
+
+        if ($search) {
+            $coursesStudentsQuery->where(function ($subQuery) use ($search) {
+                $subQuery->whereRaw("concat(first_name, ' ', last_name) ILIKE ?", ["%$search%"])
+                    ->orWhere('nif', 'ILIKE', "%$search%");
+            });
+        }
+
+        if (isset($sort) && !empty($sort)) {
+            foreach ($sort as $order) {
+                $coursesStudentsQuery->orderBy($order['field'], $order['dir']);
+            }
+        }
+
+        $coursesStudents = $coursesStudentsQuery->paginate($size);
+
+        $courseBlocks = $course->blocks()->with("learningResults.competence.competenceFramework.levels")->get();
+
+        // Resultados de aprendizaje únicos
+        $learningResults = [];
+        foreach ($courseBlocks as $block) {
+            foreach ($block->learningResults as $learningResult) {
+                $learningResults[$learningResult->uid] = $learningResult->toArray();
+            }
+        }
+
+        // Convertir el array asociativo de vuelta a un array indexado
+        $learningResults = array_values($learningResults);
+
+        return response()->json([
+            "coursesStudents" => $coursesStudents,
+            "courseBlocks" => $courseBlocks,
+            "learningResults" => $learningResults
+        ], 200);
+    }
+
+    public function saveCalification(Request $request, $courseUid)
+    {
+        $blocksLearningResultCalifications = $request->input("blocksLearningResultCalifications");
+        $learningResultsCalifications = $request->input("learningResultsCalifications");
+
+        DB::transaction(function () use ($blocksLearningResultCalifications, $learningResultsCalifications, $courseUid) {
+            foreach ($blocksLearningResultCalifications as $blockCalification) {
+                CoursesBlocksLearningResultsCalificationsModel::updateOrCreate(
+                    [
+                        "user_uid" => $blockCalification["userUid"],
+                        "course_block_uid" => $blockCalification["blockUid"],
+                        "learning_result_uid" => $blockCalification["learningResultUid"],
+                    ],
+                    [
+                        "uid" => generate_uuid(),
+                        "calification_info" => $blockCalification["calificationInfo"],
+                        "competence_framework_level_uid" => $blockCalification["levelUid"]
+                    ]
+                );
+            }
+
+            foreach ($learningResultsCalifications as $learningResultCalification) {
+                CourseLearningResultCalificationsModel::updateOrCreate(
+                    [
+                        "user_uid" => $learningResultCalification["userUid"],
+                        "learning_result_uid" => $learningResultCalification["learningResultUid"],
+                        "course_uid" => $courseUid
+                    ],
+                    [
+                        "uid" => generate_uuid(),
+                        "calification_info" => $learningResultCalification["calificationInfo"],
+                        "competence_framework_level_uid" => $learningResultCalification["levelUid"]
+                    ]
+                );
+            }
+        });
+
+        return response()->json(['message' => 'Se han guardado las calificaciones correctamente'], 200);
     }
 
     private function updateAuxiliarDataCourse($course_bd, $request)
@@ -816,6 +910,14 @@ class ManagementCoursesController extends BaseController
                 throw new OperationFailedException('No puedes añadir más de 100 resultados de aprendizaje por bloque', 422);
             }
         }
+    }
+
+    private function saveLogMessageSaveCourse($isNew, $courseTitle)
+    {
+        $logMessage = $isNew ? 'Curso añadido: ' : 'Curso actualizado: ';
+        $logMessage .= $courseTitle;
+
+        LogsController::createLog($logMessage, 'Cursos', auth()->user()->uid);
     }
 
     private function getValidatorCourseMessages()

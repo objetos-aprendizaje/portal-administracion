@@ -107,9 +107,8 @@ class AnalyticsTopCategoriesControllerTest extends TestCase
         // Verificar que los datos pasados a la vista sean correctos
         $response->assertViewHas('page_name', 'TOP Categorias');
         $response->assertViewHas('page_title', 'TOP Categorias');
-        $response->assertViewHas('resources', [
-            "resources/js/analytics_module/analytics_top_categories.js",
-            "resources/js/analytics_module/d3.js"
+        $response->assertViewHas('resources', [            
+            "resources/js/analytics_module/analytics_top_categories.js"
         ]);
         $response->assertViewHas('tabulator', true);
         $response->assertViewHas('submenuselected', 'analytics-top-categories');

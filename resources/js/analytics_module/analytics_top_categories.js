@@ -6,6 +6,9 @@ import {
     updatePaginationInfo
  } from "../tabulator_handler";
 import { apiFetch } from "../app.js";
+import * as d3 from 'd3';
+import * as XLSX from 'xlsx';
+window.XLSX = XLSX;
 
 
 const endPointTable = "/analytics/users/get_top_table";
@@ -16,6 +19,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     drawTable();
     drawGraph();
+
+    document.getElementById("download-xlsx").addEventListener("click", function(){
+        analyticsTopTable.download("xlsx", "categorias.xlsx", {sheetName:"Recursos"});
+    });
 
 });
 function drawTable(){
@@ -104,11 +111,17 @@ function graficar(datas){
         .style("padding", "10px")
         .style("pointer-events", "none");
 
-    // Funciones para mostrar y ocultar el tooltip
+    // Funciones para mostrar y mover el tooltip con el ratón
     const showTooltip = function(event, d) {
         tooltip
             .html(`Categoría: ${d.category}<br>Estudiantes: ${d.value}`)
             .style("opacity", 1)
+            .style("left", (event.pageX + 10) + "px")
+            .style("top", (event.pageY - 20) + "px");
+    }
+
+    const moveTooltip = function(event, d) {
+        tooltip
             .style("left", (event.pageX + 10) + "px")
             .style("top", (event.pageY - 20) + "px");
     }
@@ -129,29 +142,56 @@ function graficar(datas){
     .call(d3.axisBottom(x))
     .selectAll("text")
         .attr("transform", "translate(-10,0)rotate(-45)")
-        .style("text-anchor", "end");
+        .style("text-anchor", "end")
+        .style("font-size", "12px");  // Ajusta el tamaño del texto en el eje X
 
-    // Add Y axis
+    // Y axis
     const y = d3.scaleLinear()
     .domain([0, itemWithMaxAccesses.value])
     .range([ height, 0]);
 
     svg.append("g")
-    .call(d3.axisLeft(y));
+    .call(d3.axisLeft(y))
+    .selectAll("text")
+        .style("font-size", "12px");  // Ajusta el tamaño del texto en el eje Y
 
-    // Bars
-    svg.selectAll("mybar")
+    // Añadir líneas horizontales (gridlines) en el eje Y sin la línea superior
+    const gridlines = d3.axisLeft(y)
+        .tickSize(-width)
+        .tickFormat("")  // No mostrar texto en las líneas
+        .ticks(5);  // Reducir la cantidad de líneas
+
+    const grid = svg.append("g")
+        .attr("class", "grid")
+        .call(gridlines)
+        .selectAll("line")
+        .attr("stroke", "#e0e0e0")  // Color de las líneas
+        .attr("stroke-dasharray", "2,2");  // Líneas punteadas
+
+    // Eliminar la primera línea que corresponde al valor máximo
+    grid.filter((d) => d === itemWithMaxAccesses.value)
+        .remove();  // Eliminar la línea superior
+
+    // Animación y dibujo de las barras
+    svg.selectAll("rect")
     .data(data)
     .join("rect")
         .attr("x", d => x(d.category))
-        .attr("y", d => y(d.value))
+        .attr("y", height)  // Empieza desde la base (altura máxima)
         .attr("width", x.bandwidth())
-        .attr("height", d => height - y(d.value))
-        .attr("fill", (d, i) => colors[i % colors.length]) // Usa el color según el índice
+        .attr("fill", (d, i) => colors[i % colors.length])  // Usa el color según el índice
         .on("mouseover", showTooltip)  // Evento para mostrar el tooltip
-        .on("mousemove", showTooltip)  // Actualiza la posición del tooltip cuando se mueve el ratón
-        .on("mouseout", hideTooltip);  // Evento para ocultar el tooltip
+        .on("mousemove", moveTooltip)  // Mueve el tooltip con el ratón
+        .on("mouseout", hideTooltip)  // Evento para ocultar el tooltip
+        .transition()  // Animación
+        .duration(1000)  // Duración de la animación en milisegundos
+        .attr("y", d => y(d.value))  // Animar la posición de las barras
+        .attr("height", d => height - y(d.value));  // Animar la altura final
 }
+
+
+
+
 
 
 

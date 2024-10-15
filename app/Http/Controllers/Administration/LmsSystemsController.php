@@ -111,12 +111,13 @@ class LmsSystemsController extends BaseController
             }
 
             $lms_system->fill($request->only([
-                'name', 'identifier',
+                'name',
+                'identifier',
             ]));
 
             $lms_system->save();
 
-            LogsController::createLog('Añadir sistema LMS', 'Sistemas LMS', auth()->user()->uid);
+            LogsController::createLog('Añadir sistema LMS: ' . $lms_system->name, 'Sistemas LMS', auth()->user()->uid);
 
             return response()->json(['message' => $isNew ? 'LMS añadido correctamente' : 'LMS actualizado correctamente']);
         }, 5);
@@ -132,9 +133,12 @@ class LmsSystemsController extends BaseController
     {
         $uids = $request->input('uids');
 
-        DB::transaction(function () use ($uids) {
-            LmsSystemsModel::destroy($uids);
-            LogsController::createLog('Eliminar sistema LMS', 'Sistemas LMS', auth()->user()->uid);
+        $lmsSystems = LmsSystemsModel::whereIn('uid', $uids)->get();
+        DB::transaction(function () use ($lmsSystems) {
+            foreach ($lmsSystems as $lmsSystem) {
+                $lmsSystem->delete();
+                LogsController::createLog('Eliminar sistema LMS: ' . $lmsSystem->name, 'Sistemas LMS', auth()->user()->uid);
+            }
         }, 5);
 
         return response()->json(['message' => 'LMS eliminados correctamente']);

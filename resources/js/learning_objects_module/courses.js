@@ -50,11 +50,16 @@ import renderer from "../renderer_infinite_tree.js";
 let selectedCourses = [];
 let selectedCourseStudents = [];
 let coursesTable;
+let calificationsCourseTable;
 let courseStudensTable;
 
 const endPointTable = "/learning_objects/courses/get_courses";
 const endPointStudentTable = "/learning_objects/courses/get_course_students";
 const coursesTableId = "courses-table";
+
+const calificationsCourseTableId = "califications-course-table";
+const endpointCalificationsCourse =
+    "/learning_objects/courses/get_califications";
 
 let tomSelectTags;
 
@@ -573,6 +578,12 @@ function initHandlers() {
         .getElementById("btn-reload-table")
         .addEventListener("click", function () {
             reloadTableCourses();
+        });
+
+    document
+        .getElementById("save-califications")
+        .addEventListener("click", () => {
+            saveCalificationsCourse();
         });
 
     // TODO
@@ -1912,7 +1923,7 @@ function initializeCoursesTable() {
                         },
                     },
                     {
-                        icon: "academic-cap",
+                        icon: "document-arrow-up",
                         type: "outline",
                         tooltip: "Envío de credenciales",
                         action: (course) => {
@@ -1922,6 +1933,14 @@ function initializeCoursesTable() {
                                 "sendCredentials",
                                 [{ key: "course_uid", value: course.uid }]
                             );
+                        },
+                    },
+                    {
+                        icon: "academic-cap",
+                        type: "outline",
+                        tooltip: "Calificaciones",
+                        action: (course) => {
+                            loadCalificationsCourse(course.uid);
                         },
                     },
                 ];
@@ -1990,12 +2009,19 @@ function initializeCoursesTable() {
                 },
             },
             {
-                label: `${heroicon("academic-cap")} Envío de credenciales`,
+                label: `${heroicon("document-arrow-up")} Envío de credenciales`,
                 action: function (e, column) {
                     showModalConfirmation(
                         "Envío de credenciales",
                         "¿Estás seguro de que quieres enviar las credenciales a los estudiantes seleccionados?"
                     ).then((result) => {});
+                },
+            },
+            {
+                label: `${heroicon("academic-cap")} Calificaciones`,
+                action: function (e, column) {
+                    const courseClicked = column.getData();
+                    loadCalificationsCourse(courseClicked.uid);
                 },
             },
         ],
@@ -2027,6 +2053,314 @@ function initializeCoursesTable() {
 
     controlsPagination(coursesTable, "courses-table");
     controlsSearch(coursesTable, endPointTable, "courses-table");
+}
+
+function loadCalificationsCourse(courseUid) {
+    showModal("califications-course-modal", "Calificaciones de curso");
+    initializeCalificationsCourseTable(courseUid);
+    controlsPagination(calificationsCourseTable, calificationsCourseTableId);
+}
+
+function initializeCalificationsCourseTable(courseUid) {
+    if (calificationsCourseTable) calificationsCourseTable.destroy();
+
+    selectedCourseUid = courseUid;
+
+    calificationsCourseTable = new Tabulator("#" + calificationsCourseTableId, {
+        ...tabulatorBaseConfig,
+        dataTree: true,
+        ajaxURL: endpointCalificationsCourse + "/" + courseUid,
+        ajaxConfig: {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": getCsrfToken(),
+            },
+        },
+        ajaxParams: {
+            filters: {
+                ...filters,
+            },
+        },
+        ajaxResponse: function (url, params, response) {
+            updatePaginationInfo(
+                calificationsCourseTable,
+                response.coursesStudents,
+                calificationsCourseTableId
+            );
+
+            function findCalification(
+                studentUid,
+                courseBlockUid,
+                learningResultUid
+            ) {
+                return response.coursesStudents.data.reduce((acc, r) => {
+                    if (r.uid === studentUid) {
+                        const nested =
+                            r.course_blocks_learning_results_califications.find(
+                                (nested) => {
+                                    return (
+                                        nested.course_block_uid ===
+                                            courseBlockUid &&
+                                        nested.learning_result_uid ===
+                                            learningResultUid
+                                    );
+                                }
+                            );
+                        if (nested) {
+                            acc = nested;
+                        }
+                    }
+                    return acc;
+                }, null);
+            }
+
+            function findCalificationLearningResult(
+                studentUid,
+                learningResultUid
+            ) {
+                return response.coursesStudents.data.reduce((acc, r) => {
+                    if (r.uid === studentUid) {
+                        const nested =
+                            r.course_learning_result_califications.find(
+                                (nested) => {
+                                    return (
+                                        nested.learning_result_uid ===
+                                        learningResultUid
+                                    );
+                                }
+                            );
+                        if (nested) {
+                            acc = nested;
+                        }
+                    }
+                    return acc;
+                }, null);
+            }
+
+            const studentsMapped = response.coursesStudents.data.map((r) => {
+                return {
+                    uid: r.uid,
+                    first_name: r.first_name,
+                    last_name: r.last_name,
+                    block: null,
+                    learning_result: null,
+                    calification: null,
+                    _children: [
+                        ...response.courseBlocks.map((block) => {
+                            return {
+                                uid: block.uid,
+                                block: block.name,
+                                _children: block.learning_results.map(
+                                    (learningResult) => {
+                                        const calification = findCalification(
+                                            r.uid,
+                                            block.uid,
+                                            learningResult.uid
+                                        );
+                                        return {
+                                            uid: learningResult.uid,
+                                            competence_framework_levels:
+                                                learningResult.competence
+                                                    .competence_framework
+                                                    .has_levels
+                                                    ? learningResult.competence.competence_framework.levels.map(
+                                                          (level) => {
+                                                              return {
+                                                                  label: level.name,
+                                                                  value: level.uid,
+                                                              };
+                                                          }
+                                                      )
+                                                    : null,
+                                            learning_result:
+                                                learningResult.name,
+                                            calification:
+                                                calification?.calification_info ||
+                                                null,
+                                            level:
+                                                calification?.competence_framework_level_uid ||
+                                                null,
+                                        };
+                                    }
+                                ),
+                            };
+                        }),
+                        {
+                            last_name: "Total Resultados Aprendizaje",
+                            _children: response.learningResults.map(
+                                (learningResult) => {
+                                    const calification =
+                                        findCalificationLearningResult(
+                                            r.uid,
+                                            learningResult.uid
+                                        );
+
+                                    return {
+                                        uid: learningResult.uid,
+                                        learning_result: learningResult.name,
+                                        calification:
+                                            calification?.calification_info ||
+                                            null,
+                                        competence_framework_levels:
+                                            learningResult.competence
+                                                .competence_framework.has_levels
+                                                ? learningResult.competence.competence_framework.levels.map(
+                                                      (level) => {
+                                                          return {
+                                                              label: level.name,
+                                                              value: level.uid,
+                                                          };
+                                                      }
+                                                  )
+                                                : null,
+                                        level:
+                                            calification?.competence_framework_level_uid ||
+                                            null,
+                                    };
+                                }
+                            ),
+                        },
+                    ],
+                };
+            });
+
+            return {
+                last_page: response.coursesStudents.last_page,
+                data: studentsMapped,
+            };
+        },
+        columns: [
+            { title: "Nombre", field: "first_name", responsive: 0 },
+            { title: "Apellidos", field: "last_name", responsive: 0 },
+
+            {
+                title: "Bloque",
+                field: "block",
+                headerSort: false,
+            },
+            {
+                title: "Resultado de aprendizaje",
+                field: "learning_result",
+                headerSort: false,
+            },
+            {
+                title: "Nivel",
+                field: "level",
+                editor: "list",
+                headerSort: false,
+                editorParams: {
+                    valuesLookup: function (cell, filterTerm) {
+                        //cell - the cell component for the current cell
+                        //filterTerm - the current value of the input element
+                        const t = cell.getRow().getData();
+
+                        return t.competence_framework_levels;
+                    },
+                },
+                formatter: function (cell) {
+                    // Obtener el valor actual de la celda
+                    const value = cell.getValue();
+                    // Obtener las opciones del editor
+                    const options = cell
+                        .getRow()
+                        .getData().competence_framework_levels;
+
+                    // Si no hay opciones, bloqueamos la celda y la ponemos de otro color
+                    if (!options) {
+                        cell.getElement().style.pointerEvents = "none";
+                        return;
+                    }
+
+                    // Buscar la opción que coincide con el valor
+                    const option = options.find((opt) => opt.value === value);
+                    // Devolver el label correspondiente
+                    return option ? option.label : value;
+                },
+            },
+            {
+                title: "Calificación",
+                field: "calification",
+                editor: "textarea",
+                headerSort: false,
+                formatter: function (cell) {
+                    const value = cell.getValue();
+                    if (value === undefined) {
+                        cell.getElement().style.pointerEvents = "none";
+                        return;
+                    }
+
+                    return value;
+                },
+            },
+        ],
+    });
+
+    controlsSearch(
+        calificationsCourseTable,
+        `${endpointCalificationsCourse}/${courseUid}`,
+        calificationsCourseTableId
+    );
+}
+
+function saveCalificationsCourse() {
+    const blocksLearningResultCalifications = [];
+    const learningResultsCalifications = [];
+    const cellsEdited = calificationsCourseTable.getEditedCells();
+
+    // Array único con las rows editadas
+    const rowsEdited = cellsEdited.map((cell) => cell.getRow());
+    const uniqueRowsEdited = Array.from(new Set(rowsEdited));
+
+    uniqueRowsEdited.forEach((row) => {
+        const parentRow = row.getTreeParent();
+
+        if (!parentRow) return;
+        const parentData = parentRow.getData();
+        const grandData = parentRow.getTreeParent().getData();
+
+        const userUid = grandData.uid;
+        const blockUid = parentData.uid;
+
+        const learningResultUid = row.getData().uid;
+        const levelUid = row.getData().level ?? null;
+
+        const calificationInfo = row.getData().calification;
+
+        if (blockUid) {
+            blocksLearningResultCalifications.push({
+                userUid,
+                blockUid,
+                learningResultUid,
+                levelUid,
+                calificationInfo,
+            });
+        } else {
+            learningResultsCalifications.push({
+                userUid,
+                learningResultUid,
+                levelUid,
+                calificationInfo,
+            });
+        }
+    });
+
+    const params = {
+        url: "/learning_objects/courses/save_calification/" + selectedCourseUid,
+        method: "POST",
+        body: {
+            blocksLearningResultCalifications,
+            learningResultsCalifications,
+        },
+        toast: true,
+        stringify: true,
+        loader: true,
+    };
+
+    apiFetch(params).then((data) => {
+        if (data.success) {
+            showToast("Calificaciones guardadas correctamente", "success");
+        }
+    });
 }
 
 /**

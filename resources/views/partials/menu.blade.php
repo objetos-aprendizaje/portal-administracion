@@ -232,6 +232,7 @@
                                 href="{{ route('analytics-abandoned') }}">Abandonos de cursos</a></li>
                         <li><a class="{{ isset($submenuselected) && $submenuselected == 'analytics-top-categories' ? 'submenu-selected' : '' }}"
                                 href="{{ route('analytics-top-categories') }}">TOP Categorias</a></li>
+                        <li><a target="_newblank" href="https://developers.google.com/analytics?hl=es-419">Google Analytics</a></li>
                     </ul>
                 </div>
             </div>

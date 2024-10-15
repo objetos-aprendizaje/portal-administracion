@@ -160,4 +160,14 @@ class UsersModel extends Authenticatable
             'learning_result_uid'
         );
     }
+
+    public function courseBlocksLearningResultsCalifications()
+    {
+        return $this->hasMany(CoursesBlocksLearningResultsCalificationsModel::class, 'user_uid');
+    }
+
+    public function courseLearningResultCalifications()
+    {
+        return $this->hasMany(CourseLearningResultCalificationsModel::class, 'user_uid');
+    }
 }

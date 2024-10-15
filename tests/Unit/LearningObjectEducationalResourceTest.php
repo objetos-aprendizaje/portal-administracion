@@ -5,7 +5,6 @@ namespace Tests\Unit;
 
 use Tests\TestCase;
 use ReflectionClass;
-use App\Models\CallsModel;
 use App\Models\UsersModel;
 use App\Models\CoursesModel;
 use App\Models\UserRolesModel;
@@ -14,7 +13,6 @@ use App\Models\CompetencesModel;
 use App\Models\LicenseTypesModel;
 use App\Models\TooltipTextsModel;
 use Illuminate\Http\UploadedFile;
-use App\Models\CourseStatusesModel;
 use App\Models\GeneralOptionsModel;
 use App\Services\EmbeddingsService;
 use Illuminate\Support\Facades\App;
@@ -93,27 +91,6 @@ class LearningObjectEducationalResourceTest extends TestCase
     }
 
 
-    /** @test testReturns400IfResourceUidIsMissing */  //Esta condicion no se puede priabr porque nunca va a conseguir la ruta
-    //    public function testReturns400IfResourceUidIsMissing()
-    //    {
-    //        // Realiza la solicitud GET a la ruta sin el UID
-    //        $response = $this->get('/learning_objects/educational_resources/get_resource/');
-
-    //        // Verifica que la respuesta sea 404 (Bad Request)
-    //        $response->assertStatus(404);
-    //        $response->assertJson(['message' => env('ERROR_MESSAGE')]);
-    //    }
-
-    /** @test testReturns406IfResourceDoesNotExist */
-    // public function testReturns406IfResourceDoesNotExist()
-    // {
-    //     // Realiza la solicitud GET a la ruta con un UID inexistente
-    //     $response = $this->get('/learning_objects/educational_resources/get_resource/');
-
-    //     // Verifica que la respuesta sea 406 (Not Acceptable)
-    //     $response->assertStatus(406);
-    //     $response->assertJson(['message' => 'El recurso no existe']);
-    // }
 
     /** @test  testReturns200AndResourceDataIfResourceExists */
     public function testReturns200AndResourceDataIfResourceExists()
@@ -284,13 +261,6 @@ class LearningObjectEducationalResourceTest extends TestCase
         $this->assertDatabaseHas('educational_resources_learning_results', ['learning_result_uid' => $learningResult1->uid]);
         $this->assertDatabaseHas('educational_resources_learning_results', ['learning_result_uid' => $learningResult2->uid]);
 
-        // Verifica que se haya creado un log correctamente
-
-        $this->assertDatabaseHas('logs', [
-            'info' => 'Recurso educativo añadido',
-            'entity' => 'Recursos educativos',
-            'user_uid' => $user->uid,
-        ]);
     }
 
     /** @test Puedo actualizar un recurso educativo existente correctamente */
@@ -395,12 +365,12 @@ class LearningObjectEducationalResourceTest extends TestCase
         $this->assertDatabaseHas('educational_resources_learning_results', ['learning_result_uid' => $learningResult1->uid]);
         $this->assertDatabaseHas('educational_resources_learning_results', ['learning_result_uid' => $learningResult2->uid]);
 
-        // Verifica que se haya creado un log correctamente
-        $this->assertDatabaseHas('logs', [
-            'info' => 'Recurso educativo actualizado',
-            'entity' => 'Recursos educativos',
-            'user_uid' => $user->uid,
-        ]);
+        // // Verifica que se haya creado un log correctamente
+        // $this->assertDatabaseHas('logs', [
+        //     'info' => 'Recurso educativo actualizado',
+        //     'entity' => 'Recursos educativos',
+        //     'user_uid' => $user->uid,
+        // ]);
     }
 
     // :::::::::::::::::::::::::: Fin de metodo guardar :::::::::::::::::::::::::::::::

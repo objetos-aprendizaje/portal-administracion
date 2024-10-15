@@ -118,7 +118,9 @@ class EducationalResourceTypesController extends BaseController
 
         $validator = Validator::make($request->all(), [
             'name' => [
-                'required', 'min:3', 'max:255',
+                'required',
+                'min:3',
+                'max:255',
                 Rule::unique('educational_resource_types', 'name')->ignore($request->get('educational_resource_type_uid'), 'uid'),
             ],
             'description' => 'nullable',
@@ -150,7 +152,7 @@ class EducationalResourceTypesController extends BaseController
 
         DB::transaction(function () use ($educational_resource_type) {
             $educational_resource_type->save();
-            LogsController::createLog('Guardar tipo de recurso educativo', 'Tipos de recursos educativos', auth()->user()->uid);
+            LogsController::createLog('Guardar tipo de recurso educativo: ' . $educational_resource_type->name, 'Tipos de recursos educativos', auth()->user()->uid);
         });
 
         // Obtenemos todas los tipos
@@ -173,9 +175,12 @@ class EducationalResourceTypesController extends BaseController
             throw new OperationFailedException('No se pueden eliminar los tipos seleccionados porque están siendo utilizados por recursos educativos', 406);
         }
 
-        DB::transaction(function () use ($uids) {
-            EducationalResourceTypesModel::destroy($uids);
-            LogsController::createLog('Eliminar tipos de recursos educativos', 'Tipos de recursos educativos', auth()->user()->uid);
+        $educationalResourceTypes = EducationalResourceTypesModel::whereIn('uid', $uids)->get();
+        DB::transaction(function () use ($educationalResourceTypes) {
+            foreach ($educationalResourceTypes as $educationalResourceType) {
+                $educationalResourceType->delete();
+                LogsController::createLog('Eliminar tipo de recurso educativo: ' . $educationalResourceType->name, 'Tipos de recursos educativos', auth()->user()->uid);
+            }
         });
 
         $educational_resource_types = EducationalResourceTypesModel::get()->toArray();

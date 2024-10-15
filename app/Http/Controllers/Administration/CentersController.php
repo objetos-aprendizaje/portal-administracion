@@ -115,7 +115,7 @@ class CentersController extends BaseController
 
             $center->save();
 
-            LogsController::createLog('Añadir centro', 'Centros', auth()->user()->uid);
+            LogsController::createLog('Añadir centro: ' . $center->name, 'Centros', auth()->user()->uid);
 
             return response()->json(['message' => $isNew ? 'Centro añadido correctamente' : 'Centro actualizado correctamente']);
         }, 5);
@@ -138,9 +138,13 @@ class CentersController extends BaseController
             return response()->json(['message' => 'No se pueden eliminar los centros porque hay cursos vinculados a ellos'], 406);
         }
 
-        DB::transaction(function () use ($uids) {
-            CentersModel::destroy($uids);
-            LogsController::createLog('Eliminar centro', 'Centros', auth()->user()->uid);
+        $centers = CentersModel::whereIn('uid', $uids)->get();
+
+        DB::transaction(function () use ($centers) {
+            foreach ($centers as $center) {
+                $center->delete();
+                LogsController::createLog('Eliminar centro: ' . $center->name, 'Centros', auth()->user()->uid);
+            }
         }, 5);
 
         return response()->json(['message' => 'Centros eliminados correctamente']);

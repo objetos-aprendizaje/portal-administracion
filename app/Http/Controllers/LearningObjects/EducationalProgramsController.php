@@ -100,6 +100,7 @@ class EducationalProgramsController extends BaseController
         $query->select("educational_programs.*", "educational_program_type.name as educational_program_type_name", "calls.name as call_name", 'educational_program_statuses.name as status_name', 'educational_program_statuses.code as status_code');
         $data = $query->paginate($size);
 
+        adaptDatesCourseEducationalProgram($data, true);
         return response()->json($data, 200);
     }
 
@@ -236,7 +237,7 @@ class EducationalProgramsController extends BaseController
                 $educational_program->paymentTerms()->delete();
             }
 
-            $this->logAction($isNew);
+            $this->logAction($isNew, $educational_program->name);
         });
 
         return response()->json(['message' => $isNew ? 'Programa formativo añadido correctamente' : 'Programa formativo actualizado correctamente']);
@@ -530,9 +531,10 @@ class EducationalProgramsController extends BaseController
         ]);
     }
 
-    private function logAction($isNew)
+    private function logAction($isNew, $educationalProgramName)
     {
-        $logMessage = $isNew ? 'Programa formativo añadido' : 'Programa formativo actualizado';
+        $logMessage = $isNew ? 'Programa formativo añadido: ' : 'Programa formativo actualizado: ';
+        $logMessage .= $educationalProgramName;
         LogsController::createLog($logMessage, 'Programas formativos', auth()->user()->uid);
     }
 
@@ -745,9 +747,12 @@ class EducationalProgramsController extends BaseController
     {
         $uids = $request->input('uids');
 
-        DB::transaction(function () use ($uids) {
-            EducationalProgramsModel::destroy($uids);
-            LogsController::createLog("Eliminación de programas formativos", 'Programas formativos', auth()->user()->uid);
+        $educationalPrograms = EducationalProgramsModel::whereIn('uid', $uids)->get();
+        DB::transaction(function () use ($educationalPrograms) {
+            foreach ($educationalPrograms as $educationalProgram) {
+                $educationalProgram->delete();
+                LogsController::createLog("Eliminación de programa formativo: " . $educationalProgram->name, 'Programas formativos', auth()->user()->uid);
+            }
         });
 
         return response()->json(['message' => 'Programas formativos eliminados correctamente']);
@@ -769,6 +774,8 @@ class EducationalProgramsController extends BaseController
         if (!$educational_program) {
             return response()->json(['message' => 'El programa formativo no existe'], 406);
         }
+
+        adaptDatesCourseEducationalProgram($educational_program);
 
         return response()->json($educational_program, 200);
     }
@@ -869,7 +876,7 @@ class EducationalProgramsController extends BaseController
 
         if ($search) {
             $query->where(function ($subQuery) use ($search) {
-                 $subQuery->whereRaw("concat(first_name, ' ', last_name) ILIKE ?", ["%$search%"])
+                $subQuery->whereRaw("concat(first_name, ' ', last_name) ILIKE ?", ["%$search%"])
                     ->orWhere('nif', 'ILIKE', "%$search%");
             });
         }

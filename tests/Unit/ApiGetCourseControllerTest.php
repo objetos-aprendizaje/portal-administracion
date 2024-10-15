@@ -33,7 +33,7 @@ class ApiGetCourseControllerTest extends TestCase
 
         $uid = Str::uuid();
         // Realizar la solicitud GET con un `course_lms_uid` que no existe
-        $response = $this->getJson('/api/get_course/' . $uid,[
+        $response = $this->getJson('/api/courses' . $uid,[
             'API-KEY' => $apikey->api_key
         ]);
 

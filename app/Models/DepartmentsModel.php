@@ -18,7 +18,7 @@ class DepartmentsModel extends Model
     public $incrementing = false; // Si los UID no son auto-incrementales
 
     // Campos asignables en la base de datos
-    protected $fillable = ['name', 'uid'];
+    protected $fillable = [ 'uid', 'name'];
 
     // Relación con el modelo de usuarios
     public function users()

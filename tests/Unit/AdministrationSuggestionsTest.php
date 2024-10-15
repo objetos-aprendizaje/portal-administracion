@@ -153,24 +153,30 @@ class AdministrationSuggestionsTest extends TestCase
     public function testDeleteEmailsWithValidUids()
     {
 
+        // Arrange: Create a user and act as them
         $user = UsersModel::factory()->create();
         $this->actingAs($user);
 
-        $email1 = SuggestionSubmissionEmailsModel::factory()->create()->first();
+        // Create an email entry
+        $email1 = SuggestionSubmissionEmailsModel::factory()->create();
 
+        // Assert that the email exists in the database
         $this->assertDatabaseHas('suggestion_submission_emails', ['uid' => $email1->uid]);
 
+        // Prepare data for deletion with the correct key
         $data = [
-            'uids' => [$email1->uid], // Asegúrate de enviar un array con el UID
+            'uidsEmails' => [$email1->uid], // Ensure this matches the method's input key
         ];
 
+        // Act: Send a delete request
         $response = $this->postJson('/administration/suggestions_improvements/delete_emails', $data);
 
+        // Assert: Check response status and message
         $response->assertStatus(200)
                 ->assertJson(['message' => 'Emails eliminados correctamente']);
 
-        $this->assertDatabaseMissing('suggestion_submission_emails', ['uid' => $email1->id]);
-
+        // Assert: Check that the email has been deleted from the database
+        $this->assertDatabaseMissing('suggestion_submission_emails', ['uid' => $email1->uid]);
     }
 /**
 *  @test  Elimina email con uid invalido*/

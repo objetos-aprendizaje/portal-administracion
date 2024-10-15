@@ -358,3 +358,33 @@ function readCsv($routeCsv)
 
     return $csv;
 }
+
+function adaptDatesCourseEducationalProgram($courseOrEducationalProgram, $collection = false)
+{
+    $dateFields = [
+        'inscription_start_date',
+        'inscription_finish_date',
+        'realization_start_date',
+        'realization_finish_date',
+        'enrolling_start_date',
+        'enrolling_finish_date'
+    ];
+
+    if ($collection) {
+        $courseOrEducationalProgram->transform(function ($course) use ($dateFields) {
+            foreach ($dateFields as $field) {
+                if (isset($course->$field)) {
+                    $course->$field = Carbon::parse($course->$field)->setTimezone(env('TIMEZONE_DISPLAY'))->format('Y-m-d H:i:s');
+                }
+            }
+
+            return $course;
+        });
+    } else {
+        foreach ($dateFields as $field) {
+            if (isset($courseOrEducationalProgram->$field)) {
+                $courseOrEducationalProgram->$field = Carbon::parse($courseOrEducationalProgram->$field)->setTimezone(env('TIMEZONE_DISPLAY'))->format('Y-m-d H:i:s');
+            }
+        }
+    }
+}

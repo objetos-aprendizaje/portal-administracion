@@ -57,5 +57,6 @@
     @include('learning_objects.courses.columns_courses_modal')
     @include('learning_objects.courses.enroll_course_modal')
     @include('learning_objects.courses.enroll_course_csv_modal')
+    @include('learning_objects.courses.califications_course_modal')
     @include('partials.modal-confirmation')
 @endsection

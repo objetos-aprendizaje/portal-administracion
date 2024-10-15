@@ -119,4 +119,8 @@ class EducationalResourcesModel extends Model
     {
         return $this->hasMany(EducationalResourcesAccesesModel::class, 'educational_resource_uid', 'uid');
     }
+    public function visits()
+    {
+        return $this->hasMany(EducationalResourcesAccesesModel::class, 'educational_resource_uid', 'uid');
+    }
 }

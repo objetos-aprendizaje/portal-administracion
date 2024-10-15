@@ -54,7 +54,7 @@ class SuggestionsImprovementsController extends BaseController
 
         DB::transaction(function () use ($email_envio_sugerencias) {
             $email_envio_sugerencias->save();
-            LogsController::createLog('Añadido de email de sugerencias', 'Sugerencias y mejoras', auth()->user()->uid);
+            LogsController::createLog('Añadido de email de sugerencias: ' . $email_envio_sugerencias->email, 'Sugerencias y mejoras', auth()->user()->uid);
         });
 
         return response()->json(['message' => 'Email añadido correctamente', 'uid_email_inserted' => $uid]);
@@ -91,9 +91,12 @@ class SuggestionsImprovementsController extends BaseController
     {
         $uids_emails = $request->input('uidsEmails');
 
-        DB::transaction(function () use ($uids_emails) {
-            SuggestionSubmissionEmailsModel::destroy($uids_emails);
-            LogsController::createLog('Eliminar email de sugerencias', 'Sugerencias y mejoras', auth()->user()->uid);
+        $suggestionsSubmissionEmails = SuggestionSubmissionEmailsModel::whereIn('uid', $uids_emails)->get();
+        DB::transaction(function () use ($suggestionsSubmissionEmails) {
+            foreach($suggestionsSubmissionEmails as $suggestionEmail) {
+                $suggestionEmail->delete();
+                LogsController::createLog('Eliminar email de sugerencias: ' . $suggestionEmail->email, 'Sugerencias y mejoras', auth()->user()->uid);
+            }
         });
 
         return response()->json(['message' => 'Emails eliminados correctamente']);

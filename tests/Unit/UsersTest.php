@@ -85,13 +85,13 @@ class UsersTest extends TestCase
         $automaticGeneralNotificationType = AutomaticNotificationTypesModel::firstOrCreate([
             'name' => 'General Notification',
             'code' => 'GENERAL_NOTIFICATION',
-            'uid'=> generate_uuid(),
+            'uid' => generate_uuid(),
 
         ])->first();
         $automaticEmailNotificationType = AutomaticNotificationTypesModel::firstOrCreate([
             'name' => 'Email Notification',
             'code' => 'EMAIL_NOTIFICATION',
-            'uid'=> generate_uuid(),
+            'uid' => generate_uuid(),
         ])->first();
 
         // Simular las notificaciones automáticas deshabilitadas por el usuario
@@ -397,25 +397,44 @@ class UsersTest extends TestCase
 
         $admin->roles()->sync($roles_to_sync);
         $this->actingAs($admin);
+
         NotificationsTypesModel::factory()->create();
-        NotificationsTypesModel::factory()->create();
+
+        $notificationsType = NotificationsTypesModel::factory()->create()->first();
+
         $departament = DepartmentsModel::factory()->create()->first();
+
+        $automaticNotificationType = AutomaticNotificationTypesModel::factory()->create()->first();
+
         if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
+
+            // Crear un archivo falso para la foto
+            $photo = \Illuminate\Http\UploadedFile::fake()->image('photo.jpg', 500, 500);
 
             // Datos de prueba
             $data = [
-                'first_name' => 'Juan',
-                'last_name' => 'Pérez',
-                'nif' => '21843185Q',
-                'curriculum' => 'Curriculum content',
-                'department_uid' => $departament->uid,
-                'photo_path' => null,
-                'general_notifications_allowed' => true,
-                'email_notifications_allowed' => false,
-                'general_notification_types_disabled' => json_encode([]),
-                'email_notification_types_disabled' => json_encode([]),
-                'automatic_general_notification_types_disabled' => json_encode([]),
-                'automatic_email_notification_types_disabled' => json_encode([])
+                'first_name'                                    => 'Juan',
+                'last_name'                                     => 'Pérez',
+                'nif'                                           => '21843185Q',
+                'curriculum'                                    => 'Curriculum content',
+                'photo_path'                                    => $photo,
+                'department_uid'                                => $departament->uid,
+                'photo_path'                                    => null,
+                'general_notifications_allowed'                 => true,
+                'email_notifications_allowed'                   => false,
+                'general_notification_types_disabled'           => json_encode([
+                    $notificationsType->uid
+
+                ]),
+                'email_notification_types_disabled'             => json_encode([
+                    // generate_uuid(),
+                    // generate_uuid(),
+                ]),
+                'automatic_general_notification_types_disabled' => json_encode([
+                    // generate_uuid(),
+                    // generate_uuid(),
+                ]),
+                'automatic_email_notification_types_disabled'   => json_encode([  $automaticNotificationType->uid])
             ];
 
             $response = $this->post('/my_profile/update', $data);
@@ -430,6 +449,12 @@ class UsersTest extends TestCase
                 'curriculum' => 'Curriculum content',
                 'department_uid' => $departament->uid,
             ]);
+
+            // // Verificar que la foto fue subida correctamente
+            // $this->assertTrue(\Illuminate\Support\Facades\File::exists(public_path('images/users-images/' . $photo->hashName())));
+
+            // // Limpiar la foto subida
+            // \Illuminate\Support\Facades\File::delete(public_path('images/users-images/' . $photo->hashName()));
         }
     }
 
@@ -663,7 +688,6 @@ class UsersTest extends TestCase
         $response = $this->get("/users/list_users/search_users_no_enrolled_educational_program/{$course->uid}/{$search}");
 
         $response->assertStatus(200);
-
     }
     /**
      * @test Obtener roles de usuarios

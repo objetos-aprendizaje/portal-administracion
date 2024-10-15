@@ -114,7 +114,7 @@ class LicensesController extends BaseController
 
             $license->save();
 
-            LogsController::createLog('Añadir licencia', 'Licencias', auth()->user()->uid);
+            LogsController::createLog('Añadir licencia: ' . $license->name, 'Licencias', auth()->user()->uid);
 
             return response()->json(['message' => $isNew ? 'Licencia añadida correctamente' : 'Licencia actualizada correctamente']);
         }, 5);
@@ -137,9 +137,12 @@ class LicensesController extends BaseController
             return response()->json(['message' => 'No se pueden eliminar las licencias porque hay recursos educativos vinculados a ellos'], 406);
         }
 
-        DB::transaction(function () use ($uids) {
-            LicenseTypesModel::destroy($uids);
-            LogsController::createLog('Eliminar licencia', 'Licencias', auth()->user()->uid);
+        $licenses = LicenseTypesModel::whereIn('uid', $uids)->get();
+        DB::transaction(function () use ($licenses) {
+            foreach($licenses as $license) {
+                $license->delete();
+                LogsController::createLog('Eliminar licencia: ' . $license->name, 'Licencias', auth()->user()->uid);
+            }
         }, 5);
 
         return response()->json(['message' => 'Licencias eliminadas correctamente']);

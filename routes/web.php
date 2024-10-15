@@ -33,11 +33,7 @@ use App\Http\Controllers\Analytics\AnalyticsUsersController;
 use App\Http\Controllers\Analytics\AnalyticsPoaController;
 use App\Http\Controllers\Analytics\AnalyticsAbandonedController;
 use App\Http\Controllers\Analytics\AnalyticsTopCategoriesController;
-use App\Http\Controllers\Api\ConfirmCourseCreationController;
-use App\Http\Controllers\Api\GetCourseController;
-use App\Http\Controllers\Api\RegisterUserController;
 use App\Http\Controllers\Api\UpdateCourseController;
-use App\Http\Controllers\Api\UpdateUserController;
 use App\Http\Controllers\Cataloging\CertificationTypesController;
 use App\Http\Controllers\Cataloging\CompetencesLearningsResultsController;
 use App\Http\Controllers\Credentials\StudentsCredentialsController;
@@ -60,7 +56,8 @@ use App\Http\Controllers\LearningObjects\LearningObjetsController;
 use App\Http\Controllers\Administration\TooltipTextsController;
 use App\Http\Controllers\Api\DepartmentsApiController;
 use App\Http\Controllers\Administration\DepartmentsController;
-use App\Jobs\SendEmailJob;
+use App\Http\Controllers\Api\ApiCoursesController;
+use App\Http\Controllers\Api\ApiUsersController;
 
 /*
 |--------------------------------------------------------------------------
@@ -276,6 +273,8 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::post('/learning_objects/courses/filter_courses', [ManagementCoursesController::class, 'filterCourses']);
         Route::get('/learning_objects/courses/get_course/{course_uid}', [ManagementCoursesController::class, 'getCourse']);
         Route::get('/learning_objects/courses/get_course_students/{course_uid}', [ManagementCoursesController::class, 'getCourseStudents']);
+        Route::post('/learning_objects/courses/get_califications/{course_uid}', [ManagementCoursesController::class, 'getCourseCalifications']);
+        Route::post('/learning_objects/courses/save_calification/{course_uid}', [ManagementCoursesController::class, 'saveCalification']);
         Route::post('/learning_objects/courses/approve_inscriptions_course', [ManagementCoursesController::class, 'approveInscriptionsCourse']);
         Route::post('/learning_objects/courses/reject_inscriptions_course', [ManagementCoursesController::class, 'rejectInscriptionsCourse']);
         Route::post('/learning_objects/courses/delete_inscriptions_course', [ManagementCoursesController::class, 'deleteInscriptionsCourse']);
@@ -345,14 +344,19 @@ Route::middleware(['combined.auth'])->group(function () {
 
         Route::get('/analytics/users/get_user_roles', [AnalyticsUsersController::class, 'getUsersRoles'])->name('analytics-users-roles');
         Route::get('/analytics/users/get_user_roles_graph', [AnalyticsUsersController::class, 'getUsersRolesGraph'])->name('analytics-users-roles-graph');
+        Route::get('/analytics/users/get_students', [AnalyticsUsersController::class, 'getStudents'])->name('analytics-students');
+        Route::post('/analytics/users/get_students_data', [AnalyticsUsersController::class, 'getStudentsData'])->name('analytics-students-data');
 
         Route::get('/analytics/users/get_poa_get', [AnalyticsPoaController::class, 'getPoa'])->name('analytics-poa-get');
         Route::get('/analytics/users/get_poa_graph', [AnalyticsPoaController::class, 'getPoaGraph'])->name('analytics-poa-graph');
         Route::get('/analytics/users/get_poa_accesses', [AnalyticsPoaController::class, 'getPoaAccesses'])->name('analytics-poa-accesses');
+        Route::get('/analytics/users/get_poa_course_modal/{courseUid}', [AnalyticsPoaController::class, 'getPoaCourseModal']);
+        Route::post('/analytics/users/get_courses_data', [AnalyticsPoaController::class, 'getCoursesData'])->name('analytics-courses-data');
 
         Route::get('/analytics/users/get_poa_resources', [AnalyticsPoaController::class, 'getPoaResources'])->name('analytics-poa-resources');
         Route::get('/analytics/users/get_poa_graph_resources', [AnalyticsPoaController::class, 'getPoaGraphResources'])->name('analytics-poa-graph-resources');
         Route::get('/analytics/users/get_poa_resources_accesses', [AnalyticsPoaController::class, 'getPoaResourcesAccesses'])->name('analytics-poa-resources-accesses');
+        Route::post('/analytics/users/get_resources_data', [AnalyticsPoaController::class, 'getResourcesData'])->name('analytics-resources-data');
 
         Route::get('/analytics/users/get_abandoned', [AnalyticsAbandonedController::class, 'getAbandoned'])->name('analytics-abandoned-get');
         Route::get('/analytics/users/get_abandoned_graph', [AnalyticsAbandonedController::class, 'getAbandonedGraph'])->name('analytics-abandoned-graph');
@@ -453,11 +457,15 @@ Route::post('/reset_password/send', [ResetPasswordController::class, 'resetPassw
 Route::post('/register/resend_email_confirmation', [RecoverPasswordController::class, 'resendEmailPasswordReset']);
 
 Route::middleware(['api_auth'])->group(function () {
-    Route::post('/api/register_user', [RegisterUserController::class, 'index']);
-    Route::post('/api/confirm_course_creation', [ConfirmCourseCreationController::class, 'index']);
-    Route::post('/api/update_course', [UpdateCourseController::class, 'index']);
-    Route::post('/api/update_user/{email_user}', [UpdateUserController::class, 'index']);
-    Route::get('/api/get_course/{course_lms_uid}', [GetCourseController::class, 'index']);
+    Route::get('/api/users', [ApiUsersController::class, 'getUsers']);
+    Route::post('/api/register_users', [ApiUsersController::class, 'registerUsers']);
+    Route::post('/api/update_user/{email_user}', [ApiUsersController::class, 'updateUser']);
+    Route::get('/api/courses', [ApiCoursesController::class, 'getCourses']);
+    Route::post('/api/courses/confirm_course_creation', [ApiCoursesController::class, 'confirmCourseCreation']);
+    Route::post('/api/courses/update/{course_lms_id}', [ApiCoursesController::class, 'updateCourse']);
+
+    Route::get('/api/users/get_roles', [ApiUsersController::class, 'getRoles']);
+
 
     Route::post('/api/departments/add', [DepartmentsApiController::class, 'addDepartment']);
     Route::get('/api/departments/get', [DepartmentsApiController::class, 'getDepartments']);

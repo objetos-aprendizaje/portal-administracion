@@ -46,7 +46,8 @@ class BlocksModel extends Model
         );
     }
 
-    public function learningResults() {
+    public function learningResults()
+    {
         return $this->belongsToMany(
             LearningResultsModel::class,
             'learning_results_blocks',
@@ -55,4 +56,8 @@ class BlocksModel extends Model
         );
     }
 
+    public function califications()
+    {
+        return $this->hasMany(CoursesBlocksLearningResultsCalificationsModel::class, 'course_block_uid', 'uid');
+    }
 }

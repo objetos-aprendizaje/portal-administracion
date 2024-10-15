@@ -202,7 +202,7 @@ class EducationalResourcesController extends BaseController
             $this->handleCategories($request, $resource);
             $this->handleEmails($request, $resource);
             $this->handleLearningResults($request, $resource);
-            $this->createLog($isNew);
+            $this->createLog($isNew, $resource->title);
 
             return response()->json(['message' => 'Recurso añadido correctamente']);
         }, 5);
@@ -354,7 +354,11 @@ class EducationalResourcesController extends BaseController
     function fillResourceDetails($request, $resource)
     {
         $resource->fill($request->only([
-            "title", "description", "educational_resource_type_uid", "license_type", "resource_way"
+            "title",
+            "description",
+            "educational_resource_type_uid",
+            "license_type",
+            "resource_way"
         ]));
     }
 
@@ -456,19 +460,23 @@ class EducationalResourcesController extends BaseController
         $resource->categories()->sync($categories_to_sync);
     }
 
-    function createLog($isNew)
+    function createLog($isNew, $resourceName)
     {
-        $logMessage = $isNew ? 'Recurso educativo añadido' : 'Recurso educativo actualizado';
+        $logMessage = $isNew ? 'Recurso educativo añadido: ' : 'Recurso educativo actualizado: ';
+        $logMessage .= $resourceName;
         LogsController::createLog($logMessage, 'Recursos educativos', auth()->user()->uid);
     }
 
     public function deleteResources()
     {
         $resources_uids = request()->input('resourcesUids');
+        $educationalResources = EducationalResourcesModel::whereIn('uid', $resources_uids)->get();
 
-        DB::transaction(function () use ($resources_uids) {
-            EducationalResourcesModel::whereIn('uid', $resources_uids)->delete();
-            LogsController::createLog("Eliminación de recursos educativos", 'Recursos educativos', auth()->user()->uid);
+        DB::transaction(function () use ($educationalResources) {
+            foreach ($educationalResources as $educationalResource) {
+                $educationalResource->delete();
+                LogsController::createLog("Eliminación de recurso educativo: " . $educationalResource->title, 'Recursos educativos', auth()->user()->uid);
+            }
         });
 
         return response()->json(['message' => 'Recursos eliminados correctamente']);
@@ -540,7 +548,7 @@ class EducationalResourcesController extends BaseController
 
         //Todo: se agregó esto ya que el campo automatic_notification_type_uid es obligatorio si no da error 500,
         //Todo solo se hizo para poder correr la prueba unitaria
-        $type = AutomaticNotificationTypesModel::where('code', 'NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS' )->first();
+        $type = AutomaticNotificationTypesModel::where('code', 'NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS')->first();
         $generalNotificationAutomaticUid = generate_uuid();
         $generalAutomaticNotification = new GeneralNotificationsAutomaticModel();
         $generalAutomaticNotification->uid = $generalNotificationAutomaticUid;
@@ -641,7 +649,8 @@ class EducationalResourcesController extends BaseController
         return $identifier;
     }
 
-    private function getCompetencesFrameworks() {
+    private function getCompetencesFrameworks()
+    {
 
         $competenceFrameworks = CompetenceFrameworksModel::with([
             'levels',
@@ -659,7 +668,8 @@ class EducationalResourcesController extends BaseController
         return $competencesLearningResults;
     }
 
-    private function mapStructureFramework($obj, $type = "competence") {
+    private function mapStructureFramework($obj, $type = "competence")
+    {
         // Crear un nuevo objeto con los campos necesarios
         $mappedObj = [
             'id' => $obj['uid'],

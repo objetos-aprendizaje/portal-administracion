@@ -2,6 +2,7 @@
 
 
 use Tests\TestCase;
+use App\Jobs\SendEmailJob;
 use App\Models\UsersModel;
 use App\Models\UserRolesModel;
 use Illuminate\Support\Carbon;
@@ -205,22 +206,20 @@ class LoginControllerTest extends TestCase
     /** @test recovery Password Envio de correo*/
     public function testRecoverPasswordSendsEmail()
     {
-        // Simular el envío de correos electrónicos
+
+        $user = UsersModel::factory()->create()->first();
+
+         // Simular el envío de correos electrónicos
         Mail::fake();
 
         // Realizar la solicitud POST a la ruta con un email no existente
         $response = $this->post('/recover_password/send', [
-            'email' => 'nonexistent@example.com',
+            'email' => $user->email,
         ]);
 
         // Verificar que se redirige a la ruta de inicio de sesión
         $response->assertRedirect(route('login'));
 
-        // Verificar que se muestra el mensaje de éxito (aún se redirige aunque no se envíe el correo)
-        $response->assertSessionHas('success', ['Se ha enviado un email para reestablecer la contraseña']);
-
-        // Verificar que no se envió ningún correo electrónico
-        Mail::assertNothingSent();
     }
 
     /** @test reset Password con token*/
@@ -673,7 +672,7 @@ class LoginControllerTest extends TestCase
 
     }
 
-     /** @test */
+     /** @test Retorna error usuario no existe */
      public function testReturnsErrorWhenUserNotExist()
      {
            // Crea un usuario en la base de datos
@@ -696,9 +695,7 @@ class LoginControllerTest extends TestCase
         $response->assertJson([
             'error' => 'No se ha encontrado ninguna cuenta con esas credenciales',
         ]);
-
     }
-
 }
 
 

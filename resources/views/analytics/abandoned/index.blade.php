@@ -11,7 +11,7 @@
         @include('partials.table-pagination', ['table' => 'analytics-abandoned'])
     -->
         <div class="table-container mt-6">
-            <h2>Gráfico</h2>
+            <h2>Abandonos de cursos</h2>
             <p>
                 Listado de cursos actualmente en realización, Muestra una relación de usuarios matriculados y aceptados
                 en el curso, así como los posibles abandonos. Se considera que un usuario ha abandonado el curso si han
@@ -25,7 +25,7 @@
             </p>
             <div id="d3_graph"></div>
             <div id="d3_graph_x_axis"></div>
-            <div class="flex justify-between">
+            <div class="flex justify-between mt-10">
                 <h2 class="hidden" id="bnt-exportar-csv-title">Usuarios que han abandonado</h2>
                 <div id="bnt-exportar-csv" class="hidden text-right mb-4">
                     <button id="export-csv" type="button" class="btn btn-icon" title="Exportar">{{e_heroicon('arrow-down-tray', 'outline')}}</button>

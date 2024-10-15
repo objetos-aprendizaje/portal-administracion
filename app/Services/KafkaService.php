@@ -9,7 +9,7 @@ class KafkaService
 
     public function sendMessage($key, $message, $topic)
     {
-        $kafkaBroker = env('KAFKA_BROKERS');
+        $kafkaBroker = env('KAFKA_ENDPOINT');
 
         if (!$kafkaBroker) return;
 
@@ -40,7 +40,7 @@ class KafkaService
 
     public function sendMessages($messages)
     {
-        $kafkaBroker = env('KAFKA_BROKERS');
+        $kafkaBroker = env('KAFKA_ENDPOINT');
 
         if (!$kafkaBroker) return;
 

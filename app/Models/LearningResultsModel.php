@@ -23,4 +23,9 @@ class LearningResultsModel extends Model
         'uid' => 'string',
     ];
 
+    public function competence()
+    {
+        return $this->belongsTo(CompetencesModel::class, 'competence_uid', 'uid');
+    }
+
 }

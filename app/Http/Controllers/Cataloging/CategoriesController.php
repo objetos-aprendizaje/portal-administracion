@@ -131,7 +131,7 @@ class CategoriesController extends BaseController
             'image_path' => 'max:6144'
         ];
 
-        if(!$request->input("category_uid")) {
+        if (!$request->input("category_uid")) {
             $rules['image_path'] = 'required|file|max:6144';
         }
 
@@ -177,7 +177,7 @@ class CategoriesController extends BaseController
 
         DB::transaction(function () use ($category) {
             $category->save();
-            LogsController::createLog('Guardar categoría', 'Categorías', auth()->user()->uid);
+            LogsController::createLog('Crear categoría: ' . $category->name, 'Categorías', auth()->user()->uid);
         });
 
         return response()->json(['message' => $isNew ? 'Categoría añadida correctamente' : 'Categoría modificada correctamente'], 200);
@@ -214,9 +214,12 @@ class CategoriesController extends BaseController
 
         $uids_categories = $request->input('uids');
 
-        DB::transaction(function () use ($uids_categories) {
-            CategoriesModel::destroy($uids_categories);
-            LogsController::createLog('Eliminar categoría', 'Categorías', auth()->user()->uid);
+        $categories = CategoriesModel::whereIn('uid', $uids_categories)->get();
+        DB::transaction(function () use ($categories) {
+            foreach ($categories as $category) {
+                $category->delete();
+                LogsController::createLog('Eliminar categoría: ' . $category->name, 'Categorías', auth()->user()->uid);
+            }
         });
 
         return response()->json(['message' => 'Categorías eliminadas correctamente'], 200);

@@ -623,6 +623,24 @@ export function instanceFlatpickr(idElement) {
     return flatpickrInstance;
 }
 
+export function instanceFlatpickrNoHour(idElement) {
+    const flatpickrInstance = flatpickr("#" + idElement, {
+        mode: "range",
+        dateFormat: "d-m-Y",
+        enableTime: true,
+        locale: Spanish,
+        onClose(selectedDates, dateStr, instance) {
+            if (selectedDates.length < 2) {
+                setTimeout(() => {
+                    instance.input.value = "";
+                }, 0);
+            }
+        },
+    });
+
+    return flatpickrInstance;
+}
+
 export function toggleFormFields(formId, isDisabled = false) {
     // Selecciona el formulario
     const form = document.getElementById(formId);

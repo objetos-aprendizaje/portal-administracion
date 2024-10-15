@@ -74,17 +74,12 @@ RUN composer install
 RUN npm install
 RUN npm run build
 
-# Generar un certificado SSL autofirmado para el desarrollo. En producción, debería usar su propio certificado.
+# Generar un certificado autofirmado
 RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/apache-selfsigned.key -out /etc/ssl/certs/apache-selfsigned.crt -subj "/CN=localhost"
-
-# Habilitar el módulo SSL de Apache y el módulo de reescritura
-RUN a2enmod ssl
-RUN a2enmod rewrite
-
 # Copiar la configuración de Apache SSL
 COPY docker_files/000-default-ssl.conf /etc/apache2/sites-available/000-default-ssl.conf
-
 # Habilitar el sitio SSL
+RUN a2enmod ssl
 RUN a2ensite 000-default-ssl
 
 # Habilitar htaccess
@@ -106,7 +101,25 @@ for script in /etc/cont-init.d/*.sh; do
     exit 1
   fi
 done
-/usr/local/bin/docker-php-entrypoint apache2-foreground
+
+# Define the Laravel log file path
+LOGFILE="/var/www/html/storage/logs/laravel.log"
+touch \$LOGFILE
+
+# Ensure both Apache logs and Laravel logs are streamed to stdout and the log file
+tail -f \$LOGFILE &
+
+# Run Apache in the foreground and pipe both stdout and stderr to tee for dual logging
+/usr/local/bin/docker-php-entrypoint apache2-foreground 2>&1 | tee -a \$LOGFILE &
+APACHE_PID=\$!
+
+# Monitor Apache process and exit the container if Apache stops
+wait \$APACHE_PID
+EXIT_CODE=\$?
+
+echo "Apache exited with status \$EXIT_CODE, stopping container."
+exit \$EXIT_CODE
+
 EOF
 RUN chmod +x /startup.sh /etc/cont-init.d/*.sh
 ENTRYPOINT ["/startup.sh"]
