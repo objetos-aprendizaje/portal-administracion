@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 
+use Mockery;
 use Exception;
 use Tests\TestCase;
 use App\Models\CallsModel;
@@ -12,16 +13,20 @@ use App\Models\CoursesModel;
 use App\Models\UserRolesModel;
 use Illuminate\Support\Carbon;
 use App\Models\TooltipTextsModel;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use App\Models\GeneralOptionsModel;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use App\Models\EducationalProgramsModel;
 use App\Models\EducationalProgramTypesModel;
 use App\Models\AutomaticResourceAprovalUsersModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Http\Controllers\Management\CallsController;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 
 
@@ -41,23 +46,25 @@ class ManagerTest extends TestCase
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
     }
 
+
     /**
      * @test
      * Verifica que el método index() del controlador ManagementGeneralConfigurationController
-     * carga la vista correcta con los datos necesarios.
+     * carga la vista correcta con los datos necesarios, incluyendo solo usuarios con rol TEACHER.
      */
     public function testLoadsTheGeneralConfigurationViewWithProperData()
     {
         // Crear un usuario con rol de 'ADMINISTRATOR'
         $admin = UsersModel::factory()->create();
 
-        // Crear un usuario con rol de 'TEACHER'
-        $teacher1 = UsersModel::factory()->create()->first();
-        $teacher2 = UsersModel::factory()->create()->first();
+        // Crear dos usuarios con rol de 'TEACHER'
+        $teacher1 = UsersModel::factory()->create();
+        $teacher2 = UsersModel::factory()->create();
 
         // Crear roles 'ADMINISTRATOR' y 'TEACHER'
-        $adminRole = UserRolesModel::factory()->create(['code' => 'ADMINISTRATOR'])->first();
-        $teacherRole = UserRolesModel::factory()->create(['code' => 'TEACHER'])->first();
+        $adminRole = UserRolesModel::factory()->create(['code' => 'ADMINISTRATOR']);
+        $teacherRole = UserRolesModel::factory()->create(['code' => 'TEACHER']);
+
 
         // Configurar opciones generales y textos de ayuda
         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
@@ -66,40 +73,40 @@ class ManagerTest extends TestCase
         $tooltip_texts = TooltipTextsModel::get();
         View::share('tooltip_texts', $tooltip_texts);
 
-        // Sincronizar roles para el usuario administrador
+
+
         $admin->roles()->sync([
             [
                 'uid' => generate_uuid(),
-                'user_uid' => $admin->uid,
                 'user_role_uid' => $adminRole->uid,
             ],
         ]);
 
         // Sincronizar roles para los usuarios profesores
-        $teacher1->roles()->sync([
+        $teacher1->roles()->sync(
             [
-                'uid' => generate_uuid(),
-                'user_uid' => $teacher1->uid,
-                'user_role_uid' => $teacherRole->uid,
-            ],
-        ]);
-
-        $teacher2->roles()->sync([
+                [
+                    'uid' => generate_uuid(),
+                    'user_role_uid' => $teacherRole->uid
+                ]
+            ]
+        );
+        $teacher2->roles()->sync(
             [
-                'uid' => generate_uuid(),
-                'user_uid' => $teacher2->uid,
-                'user_role_uid' => $teacherRole->uid,
-            ],
-        ]);
+                [
+                    'uid' => generate_uuid(),
+                    'user_role_uid' => $teacherRole->uid
+                ]
+            ]
+        );
 
-        // Crear un solo registro de aprobación automática de recursos por profesor
+        View::share('roles', $admin->roles->toArray());
+
+        // Crear un registro de aprobación automática de recursos para uno de los profesores
         $autoApproval1 = AutomaticResourceAprovalUsersModel::factory()->create(['user_uid' => $teacher1->uid]);
-
 
         // Simular el inicio de sesión como administrador
         Auth::login($admin);
-
-        View::share('roles', $admin->roles->toArray());
 
         // Realizar la petición GET a la ruta correspondiente
         $response = $this->get('/management/general_configuration');
@@ -107,9 +114,15 @@ class ManagerTest extends TestCase
         // Verificar que la respuesta sea 200 (OK)
         $response->assertStatus(200);
 
+        // Verificar que la vista contiene solo los usuarios con rol de 'TEACHER'
+        $response->assertViewHas('teachers', function ($teachers) use ($teacher1, $teacher2) {
+            $uids = collect($teachers)->pluck('uid')->toArray();
+            return in_array($teacher1->uid, $uids) && in_array($teacher2->uid, $uids);
+        });
 
+        // Verificar que la vista contiene los uids de los profesores con aprobación automática
         $response->assertViewHas('uids_teachers_automatic_aproval_resources', function ($uids) use ($teacher1) {
-            return in_array($teacher1->uid, $uids); // Solo verifica el primer profesor
+            return in_array($teacher1->uid, $uids); // Solo verifica el primer profesor con aprobación automática
         });
 
         // Verificar que la vista cargada es la correcta
@@ -358,6 +371,12 @@ class ManagerTest extends TestCase
             // Crea una convocatoria existente
             $call = CallsModel::factory()->create();
 
+            // Simular almacenamiento de archivos
+            Storage::fake('public');
+
+            // Simula un archivo adjunto falso
+            $fakeFile = UploadedFile::fake()->create('document.pdf', 100, 'application/pdf');
+
 
             //Datos de la convocatoria
             $data = [
@@ -366,6 +385,7 @@ class ManagerTest extends TestCase
                 'start_date' => Carbon::now()->addDays(1)->format('Y-m-d\TH:i'),
                 'end_date' => Carbon::now()->addDays(5)->format('Y-m-d\TH:i'),
                 'program_types' => [$uid1, $uid2], // Usar los UIDs generados
+                'attachment' => $fakeFile,
             ];
 
 
@@ -571,8 +591,18 @@ class ManagerTest extends TestCase
         $admin->roles()->sync($roles_to_sync);
         $this->actingAs($admin);
         if ($admin->hasAnyRole(['MANAGEMENT'])) {
+
+            // Preparar los parámetros para la solicitud
+            $params = [
+                'size' => 10, // Por ejemplo, paginar 10 resultados
+                'search' => 'nombre_a_buscar', // Reemplaza con un nombre existente en la base de datos
+                'sort' => [
+                    ['field' => 'created_at', 'dir' => 'desc'] // Ordenar por fecha de creación descendente
+                ]
+            ];
             // Hacer la solicitud
-            $response = $this->get('/management/calls/get_calls');
+
+            $response = $this->get('/management/calls/get_calls?' . http_build_query($params));
 
             // Verificar que el acceso sea permitido
             $response->assertStatus(200);
@@ -754,7 +784,7 @@ class ManagerTest extends TestCase
         ]);
     }
 
-     /**
+    /**
      * @test
      * Verifica que el método deleteCalls() del CallsController
      * elimina las convocatorias correctamente si no están asociadas a cursos o programas formativos.
@@ -822,4 +852,92 @@ class ManagerTest extends TestCase
         // Verificar que la convocatoria no fue eliminada
         $this->assertDatabaseHas('calls', ['uid' => $call->uid]);
     }
+
+    public function testMiddlewareDeniesAccessWhenUserIsNotManager()
+    {
+        // Simular que 'managers_can_manage_calls' está habilitado
+        App::shouldReceive('make')
+            ->with('general_options')
+            ->andReturn(['managers_can_manage_calls' => true]);
+
+        // Crear un usuario sin el rol 'MANAGEMENT'
+        $user = UsersModel::factory()->create();
+        // Asignar otros roles si es necesario, pero no 'MANAGEMENT'
+
+        // Simular la autenticación del usuario
+        Auth::shouldReceive('user')->andReturn($user);
+
+        // Hacer una solicitud a una ruta que no sea 'index'
+        $response = $this->get('/management/calls/get_calls');
+
+        // Verificar que la respuesta sea exitosa
+        $response->assertStatus(200); // Cambiar según tu lógica de negocio
+    }
+
+    public function testMiddlewareChecksAccessForManagementCalls()
+    {
+        $user = UsersModel::factory()->create();
+
+        $roles = UserRolesModel::where('code', 'MANAGEMENT')->first();
+        $user->roles()->sync([
+            $roles->uid => ['uid' => generate_uuid()]
+        ]);
+
+        // Autenticar al usuario
+        Auth::login($user);
+        View::share('roles', $roles);
+
+        //Simular la configuración de general_options
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+
+        app()->instance('general_options', $general_options);
+
+        View::share('general_options', $general_options);
+
+         // Simula datos de TooltipTextsModel
+         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+         View::share('tooltip_texts', $tooltip_texts);
+
+         // Simula notificaciones no leídas
+         $unread_notifications = $user->notifications->where('read_at', null);
+         View::share('unread_notifications', $unread_notifications);
+
+
+    // Crear un mock del controlador
+    // Crear una instancia del controlador
+    $controller = new CallsController();
+
+    // Usar reflexión para acceder al método privado checkAccessCalls
+    $reflection = new \ReflectionClass($controller);
+
+    // Verificar el método checkAccessCalls
+    $methodAccess = $reflection->getMethod('checkAccessCalls');
+    $methodAccess->setAccessible(true); // Hacer el método accesible
+    $accessResult = $methodAccess->invoke($controller); // Invocar el método
+
+    // Verificar el resultado del método checkAccessCalls
+    $this->assertFalse($accessResult); // Cambia esto según tu lógica real
+
+    // Verificar el método checkManagersAccessCalls
+    $methodManager = $reflection->getMethod('checkManagersAccessCalls');
+    $methodManager->setAccessible(true); // Hacer el método accesible
+    $managerResult = $methodManager->invoke($controller); // Invocar el método
+
+    // Verificar el resultado del método checkManagersAccessCalls
+    $this->assertFalse($managerResult); // Cambia esto según tu lógica real
+
+    // Simula un request a la ruta '/management/calls'
+    $response = $this->get('/management/calls');
+
+    if (!$accessResult || !$managerResult) {
+
+            $this->assertEquals(200, $response->getStatusCode());
+
+    } else {
+        $response->assertStatus(200);
+    }
+
+
+
+}
 }

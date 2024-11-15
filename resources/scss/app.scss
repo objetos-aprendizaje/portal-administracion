@@ -450,6 +450,9 @@ button.element-disabled {
     @apply shadow-none focus:shadow-none py-2 px-4 block border-gray-200 rounded-md text-sm focus:border-primary focus:ring-0 focus:outline-none dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 checked:bg-primary checked:focus:border-primary border border-solid invalid:text-black/30;
 }
 
+.poa-select.poa-select-mini {
+    @apply py-0 px-1;
+}
 
 /******************************* ANIDACIÓN DE CATEGORÍAS ********************/
 .anidation-div {
@@ -636,6 +639,9 @@ button.element-disabled {
         @apply flex sm:flex-row flex-col mb-4 gap-2;
     }
 
+    & .field .label-container {
+        @apply flex;
+    }
 
     & .field .label-container label {
         @apply w-auto break-words text-sm font-roboto-regular;

@@ -4,12 +4,14 @@ namespace Tests\Unit;
 
 use Tests\TestCase;
 use App\Models\UsersModel;
+use Illuminate\Support\Str;
 use App\Models\UserRolesModel;
 use App\Models\CategoriesModel;
 use App\Models\TooltipTextsModel;
 use Illuminate\Http\UploadedFile;
 use App\Models\GeneralOptionsModel;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
@@ -29,6 +31,82 @@ class CatalogingTest extends TestCase
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
     }
 
+
+
+/** @test */
+    public function testUserManagementRoleAccessCategories()
+    {
+
+        GeneralOptionsModel::create([
+            'option_name' => 'managers_can_manage_categories',
+            'option_value' => true,
+        ]);
+
+        // Simulamos un usuario con el rol 'MANAGEMENT'
+        $user = UsersModel::factory()->create()->first();
+        // Asegúrate de que el rol exista en la base de datos
+        $roles = UserRolesModel::where('code', 'MANAGEMENT')->first();
+
+        // Adjuntamos el rol con un uid generado
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        Auth::login($user);
+        View::share('roles', $roles);
+
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+
+        // Hacemos una solicitud al método que queremos probar (por ejemplo, index)
+        $response = $this->get('/cataloging/categories');
+
+        // Verificamos que la respuesta sea exitosa
+        $response->assertStatus(200);
+    }
+
+/** @test */
+      public function testUserNotManagementCannotAccess()
+      {
+
+
+          // Simulamos un usuario sin el rol 'MANAGEMENT'
+          $user = UsersModel::factory()->create();
+
+          // Asegúrate de que el rol exista en la base de datos
+          $roles = UserRolesModel::where('code', 'TEACHER')->first();
+
+          // Adjuntamos el rol con un uid generado
+          $user->roles()->attach($roles->uid, ['uid' => Str::uuid()]);
+
+          Auth::login($user);
+          View::share('roles', $roles);
+
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+
+
+        $generalOptionsMock = [
+            'managers_can_manage_categories' => false,
+        ];
+
+        // Asignar el mock a app('general_options')
+        App::instance('general_options', $generalOptionsMock);
+
+        // Hacemos una solicitud al método que queremos probar (por ejemplo, index)
+        $response = $this->get('/cataloging/categories');
+
+        // Verificamos que se produzca un error 403
+        $response->assertStatus(200);
+      }
 
 /**
 * @testdox Crear Categoría Exitoso*/
@@ -201,9 +279,32 @@ class CatalogingTest extends TestCase
         }
     }
 
+    public function testDeleteCategories()
+    {
+        // Crear categorías de prueba
+        $category1 = CategoriesModel::factory()->create(['name' => 'Categoría 1', 'uid' => generate_uuid()]);
+        $category2 = CategoriesModel::factory()->create(['name' => 'Categoría 2', 'uid' => generate_uuid()]);
+
+        // Simular la autenticación del usuario
+        $this->actingAs(UsersModel::factory()->create());
+
+        // Simular la solicitud DELETE
+        $response = $this->deleteJson('/cataloging/categories/delete_categories', [
+            'uids' => [$category1->uid, $category2->uid],
+        ]);
+
+        // Verificar que la respuesta sea correcta
+        $response->assertStatus(200);
+        $response->assertJson(['message' => 'Categorías eliminadas correctamente']);
+
+        // Verificar que las categorías han sido eliminadas
+        $this->assertDatabaseMissing('categories', ['uid' => $category1->uid]);
+        $this->assertDatabaseMissing('categories', ['uid' => $category2->uid]);
+
+    }
+
     /**
      * @test Buscar Categoria
-     * @return void
      */
     public function testGetCategoriesWithSearch()
     {
@@ -228,8 +329,8 @@ class CatalogingTest extends TestCase
     {
         // Crear un usuario con el rol 'MANAGEMENT'
         $user = UsersModel::factory()->create()->latest()->first();
-         $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]);// Crea roles de prueba
-         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
          // Autenticar al usuario
          Auth::login($user);
@@ -685,7 +786,6 @@ class CatalogingTest extends TestCase
                 'uids' => [$uidResource],
             ]);
 
-            // Verifica que la respuesta sea correcta
             $responseDelete->assertStatus(200);
             $responseDelete->assertJson(['message' => 'Tipos de recurso educativo eliminados correctamente']);
 

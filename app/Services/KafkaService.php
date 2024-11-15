@@ -9,7 +9,7 @@ class KafkaService
 
     public function sendMessage($key, $message, $topic)
     {
-        $kafkaBroker = env('KAFKA_BROKERS');
+        $kafkaBroker = env('KAFKA_ENDPOINT');
 
         if (!$kafkaBroker) return;
 
@@ -23,16 +23,20 @@ class KafkaService
         $topic = $producer->newTopic($topic);
 
         try {
-            for ($flushRetries = 0; $flushRetries < 10; $flushRetries++) {
-                $topic->produce(RD_KAFKA_PARTITION_UA, 0, json_encode($message), $key);
-                $producer->poll(0);
+            // Produce the message once
+            $topic->produce(RD_KAFKA_PARTITION_UA, 0, json_encode($message), $key);
+            $producer->poll(0);
 
+            // Flush the producer to ensure the message is sent
+            for ($flushRetries = 0; $flushRetries < 10; $flushRetries++) {
                 if ($producer->flush(1000) === RD_KAFKA_RESP_ERR_NO_ERROR) {
                     break;
                 }
             }
 
-            if ($flushRetries == 10) throw new Exception("No se pudo enviar el mensaje");
+            if ($flushRetries == 10) {
+                throw new Exception("No se pudo enviar el mensaje");
+            }
         } catch (Exception $e) {
             throw new Exception("No se pudo enviar el mensaje");
         }
@@ -40,7 +44,7 @@ class KafkaService
 
     public function sendMessages($messages)
     {
-        $kafkaBroker = env('KAFKA_BROKERS');
+        $kafkaBroker = env('KAFKA_ENDPOINT');
 
         if (!$kafkaBroker) return;
 

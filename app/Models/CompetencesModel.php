@@ -37,4 +37,9 @@ class CompetencesModel extends Model
     {
         return $this->hasMany(LearningResultsModel::class, 'competence_uid', 'uid');
     }
+
+    public function competenceFramework()
+    {
+        return $this->belongsTo(CompetenceFrameworksModel::class, 'competence_framework_uid', 'uid');
+    }
 }

@@ -21,7 +21,10 @@ use App\Models\CentersModel;
 use App\Models\CertificationTypesModel;
 use App\Models\CompetenceFrameworksModel;
 use App\Models\CourseCategoriesModel;
+use App\Models\CourseLearningResultCalificationsModel;
+use App\Models\CoursesBlocksLearningResultsCalificationsModel;
 use App\Models\CoursesEmailsContactsModel;
+use App\Models\CoursesEmbeddingsModel;
 use App\Models\CoursesPaymentTermsModel;
 use App\Models\CoursesStudentDocumentsModel;
 use App\Models\CoursesStudentsModel;
@@ -43,6 +46,7 @@ use Illuminate\Support\Facades\Auth;
 use League\Csv\Reader;
 
 use App\Rules\NifNie;
+use App\Services\CertidigitalService;
 use App\Services\KafkaService;
 use App\Services\EmbeddingsService;
 use DateTime;
@@ -52,10 +56,12 @@ class ManagementCoursesController extends BaseController
     use AuthorizesRequests, ValidatesRequests;
 
     protected $embeddingsService;
+    protected $certidigitalService;
 
-    public function __construct(EmbeddingsService $embeddingsService)
+    public function __construct(EmbeddingsService $embeddingsService, CertidigitalService $certidigitalService)
     {
         $this->embeddingsService = $embeddingsService;
+        $this->certidigitalService = $certidigitalService;
     }
 
     public function index()
@@ -170,7 +176,7 @@ class ManagementCoursesController extends BaseController
         }
 
         // Obtenemos los cursos de la base de datos
-        $courses_bd = CoursesModel::whereIn('uid', array_column($changesCoursesStatuses, "uid"))->with('status')->get()->keyBy('uid');
+        $courses_bd = CoursesModel::whereIn('uid', array_column($changesCoursesStatuses, "uid"))->with('status', 'lmsSystem')->get()->keyBy('uid');
 
         // Excluímos los estados a los que no se pueden cambiar manualmente.
         $statuses_courses = CourseStatusesModel::whereNotIn('code', ['DEVELOPMENT', 'PENDING_INSCRIPTION', 'FINISHED'])->get()->keyBy('code');
@@ -180,8 +186,8 @@ class ManagementCoursesController extends BaseController
             // Recorremos los cursos que nos vienen en el request y los comparamos con los de la base de datos
             foreach ($changesCoursesStatuses as $changeCourseStatus) {
                 // Obtenemos el curso de la base de datos
-                $course = $courses_bd[$changeCourseStatus['uid']] ?? null; // Se agregó null para poder ejecutar pruena unitaria
-                $status = $statuses_courses[$changeCourseStatus['status']];
+                $course = $courses_bd[$changeCourseStatus['uid']] ?? null;
+                $status = $statuses_courses[$changeCourseStatus['status']] ?? null;
                 $reason = $changeCourseStatus['reason'];
 
                 // Si no existe el curso en la base de datos, devolvemos un error
@@ -196,7 +202,7 @@ class ManagementCoursesController extends BaseController
                 $this->updateStatusCourse($course, $status, $reason);
 
                 if ($status->code == "ACCEPTED_PUBLICATION" && !$course->lms_url) {
-                    $this->sendNotificationCourseAcceptedPublicationToKafka($course);
+                    $this->sendNotificationCourseAcceptedPublicationToKafka($course, $course->lmsSystem->identifier);
                 }
 
                 dispatch(new SendChangeStatusCourseNotification($course));
@@ -208,6 +214,26 @@ class ManagementCoursesController extends BaseController
         return response()->json(['message' => 'Se han actualizado los estados de los cursos correctamente'], 200);
     }
 
+    public function regenerateEmbeddings(Request $request)
+    {
+        $coursesUids = $request->input('courses_uids');
+        $courses = CoursesModel::whereIn('uid', $coursesUids)->get();
+
+        foreach ($courses as $course) {
+            $this->embeddingsService->generateEmbeddingForCourse($course);
+        }
+
+        return response()->json(['message' => 'Se han regenerado los embeddings correctamente'], 200);
+    }
+
+    public function sendCredentials(Request $request)
+    {
+        $courseUid = $request->input('course_uid');
+        $this->certidigitalService->emissionCredentials($courseUid);
+
+        return response()->json(['message' => 'Se han enviado las credenciales correctamente'], 200);
+    }
+
     private function updateStatusCourse($course, $status, $reason)
     {
         $course->course_status_uid = $status->uid;
@@ -215,7 +241,7 @@ class ManagementCoursesController extends BaseController
         $course->save();
     }
 
-    private function sendNotificationCourseAcceptedPublicationToKafka($course)
+    private function sendNotificationCourseAcceptedPublicationToKafka($course, $lmsCode)
     {
         $courseData = [
             'course_uid' => $course->uid,
@@ -226,7 +252,7 @@ class ManagementCoursesController extends BaseController
         ];
 
         $kafkaService = new KafkaService();
-        $kafkaService->sendMessage('course_accepted_publication', $courseData, 'course_accepted_publication');
+        $kafkaService->sendMessage('course_accepted_publication', $courseData, $lmsCode);
     }
 
     public function getCourses(Request $request)
@@ -271,6 +297,17 @@ class ManagementCoursesController extends BaseController
 
         $data = $query->paginate($size);
 
+        $dates = [
+            'inscription_start_date',
+            'inscription_finish_date',
+            'realization_start_date',
+            'realization_finish_date',
+            'enrolling_start_date',
+            'enrolling_finish_date'
+        ];
+
+        adaptDatesModel($data, $dates, true);
+
         return response()->json($data, 200);
     }
 
@@ -288,6 +325,7 @@ class ManagementCoursesController extends BaseController
             ->with('teachers_coordinate')
             ->with('teachers_no_coordinate')
             ->with('categories')
+            ->leftJoin('courses_embeddings', 'courses.uid', '=', 'courses_embeddings.course_uid')
             ->select(
                 'courses.*',
                 'status.name as status_name',
@@ -297,7 +335,8 @@ class ManagementCoursesController extends BaseController
                 'educational_program_types.name as educational_program_types_name',
                 'course_types.name as course_types_name',
                 'centers.name as centers_name',
-            );
+            )
+            ->addSelect(DB::raw('CASE WHEN courses_embeddings.embeddings IS NULL THEN 0 ELSE 1 END as embeddings_status'));
     }
 
     private function buildQueryForTeacher()
@@ -385,12 +424,16 @@ class ManagementCoursesController extends BaseController
                 $query->where('min_required_students', '>=', $filter['value']);
             } else if ($filter['database_field'] == 'max_required_students') {
                 $query->where('min_required_students', '<=', $filter['value']);
+            } else if ($filter['database_field'] == 'validate_student_registrations') {
+                $query->where('courses.validate_student_registrations', $filter['value']);
             } else if ($filter['database_field'] == 'learning_results') {
                 $query->with([
                     'blocks.learningResults'
                 ])->whereHas('blocks.learningResults', function ($query) use ($filter) {
                     $query->whereIn('learning_results.uid', $filter['value']);
                 });
+            } else if ($filter['database_field'] == "embeddings") {
+                $query->where(DB::raw('CASE WHEN courses_embeddings.embeddings IS NULL THEN 0 ELSE 1 END'), '=', $filter['value']);
             } else {
                 $query->where($filter['database_field'], $filter['value']);
             }
@@ -404,9 +447,9 @@ class ManagementCoursesController extends BaseController
     public function getCourse($course_uid)
     {
 
-        if (!$course_uid) {
-            return response()->json(['message' => env('ERROR_MESSAGE')], 400);
-        }
+        // if (!$course_uid) {
+        //     return response()->json(['message' => env('ERROR_MESSAGE')], 400);
+        // }
 
         $course = CoursesModel::where('uid', $course_uid)->with([
             'status',
@@ -437,6 +480,17 @@ class ManagementCoursesController extends BaseController
         ])
             ->first();
 
+        $dates = [
+            'inscription_start_date',
+            'inscription_finish_date',
+            'realization_start_date',
+            'realization_finish_date',
+            'enrolling_start_date',
+            'enrolling_finish_date'
+        ];
+
+        adaptDatesModel($course, $dates, false);
+
         if (!$course) {
             return response()->json(['message' => 'El curso no existe'], 406);
         }
@@ -449,11 +503,13 @@ class ManagementCoursesController extends BaseController
      */
     public function saveCourse(Request $request)
     {
+        adaptRequestDatesToUTC($request);
+
         $course_uid = $request->input('course_uid');
 
         if ($course_uid) {
             $isNew = false;
-            $course_bd = CoursesModel::where('uid', $course_uid)->with("educational_program")->first();
+            $course_bd = CoursesModel::where('uid', $course_uid)->with(["educational_program", "embeddings"])->first();
             $this->checkStatusCourse($course_bd);
 
             // Si el curso está ya añadido a un programa educativo, validamos las fechas de realización
@@ -489,18 +545,24 @@ class ManagementCoursesController extends BaseController
             $newCourseStatus = $this->statusCourseBelongsEducationalProgram($action, $course_bd);
         } else {
             $newCourseStatus = $this->statusCourseNotBelongsEducationalProgram($action, $course_bd);
+
+            // dd($newCourseStatus->code,"540");
         }
 
         DB::transaction(function () use ($request, $course_bd, $belongsEducationalProgram, $isNew, $newCourseStatus) {
             $isManagement = Auth::user()->hasAnyRole(['MANAGEMENT']);
 
+            // Antes de actualizar el título y descripción del curso, se comprueba si hay cambios y se generan embeddings
+            $embeddings = $this->generateCourseEmbeddings($request, $course_bd);
+
             if ($newCourseStatus) {
                 $course_bd->course_status_uid = $newCourseStatus->uid;
-            }
 
-            // Antes de actualizar el título y descripción del curso, se comprueba si hay cambios y se generan embeddings
-            // Fixit
-            $embeddings = $this->generateCourseEmbeddings($request, $course_bd);
+                // Notificación a los gestores si el curso está pendiente de aprobación para que lo revisen
+                if ($newCourseStatus->code == "PENDING_APPROVAL") {
+                    dispatch(new SendCourseNotificationToManagements($course_bd->toArray()));
+                }
+            }
 
             // En función de si el curso pertenece a una nueva edición o no y no es gestor, se actualizarán o no ciertos campos
             if ($course_bd->course_origin_uid && !$isManagement) {
@@ -520,15 +582,24 @@ class ManagementCoursesController extends BaseController
             $image_file = $request->file('image_input_file');
             if ($image_file) $this->updateImageField($image_file, $course_bd);
 
-            if ($newCourseStatus && $newCourseStatus->code === "PENDING_APPROVAL") {
-                dispatch(new SendCourseNotificationToManagements($course_bd->toArray()));
-            }
-
-            $course_bd->embeddings = $embeddings;
-
+            $this->saveLogMessageSaveCourse($isNew, $course_bd->title);
             $course_bd->save();
 
-            LogsController::createLog(($isNew) ? 'Curso añadido' : 'Curso actualizado', 'Cursos', auth()->user()->uid);
+            if ($embeddings) {
+                CoursesEmbeddingsModel::updateOrCreate(
+                    ['course_uid' => $course_bd->uid],
+                    ['embeddings' => $embeddings]
+                );
+            }
+
+            if ($newCourseStatus && $newCourseStatus->code == "ACCEPTED_PUBLICATION" && !$course_bd->lms_url) {
+                $lmsSystem = $request->input('lms_system_uid');
+                $lmsSystem = LmsSystemsModel::where('uid', $lmsSystem)->first();
+                $this->sendNotificationCourseAcceptedPublicationToKafka($course_bd, $lmsSystem->identifier);
+            }
+
+            // Creación de las credenciales de Certidigital
+            $this->certidigitalService->createCoursesCredentials([$course_bd]);
         }, 5);
 
         return response()->json(['message' => ($isNew) ? 'Se ha añadido el curso correctamente' : 'Se ha actualizado el curso correctamente'], 200);
@@ -547,10 +618,10 @@ class ManagementCoursesController extends BaseController
 
         if (!$course_bd->embeddings || $title != $course_bd->title || $description != $course_bd->description) {
             $embeddings = $this->embeddingsService->getEmbedding($title . ' ' . $description);
-            return $embeddings ?: $course_bd->embeddings;
+            return $embeddings ?: $course_bd->embeddings->embeddings;
         }
 
-        return $course_bd->embeddings;
+        return $course_bd->embeddings->embeddings;
     }
 
     private function checkRealizationDatesCourseAddEducationalProgram($request, $course_bd)
@@ -600,6 +671,111 @@ class ManagementCoursesController extends BaseController
             $necessaryApprovalEditions = app('general_options')['necessary_approval_editions'];
             return $necessaryApprovalEditions ? $statuses['PENDING_APPROVAL'] : $statuses['ACCEPTED_PUBLICATION'];
         } else return null;
+    }
+
+    public function getCourseCalifications(Request $request, $courseUid)
+    {
+        $size = $request->get('size', 1);
+        $search = $request->get('search');
+        $sort = $request->get('sort');
+
+        $course = CoursesModel::where("uid", $courseUid)->first();
+
+        if ($course->belongs_to_educational_program) {
+            $educationalProgramCourse = $course->educational_program()->first();
+            $coursesStudentsQuery = $educationalProgramCourse->students();
+        } else {
+            $coursesStudentsQuery = $course->students();
+        }
+
+        $coursesStudentsQuery->with(["courseBlocksLearningResultsCalifications", "courseBlocksLearningResultsCalifications.block" => function ($query) use ($courseUid) {
+            return $query->where("course_uid", $courseUid);
+        }, "courseLearningResultCalifications" => function ($query) use ($courseUid) {
+            return $query->where("course_uid", $courseUid);
+        }]);
+
+        if ($search) {
+            $coursesStudentsQuery->where(function ($subQuery) use ($search) {
+                $subQuery->whereRaw("concat(first_name, ' ', last_name) ILIKE ?", ["%$search%"])
+                    ->orWhere('nif', 'ILIKE', "%$search%");
+            });
+        }
+
+        if (isset($sort) && !empty($sort)) {
+            foreach ($sort as $order) {
+                $coursesStudentsQuery->orderBy($order['field'], $order['dir']);
+            }
+        }
+
+        $coursesStudents = $coursesStudentsQuery->paginate($size);
+
+        $courseBlocks = $course->blocks()->with("learningResults.competence.competenceFramework.levels")->get();
+
+        // Resultados de aprendizaje únicos
+        $learningResults = [];
+        foreach ($courseBlocks as $block) {
+            foreach ($block->learningResults as $learningResult) {
+                $learningResults[$learningResult->uid] = $learningResult->toArray();
+            }
+        }
+
+        // Convertir el array asociativo de vuelta a un array indexado
+        $learningResults = array_values($learningResults);
+
+        return response()->json([
+            "coursesStudents" => $coursesStudents,
+            "courseBlocks" => $courseBlocks,
+            "learningResults" => $learningResults
+        ], 200);
+    }
+
+    public function saveCalification(Request $request, $courseUid)
+    {
+        $blocksLearningResultCalifications = $request->input("blocksLearningResultCalifications");
+        $learningResultsCalifications = $request->input("learningResultsCalifications");
+        $globalCalifications = $request->input("globalCalifications");
+
+        DB::transaction(function () use ($blocksLearningResultCalifications, $learningResultsCalifications, $globalCalifications, $courseUid) {
+            foreach ($blocksLearningResultCalifications as $blockCalification) {
+                CoursesBlocksLearningResultsCalificationsModel::updateOrCreate(
+                    [
+                        "user_uid" => $blockCalification["userUid"],
+                        "course_block_uid" => $blockCalification["blockUid"],
+                        "learning_result_uid" => $blockCalification["learningResultUid"],
+                    ],
+                    [
+                        "uid" => generate_uuid(),
+                        "calification_info" => $blockCalification["calificationInfo"],
+                        "competence_framework_level_uid" => $blockCalification["levelUid"]
+                    ]
+                );
+            }
+
+            foreach ($learningResultsCalifications as $learningResultCalification) {
+                CourseLearningResultCalificationsModel::updateOrCreate(
+                    [
+                        "user_uid" => $learningResultCalification["userUid"],
+                        "learning_result_uid" => $learningResultCalification["learningResultUid"],
+                        "course_uid" => $courseUid
+                    ],
+                    [
+                        "uid" => generate_uuid(),
+                        "calification_info" => $learningResultCalification["calificationInfo"],
+                        "competence_framework_level_uid" => $learningResultCalification["levelUid"]
+                    ]
+                );
+            }
+
+            foreach ($globalCalifications as $globalCalification) {
+                CoursesStudentsModel::where("user_uid", $globalCalification["user_uid"])
+                    ->where("course_uid", $courseUid)
+                    ->update([
+                        "calification_info" => $globalCalification["calification_info"]
+                    ]);
+            }
+        });
+
+        return response()->json(['message' => 'Se han guardado las calificaciones correctamente'], 200);
     }
 
     private function updateAuxiliarDataCourse($course_bd, $request)
@@ -692,7 +868,7 @@ class ManagementCoursesController extends BaseController
             'ects_workload' => 'required|numeric',
             'validate_student_registrations' => 'required|boolean',
             'lms_url' => 'nullable|url',
-            'lms_system_uid' => 'required_with:lms_url',
+            'lms_system_uid' => 'required_if:lms_url,!=,null',
             'cost' => 'nullable|numeric',
             'featured_big_carrousel_title' => 'required_if:featured_big_carrousel,1',
             'featured_big_carrousel_description' => 'required_if:featured_big_carrousel,1',
@@ -818,6 +994,14 @@ class ManagementCoursesController extends BaseController
         }
     }
 
+    private function saveLogMessageSaveCourse($isNew, $courseTitle)
+    {
+        $logMessage = $isNew ? 'Curso añadido: ' : 'Curso actualizado: ';
+        $logMessage .= $courseTitle;
+
+        LogsController::createLog($logMessage, 'Cursos', auth()->user()->uid);
+    }
+
     private function getValidatorCourseMessages()
     {
 
@@ -841,7 +1025,7 @@ class ManagementCoursesController extends BaseController
             'ects_workload.numeric' => 'La carga de trabajo ECTS debe ser un número.',
             'validate_student_registrations.required' => 'Indica si se validarán las inscripciones de los estudiantes.',
             'lms_url.url' => 'Introduce una URL válida para el LMS.',
-            'lms_system_uid.required_with' => 'Debes seleccionar un LMS si especificas una URL',
+            'lms_system_uid.required_if' => 'Debes seleccionar un LMS si no especificas una URL',
             'call_uid.required' => 'Selecciona la convocatoria del curso.',
             'center_uid' => 'Debes especificar un centro',
             'featured_big_carrousel_title.required_if' => 'Debes especificar un título',
@@ -967,10 +1151,10 @@ class ManagementCoursesController extends BaseController
         } else return null;
     }
 
-    private function checkIsEdition($course_bd)
-    {
-        return $course_bd->course_origin_uid != null;
-    }
+    // private function checkIsEdition($course_bd)
+    // {
+    //     return $course_bd->course_origin_uid != null;
+    // }
 
     private function updateCourseFieldsNewEdition($request, $courseBd)
     {
@@ -1695,7 +1879,11 @@ class ManagementCoursesController extends BaseController
             throw new OperationFailedException('No se puede crear una edición de un curso de programa');
         }
 
-        $existingEdition = CoursesModel::where('course_origin_uid', $course_bd->uid)->where('course_status_uid', '!=', 'RETIRED')->exists();
+        $existingEdition = CoursesModel::where('course_origin_uid', $course_bd->uid)
+            ->whereHas('status', function ($query) {
+                $query->where('code', '!=', 'RETIRED');
+            })
+            ->exists();
         if ($existingEdition) {
             throw new OperationFailedException('Ya existe una edición activa de este curso');
         }
@@ -1856,7 +2044,6 @@ class ManagementCoursesController extends BaseController
             $enroll->uid = generate_uuid();
             $enroll->course_uid = $request->get('courseUid');
             $enroll->user_uid = $user;
-            $enroll->calification_type = "NUMERIC";
             $enroll->acceptance_status = 'ACCEPTED';
             $messageLog = "Alumno añadido a curso";
 
@@ -1969,7 +2156,6 @@ class ManagementCoursesController extends BaseController
             $enroll->uid = generate_uuid();
             $enroll->course_uid = $course_uid;
             $enroll->user_uid = $user_uid;
-            $enroll->calification_type = "NUMERIC";
             $enroll->acceptance_status = 'ACCEPTED';
             $messageLog = "Alumno añadido a curso";
 

@@ -92,11 +92,13 @@ class TooltipTextsController extends BaseController
     public function saveTooltipText(Request $request)
     {
         $messages = [
+            'form_id.required' => 'El nombre es obligatorio.',
             'input_id.required' => 'El nombre es obligatorio.',
             'description.required' => 'La descripción es obligatorio.',
         ];
 
         $validator = Validator::make($request->all(), [
+            'form_id' => 'required',
             'input_id' => 'required',
             'description' => 'required',
         ], $messages);
@@ -112,8 +114,8 @@ class TooltipTextsController extends BaseController
 
             if (!$tooltip_text_uid) {
                 $tooltip_text = new TooltipTextsModel();
-                $license_uid = generate_uuid();
-                $tooltip_text->uid = $license_uid;
+                $tooltip_uid = generate_uuid();
+                $tooltip_text->uid = $tooltip_uid;
                 $isNew = true;
             } else {
                 $tooltip_text = TooltipTextsModel::find($tooltip_text_uid);
@@ -121,6 +123,7 @@ class TooltipTextsController extends BaseController
             }
 
             $tooltip_text->fill($request->only([
+                'form_id',
                 'input_id',
                 'description'
             ]));

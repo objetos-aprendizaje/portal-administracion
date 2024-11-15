@@ -38,14 +38,20 @@ class CallsController extends BaseController
         if (!$this->checkAccessCalls()) {
             return view('access_not_allowed', [
                 'title' => 'Las convocatorias están desactivadas',
-                'description' => 'El administrador ha desactivado el funcionamiento por convocatorias en la plataforma.'
+                'description' => 'El administrador ha desactivado el funcionamiento por convocatorias en la plataforma.',
+                "page_name" => "Convocatorias",
+                "page_title" => "Convocatorias",
+                "submenuselected" => "management-calls"
             ]);
         }
 
         if (!$this->checkManagersAccessCalls()) {
             return view('access_not_allowed', [
                 'title' => 'No tienes permiso para modificar las convocatorias',
-                'description' => 'El administrador ha desactivado la administración de convocatorias para los gestores.'
+                'description' => 'El administrador ha desactivado la administración de convocatorias para los gestores.',
+                "page_name" => "Convocatorias",
+                "page_title" => "Convocatorias",
+                "submenuselected" => "management-calls"
             ]);
         }
 

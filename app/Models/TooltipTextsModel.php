@@ -18,7 +18,6 @@ class TooltipTextsModel extends Model
         "uid",
         "input_id",
         "description",
+        "form_id"
     ];
-
-
 }

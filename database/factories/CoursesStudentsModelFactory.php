@@ -20,7 +20,6 @@ class CoursesStudentsModelFactory extends Factory
     {
         return [
             'uid'               => generate_uuid(),
-            'calification_type' => 'NUMERIC',
             'status'            => 'INSCRIBED',
             'acceptance_status' => 'PENDING',
         ];

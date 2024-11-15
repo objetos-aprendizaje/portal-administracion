@@ -19,11 +19,10 @@
 
                 <div>
                     <div class="label-container label-center">
-                        <label for="date_users">Fecha</label>
+                        <label for="date_users">Fecha de creación</label>
                     </div>
                     <div class="content-container mt-1">
-                        <input type="datetime-local" class="poa-input" id="date_users"
-                            name="date_users" />
+                        <input type="datetime-local" class="poa-input" id="date_users" name="date_users" placeholder="Fecha de creación"/>
                     </div>
                 </div>
 
@@ -34,7 +33,10 @@
 
                     <div class="content-container mt-1">
                         <select id="roles_filter" class="mb-4" name="roles_filter[]" multiple
-                            placeholder="Selecciona uno o varios roles">
+                            placeholder="Selecciona uno o varios roles" autocomplete="off">
+                            @foreach ($userRoles as $role)
+                                <option value="{{ $role->uid }}">{{ $role->name }}</option>
+                            @endforeach
                         </select>
                     </div>
 

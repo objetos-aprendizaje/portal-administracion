@@ -75,6 +75,31 @@ class LoginController extends BaseController
         }
     }
 
+    public function loginCertificate() {
+        $data = $_GET['data'];
+        $dataParsed = json_decode($data);
+        $expiration = $_GET['expiration'];
+        $hash = $_GET['hash'];
+
+        $hashCheck = md5($data.$expiration.env('KEY_CHECK_CERTIFICATE_ACCESS'));
+
+        if($expiration < time() || $hash != $hashCheck) return redirect('/login');
+
+        $user = UsersModel::with('roles')
+            ->whereRaw('LOWER(nif) = ?', [strtolower($dataParsed->nif)])
+            ->whereHas('roles', function ($query) {
+                $query->whereIn('code', ['ADMINISTRATOR', 'MANAGEMENT', 'TEACHER']);
+            })
+            ->first();
+
+        if ($user && $user->verified) {
+            Auth::login($user);
+            return redirect('/');
+        } else {
+            return redirect("/login?e=certificate-error");
+        }
+    }
+
     public function handleSocialCallback($loginMethod)
     {
         $this->validateLoginMethod($loginMethod);

@@ -9,7 +9,7 @@ import {
     formatDateTime,
 } from "../tabulator_handler.js";
 import { heroicon } from "../heroicons.js";
-import { getCsrfToken } from "../app.js";
+import { getCsrfToken, showFormErrors, resetFormErrors } from "../app.js";
 import { showToast } from "../toast.js";
 import {
     hideModal,
@@ -244,6 +244,8 @@ function submitFooterPageForm() {
         formData.append("acceptance_required", 0);
     }
 
+    resetFormErrors("footer-page-form");
+
     const params = {
         url: "/administration/footer_pages/save_footer_page",
         method: "POST",
@@ -255,6 +257,8 @@ function submitFooterPageForm() {
     apiFetch(params).then(() => {
         hideModal("footer-page-modal");
         footerPagesTable.setData(endPointTable);
+    }).catch((data) => {
+        showFormErrors(data.errors);
     });
 }
 

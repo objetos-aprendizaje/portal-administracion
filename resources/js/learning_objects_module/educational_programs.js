@@ -375,7 +375,8 @@ function initializeEducationalProgramsTable() {
                         tooltip: "Listado de alumnos del curso",
                         action: (educationalprogram) => {
                             loadEducationalProgramsStudentsModal(
-                                educationalprogram.uid
+                                educationalprogram.uid,
+                                educationalprogram.validate_student_registrations
                             );
                         },
                     },
@@ -418,7 +419,8 @@ function initializeEducationalProgramsTable() {
                 action: function (e, column) {
                     const educationalProgramClicked = column.getData();
                     loadEducationalProgramsStudentsModal(
-                        educationalProgramClicked.uid
+                        educationalProgramClicked.uid,
+                        educationalProgramClicked.validate_student_registrations
                     );
                 },
             },
@@ -490,23 +492,6 @@ function fillEducationalProgramModal(educationalProgram) {
 
     fillFormWithObject(educationalProgram, "educational-program-form");
 
-    document.getElementById("inscription_start_date").value =
-        educationalProgram.inscription_start_date;
-    document.getElementById("inscription_finish_date").value =
-        educationalProgram.inscription_finish_date;
-
-    document.getElementById("enrolling_start_date").value =
-        educationalProgram.enrolling_start_date;
-
-    document.getElementById("enrolling_finish_date").value =
-        educationalProgram.enrolling_finish_date;
-
-    document.getElementById("realization_start_date").value =
-        educationalProgram.realization_start_date;
-
-    document.getElementById("realization_finish_date").value =
-        educationalProgram.realization_finish_date;
-
     document.getElementById("validate_student_registrations").value =
         educationalProgram.validate_student_registrations;
 
@@ -549,11 +534,6 @@ function fillEducationalProgramModal(educationalProgram) {
             tomSelectTags.addItem(tag.tag);
         });
     }
-
-    document.getElementById("cost").value = educationalProgram.cost;
-
-    document.getElementById("evaluation_criteria").value =
-        educationalProgram.evaluation_criteria;
 
     if (educationalProgram.image_path) {
         document.getElementById("image_path_preview").src =
@@ -751,11 +731,21 @@ function controlEnrollingDates() {
 function submitFormEducationalProgram() {
     const action = event.submitter.value;
 
+    // Habilitar todos los campos para que se envíen en el formulario
+    const form = document.getElementById("educational-program-form");
+    const disabledFields = form.querySelectorAll(":disabled");
+    disabledFields.forEach(function (field) {
+        field.disabled = false;
+    });
+
     const formData = new FormData(this);
+
+    disabledFields.forEach(function (field) {
+        field.disabled = true;
+    });
 
     formData.append("action", action);
 
-    const form = document.getElementById("educational-program-form");
     const checkboxValidateStudentRegistrations = form.querySelector(
         "#validate_student_registrations"
     );
@@ -1247,7 +1237,10 @@ function reloadTableCourses() {
  * Carga y muestra el modal para la gestión de estudiantes de un curso.
  * Inicializa la tabla de estudiantes del curso y configura los eventos para la búsqueda y eliminación de estudiantes.
  */
-function loadEducationalProgramsStudentsModal(educationalProgramUid) {
+function loadEducationalProgramsStudentsModal(
+    educationalProgramUid,
+    validateStudentRegistrations
+) {
     if (
         educationalProgramStudentsTable != null &&
         educationalProgramStudentsTable != undefined
@@ -1257,7 +1250,23 @@ function loadEducationalProgramsStudentsModal(educationalProgramUid) {
 
     selectedEducationalProgramUid = educationalProgramUid;
 
-    initializeEducationalProgramStudentsTable(educationalProgramUid);
+    // Mostrar u ocultar botones de validación de estudiantes
+    const validateStudentRegistrationsButtons = [
+        "approve-students-btn",
+        "reject-students-btn",
+    ];
+
+    validateStudentRegistrationsButtons.forEach((button) => {
+        const btn = document.getElementById(button);
+
+        if (validateStudentRegistrations) btn.classList.remove("hidden");
+        else btn.classList.add("hidden");
+    });
+
+    initializeEducationalProgramStudentsTable(
+        educationalProgramUid,
+        validateStudentRegistrations
+    );
 
     controlsPagination(
         educationalProgramStudentsTable,
@@ -1271,7 +1280,10 @@ function loadEducationalProgramsStudentsModal(educationalProgramUid) {
  * Inicializa la tabla de estudiantes de un curso específico.
  * Configura las columnas y las opciones de ajax para la tabla de estudiantes usando 'Tabulator'.
  */
-function initializeEducationalProgramStudentsTable(educationalProgramUid) {
+function initializeEducationalProgramStudentsTable(
+    educationalProgramUid,
+    validateStudentRegistrations
+) {
     const columns = [
         {
             title: '<div class="checkbox-cell"><input type="checkbox" id="select-all-checkbox"/></div>',
@@ -1305,68 +1317,75 @@ function initializeEducationalProgramStudentsTable(educationalProgramUid) {
         { title: "Nombre", field: "first_name", widthGrow: "2" },
         { title: "Apellidos", field: "last_name", widthGrow: "3" },
         { title: "NIF", field: "nif", widthGrow: "2" },
-        {
-            title: "Aprobado",
-            field: "educational_programs_students.approved",
-            formatter: function (cell, formatterParams, onRendered) {
-                const rowData = cell.getRow().getData();
-
-                const approved =
-                    rowData.educational_program_student_info.acceptance_status;
-
-                if (approved == "PENDING") return "Pendiente de decisión";
-                else if (approved == "ACCEPTED") return "Si";
-                else return "No";
-            },
-            widthGrow: "3",
-            resizable: false,
-        },
-        {
-            title: "Documentos presentados",
-            field: "actions",
-            formatter: function (cell, formatterParams, onRendered) {
-                const rowData = cell.getRow().getData();
-                if (rowData.educational_program_documents.length) {
-                    return `
-                    <button class="dropdown-button" type="button" id="menu-button" aria-expanded="true" aria-haspopup="true">
-                        Descarga
-                        ${heroicon("chevron-down", "outline")}
-                    </button>
-                </div>
-                    `;
-                } else {
-                    return "";
-                }
-            },
-            cellClick: function (e, cell) {
-                e.preventDefault();
-                const rowData = cell.getRow().getData();
-
-                if (rowData.educational_program_documents) {
-                    const btnArray = [];
-                    rowData.educational_program_documents.forEach(
-                        (document) => {
-                            btnArray.push({
-                                text: document.educational_program_document
-                                    .document_name,
-                                action: () => {
-                                    downloadDocument(document.uid);
-                                },
-                            });
-                        }
-                    );
-
-                    setTimeout(() => {
-                        dropdownMenu(cell, btnArray);
-                    }, 1);
-                }
-            },
-            cssClass: "text-center",
-            headerSort: false,
-            widthGrow: 3,
-            resizable: false,
-        },
     ];
+
+    // Si el programa formativo requiere validación de matrículas, se añaden las columnas de aprobación y documentos
+    if (validateStudentRegistrations) {
+        columns.push(
+            {
+                title: "Aprobado",
+                field: "educational_programs_students.approved",
+                formatter: function (cell, formatterParams, onRendered) {
+                    const rowData = cell.getRow().getData();
+
+                    const approved =
+                        rowData.educational_program_student_info
+                            .acceptance_status;
+
+                    if (approved == "PENDING") return "Pendiente de decisión";
+                    else if (approved == "ACCEPTED") return "Si";
+                    else return "No";
+                },
+                widthGrow: "3",
+                resizable: false,
+            },
+            {
+                title: "Documentos presentados",
+                field: "actions",
+                formatter: function (cell, formatterParams, onRendered) {
+                    const rowData = cell.getRow().getData();
+                    if (rowData.educational_program_documents.length) {
+                        return `
+                        <button class="dropdown-button" type="button" id="menu-button" aria-expanded="true" aria-haspopup="true">
+                            Descarga
+                            ${heroicon("chevron-down", "outline")}
+                        </button>
+                    </div>
+                        `;
+                    } else {
+                        return "";
+                    }
+                },
+                cellClick: function (e, cell) {
+                    e.preventDefault();
+                    const rowData = cell.getRow().getData();
+
+                    if (rowData.educational_program_documents) {
+                        const btnArray = [];
+                        rowData.educational_program_documents.forEach(
+                            (document) => {
+                                btnArray.push({
+                                    text: document.educational_program_document
+                                        .document_name,
+                                    action: () => {
+                                        downloadDocument(document.uid);
+                                    },
+                                });
+                            }
+                        );
+
+                        setTimeout(() => {
+                            dropdownMenu(cell, btnArray);
+                        }, 1);
+                    }
+                },
+                cssClass: "text-center",
+                headerSort: false,
+                widthGrow: 3,
+                resizable: false,
+            }
+        );
+    }
 
     educationalProgramStudentsTable = new Tabulator(
         "#educational-program-students-table",

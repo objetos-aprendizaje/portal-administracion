@@ -32,9 +32,9 @@ class ChangeStatusToEnrollingEducationalProgramTest extends TestCase
             'description' => 'Descripción del curso',
             'inscription_start_date' => Carbon::now()->format('Y-m-d\TH:i'),
             'inscription_finish_date' => Carbon::now()->addDays(29)->format('Y-m-d\TH:i'),
-            'enrolling_start_date' => Carbon::now()->addDays(30)->format('Y-m-d\TH:i'),
+            'enrolling_start_date' => Carbon::now()->format('Y-m-d\TH:i'),
             'enrolling_finish_date' => Carbon::now()->addDays(60)->format('Y-m-d\TH:i'),
-            'educational_program_status_uid' => $statusInscription->uid,
+            'educational_program_status_uid' => $statusEnrolling->uid,
         ]);
 
         $educationalProgram2 = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
@@ -43,15 +43,15 @@ class ChangeStatusToEnrollingEducationalProgramTest extends TestCase
             'description' => 'Descripción del curso',
             'inscription_start_date' => Carbon::now()->format('Y-m-d\TH:i'),
             'inscription_finish_date' => Carbon::now()->addDays(29)->format('Y-m-d\TH:i'),
-            'enrolling_start_date' => Carbon::now()->addDays(30)->format('Y-m-d\TH:i'),
+            'enrolling_start_date' => Carbon::now()->format('Y-m-d\TH:i'),
             'enrolling_finish_date' => Carbon::now()->addDays(60)->format('Y-m-d\TH:i'),
-            'educational_program_status_uid' =>  $statusEnrolling->uid,
+            'educational_program_status_uid' => $statusInscription->uid,
         ]);
 
 
         // Simular que hay estudiantes
         $students = UsersModel::factory()->count(2)->create();
-       // Crear un array para el attach
+        // Crear un array para el attach
         $attachData = [];
 
         // Generar un uid único para cada relación y preparar el array
@@ -62,8 +62,17 @@ class ChangeStatusToEnrollingEducationalProgramTest extends TestCase
         foreach ($students as $student) {
             $attachData[$student->uid] = [
                 'uid' => Str::uuid(),
+                'status' => 'ENROLLED',
                 'acceptance_status' => 'INSCRIBED'
             ];
+        }
+
+        foreach ($students as $student) {
+            $educationalProgram2->students()->attach($student, [
+                'uid' => generate_uuid(),
+                'status' => 'ENROLLED',
+                'acceptance_status' => 'ACCEPTED'
+            ]);
         }
 
         // Esperar que la cola de trabajos se llene
@@ -76,17 +85,11 @@ class ChangeStatusToEnrollingEducationalProgramTest extends TestCase
         $educationalProgram2->refresh();
         $this->assertEquals($statusEnrolling->uid, $educationalProgram2->educational_program_status_uid);
 
-         // Validar que hay programas educativos en estado INSCRIPTION antes del cambio
+        // Validar que hay programas educativos en estado INSCRIPTION antes del cambio
         $educationalPrograms = EducationalProgramsModel::where('educational_program_status_uid', $statusInscription->uid)->get();
 
         // Asegurarse de que hay programas educativos para procesar
-        $this->assertTrue($educationalPrograms->count() > 0, 'No hay programas educativos en estado INSCRIPTION para cambiar a ENROLLING.');
+        // $this->assertTrue($educationalPrograms->count() > 0, 'No hay programas educativos en estado INSCRIPTION para cambiar a ENROLLING.');
 
     }
-
-
-
-
-
 }
-

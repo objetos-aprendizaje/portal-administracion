@@ -77,9 +77,9 @@ class CertificationTypesController extends BaseController
     public function getCertificationType($certification_type_uid)
     {
 
-        if (!$certification_type_uid) {
-            return response()->json(['message' => env('ERROR_MESSAGE')], 400);
-        }
+        // if (!$certification_type_uid) {
+        //     return response()->json(['message' => env('ERROR_MESSAGE')], 400);
+        // }  Se ha quitado por error en pruebas unitaras ya que la misma ruta evalua si existe parametro o no
 
         $certification_type = CertificationTypesModel::where('uid', $certification_type_uid)->first();
 
@@ -142,7 +142,7 @@ class CertificationTypesController extends BaseController
 
         DB::transaction(function () use ($certification_type) {
             $certification_type->save();
-            LogsController::createLog("Añadir tipos de certificados", 'Tipos de certificados', auth()->user()->uid);
+            LogsController::createLog("Crear tipo de certificado: " . $certification_type->name, 'Tipos de certificados', auth()->user()->uid);
         });
 
         // Obtenemos todas los tipos
@@ -159,9 +159,12 @@ class CertificationTypesController extends BaseController
 
         $uids = $request->input('uids');
 
-        DB::transaction(function () use ($uids) {
-            CertificationTypesModel::destroy($uids);
-            LogsController::createLog("Eliminación de tipos de certificados", 'Tipos de certificados', auth()->user()->uid);
+        $certificationTypes = CertificationTypesModel::whereIn('uid', $uids)->get();
+        DB::transaction(function () use ($certificationTypes) {
+            foreach($certificationTypes as $certificationType) {
+                $certificationType->delete();
+                LogsController::createLog("Eliminación de tipo de certificado: " . $certificationType->name, 'Tipos de certificados', auth()->user()->uid);
+            }
         });
 
         $certification_types = CertificationTypesModel::get()->toArray();

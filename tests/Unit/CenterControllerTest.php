@@ -6,6 +6,7 @@ use App\User;
 use Tests\TestCase;
 use App\Models\UsersModel;
 use App\Models\CentersModel;
+use App\Models\CoursesModel;
 use App\Models\UserRolesModel;
 use App\Models\TooltipTextsModel;
 use App\Models\GeneralOptionsModel;
@@ -21,7 +22,8 @@ class CenterControllerTest extends TestCase
     /**
      * @testdox Inicialización de inicio de sesión
      */
-    public function setUp(): void {
+    public function setUp(): void
+    {
         parent::setUp();
         $this->withoutMiddleware();
         // Asegúrate de que la tabla 'qvkei_settings' existe
@@ -29,12 +31,12 @@ class CenterControllerTest extends TestCase
     }
     /** @group Center Controller */
     /**
-    *  @test  Obtener Index View Centros */
+     *  @test  Obtener Index View Centros */
     public function testIndexRouteReturnsViewCenter()
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
         // Autenticar al usuario
@@ -76,7 +78,7 @@ class CenterControllerTest extends TestCase
 
 
     /**
-    *  @test  Valida Crear Centros */
+     *  @test  Valida Crear Centros */
     public function testSaveCenterSuccess()
     {
         // Simular un usuario autenticado
@@ -93,13 +95,44 @@ class CenterControllerTest extends TestCase
 
         // Verificar la respuesta
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Centro añadido correctamente']);
+            ->assertJson(['message' => 'Centro añadido correctamente']);
 
         // Verificar que el centro se haya guardado en la base de datos
         $this->assertDatabaseHas('centers', [
             'name' => 'Test Center',
         ]);
     }
+
+    /**
+     *  @test  Valida Crear Centros */
+    public function testUpdateCenterSuccess()
+    {
+        // Simular un usuario autenticado
+        $user = UsersModel::factory()->create();
+        $this->actingAs($user);
+
+        $center = CentersModel::factory()->create()->first();
+
+        // Datos de prueba válidos
+        $data = [
+            'name' => 'Test Center',
+            'center_uid' => $center->uid,
+        ];
+
+        // Enviar la solicitud POST
+        $response = $this->postJson('/administration/centers/save_center', $data);
+
+        // Verificar la respuesta
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'Centro actualizado correctamente']);
+
+        // Verificar que el centro se haya guardado en la base de datos
+        $this->assertDatabaseHas('centers', [
+            'name' => 'Test Center',
+        ]);
+    }
+
+
 
     /** @test Elimina Centro*/
     public function testDeleteCentersSuccess()
@@ -124,23 +157,50 @@ class CenterControllerTest extends TestCase
 
         // Verificar la respuesta
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Centros eliminados correctamente']);
+            ->assertJson(['message' => 'Centros eliminados correctamente']);
 
         // Verificar que los centros ya no existen en la base de datos
         $this->assertDatabaseMissing('centers', ['uid' => $center1->uid]);
         $this->assertDatabaseMissing('centers', ['uid' => $center2->uid]);
     }
 
+    /** @test Elimina Centro*/
+    public function testDeleteCentersWithCourseInclude()
+    {
+        // Simular un usuario autenticado
+        $user = UsersModel::factory()->create();
+        $this->actingAs($user);
+
+        // Crear algunos centros de prueba
+        $center1 = CentersModel::factory()->create()->first();
+
+        CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
+            'center_uid'=> $center1->uid
+        ]);       
+        // Asegúrate de que los centros existen antes de la eliminación
+        $this->assertDatabaseHas('centers', ['uid' => $center1->uid]);
+       
+
+        // Enviar la solicitud DELETE para eliminar los centros
+        $response = $this->deleteJson('/administration/centers/delete_centers', [
+            'uids' => [$center1->uid]
+        ]);
+
+        // Verificar la respuesta
+        $response->assertStatus(406)
+            ->assertJson(['message' => 'No se pueden eliminar los centros porque hay cursos vinculados a ellos']);
+    }
+
     /**
      * test Obtener Centro por uid
-    */
+     */
     public function testGetCenterByUid()
     {
         // Crear un centro de prueba
         $center = CentersModel::factory()->create()->first();
 
         // Hacer una petición GET a la ruta con el uid del centro
-        $response = $this->get('/administration/centers/get_center/'.$center->uid);
+        $response = $this->get('/administration/centers/get_center/' . $center->uid);
 
         // Verifica que la respuesta sea exitosa
         $response->assertStatus(200);
@@ -167,7 +227,7 @@ class CenterControllerTest extends TestCase
         $this->assertCount(1, $response->json('data'));
     }
 
-/** @test  Ordenar centros*/
+    /** @test  Ordenar centros*/
     public function testSortCenters()
     {
 
@@ -178,7 +238,6 @@ class CenterControllerTest extends TestCase
         $response = $this->get('/administration/lms_systems/get_lms_systems?sort[0][field]=name&sort[0][dir]=asc&size=10');
 
         $response->assertStatus(200);
-
     }
 
     /** @test */
@@ -206,7 +265,6 @@ class CenterControllerTest extends TestCase
         $this->assertEquals('Center A', $data[0]['name']);
         $this->assertEquals('Center B', $data[1]['name']);
         $this->assertEquals('Center C', $data[2]['name']);
-
     }
 
     public function testSortsCentersDesc()
@@ -239,7 +297,7 @@ class CenterControllerTest extends TestCase
     {
         // Envía una solicitud POST sin el campo 'name'
         $response = $this->json('POST', '/administration/centers/save_center', [
-             'name' => '',
+            'name' => '',
         ]);
 
         // Verifica que la respuesta tenga un estado 422 (Unprocessable Entity)
@@ -253,6 +311,4 @@ class CenterControllerTest extends TestCase
             ],
         ]);
     }
-
-
 }

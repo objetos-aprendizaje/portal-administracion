@@ -13,7 +13,7 @@ class CategoriesSeeder extends Seeder
      */
     public function run(): void
     {
-        $demoImages = collect(File::files(base_path('public/images/test-images')))
+        $demoImages = collect(File::files(base_path('public/test-images')))
             ->map(function ($file) {
                 return str_replace(base_path('public/'), '', $file->getPathname());
             })->toArray();

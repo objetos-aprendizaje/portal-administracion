@@ -354,6 +354,90 @@ class CatalogingCourseTest extends TestCase
     }
 
     /**
+    * @test Guarda Tipo de Certificación
+    */
+    public function testUpdateCertificationType()
+    {
+        $admin = UsersModel::factory()->create();
+        $roles_bd = UserRolesModel::get()->pluck('uid');
+        $roles_to_sync = [];
+        foreach ($roles_bd as $rol_uid) {
+            $roles_to_sync[] = [
+                'uid' => generate_uuid(),
+                'user_uid' => $admin->uid,
+                'user_role_uid' => $rol_uid
+            ];
+        }
+
+        $admin->roles()->sync($roles_to_sync);
+        $this->actingAs($admin);
+
+        if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
+
+            //Crea una categoria
+            $category = CategoriesModel::factory()->create()->first();
+            $this->assertDatabaseHas('categories', ['uid' => $category->uid]);
+
+            $cert = CertificationTypesModel::factory()->create(
+                [
+                    'category_uid'=> $category->uid
+                ]
+            );
+
+            // request POST a la ruta con datos válidos
+            $response = $this->postJson('/cataloging/certification_types/save_certification_type', [
+                'certification_type_uid' => $cert->uid,
+                'name' => 'New Certification Type',
+                'description' => 'Description',
+                'category_uid' => $category->uid
+            ]);
+
+            // Verificar que la respuesta sea correcta
+            $response->assertStatus(200);
+                   
+        }
+    }
+
+    /*  Group certificación*/
+    /**
+    * @test Guarda Tipo de Certificación
+    */
+    public function testSaveCertificationTypeWithInValidData()
+    {
+        $admin = UsersModel::factory()->create();
+        $roles_bd = UserRolesModel::get()->pluck('uid');
+        $roles_to_sync = [];
+        foreach ($roles_bd as $rol_uid) {
+            $roles_to_sync[] = [
+                'uid' => generate_uuid(),
+                'user_uid' => $admin->uid,
+                'user_role_uid' => $rol_uid
+            ];
+        }
+
+        $admin->roles()->sync($roles_to_sync);
+        $this->actingAs($admin);
+
+        if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
+
+            //Crea una categoria
+            $category = CategoriesModel::factory()->create()->first();
+            $this->assertDatabaseHas('categories', ['uid' => $category->uid]);
+
+            // request POST a la ruta con datos válidos
+            $response = $this->postJson('/cataloging/certification_types/save_certification_type', [               
+                
+                'description' => 'Description',
+                'category_uid' => $category->uid
+            ]);
+
+            // Verificar que la respuesta sea correcta
+            $response->assertStatus(422);
+                  
+        }
+    }
+
+    /**
     * @test Elimina Tipo de Certificación
     */
     public function testDeleteCertificationTypes()

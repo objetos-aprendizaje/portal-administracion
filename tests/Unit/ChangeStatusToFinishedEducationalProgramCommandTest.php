@@ -23,16 +23,17 @@ class ChangeStatusToFinishedEducationalProgramCommandTest extends TestCase
     public function testChangesEducationalProgramStatusToFinished()
     {
 
-        $statusDevelopment =  EducationalProgramStatusesModel::where('code','FINISHED')->first();
+        $statusDevelopment =  EducationalProgramStatusesModel::where('code','DEVELOPMENT')->first();
 
         // Crear un programa educativo en estado 'DEVELOPMENT' que ha finalizado
         $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
-            'realization_finish_date' => Carbon::now()->addDays(90)->format('Y-m-d\TH:i'),
+            'realization_finish_date' => Carbon::now()->format('Y-m-d\TH:i'),
             'educational_program_status_uid' => $statusDevelopment->uid,
         ])->first();
 
         // Asociar estudiantes al programa educativo
         $students = UsersModel::factory()->count(3)->create();
+
         foreach ($students as $student) {
             $educationalProgram->students()->attach($student, [
                 'status' => 'ENROLLED',

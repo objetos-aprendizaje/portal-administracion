@@ -68,9 +68,9 @@ class GeneralAdministrationController extends BaseController
 
         $updateData = $request->all();
 
-        if(!$updateData['smtp_password']) {
-            unset($updateData['smtp_password']);
-        }
+        // if(!$updateData['smtp_password']) {
+        //     unset($updateData['smtp_password']);
+        // }  
 
         DB::transaction(function () use ($updateData) {
             foreach ($updateData as $key => $value) {
@@ -295,8 +295,10 @@ class GeneralAdministrationController extends BaseController
 
     public function saveOpenai(Request $request) {
         $openAiKey = $request->input('openai_key');
+        $enabledRecommendationModule = $request->input('enabled_recommendation_module');
 
         GeneralOptionsModel::where('option_name', 'openai_key')->update(['option_value' => $openAiKey]);
+        GeneralOptionsModel::where('option_name', 'enabled_recommendation_module')->update(['option_value' => $enabledRecommendationModule]);
 
         return response()->json(['message' => 'Clave de OpenAI guardada correctamente']);
     }

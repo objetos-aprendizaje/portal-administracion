@@ -117,7 +117,9 @@ class CourseTypesController extends BaseController
 
         $validator = Validator::make($request->all(), [
             'name' => [
-                'required', 'min:3', 'max:255',
+                'required',
+                'min:3',
+                'max:255',
                 Rule::unique('course_types', 'name')->ignore($request->get('course_type_uid'), 'uid'),
             ],
             'description' => 'nullable',
@@ -148,7 +150,8 @@ class CourseTypesController extends BaseController
 
         DB::transaction(function () use ($course_type) {
             $course_type->save();
-            LogsController::createLog('Guardar tipo de curso', 'Tipos de cursos', auth()->user()->uid);
+
+            LogsController::createLog('Guardar tipo de curso: ' . $course_type->name, 'Tipos de cursos', auth()->user()->uid);
         });
 
         // Obtenemos todas los tipos
@@ -171,9 +174,12 @@ class CourseTypesController extends BaseController
             throw new OperationFailedException("No se pueden eliminar los tipos de curso porque están asociados a cursos", 406);
         }
 
-        DB::transaction(function () use ($uids) {
-            CourseTypesModel::destroy($uids);
-            LogsController::createLog('Eliminar tipo de curso', 'Tipos de cursos', auth()->user()->uid);
+        $courseTypes = CourseTypesModel::whereIn('uid', $uids)->get();
+        DB::transaction(function () use ($courseTypes) {
+            foreach ($courseTypes as $courseType) {
+                $courseType->delete();
+                LogsController::createLog('Eliminar tipo de curso: ' . $courseType->name, 'Tipos de cursos', auth()->user()->uid);
+            }
         });
 
         $course_types = CourseTypesModel::get()->toArray();

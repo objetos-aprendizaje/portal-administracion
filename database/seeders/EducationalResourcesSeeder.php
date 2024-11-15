@@ -48,7 +48,7 @@ class EducationalResourcesSeeder extends Seeder
             $query->where('code', 'TEACHER');
         })->get();
 
-        $this->demoImages = collect(File::files(base_path('public/images/test-images')))
+        $this->demoImages = collect(File::files(base_path('public/test-images')))
             ->map(function ($file) {
                 return str_replace(base_path('public/'), '', $file->getPathname());
             })->toArray();
@@ -108,6 +108,7 @@ class EducationalResourcesSeeder extends Seeder
             EducationalResourcesModel::factory()->create($data);
 
             $this->addAccesses($data['uid']);
+            $this->addVisits($data['uid']);
         }
     }
 
@@ -121,19 +122,26 @@ class EducationalResourcesSeeder extends Seeder
     }
 
     private function addAccesses($uid){
-
-        $date = Carbon::now();
-
         foreach ($this->students as $index => $student) {
-
-            $date = ($index === 0) ? $date : $date->copy()->subDays(20 * $index);
-
-            EducationalResourcesAccesesModel::factory()->create([
-                'educational_resource_uid' => $uid,
-                'user_uid' => $student['uid'],
-                'date' => $date,
-            ]);
-
+            $accesses = rand(1, 100);
+            for ($i = 0; $i < $accesses; $i++) {
+                EducationalResourcesAccesesModel::factory()->create([
+                    'educational_resource_uid' => $uid,
+                    'user_uid' => $student['uid'],
+                    'date' => $this->faker->dateTimeBetween("-4 months", "now"),
+                ]);
+            }
+        }
+    }
+    private function addVisits($uid){
+        foreach ($this->students as $index => $student) {
+            $accesses = rand(1, 100);
+            for ($i = 0; $i < $accesses; $i++) {
+                EducationalResourcesAccesesModel::factory()->create([
+                    'educational_resource_uid' => $uid,
+                    'date' => $this->faker->dateTimeBetween("-4 months", "now"),
+                ]);
+            }
         }
     }
 }

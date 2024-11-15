@@ -33,8 +33,7 @@ class EducationalResourcesModel extends Model
         'course_uid',
         'license_type',
         'resource_way',
-        'resource_url',
-        'embeddings'
+        'resource_url'
     ];
 
     public function status()
@@ -94,7 +93,8 @@ class EducationalResourcesModel extends Model
         return $this->belongsTo(UsersModel::class, 'creator_user_uid', 'uid');
     }
 
-    public function contact_emails() {
+    public function contact_emails()
+    {
         return $this->hasMany(
             EducationalResourcesEmailContactsModel::class,
             'educational_resource_uid',
@@ -118,5 +118,15 @@ class EducationalResourcesModel extends Model
     public function accesses()
     {
         return $this->hasMany(EducationalResourcesAccesesModel::class, 'educational_resource_uid', 'uid');
+    }
+
+    public function visits()
+    {
+        return $this->hasMany(EducationalResourcesAccesesModel::class, 'educational_resource_uid', 'uid');
+    }
+
+    public function embeddings()
+    {
+        return $this->hasOne(EducationalResourcesEmbeddingsModel::class, 'educational_resource_uid', 'uid');
     }
 }

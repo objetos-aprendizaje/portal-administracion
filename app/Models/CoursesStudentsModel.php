@@ -13,13 +13,15 @@ class CoursesStudentsModel extends Model
 
     protected $keyType = 'string';
 
-    protected $fillable = ['uid','course_uid','user_uid', 'calification_type','calification','credential','status','acceptance_status'];
+    protected $fillable = ['uid', 'course_uid', 'user_uid', 'credential', 'status', 'acceptance_status', 'emissions_block_id', 'emissions_block_uuid'];
 
-    public function course() {
+    public function course()
+    {
         return $this->belongsTo(CoursesModel::class, 'course_uid', 'uid');
     }
 
-    public function user() {
+    public function user()
+    {
         return $this->belongsTo(UsersModel::class, 'user_uid', 'uid');
     }
 }

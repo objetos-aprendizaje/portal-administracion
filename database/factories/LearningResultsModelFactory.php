@@ -19,7 +19,7 @@ class LearningResultsModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => Str::uuid(),
+            'uid' => generate_uuid(),
             'name' => $this->faker->unique()->sentence(3),
             'description' => $this->faker->paragraph(2),
             'origin_code' => $this->faker->url(),

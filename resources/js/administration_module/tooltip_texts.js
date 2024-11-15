@@ -102,6 +102,7 @@ function initializeTooltipTextsTable() {
             width: 60,
             headerSort: false,
         },
+        { title: "ID del Formulario", field: "form_id"},
         { title: "ID del Campo", field: "input_id"},
         { title: "Descripción", field: "description"},
         {
@@ -173,6 +174,7 @@ async function loadTooltipTextsModal(tooltipTextUid) {
 function fillFormTooltipTextModal(tooltiptext) {
     document.getElementById("tooltip_text_uid").value = tooltiptext.uid;
     document.getElementById("input_id").value = tooltiptext.input_id;
+    document.getElementById("form_id").value = tooltiptext.form_id;
     document.getElementById("description").value = tooltiptext.description;
 }
 

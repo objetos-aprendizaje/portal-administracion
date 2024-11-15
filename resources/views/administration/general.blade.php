@@ -1278,7 +1278,7 @@
     </div>
 
     <div class="poa-container mb-8">
-        <h2>Configuración de API de OpenAI</h2>
+        <h2>Configuración del módulo de recomendación</h2>
 
         <p class="mt-2 mb-4">
             Se usará la API de OpenAI para la generación de etiquetas.
@@ -1292,6 +1292,21 @@
         <form id="openai-form">
             @csrf
             <div class="poa-form">
+                <div class="field mt-2">
+                    <div class="label-container label-center">
+                        <label for="enabled_recommendation_module">Activar módulo de recomendación</label>
+                    </div>
+                    <div class="content-container mt-1">
+                        <div class="checkbox">
+                            <label for="enabled_recommendation_module" class="inline-flex relative items-center cursor-pointer">
+                                <input {{ $general_options['enabled_recommendation_module'] ? 'checked' : '' }} type="checkbox" id="enabled_recommendation_module" name="enabled_recommendation_module" class="sr-only peer">
+                                <div class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="field">
                     <div class="label-container label-center">
                         <label for="openai_key">Clave API <span class="text-danger">*</span></label>

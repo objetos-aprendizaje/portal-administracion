@@ -86,7 +86,6 @@ class EmailNotificationsService
                     "body" => $notification['body'],
                 ];
 
-                //dd($user['email'], $notification['subject'], $parameters, 'emails.notification');
                 dispatch(new SendEmailJob($user['email'], $notification['subject'], $parameters, 'emails.notification'));
             } catch (\Exception $e) {
                 Log::error('Error enviando email a ' . $user['email'] . ' ' . $e->getMessage());

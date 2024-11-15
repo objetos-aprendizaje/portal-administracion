@@ -23,4 +23,13 @@ class LearningResultsModel extends Model
         'uid' => 'string',
     ];
 
+    public function competence()
+    {
+        return $this->belongsTo(CompetencesModel::class, 'competence_uid', 'uid');
+    }
+
+    public function certidigitalAssesments()
+    {
+        return $this->hasMany(CertidigitalAssesmentsModel::class, 'learning_result_uid', 'uid');
+    }
 }

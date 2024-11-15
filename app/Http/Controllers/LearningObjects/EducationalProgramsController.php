@@ -30,6 +30,7 @@ use League\Csv\Reader;
 use App\Models\EducationalProgramEmailContactsModel;
 use App\Models\EducationalProgramsPaymentTermsModel;
 use App\Rules\NifNie;
+use App\Services\KafkaService;
 use Illuminate\Support\Facades\Auth;
 
 class EducationalProgramsController extends BaseController
@@ -100,6 +101,17 @@ class EducationalProgramsController extends BaseController
         $query->select("educational_programs.*", "educational_program_type.name as educational_program_type_name", "calls.name as call_name", 'educational_program_statuses.name as status_name', 'educational_program_statuses.code as status_code');
         $data = $query->paginate($size);
 
+        $dates = [
+            'inscription_start_date',
+            'inscription_finish_date',
+            'realization_start_date',
+            'realization_finish_date',
+            'enrolling_start_date',
+            'enrolling_finish_date'
+        ];
+
+        adaptDatesModel($data, $dates, true);
+
         return response()->json($data, 200);
     }
 
@@ -164,6 +176,7 @@ class EducationalProgramsController extends BaseController
      */
     public function saveEducationalProgram(Request $request)
     {
+        adaptRequestDatesToUTC($request);
 
         $educational_program_uid = $request->input("educational_program_uid");
 
@@ -194,8 +207,6 @@ class EducationalProgramsController extends BaseController
         $action = $request->input('action');
 
         $newStatus = $this->getStatusEducationalProgram($action, $educational_program);
-
-
 
         DB::transaction(function () use ($request, &$isNew, $educational_program, $newStatus) {
 
@@ -236,10 +247,43 @@ class EducationalProgramsController extends BaseController
                 $educational_program->paymentTerms()->delete();
             }
 
-            $this->logAction($isNew);
+            if ($newStatus && $newStatus->code === 'ACCEPTED_PUBLICATION') {
+                $courses = $request->input('courses');
+                $courses = CoursesModel::whereIn('uid', $courses)
+                    ->has('lmsSystem')
+                    ->with('lmsSystem')
+                    ->get();
+
+                $this->sendNotificationCoursesAcceptedPublicationToKafka($courses);
+            }
+
+            $this->logAction($isNew, $educational_program->name);
         });
 
         return response()->json(['message' => $isNew ? 'Programa formativo añadido correctamente' : 'Programa formativo actualizado correctamente']);
+    }
+
+    public function sendNotificationCoursesAcceptedPublicationToKafka($courses)
+    {
+        $kafkaService = new KafkaService();
+
+        $courseToSend = [];
+
+        foreach ($courses as $course) {
+            $courseToSend[] = [
+                'topic' => $course->lmsSystem->identifier,
+                'key' => 'course_accepted_publication',
+                'value' => [
+                    'course_uid' => $course->uid,
+                    'title' => $course->title,
+                    "description" => $course->description,
+                    'realization_start_date' => $course->realization_start_date,
+                    'realization_finish_date' => $course->realization_start_date,
+                ]
+            ];
+        }
+
+        $kafkaService->sendMessages($courseToSend);
     }
 
     private function updatePaymentTerms($request, $educationalProgramBd)
@@ -530,9 +574,10 @@ class EducationalProgramsController extends BaseController
         ]);
     }
 
-    private function logAction($isNew)
+    private function logAction($isNew, $educationalProgramName)
     {
-        $logMessage = $isNew ? 'Programa formativo añadido' : 'Programa formativo actualizado';
+        $logMessage = $isNew ? 'Programa formativo añadido: ' : 'Programa formativo actualizado: ';
+        $logMessage .= $educationalProgramName;
         LogsController::createLog($logMessage, 'Programas formativos', auth()->user()->uid);
     }
 
@@ -745,9 +790,12 @@ class EducationalProgramsController extends BaseController
     {
         $uids = $request->input('uids');
 
-        DB::transaction(function () use ($uids) {
-            EducationalProgramsModel::destroy($uids);
-            LogsController::createLog("Eliminación de programas formativos", 'Programas formativos', auth()->user()->uid);
+        $educationalPrograms = EducationalProgramsModel::whereIn('uid', $uids)->get();
+        DB::transaction(function () use ($educationalPrograms) {
+            foreach ($educationalPrograms as $educationalProgram) {
+                $educationalProgram->delete();
+                LogsController::createLog("Eliminación de programa formativo: " . $educationalProgram->name, 'Programas formativos', auth()->user()->uid);
+            }
         });
 
         return response()->json(['message' => 'Programas formativos eliminados correctamente']);
@@ -759,7 +807,6 @@ class EducationalProgramsController extends BaseController
 
     public function getEducationalProgram($educational_program_uid)
     {
-
         if (!$educational_program_uid) {
             return response()->json(['message' => env('ERROR_MESSAGE')], 400);
         }
@@ -769,6 +816,17 @@ class EducationalProgramsController extends BaseController
         if (!$educational_program) {
             return response()->json(['message' => 'El programa formativo no existe'], 406);
         }
+
+        $dates = [
+            'inscription_start_date',
+            'inscription_finish_date',
+            'realization_start_date',
+            'realization_finish_date',
+            'enrolling_start_date',
+            'enrolling_finish_date'
+        ];
+
+        adaptDatesModel($educational_program, $dates, false);
 
         return response()->json($educational_program, 200);
     }
@@ -846,6 +904,10 @@ class EducationalProgramsController extends BaseController
         $educational_program_bd->status_reason = $changeEducationalProgramStatus['reason'] ?? null;
 
         $educational_program_bd->save();
+
+        if($changeEducationalProgramStatus['status'] == 'ACCEPTED_PUBLICATION') {
+            $this->sendNotificationCoursesAcceptedPublicationToKafka($educational_program_bd->courses);
+        }
     }
 
     public function getEducationalProgramStudents(Request $request, $educational_program_uid)
@@ -869,7 +931,7 @@ class EducationalProgramsController extends BaseController
 
         if ($search) {
             $query->where(function ($subQuery) use ($search) {
-                 $subQuery->whereRaw("concat(first_name, ' ', last_name) ILIKE ?", ["%$search%"])
+                $subQuery->whereRaw("concat(first_name, ' ', last_name) ILIKE ?", ["%$search%"])
                     ->orWhere('nif', 'ILIKE', "%$search%");
             });
         }

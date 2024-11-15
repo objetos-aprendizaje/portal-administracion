@@ -85,8 +85,8 @@
                         <label for="filter_inscription_date">Fecha Inscripción</label>
                     </div>
                     <div class="content-container mt-1">
-                        <input type="datetime-local" placeholder="Selecciona un rango de fechas" class="poa-input" id="filter_inscription_date"
-                            name="filter_inscription_date" />
+                        <input type="datetime-local" placeholder="Selecciona un rango de fechas" class="poa-input"
+                            id="filter_inscription_date" name="filter_inscription_date" />
                     </div>
                 </div>
 
@@ -95,8 +95,8 @@
                         <label for="filter_realization_date">Fecha Realización</label>
                     </div>
                     <div class="content-container mt-1">
-                        <input type="datetime-local" placeholder="Selecciona un rango de fechas" class="poa-input" id="filter_realization_date"
-                            name="filter_realization_date" />
+                        <input type="datetime-local" placeholder="Selecciona un rango de fechas" class="poa-input"
+                            id="filter_realization_date" name="filter_realization_date" />
                     </div>
                 </div>
 
@@ -179,8 +179,8 @@
                     </div>
 
                     <div class="content-container mt-1">
-                        <select id="filter_coordinators_teachers" class="mb-4" name="teachers_coordinators[]" multiple
-                            placeholder="Selecciona un docente coordinador..." autocomplete="off">
+                        <select id="filter_coordinators_teachers" class="mb-4" name="teachers_coordinators[]"
+                            multiple placeholder="Selecciona un docente coordinador..." autocomplete="off">
                             @foreach ($teachers as $teacher)
                                 <option value="{{ $teacher['uid'] }}">
                                     {{ $teacher['first_name'] }} {{ $teacher['last_name'] }}</option>
@@ -195,7 +195,8 @@
                     </div>
 
                     <div class="content-container mt-1">
-                        <select id="filter_no_coordinators_teachers" class="mb-4" name="filter_no_coordinators_teachers[]" multiple
+                        <select id="filter_no_coordinators_teachers" class="mb-4"
+                            name="filter_no_coordinators_teachers[]" multiple
                             placeholder="Selecciona un docente no coordinador..." autocomplete="off">
                             @foreach ($teachers as $teacher)
                                 <option value="{{ $teacher['uid'] }}">
@@ -271,6 +272,19 @@
                     </div>
                 </div>
 
+                <div>
+                    <div class="label-container label-center">
+                        <label for="filter_embeddings">Embeddings</label>
+                    </div>
+
+                    <div class="content-container mt-1">
+                        <select id="filter_embeddings" name="filter_embeddings" class="poa-select w-full">
+                            <option value="" selected></option>
+                            <option value="1">Sí</option>
+                            <option value="0">No</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
             <div class="flex justify-center mt-8">

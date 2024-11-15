@@ -16,6 +16,7 @@ use App\Models\GeneralOptionsModel;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
+use App\Models\EducationalResourcesModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use App\Http\Controllers\Administration\LicensesController;
@@ -27,12 +28,13 @@ class LicensesControllerTest extends TestCase
     /**
      * @testdox Inicialización de inicio de sesión
      */
-        public function setUp(): void {
-            parent::setUp();
-            $this->withoutMiddleware();
-            // Asegúrate de que la tabla 'qvkei_settings' existe
-            $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
-        }
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutMiddleware();
+        // Asegúrate de que la tabla 'qvkei_settings' existe
+        $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
+    }
     /* @Group Licencia*/
 
 
@@ -40,7 +42,7 @@ class LicensesControllerTest extends TestCase
     public function testIndexRouteReturnsViewLicenses()
     {
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
         // Autenticar al usuario
@@ -50,7 +52,7 @@ class LicensesControllerTest extends TestCase
         View::share('roles', $roles);
 
         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
-    View::share('general_options', $general_options);
+        View::share('general_options', $general_options);
 
         // Simula datos de TooltipTextsModel
         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
@@ -79,7 +81,7 @@ class LicensesControllerTest extends TestCase
         $response->assertViewHas('submenuselected', 'licenses');
     }
     /**
-    * @test Crear Licencias  */
+     * @test Crear Licencias  */
     public function testCreateLicense()
     {
         $user = UsersModel::factory()->create();
@@ -101,6 +103,27 @@ class LicensesControllerTest extends TestCase
             'name' => $license->name
         ]);
     }
+
+    /**
+     * @test Update Licencias  */
+    public function testUpdateLicense()
+    {
+        $user = UsersModel::factory()->create();
+        $this->actingAs($user);
+        $license = LicenseTypesModel::factory()->create()->first();
+
+        $data = [
+            'license_uid' => $license->uid,
+            'name' => $license->name,
+        ];
+
+        $response = $this->postJson('/administration/licenses/save_license', $data);
+
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'Licencia actualizada correctamente']);
+    }
+
+
     /** @test Error licencia invalida*/
     public function testSaveLicenseWithInvalidData()
     {
@@ -113,8 +136,6 @@ class LicensesControllerTest extends TestCase
         $response->assertStatus(422)
             ->assertJson(['message' => 'Algunos campos son incorrectos'])
             ->assertJsonStructure(['errors' => ['name']]);
-
-
     }
     /** @test  Actualizar licencia*/
     public function testSaveLicenseUpdatesExistingLicense()
@@ -164,8 +185,34 @@ class LicensesControllerTest extends TestCase
         ]);
     }
 
-    
-     /** 
+    /** @test Elimina Licencia Error 406*/
+    public function testDeleteLicensesWith406()
+    {
+        $user = UsersModel::factory()->create();
+        $this->actingAs($user);
+        $license = LicenseTypesModel::factory()->create();
+
+        EducationalResourcesModel::factory()->withStatus()->withEducationalResourceType()->create(
+            [
+                'creator_user_uid' => $user->uid,
+                'license_type_uid' => $license->uid,
+            ]
+        );
+
+        $data = [
+            'uids' => [$license->uid],
+        ];
+        // Realiza la solicitud DELETE para eliminar la licencia
+        $response = $this->deleteJson('/administration/licenses/delete_licenses', $data);
+
+        // Verifica que la respuesta sea correcta
+        $response->assertStatus(406)
+            ->assertJson(['message' => 'No se pueden eliminar las licencias porque hay recursos educativos vinculados a ellos']);
+       
+    }
+
+
+    /** 
      * @test 
      * Este test verifica que se puedan obtener las licencias con paginación, 
      * búsqueda y ordenamiento aplicados correctamente.
@@ -218,8 +265,8 @@ class LicensesControllerTest extends TestCase
     public function testGetLicenseByUid()
     {
         // Crear una licencia simulada en la base de datos
-        $license = LicenseTypesModel::factory()->create([            
-            'name' => 'Test License',            
+        $license = LicenseTypesModel::factory()->create([
+            'name' => 'Test License',
         ])->first();
 
         // Simular la solicitud GET con el `license_uid`
@@ -231,7 +278,7 @@ class LicensesControllerTest extends TestCase
         // Verificar que los datos devueltos sean correctos
         $response->assertJson([
             'uid' => $license->uid,
-            'name' => 'Test License',           
+            'name' => 'Test License',
         ]);
     }
 }

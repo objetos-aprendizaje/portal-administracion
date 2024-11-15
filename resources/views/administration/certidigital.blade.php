@@ -80,6 +80,16 @@
                     </div>
                 </div>
 
+                <div class="field">
+                    <div class="label-container label-center">
+                        <label for="certidigital_organization_oid">ID de organización</label>
+                    </div>
+                    <div class="content-container little">
+                        <input value="{{ $general_options['certidigital_organization_oid'] }}" placeholder="" type="text"
+                            id="certidigital_organization_oid" name="certidigital_organization_oid" class="poa-input" />
+                    </div>
+                </div>
+
                 <button type="submit" class="btn btn-primary">Guardar
                     {{ e_heroicon('paper-airplane', 'outline') }}</button>
 

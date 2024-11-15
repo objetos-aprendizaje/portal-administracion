@@ -31,17 +31,9 @@ class ChangestatustoinscriptionTest extends TestCase
 
     public function testGetAcceptedPublicationCourses()
     {
-        // Crear un estado de curso 'ACCEPTED_PUBLICATION'
-        $acceptedStatus = CourseStatusesModel::factory()->create([
-            'uid' => generate_uuid(),
-            'code' => 'ACCEPTED_PUBLICATION'
-        ])->latest()->first();
+        // Buscar un estado de curso 'ACCEPTED_PUBLICATION'       
 
-        // Crear un estado de curso 'INSCRIPTION'
-         CourseStatusesModel::factory()->create([
-            'uid' => generate_uuid(),
-            'code' => 'INSCRIPTION'
-        ])->latest()->first();
+        $acceptedStatus = CourseStatusesModel::where('code','ACCEPTED_PUBLICATION')->first();     
 
         // Crear cursos con diferentes fechas y estados
          CoursesModel::factory()->withCourseType()->create([

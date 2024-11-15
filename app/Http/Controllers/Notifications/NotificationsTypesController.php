@@ -94,7 +94,9 @@ class NotificationsTypesController extends BaseController
 
         $validator = Validator::make($request->all(), [
             'name' => [
-                'required', 'min:3', 'max:255',
+                'required',
+                'min:3',
+                'max:255',
                 Rule::unique('notifications_types', 'name')->ignore($request->get('notification_type_uid'), 'uid'),
             ],
             'notification_type_uid' => 'nullable|exists:notifications_types,uid',
@@ -127,8 +129,9 @@ class NotificationsTypesController extends BaseController
         // Obtenemos todas los tipos
         $notifications_types = NotificationsTypesModel::get()->toArray();
 
-        $messageLog = $isNew ? 'Tipo de notificación añadida' : 'Tipo de notificación actualizada';
-        LogsController::createLog($messageLog, 'Tipos de notificación', auth()->user()->uid);
+        $messageLog = $isNew ? 'Creación tipo de notificación: ' : 'Tipo de notificación actualizada: ';
+        $messageLog .= $notification_type->name;
+        LogsController::createLog($messageLog, 'Tipos de notificaciones', auth()->user()->uid);
 
         return response()->json([
             'message' => ($isNew) ? 'Tipo de notificación añadida correctamente' : 'Tipo de notificación actualizada correctamente',
@@ -148,9 +151,12 @@ class NotificationsTypesController extends BaseController
             return response()->json(['message' => 'No se pueden eliminar los tipos de notificación porque hay notificaciones vinculadas a ellos'], 406);
         }
 
-        DB::transaction(function () use ($uids) {
-            NotificationsTypesModel::destroy($uids);
-            LogsController::createLog("Tipos de notificación eliminados", 'Tipos de notificación', auth()->user()->uid);
+        $notificationTypes = NotificationsTypesModel::whereIn('uid', $uids)->get();
+        DB::transaction(function () use ($notificationTypes) {
+            foreach ($notificationTypes as $notificationType) {
+                $notificationType->delete();
+                LogsController::createLog("Tipo de notificación eliminado: " . $notificationType->name, 'Tipos de notificaciones', auth()->user()->uid);
+            }
         });
 
 

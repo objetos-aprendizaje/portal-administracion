@@ -174,8 +174,8 @@ class LearningObjectProgramsEducationalSaveTest extends TestCase
         // Datos de prueba con errores (por ejemplo, sin nombre)
         $data = [
             'educational_program_type_uid' => generate_uuid(),
-            'inscription_start_date' => '2024-09-01',
-            'inscription_finish_date' => '2024-08-30',
+            'inscription_start_date' => '2024-09-01 10:00:00', 
+            'inscription_finish_date' => '2024-08-30 09:00:00',
         ];
 
         // Realizar la solicitud POST

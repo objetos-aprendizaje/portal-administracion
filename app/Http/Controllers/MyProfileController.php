@@ -24,7 +24,8 @@ class MyProfileController extends BaseController
 
         $notification_types = NotificationsTypesModel::all();
 
-        $rolesUser = Auth::user()->roles()->get();
+        $user = Auth::user();
+        $rolesUser = Auth::user()->roles;
         $automaticNotificationTypes = AutomaticNotificationTypesModel::with('roles')
             ->whereHas('roles', function ($query) use ($rolesUser) {
                 $query->whereIn('uid', $rolesUser->pluck("uid"));
@@ -33,7 +34,6 @@ class MyProfileController extends BaseController
 
         $departments = DepartmentsModel::all();
 
-        $user = Auth::user();
         $userGeneralNotificationsDisabled = $user->generalNotificationsTypesDisabled()->get()->toArray();
         $userEmailNotificationsDisabled = $user->emailNotificationsTypesDisabled()->get()->toArray();
 

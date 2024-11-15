@@ -67,13 +67,17 @@ class ApiKeysController extends BaseController
         return response()->json($api_key, 200);
     }
 
-    public function deleteApiKey(Request $request) {
-
+    public function deleteApiKey(Request $request)
+    {
         $apiKeysUids = $request->input('uids');
 
-        DB::transaction(function () use ($apiKeysUids) {
-            ApiKeysModel::destroy($apiKeysUids);
-            LogsController::createLog('Eliminar claves de api', 'Claves API', auth()->user()->uid);
+        $apiKeys = ApiKeysModel::whereIn('uid', $apiKeysUids)->get();
+
+        DB::transaction(function () use ($apiKeys) {
+            foreach ($apiKeys as $apiKey) {
+                $apiKey->delete();
+                LogsController::createLog('Eliminar clave API: ' . $apiKey->name, 'Claves API', auth()->user()->uid);
+            }
         }, 5);
 
         return response()->json(['message' => 'Claves de API eliminadas correctamente']);
@@ -111,12 +115,14 @@ class ApiKeysController extends BaseController
         }
 
         $api_key_query->fill($request->only([
-            'api_key_uid', 'name', 'api_key'
+            'api_key_uid',
+            'name',
+            'api_key'
         ]));
 
         DB::transaction(function () use ($api_key_query) {
             $api_key_query->save();
-            LogsController::createLog('Añadir clave API', 'Claves APIs', auth()->user()->uid);
+            LogsController::createLog('Añadir clave API: ' . $api_key_query->name, 'Claves APIs', auth()->user()->uid);
         }, 5);
 
         return response()->json(['message' => 'Clave guardada correctamente']);

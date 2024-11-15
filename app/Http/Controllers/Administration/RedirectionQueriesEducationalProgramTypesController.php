@@ -134,7 +134,7 @@ class RedirectionQueriesEducationalProgramTypesController extends BaseController
 
         DB::transaction(function () use ($redirection_query) {
             $redirection_query->save();
-            LogsController::createLog('Añadir redirección de consulta', 'Redirección de consultas', auth()->user()->uid);
+            LogsController::createLog('Añadir redirección de consulta:', 'Redirección de consultas', auth()->user()->uid);
         });
 
         return response()->json(['message' => 'Redirección guardada correctamente']);

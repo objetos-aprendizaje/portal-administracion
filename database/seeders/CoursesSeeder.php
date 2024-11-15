@@ -25,6 +25,7 @@ use App\Models\SubblocksModel;
 use App\Models\SubelementsModel;
 use App\Models\UsersModel;
 use App\Models\CoursesAccesesModel;
+use App\Models\CoursesVisitsModel;
 use Illuminate\Database\Seeder;
 use Faker\Factory as Faker;
 use Illuminate\Support\Facades\File;
@@ -63,7 +64,7 @@ class CoursesSeeder extends Seeder
         $this->lmsSystems = LmsSystemsModel::all()->pluck('uid');
         $this->educationalProgramTypes = EducationalProgramTypesModel::all()->pluck('uid');
         $this->calls = CallsModel::all()->pluck('uid');
-        $this->demoImages = collect(File::files(base_path('public/images/test-images')))
+        $this->demoImages = collect(File::files(base_path('public/test-images')))
             ->map(function ($file) {
                 return str_replace(base_path('public/'), '', $file->getPathname());
             })->toArray();
@@ -178,6 +179,7 @@ class CoursesSeeder extends Seeder
             if($status == "DEVELOPMENT"){
 
                 $this->AddCourseAccesses($data['uid'],$studentsUids);
+                $this->AddCourseVisits($data['uid'],$studentsUids);
 
             }
 
@@ -438,19 +440,29 @@ class CoursesSeeder extends Seeder
         return $documentsAddedUids;
     }
 
-    private function AddCourseAccesses($courseUid,$studentsUids){
+    private function AddCourseAccesses($courseUid, $studentsUids) {
 
-        $date = Carbon::now();
-
+        foreach ($studentsUids as $student) {
+            $accesses = rand(1, 1000);
+            for ($i = 0; $i < $accesses; $i++) {
+                CoursesAccesesModel::factory()->create([
+                    'course_uid' => $courseUid,
+                    'user_uid' => $student,
+                    'access_date' => $this->faker->dateTimeBetween("-4 months", "-1 month"),
+                ]);
+            }
+        }
+    }
+    private function AddCourseVisits($courseUid,$studentsUids){
         foreach ($studentsUids as $index => $student) {
-
-            $date = ($index === 0) ? $date : $date->copy()->subDays(20 * $index);
-
-            CoursesAccesesModel::factory()->create([
-                'course_uid' => $courseUid,
-                'user_uid' => $student,
-                'access_date' => $date,
-            ]);
+            $visits = rand(1, 1000);
+            for ($i = 0; $i < $visits; $i++) {
+                CoursesVisitsModel::factory()->create([
+                    'course_uid' => $courseUid,
+                    'user_uid' => $student,
+                    'access_date' => $this->faker->dateTimeBetween("-4 months", "now"),
+                ]);
+            }
         }
 
     }

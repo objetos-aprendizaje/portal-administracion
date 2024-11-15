@@ -152,7 +152,7 @@ class CarrouselsController extends BaseController
             $educationalProgramsToDisableUids = $this->filterArrayLearningObjects($educationalPrograms, false);
             EducationalProgramsModel::whereIn('uid', $educationalProgramsToDisableUids)->update(['featured_slider_approved' => false]);
 
-            LogsController::createLog('Actualizar carrouseles grandes', 'Administración carrouseles', auth()->user()->uid);
+            LogsController::createLog('Actualizar slider principal', 'Administración carrouseles', auth()->user()->uid);
         });
 
         return response()->json([
@@ -181,7 +181,7 @@ class CarrouselsController extends BaseController
             $educationalProgramsToDisableUids = $this->filterArrayLearningObjects($educationalPrograms, false);
             EducationalProgramsModel::whereIn('uid', $educationalProgramsToDisableUids)->update(['featured_main_carrousel_approved' => false]);
 
-            LogsController::createLog('Actualizar carrouseles pequeños', 'Administración carrouseles', auth()->user()->uid);
+            LogsController::createLog('Actualizar carrouseles principal', 'Administración carrouseles', auth()->user()->uid);
         });
 
         return response()->json([

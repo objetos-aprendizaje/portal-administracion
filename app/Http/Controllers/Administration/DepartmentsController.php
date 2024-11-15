@@ -88,7 +88,7 @@ class DepartmentsController extends BaseController
         ];
 
         $validator = Validator::make($request->all(), [
-            'name' =>'required|string|max:255',
+            'name' => 'required|string|max:255',
         ], $messages);
 
 
@@ -116,7 +116,7 @@ class DepartmentsController extends BaseController
 
             $department->save();
 
-            LogsController::createLog('Añadir departamento', 'Licencias', auth()->user()->uid);
+            LogsController::createLog('Añadir departamento: ' . $department->name, 'Departamentos', auth()->user()->uid);
 
             return response()->json(['message' => $isNew ? 'Departamento añadida correctamente' : 'Departamento actualizada correctamente']);
         }, 5);
@@ -139,12 +139,14 @@ class DepartmentsController extends BaseController
             throw new OperationFailedException('No se pueden eliminar los departamentos porque hay usuarios vinculados a ellos');
         }
 
-        DB::transaction(function () use ($uids) {
-            DepartmentsModel::destroy($uids);
-            LogsController::createLog('Eliminar departamentos', 'Departamentos', auth()->user()->uid);
+        $departments = DepartmentsModel::whereIn('uid', $uids)->get();
+        DB::transaction(function () use ($departments) {
+            foreach ($departments as $department) {
+                $department->delete();
+                LogsController::createLog('Eliminar departamentos: ' . $department->name, 'Departamentos', auth()->user()->uid);
+            }
         }, 5);
 
         return response()->json(['message' => 'Departamentos eliminados correctamente']);
     }
-
 }

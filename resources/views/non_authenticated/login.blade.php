@@ -151,7 +151,7 @@
                     </form>
 
                     @if ($cert_login != '')
-                        <div class="text-center p-4"><a href="{{ env('DOMINIO_CERTIFICADO') }}/certificate-access">Acceso
+                        <div class="text-center p-4"><a href="/certificate-access">Acceso
                                 mediante
                                 Certificado Digital</a></div>
                     @endif

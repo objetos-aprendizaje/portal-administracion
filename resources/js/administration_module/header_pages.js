@@ -9,7 +9,7 @@ import {
     formatDateTime,
 } from "../tabulator_handler.js";
 import { heroicon } from "../heroicons.js";
-import { getCsrfToken } from "../app.js";
+import { getCsrfToken, showFormErrors, resetFormErrors } from "../app.js";
 import { showToast } from "../toast.js";
 import {
     hideModal,
@@ -224,6 +224,7 @@ function loadLegalPageModal(legalPageUid) {
     const params = {
         url: "/administration/header_pages/get_header_page/" + legalPageUid,
         method: "GET",
+        loader: true
     };
 
     apiFetch(params).then((data) => {
@@ -238,6 +239,9 @@ function submitHeaderPageForm() {
     const content = tinymceContent.getContent();
 
     formData.append("content", content);
+
+    resetFormErrors("header-page-form");
+
     const params = {
         url: "/administration/header_pages/save_header_page",
         method: "POST",
@@ -249,6 +253,8 @@ function submitHeaderPageForm() {
     apiFetch(params).then(() => {
         hideModal("header-page-modal");
         headerPagesTable.setData(endPointTable);
+    }).catch((data) => {
+        showFormErrors(data.errors);
     });
 }
 

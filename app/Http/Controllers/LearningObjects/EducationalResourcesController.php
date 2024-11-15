@@ -25,6 +25,7 @@ use App\Models\EducationalResourceCategoriesModel;
 use App\Models\GeneralNotificationsAutomaticModel;
 use Illuminate\Routing\Controller as BaseController;
 use App\Models\EducationalResourcesEmailContactsModel;
+use App\Models\EducationalResourcesEmbeddingsModel;
 use App\Models\GeneralNotificationsAutomaticUsersModel;
 use App\Models\EducationalResourcesLearningResultsModel;
 use App\Services\EmbeddingsService;
@@ -41,9 +42,9 @@ class EducationalResourcesController extends BaseController
     public function index()
     {
 
-        $educational_resources_types = EducationalResourceTypesModel::all()->toArray();
-        $categories = CategoriesModel::with('parentCategory')->get()->toArray();
-        $license_types = LicenseTypesModel::get()->toArray();
+        $educational_resources_types = EducationalResourceTypesModel::all();
+        $categories = CategoriesModel::with('parentCategory')->get();
+        $license_types = LicenseTypesModel::get();
 
         $competencesLearningResults = $this->getCompetencesFrameworks();
 
@@ -62,7 +63,8 @@ class EducationalResourcesController extends BaseController
                 "submenuselected" => "learning-objects-educational-resources",
                 "variables_js" => [
                     "rolesUser" => Auth::user()->roles->pluck('code'),
-                    "competencesLearningResults" => $competencesLearningResults
+                    "competencesLearningResults" => $competencesLearningResults,
+                    "enabledRecommendationModule" => (bool) app('general_options')['enabled_recommendation_module']
                 ],
                 "infiniteTree" => true,
                 "license_types" => $license_types,
@@ -76,7 +78,10 @@ class EducationalResourcesController extends BaseController
         $search = $request->get('search');
         $query = EducationalResourcesModel::with(["status", "type", "categories"])
             ->join('educational_resource_statuses as status', 'educational_resources.status_uid', '=', 'status.uid')
-            ->join("educational_resource_types as type", "educational_resources.educational_resource_type_uid", "=", "type.uid");
+            ->join("educational_resource_types as type", "educational_resources.educational_resource_type_uid", "=", "type.uid")
+            ->leftJoin('educational_resources_embeddings', 'educational_resources.uid', '=', 'educational_resources_embeddings.educational_resource_uid')
+            ->select('educational_resources.*')
+            ->addSelect(DB::raw('CASE WHEN educational_resources_embeddings.embeddings IS NULL THEN 0 ELSE 1 END as embeddings_status'));
 
         $rolesUser = Auth::user()->roles->pluck('code');
 
@@ -102,8 +107,6 @@ class EducationalResourcesController extends BaseController
             }
         }
 
-        $query->select("educational_resources.*");
-
         $data = $query->paginate($size);
 
         return response()->json($data, 200);
@@ -116,6 +119,8 @@ class EducationalResourcesController extends BaseController
                 $query->whereHas('categories', function ($query) use ($filter) {
                     $query->whereIn('categories.uid', $filter['value']);
                 });
+            } else if ($filter['database_field'] == "embeddings") {
+                $query->where(DB::raw('CASE WHEN educational_resources_embeddings.embeddings IS NULL THEN 0 ELSE 1 END'), '=', $filter['value']);
             } else {
                 $query->where($filter['database_field'], $filter['value']);
             }
@@ -169,10 +174,10 @@ class EducationalResourcesController extends BaseController
             $resource->identifier = $this->generateIdentificerEducationalResources();
             $resource->creator_user_uid = auth()->user()->uid;
         } else {
-            $resource = EducationalResourcesModel::where('uid', $uid_resource)->with('categories')->first();
+            $resource = EducationalResourcesModel::where('uid', $uid_resource)->with(['categories', 'embeddings'])->first();
         }
 
-        // Comprobamos el nuevo estado que le corresponde al curso.
+        // Comprobamos el nuevo estado que le corresponde al recurso.
         $action = $request->input('action');
 
         if ($isNew) {
@@ -194,18 +199,34 @@ class EducationalResourcesController extends BaseController
             $this->handleResourceWay($request, $resource);
             $resource->save();
 
-            $resource->embeddings = $embeddings;
-            $resource->save();
+            if ($embeddings) {
+                EducationalResourcesEmbeddingsModel::updateOrCreate(
+                    ['educational_resource_uid' => $resource->uid],
+                    ['embeddings' => $embeddings]
+                );
+            }
 
             $this->handleTags($request, $resource);
             $this->handleMetadata($request, $resource);
             $this->handleCategories($request, $resource);
             $this->handleEmails($request, $resource);
             $this->handleLearningResults($request, $resource);
-            $this->createLog($isNew);
+            $this->createLog($isNew, $resource->title);
 
             return response()->json(['message' => 'Recurso añadido correctamente']);
         }, 5);
+    }
+
+    public function regenerateEmbeddings(Request $request)
+    {
+        $educationalResourcesUids = $request->input('educational_resources_uids');
+        $educationalResources = EducationalResourcesModel::whereIn('uid', $educationalResourcesUids)->get();
+
+        foreach ($educationalResources as $educationalResource) {
+            $this->embeddingsService->generateEmbeddingForEducationalResource($educationalResource);
+        }
+
+        return response()->json(['message' => 'Se han regenerado los embeddings correctamente'], 200);
     }
 
     /**
@@ -221,10 +242,10 @@ class EducationalResourcesController extends BaseController
 
         if (!$resourceBd->embeddings || $title != $resourceBd->title || $description != $resourceBd->description) {
             $embeddings = $this->embeddingsService->getEmbedding($title . ' ' . $description);
-            return $embeddings ?: $resourceBd->embeddings;
+            return $embeddings ?: $resourceBd->embeddings->embeddings;
         }
 
-        return $resourceBd->embeddings;
+        return $resourceBd->embeddings->embeddings;
     }
 
     private function handleLearningResults($request, $resource)
@@ -354,7 +375,11 @@ class EducationalResourcesController extends BaseController
     function fillResourceDetails($request, $resource)
     {
         $resource->fill($request->only([
-            "title", "description", "educational_resource_type_uid", "license_type", "resource_way"
+            "title",
+            "description",
+            "educational_resource_type_uid",
+            "license_type",
+            "resource_way"
         ]));
     }
 
@@ -456,19 +481,23 @@ class EducationalResourcesController extends BaseController
         $resource->categories()->sync($categories_to_sync);
     }
 
-    function createLog($isNew)
+    function createLog($isNew, $resourceName)
     {
-        $logMessage = $isNew ? 'Recurso educativo añadido' : 'Recurso educativo actualizado';
+        $logMessage = $isNew ? 'Recurso educativo añadido: ' : 'Recurso educativo actualizado: ';
+        $logMessage .= $resourceName;
         LogsController::createLog($logMessage, 'Recursos educativos', auth()->user()->uid);
     }
 
     public function deleteResources()
     {
         $resources_uids = request()->input('resourcesUids');
+        $educationalResources = EducationalResourcesModel::whereIn('uid', $resources_uids)->get();
 
-        DB::transaction(function () use ($resources_uids) {
-            EducationalResourcesModel::whereIn('uid', $resources_uids)->delete();
-            LogsController::createLog("Eliminación de recursos educativos", 'Recursos educativos', auth()->user()->uid);
+        DB::transaction(function () use ($educationalResources) {
+            foreach ($educationalResources as $educationalResource) {
+                $educationalResource->delete();
+                LogsController::createLog("Eliminación de recurso educativo: " . $educationalResource->title, 'Recursos educativos', auth()->user()->uid);
+            }
         });
 
         return response()->json(['message' => 'Recursos eliminados correctamente']);
@@ -540,7 +569,7 @@ class EducationalResourcesController extends BaseController
 
         //Todo: se agregó esto ya que el campo automatic_notification_type_uid es obligatorio si no da error 500,
         //Todo solo se hizo para poder correr la prueba unitaria
-        $type = AutomaticNotificationTypesModel::where('code', 'NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS' )->first();
+        $type = AutomaticNotificationTypesModel::where('code', 'NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS')->first();
         $generalNotificationAutomaticUid = generate_uuid();
         $generalAutomaticNotification = new GeneralNotificationsAutomaticModel();
         $generalAutomaticNotification->uid = $generalNotificationAutomaticUid;
@@ -641,7 +670,8 @@ class EducationalResourcesController extends BaseController
         return $identifier;
     }
 
-    private function getCompetencesFrameworks() {
+    private function getCompetencesFrameworks()
+    {
 
         $competenceFrameworks = CompetenceFrameworksModel::with([
             'levels',
@@ -659,7 +689,8 @@ class EducationalResourcesController extends BaseController
         return $competencesLearningResults;
     }
 
-    private function mapStructureFramework($obj, $type = "competence") {
+    private function mapStructureFramework($obj, $type = "competence")
+    {
         // Crear un nuevo objeto con los campos necesarios
         $mappedObj = [
             'id' => $obj['uid'],
