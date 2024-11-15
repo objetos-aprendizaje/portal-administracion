@@ -64,7 +64,7 @@ class CoursesSeeder extends Seeder
         $this->lmsSystems = LmsSystemsModel::all()->pluck('uid');
         $this->educationalProgramTypes = EducationalProgramTypesModel::all()->pluck('uid');
         $this->calls = CallsModel::all()->pluck('uid');
-        $this->demoImages = collect(File::files(base_path('public/images/test-images')))
+        $this->demoImages = collect(File::files(base_path('public/test-images')))
             ->map(function ($file) {
                 return str_replace(base_path('public/'), '', $file->getPathname());
             })->toArray();

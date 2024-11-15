@@ -225,14 +225,17 @@
                     <ul>
                         <!--<li class="disabled"><a href="javascript:void(0)">Visitas totales</a></li>-->
                         <li><a class="{{ isset($submenuselected) && $submenuselected == 'analytics-poa' ? 'submenu-selected' : '' }}"
-                                href="{{ route('analytics-poa') }}">Visitas por objetos de aprendizaje</a></li>
+                                href="{{ route('analytics-resources') }}">Visitas por recursos</a></li>
+                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'analytics-courses' ? 'submenu-selected' : '' }}"
+                                href="{{ route('analytics-courses') }}">Visitas por cursos</a></li>
                         <li><a class="{{ isset($submenuselected) && $submenuselected == 'analytics-users' ? 'submenu-selected' : '' }}"
                                 href="{{ route('analytics-users') }}">Usuarios registrados</a></li>
                         <li><a class="{{ isset($submenuselected) && $submenuselected == 'analytics-abandoned' ? 'submenu-selected' : '' }}"
                                 href="{{ route('analytics-abandoned') }}">Abandonos de cursos</a></li>
                         <li><a class="{{ isset($submenuselected) && $submenuselected == 'analytics-top-categories' ? 'submenu-selected' : '' }}"
                                 href="{{ route('analytics-top-categories') }}">TOP Categorias</a></li>
-                        <li><a target="_newblank" href="https://developers.google.com/analytics?hl=es-419">Google Analytics</a></li>
+                        <li><a target="_newblank" href="https://developers.google.com/analytics?hl=es-419">Google
+                                Analytics</a></li>
                     </ul>
                 </div>
             </div>

@@ -94,6 +94,484 @@ let tomSelectUsersToEnroll;
 
 let competencesLearningResults = [];
 
+const columnsCoursesTable = [
+    {
+        title: '<div class="checkbox-cell"><input type="checkbox" id="select-all-checkbox"/></div>',
+        headerClick: function (e) {
+            const selectAllCheckbox = e.target;
+            if (selectAllCheckbox.type === "checkbox") {
+                // Asegúrate de que el clic fue en el checkbox
+                coursesTable.getRows().forEach((row) => {
+                    const cell = row.getCell("select");
+                    const checkbox = cell
+                        .getElement()
+                        .querySelector('input[type="checkbox"]');
+                    checkbox.checked = selectAllCheckbox.checked;
+                    updateSelectedCourses(checkbox, row.getData());
+                });
+            }
+        },
+        field: "select",
+        formatter: function (cell, formatterParams, onRendered) {
+            const uid = cell.getRow().getData().uid;
+            return `<input type="checkbox" data-uid="${uid}"/>`;
+        },
+        cssClass: "checkbox-cell",
+        cellClick: function (e, cell) {
+            const checkbox = e.target;
+            const rowData = cell.getRow().getData();
+
+            updateSelectedCourses(checkbox, rowData);
+        },
+        headerSort: false,
+        width: 60,
+    },
+    { title: "Título", field: "title", resizable: true, widthGrow: 3 },
+    {
+        title: "Identificador",
+        field: "identifier",
+        visible: false,
+        resizable: true,
+        widthGrow: 2,
+    },
+    {
+        title: "Estado",
+        field: "status_name",
+        formatter: function (cell, formatterParams, onRendered) {
+            const color = getStatusCourseColor(
+                cell.getRow().getData().status_code
+            );
+            return `
+            <div class="label-status" style="background-color:${color}">${
+                cell.getRow().getData().status_name
+            }</div>
+            `;
+        },
+        widthGrow: 2,
+    },
+    {
+        title: "Fecha de inicio de realización",
+        field: "realization_start_date",
+        formatter: function (cell, formatterParams, onRendered) {
+            const isoDate = cell.getValue();
+            if (!isoDate) return "";
+            return formatDateTime(isoDate);
+        },
+        widthGrow: 2,
+    },
+    {
+        title: "Fecha de fin de realización",
+        field: "realization_finish_date",
+        formatter: function (cell, formatterParams, onRendered) {
+            const isoDate = cell.getValue();
+            if (!isoDate) return "";
+            return formatDateTime(isoDate);
+        },
+        widthGrow: 2,
+    },
+    {
+        title: "Convocatoria",
+        field: "calls_name",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            return data;
+        },
+        widthGrow: 2,
+    },
+    {
+        title: "Programa formativo",
+        field: "educational_programs_name",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            return data;
+        },
+        widthGrow: 2,
+        visible: false,
+    },
+    {
+        title: "Tipo de programa formativo",
+        field: "educational_program_types_name",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            return data;
+        },
+        widthGrow: 2,
+        visible: false,
+    },
+    {
+        title: "Tipo de curso",
+        field: "course_types_name",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            return data;
+        },
+        widthGrow: 2,
+        visible: false,
+    },
+    {
+        title: "Mínimo de estudiantes requeridos",
+        field: "min_required_students",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            return data;
+        },
+        widthGrow: 2,
+        visible: false,
+    },
+    {
+        title: "Centro",
+        field: "centers_name",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            return data;
+        },
+        widthGrow: 2,
+        visible: false,
+    },
+    {
+        title: "Fecha de inicio de inscripción",
+        field: "inscription_start_date",
+        formatter: function (cell, formatterParams, onRendered) {
+            const isoDate = cell.getValue();
+            if (!isoDate) return "";
+            return formatDateTime(isoDate);
+        },
+        widthGrow: 2,
+        visible: false,
+    },
+    {
+        title: "Fecha de fin de inscripción",
+        field: "inscription_finish_date",
+        formatter: function (cell, formatterParams, onRendered) {
+            const isoDate = cell.getValue();
+            if (!isoDate) return "";
+            return formatDateTime(isoDate);
+        },
+        widthGrow: 2,
+        visible: false,
+    },
+    {
+        title: "Fecha de inicio de matriculación",
+        field: "enrolling_start_date",
+        formatter: function (cell, formatterParams, onRendered) {
+            const isoDate = cell.getValue();
+            if (!isoDate) return "";
+            return formatDateTime(isoDate);
+        },
+        widthGrow: 2,
+        visible: false,
+    },
+    {
+        title: "Fecha de fin de matriculación",
+        field: "enrolling_finish_date",
+        formatter: function (cell, formatterParams, onRendered) {
+            const isoDate = cell.getValue();
+            if (!isoDate) return "";
+            return formatDateTime(isoDate);
+        },
+        widthGrow: 2,
+        visible: false,
+    },
+    {
+        title: "Tipo de calificación",
+        field: "calification_type",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            if (data == "NUMERICAL") {
+                return "Numérica";
+            } else {
+                return "Textual";
+            }
+        },
+        widthGrow: 2,
+        visible: false,
+    },
+    {
+        title: "Video de presentación",
+        field: "presentation_video_url",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            if (data) {
+                return "<a href='" + data + "' target='_blank'>Enlace</a>";
+            }
+        },
+        widthGrow: 2,
+        visible: false,
+    },
+    {
+        title: "Validar registros de estudiantes",
+        field: "validate_student_registrations",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            return data;
+        },
+        widthGrow: 2,
+        visible: false,
+    },
+    {
+        title: "Validar registros de estudiantes",
+        field: "ects_workload",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            return data;
+        },
+        widthGrow: 2,
+        visible: false,
+    },
+    {
+        title: "Etiquetas",
+        field: "tags",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            const tagsArray = [];
+            data.forEach((item) => {
+                tagsArray.push(item.tag);
+            });
+            return tagsArray.join(", ");
+        },
+        widthGrow: 2,
+        visible: false,
+        headerSort: false,
+    },
+    {
+        title: "Emails de contacto",
+        field: "contact_emails",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            const emailsArray = [];
+            data.forEach((item) => {
+                emailsArray.push(item.email);
+            });
+            return emailsArray.join(", ");
+        },
+        widthGrow: 2,
+        visible: false,
+        headerSort: false,
+    },
+    {
+        title: "URL de LSM",
+        field: "lsm_url",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            if (data) {
+                return "<a href='" + data + "' target='_blank'>Enlace</a>";
+            }
+        },
+        widthGrow: 2,
+        visible: false,
+    },
+    {
+        title: "Docentes coordinadores",
+        field: "teachers_coordinate",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            const fullNames = data.map(
+                (professor) => `${professor.first_name} ${professor.last_name}`
+            );
+            const concatenatedNames = fullNames.join(", ");
+            return concatenatedNames;
+        },
+        widthGrow: 2,
+        visible: false,
+        headerSort: false,
+    },
+    {
+        title: "Docentes no coordinadores",
+        field: "teachers_no_coordinate",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            const fullNames = data.map(
+                (professor) => `${professor.first_name} ${professor.last_name}`
+            );
+            const concatenatedNames = fullNames.join(", ");
+            return concatenatedNames;
+        },
+        widthGrow: 2,
+        visible: false,
+        headerSort: false,
+    },
+    {
+        title: "Categorias",
+        field: "categories",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            const categoriesArray = [];
+            data.forEach((item) => {
+                categoriesArray.push(item.name);
+            });
+            return categoriesArray.join(", ");
+        },
+        widthGrow: 2,
+        visible: false,
+        headerSort: false,
+    },
+    {
+        title: "Coste",
+        field: "cost",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            return data + " €";
+        },
+        widthGrow: 2,
+        visible: false,
+    },
+    {
+        title: "Destacar en el carrousel grande",
+        field: "featured_big_carousel",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            if (data == 0) {
+                return "No";
+            } else {
+                return "Si";
+            }
+        },
+        widthGrow: 2,
+        visible: false,
+    },
+    {
+        title: "Destacar en el carrousel pequeño",
+        field: "featured_small_carousel",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            if (data == 0) {
+                return "No";
+            } else {
+                return "Si";
+            }
+        },
+        widthGrow: 2,
+        visible: false,
+    },
+    {
+        title: "¿Tiene embeddings?",
+        field: "embeddings_status",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            if (data == 0) {
+                return "No";
+            } else {
+                return "Si";
+            }
+        },
+        widthGrow: 2,
+        visible: false,
+    },
+    {
+        title: `<span class='cursor-pointer columns-selector'>${heroicon(
+            "view-columns"
+        )}</span>`,
+        field: "actions",
+        formatter: function (cell, formatterParams, onRendered) {
+            return `<button type="button" class='btn action-btn'>${heroicon(
+                "pencil-square",
+                "outline"
+            )}</button>`;
+        },
+        cellClick: function (e, cell) {
+            e.preventDefault();
+
+            const courseClicked = cell.getRow().getData();
+            loadCourseModal(courseClicked.uid);
+        },
+        headerClick: function (e, column) {
+            controlColumnsSecectorModal();
+        },
+        cssClass: "text-center",
+        headerSort: false,
+        width: 30,
+        resizable: false,
+    },
+    {
+        title: "",
+        field: "actions",
+        formatter: function (cell, formatterParams, onRendered) {
+            return `
+                <button type="button" class='btn action-btn'>${heroicon(
+                    "ellipsis-horizontal",
+                    "outline"
+                )}</button>
+            `;
+        },
+        cellClick: function (e, cell) {
+            e.preventDefault();
+            const btnArray = [
+                {
+                    icon: "user-group",
+                    type: "outline",
+                    tooltip: "Listado de alumnos del curso",
+                    action: (course) => {
+                        loadCourseStudentsModal(
+                            course.uid,
+                            course.validate_student_registrations
+                        );
+                    },
+                },
+                {
+                    icon: "document-duplicate",
+                    type: "outline",
+                    tooltip: "Duplicar curso",
+                    action: (course) => {
+                        showModalConfirmation(
+                            "¿Deseas duplicar esta edición?",
+                            "Se creará una nueva edición del curso con los mismos datos que la edición actual.",
+                            "duplicateCourse",
+                            [{ key: "course_uid", value: course.uid }]
+                        ).then((result) => {
+                            if (result) duplicateCourse(course.uid);
+                        });
+                    },
+                },
+                {
+                    icon: "folder-plus",
+                    type: "outline",
+                    tooltip: "Crear nueva edición a partir de este curso",
+                    action: (course) => {
+                        showModalConfirmation(
+                            "¿Deseas crear una nueva edición?",
+                            "Se creará una nueva edición del curso con los mismos datos que la edición actual.",
+                            "newEdition",
+                            [{ key: "course_uid", value: course.uid }]
+                        ).then((result) => {
+                            if (result) newEditionCourse(course.uid);
+                        });
+                    },
+                },
+                {
+                    icon: "document-arrow-up",
+                    type: "outline",
+                    tooltip: "Envío de credenciales",
+                    action: (course) => {
+                        showModalConfirmation(
+                            "Envío de credenciales",
+                            "¿Deseas enviar las credenciales a todos los usuarios que hayan finalizado?",
+                            "sendCredentials",
+                            [{ key: "course_uid", value: course.uid }]
+                        ).then((result) => {
+                            if (result) sendCredentialsCourse(course.uid);
+                        });
+                    },
+                },
+                {
+                    icon: "academic-cap",
+                    type: "outline",
+                    tooltip: "Calificaciones",
+                    action: (course) => {
+                        loadCalificationsCourse(course.uid);
+                    },
+                },
+            ];
+
+            setTimeout(() => {
+                moreOptionsBtn(cell, btnArray);
+            }, 1);
+        },
+        cssClass: "text-center",
+        headerSort: false,
+        width: 30,
+        resizable: false,
+    },
+];
 class Trees {
     constructor(order, tree, selectedNodes = []) {
         this.order = order;
@@ -580,6 +1058,22 @@ function initHandlers() {
             reloadTableCourses();
         });
 
+    const regenerateEmbeddingsBtn = document.getElementById(
+        "btn-regenerate-embeddings"
+    );
+
+    if(regenerateEmbeddingsBtn) {
+        regenerateEmbeddingsBtn.addEventListener("click", function () {
+            showModalConfirmation(
+                "Regenerar embeddings",
+                "¿Estás seguro de que quieres regenerar los embeddings de los cursos seleccionados?"
+            ).then((result) => {
+                if (!result) return;
+                regenerateEmbeddingsCourses();
+            });
+        });
+    }
+
     document
         .getElementById("save-califications")
         .addEventListener("click", () => {
@@ -1065,6 +1559,18 @@ function collectFilters() {
             "realization_date"
         );
 
+    let selectElementFilterEmbeddings =
+        document.getElementById("filter_embeddings");
+    if (selectElementFilterEmbeddings.value) {
+        addFilter(
+            "¿Tiene embeddings?",
+            selectElementFilterEmbeddings.value,
+            selectElementFilterEmbeddings.value == "1" ? "Sí" : "No",
+            "filter_embeddings",
+            "embeddings"
+        );
+    }
+
     let selectElementValidateStudents = document.getElementById(
         "filter_validate_student_registrations"
     );
@@ -1494,537 +2000,83 @@ function updateMedianInscriptionsLabel(value) {
 function initializeCoursesTable() {
     if (coursesTable) coursesTable.destroy();
 
-    const columns = [
-        {
-            title: '<div class="checkbox-cell"><input type="checkbox" id="select-all-checkbox"/></div>',
-            headerClick: function (e) {
-                const selectAllCheckbox = e.target;
-                if (selectAllCheckbox.type === "checkbox") {
-                    // Asegúrate de que el clic fue en el checkbox
-                    coursesTable.getRows().forEach((row) => {
-                        const cell = row.getCell("select");
-                        const checkbox = cell
-                            .getElement()
-                            .querySelector('input[type="checkbox"]');
-                        checkbox.checked = selectAllCheckbox.checked;
-                        updateSelectedCourses(checkbox, row.getData());
-                    });
-                }
-            },
-            field: "select",
-            formatter: function (cell, formatterParams, onRendered) {
-                const uid = cell.getRow().getData().uid;
-                return `<input type="checkbox" data-uid="${uid}"/>`;
-            },
-            cssClass: "checkbox-cell",
-            cellClick: function (e, cell) {
-                const checkbox = e.target;
-                const rowData = cell.getRow().getData();
-
-                updateSelectedCourses(checkbox, rowData);
-            },
-            headerSort: false,
-            width: 60,
-        },
-        { title: "Título", field: "title", resizable: true, widthGrow: 3 },
-        {
-            title: "Identificador",
-            field: "identifier",
-            visible: false,
-            resizable: true,
-            widthGrow: 2,
-        },
-        {
-            title: "Estado",
-            field: "status_name",
-            formatter: function (cell, formatterParams, onRendered) {
-                const color = getStatusCourseColor(
-                    cell.getRow().getData().status_code
-                );
-                return `
-                <div class="label-status" style="background-color:${color}">${
-                    cell.getRow().getData().status_name
-                }</div>
-                `;
-            },
-            widthGrow: 2,
-        },
-        {
-            title: "Fecha de inicio de realización",
-            field: "realization_start_date",
-            formatter: function (cell, formatterParams, onRendered) {
-                const isoDate = cell.getValue();
-                if (!isoDate) return "";
-                return formatDateTime(isoDate);
-            },
-            widthGrow: 2,
-        },
-        {
-            title: "Fecha de fin de realización",
-            field: "realization_finish_date",
-            formatter: function (cell, formatterParams, onRendered) {
-                const isoDate = cell.getValue();
-                if (!isoDate) return "";
-                return formatDateTime(isoDate);
-            },
-            widthGrow: 2,
-        },
-        {
-            title: "Convocatoria",
-            field: "calls_name",
-            formatter: function (cell, formatterParams, onRendered) {
-                const data = cell.getValue();
-                return data;
-            },
-            widthGrow: 2,
-        },
-        {
-            title: "Programa formativo",
-            field: "educational_programs_name",
-            formatter: function (cell, formatterParams, onRendered) {
-                const data = cell.getValue();
-                return data;
-            },
-            widthGrow: 2,
-            visible: false,
-        },
-        {
-            title: "Tipo de programa formativo",
-            field: "educational_program_types_name",
-            formatter: function (cell, formatterParams, onRendered) {
-                const data = cell.getValue();
-                return data;
-            },
-            widthGrow: 2,
-            visible: false,
-        },
-        {
-            title: "Tipo de curso",
-            field: "course_types_name",
-            formatter: function (cell, formatterParams, onRendered) {
-                const data = cell.getValue();
-                return data;
-            },
-            widthGrow: 2,
-            visible: false,
-        },
-        {
-            title: "Mínimo de estudiantes requeridos",
-            field: "min_required_students",
-            formatter: function (cell, formatterParams, onRendered) {
-                const data = cell.getValue();
-                return data;
-            },
-            widthGrow: 2,
-            visible: false,
-        },
-        {
-            title: "Centro",
-            field: "centers_name",
-            formatter: function (cell, formatterParams, onRendered) {
-                const data = cell.getValue();
-                return data;
-            },
-            widthGrow: 2,
-            visible: false,
-        },
-        {
-            title: "Fecha de inicio de inscripción",
-            field: "inscription_start_date",
-            formatter: function (cell, formatterParams, onRendered) {
-                const isoDate = cell.getValue();
-                if (!isoDate) return "";
-                return formatDateTime(isoDate);
-            },
-            widthGrow: 2,
-            visible: false,
-        },
-        {
-            title: "Fecha de fin de inscripción",
-            field: "inscription_finish_date",
-            formatter: function (cell, formatterParams, onRendered) {
-                const isoDate = cell.getValue();
-                if (!isoDate) return "";
-                return formatDateTime(isoDate);
-            },
-            widthGrow: 2,
-            visible: false,
-        },
-        {
-            title: "Fecha de inicio de matriculación",
-            field: "enrolling_start_date",
-            formatter: function (cell, formatterParams, onRendered) {
-                const isoDate = cell.getValue();
-                if (!isoDate) return "";
-                return formatDateTime(isoDate);
-            },
-            widthGrow: 2,
-            visible: false,
-        },
-        {
-            title: "Fecha de fin de matriculación",
-            field: "enrolling_finish_date",
-            formatter: function (cell, formatterParams, onRendered) {
-                const isoDate = cell.getValue();
-                if (!isoDate) return "";
-                return formatDateTime(isoDate);
-            },
-            widthGrow: 2,
-            visible: false,
-        },
-        {
-            title: "Tipo de calificación",
-            field: "calification_type",
-            formatter: function (cell, formatterParams, onRendered) {
-                const data = cell.getValue();
-                if (data == "NUMERICAL") {
-                    return "Numérica";
-                } else {
-                    return "Textual";
-                }
-            },
-            widthGrow: 2,
-            visible: false,
-        },
-        {
-            title: "Video de presentación",
-            field: "presentation_video_url",
-            formatter: function (cell, formatterParams, onRendered) {
-                const data = cell.getValue();
-                if (data) {
-                    return "<a href='" + data + "' target='_blank'>Enlace</a>";
-                }
-            },
-            widthGrow: 2,
-            visible: false,
-        },
-        {
-            title: "Validar registros de estudiantes",
-            field: "validate_student_registrations",
-            formatter: function (cell, formatterParams, onRendered) {
-                const data = cell.getValue();
-                return data;
-            },
-            widthGrow: 2,
-            visible: false,
-        },
-        {
-            title: "Validar registros de estudiantes",
-            field: "ects_workload",
-            formatter: function (cell, formatterParams, onRendered) {
-                const data = cell.getValue();
-                return data;
-            },
-            widthGrow: 2,
-            visible: false,
-        },
-        {
-            title: "Etiquetas",
-            field: "tags",
-            formatter: function (cell, formatterParams, onRendered) {
-                const data = cell.getValue();
-                const tagsArray = [];
-                data.forEach((item) => {
-                    tagsArray.push(item.tag);
-                });
-                return tagsArray.join(", ");
-            },
-            widthGrow: 2,
-            visible: false,
-            headerSort: false,
-        },
-        {
-            title: "Emails de contacto",
-            field: "contact_emails",
-            formatter: function (cell, formatterParams, onRendered) {
-                const data = cell.getValue();
-                const emailsArray = [];
-                data.forEach((item) => {
-                    emailsArray.push(item.email);
-                });
-                return emailsArray.join(", ");
-            },
-            widthGrow: 2,
-            visible: false,
-            headerSort: false,
-        },
-        {
-            title: "URL de LSM",
-            field: "lsm_url",
-            formatter: function (cell, formatterParams, onRendered) {
-                const data = cell.getValue();
-                if (data) {
-                    return "<a href='" + data + "' target='_blank'>Enlace</a>";
-                }
-            },
-            widthGrow: 2,
-            visible: false,
-        },
-        {
-            title: "Docentes coordinadores",
-            field: "teachers_coordinate",
-            formatter: function (cell, formatterParams, onRendered) {
-                const data = cell.getValue();
-                const fullNames = data.map(
-                    (professor) =>
-                        `${professor.first_name} ${professor.last_name}`
-                );
-                const concatenatedNames = fullNames.join(", ");
-                return concatenatedNames;
-            },
-            widthGrow: 2,
-            visible: false,
-            headerSort: false,
-        },
-        {
-            title: "Docentes no coordinadores",
-            field: "teachers_no_coordinate",
-            formatter: function (cell, formatterParams, onRendered) {
-                const data = cell.getValue();
-                const fullNames = data.map(
-                    (professor) =>
-                        `${professor.first_name} ${professor.last_name}`
-                );
-                const concatenatedNames = fullNames.join(", ");
-                return concatenatedNames;
-            },
-            widthGrow: 2,
-            visible: false,
-            headerSort: false,
-        },
-        {
-            title: "Categorias",
-            field: "categories",
-            formatter: function (cell, formatterParams, onRendered) {
-                const data = cell.getValue();
-                const categoriesArray = [];
-                data.forEach((item) => {
-                    categoriesArray.push(item.name);
-                });
-                return categoriesArray.join(", ");
-            },
-            widthGrow: 2,
-            visible: false,
-            headerSort: false,
-        },
-        {
-            title: "Coste",
-            field: "cost",
-            formatter: function (cell, formatterParams, onRendered) {
-                const data = cell.getValue();
-                return data + " €";
-            },
-            widthGrow: 2,
-            visible: false,
-        },
-        {
-            title: "Destacar en el carrousel grande",
-            field: "featured_big_carousel",
-            formatter: function (cell, formatterParams, onRendered) {
-                const data = cell.getValue();
-                if (data == 0) {
-                    return "No";
-                } else {
-                    return "Si";
-                }
-            },
-            widthGrow: 2,
-            visible: false,
-        },
-        {
-            title: "Destacar en el carrousel pequeño",
-            field: "featured_small_carousel",
-            formatter: function (cell, formatterParams, onRendered) {
-                const data = cell.getValue();
-                if (data == 0) {
-                    return "No";
-                } else {
-                    return "Si";
-                }
-            },
-            widthGrow: 2,
-            visible: false,
-        },
-        {
-            title: `<span class='cursor-pointer columns-selector'>${heroicon(
-                "view-columns"
-            )}</span>`,
-            field: "actions",
-            formatter: function (cell, formatterParams, onRendered) {
-                return `<button type="button" class='btn action-btn'>${heroicon(
-                    "pencil-square",
-                    "outline"
-                )}</button>`;
-            },
-            cellClick: function (e, cell) {
-                e.preventDefault();
-
-                const courseClicked = cell.getRow().getData();
-                loadCourseModal(courseClicked.uid);
-            },
-            headerClick: function (e, column) {
-                controlColumnsSecectorModal();
-            },
-            cssClass: "text-center",
-            headerSort: false,
-            width: 30,
-            resizable: false,
-        },
-        {
-            title: "",
-            field: "actions",
-            formatter: function (cell, formatterParams, onRendered) {
-                return `
-                    <button type="button" class='btn action-btn'>${heroicon(
-                        "ellipsis-horizontal",
-                        "outline"
-                    )}</button>
-                `;
-            },
-            cellClick: function (e, cell) {
-                e.preventDefault();
-                const btnArray = [
-                    {
-                        icon: "user-group",
-                        type: "outline",
-                        tooltip: "Listado de alumnos del curso",
-                        action: (course) => {
-                            loadCourseStudentsModal(course.uid);
-                        },
-                    },
-                    {
-                        icon: "document-duplicate",
-                        type: "outline",
-                        tooltip: "Duplicar curso",
-                        action: (course) => {
-                            showModalConfirmation(
-                                "¿Deseas duplicar esta edición?",
-                                "Se creará una nueva edición del curso con los mismos datos que la edición actual.",
-                                "duplicateCourse",
-                                [{ key: "course_uid", value: course.uid }]
-                            ).then((result) => {
-                                if (result) duplicateCourse(course.uid);
-                            });
-                        },
-                    },
-                    {
-                        icon: "folder-plus",
-                        type: "outline",
-                        tooltip: "Crear nueva edición a partir de este curso",
-                        action: (course) => {
-                            showModalConfirmation(
-                                "¿Deseas crear una nueva edición?",
-                                "Se creará una nueva edición del curso con los mismos datos que la edición actual.",
-                                "newEdition",
-                                [{ key: "course_uid", value: course.uid }]
-                            ).then((result) => {
-                                if (result) newEditionCourse(course.uid);
-                            });
-                        },
-                    },
-                    {
-                        icon: "document-arrow-up",
-                        type: "outline",
-                        tooltip: "Envío de credenciales",
-                        action: (course) => {
-                            showModalConfirmation(
-                                "Envío de credenciales",
-                                "¿Deseas enviar las credenciales a todos los usuarios que hayan finalizado?",
-                                "sendCredentials",
-                                [{ key: "course_uid", value: course.uid }]
-                            );
-                        },
-                    },
-                    {
-                        icon: "academic-cap",
-                        type: "outline",
-                        tooltip: "Calificaciones",
-                        action: (course) => {
-                            loadCalificationsCourse(course.uid);
-                        },
-                    },
-                ];
-
-                setTimeout(() => {
-                    moreOptionsBtn(cell, btnArray);
-                }, 1);
-            },
-            cssClass: "text-center",
-            headerSort: false,
-            width: 30,
-            resizable: false,
-        },
-    ];
-
     const { ...tabulatorBaseConfigOverrided } = tabulatorBaseConfig;
 
     const actualTableConfiguration = getPaginationControls("courses-table");
     tabulatorBaseConfigOverrided.paginationSize =
         actualTableConfiguration.paginationSize;
 
+    const rowContextMenuOptions = [
+        {
+            label: `${heroicon("pencil-square")} Editar`,
+            action: function (e, column) {
+                const courseClicked = column.getData();
+                loadCourseModal(courseClicked.uid);
+            },
+        },
+        {
+            label: `${heroicon("user-group")} Listado de alumnos`,
+            action: function (e, column) {
+                const courseClicked = column.getData();
+                loadCourseStudentsModal(
+                    courseClicked.uid,
+                    courseClicked.validate_student_registrations
+                );
+            },
+        },
+        {
+            label: `${heroicon("document-duplicate")} Duplicar curso`,
+            action: function (e, column) {
+                const courseClicked = column.getData();
+                showModalConfirmation(
+                    "¿Deseas duplicar esta edición?",
+                    "Se creará una nueva edición del curso con los mismos datos que la edición actual.",
+                    "duplicateCourse"
+                ).then((result) => {
+                    if (result) duplicateCourse(courseClicked.uid);
+                });
+            },
+        },
+        {
+            label: `${heroicon(
+                "folder-plus"
+            )} Crear nueva edición a partir de este curso`,
+            action: function (e, column) {
+                const courseClicked = column.getData();
+                showModalConfirmation(
+                    "¿Deseas crear una nueva edición?",
+                    "Se creará una nueva edición del curso con los mismos datos que la edición actual.",
+                    "newEdition"
+                ).then((result) => {
+                    if (result) newEditionCourse(courseClicked.uid);
+                });
+            },
+        },
+        {
+            label: `${heroicon("document-arrow-up")} Envío de credenciales`,
+            action: function (e, column) {
+                showModalConfirmation(
+                    "Envío de credenciales",
+                    "¿Estás seguro de que quieres enviar las credenciales a los estudiantes seleccionados?"
+                ).then((result) => {
+                    const courseClicked = column.getData();
+                    if (result) sendCredentialsCourse(courseClicked.uid);
+                });
+            },
+        },
+        {
+            label: `${heroicon("academic-cap")} Calificaciones`,
+            action: function (e, column) {
+                const courseClicked = column.getData();
+                loadCalificationsCourse(courseClicked.uid);
+            },
+        },
+    ];
+
     coursesTable = new Tabulator("#courses-table", {
         ...tabulatorBaseConfigOverrided,
         ajaxURL: endPointTable,
-        rowContextMenu: [
-            {
-                label: `${heroicon("pencil-square")} Editar`,
-                action: function (e, column) {
-                    const courseClicked = column.getData();
-                    loadCourseModal(courseClicked.uid);
-                },
-            },
-            {
-                label: `${heroicon("user-group")} Listado de alumnos`,
-                action: function (e, column) {
-                    const courseClicked = column.getData();
-                    loadCourseStudentsModal(courseClicked.uid);
-                },
-            },
-            {
-                label: `${heroicon("document-duplicate")} Duplicar curso`,
-                action: function (e, column) {
-                    const courseClicked = column.getData();
-                    showModalConfirmation(
-                        "¿Deseas duplicar esta edición?",
-                        "Se creará una nueva edición del curso con los mismos datos que la edición actual.",
-                        "duplicateCourse"
-                    ).then((result) => {
-                        if (result) duplicateCourse(courseClicked.uid);
-                    });
-                },
-            },
-            {
-                label: `${heroicon(
-                    "folder-plus"
-                )} Crear nueva edición a partir de este curso`,
-                action: function (e, column) {
-                    const courseClicked = column.getData();
-                    showModalConfirmation(
-                        "¿Deseas crear una nueva edición?",
-                        "Se creará una nueva edición del curso con los mismos datos que la edición actual.",
-                        "newEdition"
-                    ).then((result) => {
-                        if (result) newEditionCourse(courseClicked.uid);
-                    });
-                },
-            },
-            {
-                label: `${heroicon("document-arrow-up")} Envío de credenciales`,
-                action: function (e, column) {
-                    showModalConfirmation(
-                        "Envío de credenciales",
-                        "¿Estás seguro de que quieres enviar las credenciales a los estudiantes seleccionados?"
-                    ).then((result) => {});
-                },
-            },
-            {
-                label: `${heroicon("academic-cap")} Calificaciones`,
-                action: function (e, column) {
-                    const courseClicked = column.getData();
-                    loadCalificationsCourse(courseClicked.uid);
-                },
-            },
-        ],
+        rowContextMenu: rowContextMenuOptions,
         ajaxConfig: {
             method: "POST",
             headers: {
@@ -2048,11 +2100,54 @@ function initializeCoursesTable() {
                 data: response.data,
             };
         },
-        columns: columns,
+        columns: columnsCoursesTable,
     });
 
     controlsPagination(coursesTable, "courses-table");
     controlsSearch(coursesTable, endPointTable, "courses-table");
+}
+
+function sendCredentialsCourse(courseUid) {
+    const params = {
+        url: `/learning_objects/courses/send_credentials`,
+        method: "POST",
+        stringify: true,
+        body: {
+            course_uid: courseUid,
+        },
+        toast: true,
+        loader: true,
+    };
+
+    apiFetch(params);
+}
+
+function handleRegenerateEmbeddings(courseUid) {
+    showModalConfirmation(
+        "Regeneración de embeddings",
+        "¿Estás seguro de que quieres regenerar los embeddings del curso seleccionado?"
+    ).then((result) => {
+        if (result) {
+            regenerateEmbeddings(courseUid);
+        }
+    });
+}
+
+function regenerateEmbeddings(courseUid) {
+    const params = {
+        url: `/learning_objects/courses/regenerate_embeddings`,
+        method: "POST",
+        stringify: true,
+        body: {
+            course_uid: courseUid,
+        },
+        toast: true,
+        loader: true,
+    };
+
+    apiFetch(params).then(() => {
+        coursesTable.setData(endPointTable);
+    });
 }
 
 function loadCalificationsCourse(courseUid) {
@@ -2144,7 +2239,7 @@ function initializeCalificationsCourseTable(courseUid) {
                     last_name: r.last_name,
                     block: null,
                     learning_result: null,
-                    calification: null,
+                    calification: r.course_student_info.calification_info,
                     _children: [
                         ...response.courseBlocks.map((block) => {
                             return {
@@ -2305,6 +2400,7 @@ function initializeCalificationsCourseTable(courseUid) {
 function saveCalificationsCourse() {
     const blocksLearningResultCalifications = [];
     const learningResultsCalifications = [];
+    const globalCalifications = [];
     const cellsEdited = calificationsCourseTable.getEditedCells();
 
     // Array único con las rows editadas
@@ -2312,34 +2408,44 @@ function saveCalificationsCourse() {
     const uniqueRowsEdited = Array.from(new Set(rowsEdited));
 
     uniqueRowsEdited.forEach((row) => {
+        const rowData = row.getData();
         const parentRow = row.getTreeParent();
 
-        if (!parentRow) return;
-        const parentData = parentRow.getData();
-        const grandData = parentRow.getTreeParent().getData();
+        // Si tiene padre, es un bloque o un resultado de aprendizaje. Si no, es una calificación global
+        if (parentRow) {
+            const parentData = parentRow.getData();
+            const grandData = parentRow.getTreeParent().getData();
 
-        const userUid = grandData.uid;
-        const blockUid = parentData.uid;
+            const userUid = grandData.uid;
+            const blockUid = parentData.uid;
 
-        const learningResultUid = row.getData().uid;
-        const levelUid = row.getData().level ?? null;
+            const learningResultUid = rowData.uid;
+            const levelUid = rowData.level ?? null;
 
-        const calificationInfo = row.getData().calification;
+            const calificationInfo = rowData.calification;
 
-        if (blockUid) {
-            blocksLearningResultCalifications.push({
-                userUid,
-                blockUid,
-                learningResultUid,
-                levelUid,
-                calificationInfo,
-            });
+            if (blockUid) {
+                blocksLearningResultCalifications.push({
+                    userUid,
+                    blockUid,
+                    learningResultUid,
+                    levelUid,
+                    calificationInfo,
+                });
+            } else {
+                learningResultsCalifications.push({
+                    userUid,
+                    learningResultUid,
+                    levelUid,
+                    calificationInfo,
+                });
+            }
         } else {
-            learningResultsCalifications.push({
-                userUid,
-                learningResultUid,
-                levelUid,
-                calificationInfo,
+            const userUid = rowData.uid;
+            const calificationInfo = rowData.calification;
+            globalCalifications.push({
+                user_uid: userUid,
+                calification_info: calificationInfo,
             });
         }
     });
@@ -2350,6 +2456,7 @@ function saveCalificationsCourse() {
         body: {
             blocksLearningResultCalifications,
             learningResultsCalifications,
+            globalCalifications,
         },
         toast: true,
         stringify: true,
@@ -2674,7 +2781,17 @@ function submitFormCourseModal(event) {
 
     const form = document.getElementById("course-form");
 
+    // Para que envíe los campos deshabilitados, hay que activarlos
+    const disabledFields = form.querySelectorAll(":disabled");
+    disabledFields.forEach(function (field) {
+        field.disabled = false;
+    });
+
     const formData = new FormData(this);
+
+    disabledFields.forEach(function (field) {
+        field.disabled = true;
+    });
 
     const tags = tomSelectTags.items;
     formData.append("tags", JSON.stringify(tags));
@@ -2770,6 +2887,28 @@ function submitFormCourseModal(event) {
         .catch((data) => {
             showFormErrors(data.errors);
         });
+}
+
+function regenerateEmbeddingsCourses() {
+    if (!selectedCourses.length) {
+        showToast("No has seleccionado ningún curso", "error");
+        return;
+    }
+
+    const coursesUids = selectedCourses.map((course) => course.uid);
+
+    const params = {
+        url: "/learning_objects/courses/regenerate_embeddings",
+        method: "POST",
+        body: { courses_uids: coursesUids },
+        toast: true,
+        loader: true,
+        stringify: true,
+    };
+
+    apiFetch(params).then(() => {
+        reloadTableCourses();
+    });
 }
 
 /**
@@ -3063,15 +3202,26 @@ function resetModal() {
  * Carga y muestra el modal para la gestión de estudiantes de un curso.
  * Inicializa la tabla de estudiantes del curso y configura los eventos para la búsqueda y eliminación de estudiantes.
  */
-function loadCourseStudentsModal(courseUid) {
+function loadCourseStudentsModal(courseUid, validateStudentsRegistrations) {
     if (courseStudensTable != null && courseStudensTable != undefined) {
         courseStudensTable.destroy();
     }
 
     selectedCourseUid = courseUid;
 
-    initializeCourseStudentsTable(courseUid);
+    initializeCourseStudentsTable(courseUid, validateStudentsRegistrations);
 
+    // Si el curso no tiene validación de inscripciones, se ocultan los botones de aprobación y rechazo
+    const buttonsValidationStudents = [
+        "approve-students-btn",
+        "reject-students-btn",
+    ];
+
+    buttonsValidationStudents.forEach((button) => {
+        const btn = document.getElementById(button);
+        if (validateStudentsRegistrations) btn.classList.remove("hidden");
+        else btn.classList.add("hidden");
+    });
     controlsPagination(courseStudensTable, "course-students-table");
 
     showModal("course-students-modal", "Listado de alumnos");
@@ -3081,7 +3231,10 @@ function loadCourseStudentsModal(courseUid) {
  * Inicializa la tabla de estudiantes de un curso específico.
  * Configura las columnas y las opciones de ajax para la tabla de estudiantes usando 'Tabulator'.
  */
-function initializeCourseStudentsTable(courseUid) {
+function initializeCourseStudentsTable(
+    courseUid,
+    validateStudentsRegistrations
+) {
     const columns = [
         {
             title: '<div class="checkbox-cell"><input type="checkbox" id="select-all-checkbox"/></div>',
@@ -3115,63 +3268,69 @@ function initializeCourseStudentsTable(courseUid) {
         { title: "Nombre", field: "first_name", widthGrow: "2" },
         { title: "Apellidos", field: "last_name", widthGrow: "3" },
         { title: "NIF", field: "nif", widthGrow: "2" },
-        {
-            title: "Aceptado",
-            field: "courses_students.acceptance_status",
-            formatter: function (cell, formatterParams, onRendered) {
-                const rowData = cell.getRow().getData();
-                const acceptanceStatus =
-                    rowData.course_student_info.acceptance_status;
-                if (acceptanceStatus === "PENDING") return "Pendiente";
-                else if (acceptanceStatus === "ACCEPTED") return "Sí";
-                else if (acceptanceStatus === "REJECTED") return "No";
+    ];
+
+    // Se añaden las columnas de aceptación y documentos presentados si el curso tiene validación de inscripciones
+    if (validateStudentsRegistrations) {
+        columns.push(
+            {
+                title: "Aceptado",
+                field: "courses_students.acceptance_status",
+                formatter: function (cell, formatterParams, onRendered) {
+                    const rowData = cell.getRow().getData();
+                    const acceptanceStatus =
+                        rowData.course_student_info.acceptance_status;
+                    if (acceptanceStatus === "PENDING") return "Pendiente";
+                    else if (acceptanceStatus === "ACCEPTED") return "Sí";
+                    else if (acceptanceStatus === "REJECTED") return "No";
+                },
+                widthGrow: "3",
+                resizable: false,
             },
-            widthGrow: "3",
-            resizable: false,
-        },
-        {
-            title: "Documentos presentados",
-            field: "actions",
-            formatter: function (cell, formatterParams, onRendered) {
-                const rowData = cell.getRow().getData();
-                if (rowData.course_student_documents.length) {
-                    return `
+            {
+                title: "Documentos presentados",
+                field: "actions",
+                formatter: function (cell, formatterParams, onRendered) {
+                    const rowData = cell.getRow().getData();
+                    if (rowData.course_student_documents.length) {
+                        return `
                     <button class="dropdown-button" type="button" id="menu-button" aria-expanded="true" aria-haspopup="true">
                         Descarga
                         ${heroicon("chevron-down", "outline")}
                     </button>
                 </div>
                     `;
-                } else {
-                    return "-";
-                }
-            },
-            cellClick: function (e, cell) {
-                e.preventDefault();
-                const rowData = cell.getRow().getData();
+                    } else {
+                        return "-";
+                    }
+                },
+                cellClick: function (e, cell) {
+                    e.preventDefault();
+                    const rowData = cell.getRow().getData();
 
-                if (rowData.course_student_documents) {
-                    const btnArray = [];
-                    rowData.course_student_documents.forEach((document) => {
-                        btnArray.push({
-                            text: document.course_document.document_name,
-                            action: () => {
-                                downloadDocument(document.uid);
-                            },
+                    if (rowData.course_student_documents) {
+                        const btnArray = [];
+                        rowData.course_student_documents.forEach((document) => {
+                            btnArray.push({
+                                text: document.course_document.document_name,
+                                action: () => {
+                                    downloadDocument(document.uid);
+                                },
+                            });
                         });
-                    });
 
-                    setTimeout(() => {
-                        dropdownMenu(cell, btnArray);
-                    }, 1);
-                }
-            },
-            cssClass: "text-center",
-            headerSort: false,
-            widthGrow: 3,
-            resizable: false,
-        },
-    ];
+                        setTimeout(() => {
+                            dropdownMenu(cell, btnArray);
+                        }, 1);
+                    }
+                },
+                cssClass: "text-center",
+                headerSort: false,
+                widthGrow: 3,
+                resizable: false,
+            }
+        );
+    }
 
     courseStudensTable = new Tabulator("#course-students-table", {
         ajaxURL: `${endPointStudentTable}/${courseUid}`,
@@ -3323,6 +3482,7 @@ function getStatusCourseColor(statusCode) {
         ENROLLING: "#F3F4FF",
         READY_ADD_EDUCATIONAL_PROGRAM: "#F3FBED",
         ADDED_EDUCATIONAL_PROGRAM: "#EDFBF6",
+        PENDING_DECISION: "#F4EBF0",
     };
 
     return statusColors[statusCode];
@@ -3749,13 +3909,13 @@ function controlColumnsSecectorModal() {
     );
     checkboxes.forEach(function (checkbox) {
         checkbox.addEventListener("click", function () {
-            if (this.checked) {
-                coursesTable.showColumn(this.value);
-                coursesTable.redraw();
-            } else {
-                coursesTable.hideColumn(this.value);
-                coursesTable.redraw();
-            }
+            columnsCoursesTable.forEach((column) => {
+                if (column.field === this.value) {
+                    column.visible = this.checked;
+                    coursesTable.showColumn(this.value);
+                    coursesTable.redraw();
+                }
+            });
         });
     });
 }

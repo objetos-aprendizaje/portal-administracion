@@ -13,23 +13,32 @@
 
             <div class="flex gap-1">
                 <div>
-                    <button type="button" id="add-course-btn" class="btn-icon">
+                    <button type="button" id="add-course-btn" class="btn-icon" title="Crear curso">
                         {{ e_heroicon('plus', 'outline') }}
-                    </button>
-                </div>
-                <div>
-                    <button type="button" class="btn-icon" id="btn-reload-table">
-                        {{ e_heroicon('arrow-path', 'outline') }}
                     </button>
                 </div>
 
                 @if (Auth::user()->hasAnyRole(['ADMINISTRATOR', 'MANAGEMENT']))
                     <div>
-                        <button type="button" class="btn-icon" id="change-statuses-btn">
+                        <button type="button" class="btn-icon" id="change-statuses-btn" title="Cambiar estado de cursos">
                             {{ e_heroicon('arrows-right-left', 'outline') }}
                         </button>
                     </div>
                 @endif
+
+                @if ($general_options['enabled_recommendation_module'])
+                    <div>
+                        <button type="button" class="btn-icon" id="btn-regenerate-embeddings" title="Regenerar embeddings">
+                            {{ e_heroicon('arrow-path-rounded-square', 'outline') }}
+                        </button>
+                    </div>
+                @endif
+
+                <div>
+                    <button type="button" class="btn-icon" id="btn-reload-table" title="Actualizar tabla">
+                        {{ e_heroicon('arrow-path', 'outline') }}
+                    </button>
+                </div>
 
             </div>
         </div>

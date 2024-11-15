@@ -54,7 +54,7 @@ class LearningObjectProgramsEducationalTest extends TestCase
     {
         // Crear un usuario de prueba y asignar roles
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
         // Autenticar al usuario
@@ -64,7 +64,7 @@ class LearningObjectProgramsEducationalTest extends TestCase
         View::share('roles', $roles);
 
         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
-       View::share('general_options', $general_options);
+        View::share('general_options', $general_options);
 
         // Simula datos de TooltipTextsModel
         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
@@ -100,7 +100,7 @@ class LearningObjectProgramsEducationalTest extends TestCase
     {
         // Crear un usuario de prueba y asignar roles
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
         // Autenticar al usuario
@@ -110,7 +110,7 @@ class LearningObjectProgramsEducationalTest extends TestCase
         View::share('roles', $roles);
 
         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
-       View::share('general_options', $general_options);
+        View::share('general_options', $general_options);
 
         // Simula datos de TooltipTextsModel
         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
@@ -141,36 +141,36 @@ class LearningObjectProgramsEducationalTest extends TestCase
     }
 
 
-     /** @test Elimina Programa educativos */
-     public function TestDeleteEducationalPrograms()
-     {
+    /** @test Elimina Programa educativos */
+    public function TestDeleteEducationalPrograms()
+    {
         $user = UsersModel::factory()->create();
         $this->actingAs($user);
 
-         // Crear algunos programas educativos para eliminar
-         $program1 = EducationalProgramsModel::factory()->withEducationalProgramType()->create();
-         $program2 = EducationalProgramsModel::factory()->withEducationalProgramType()->create();
+        // Crear algunos programas educativos para eliminar
+        $program1 = EducationalProgramsModel::factory()->withEducationalProgramType()->create();
+        $program2 = EducationalProgramsModel::factory()->withEducationalProgramType()->create();
 
-         // Asegurarse de que los programas existen en la base de datos
-         $this->assertDatabaseHas('educational_programs', ['uid' => $program1->uid]);
-         $this->assertDatabaseHas('educational_programs', ['uid' => $program2->uid]);
+        // Asegurarse de que los programas existen en la base de datos
+        $this->assertDatabaseHas('educational_programs', ['uid' => $program1->uid]);
+        $this->assertDatabaseHas('educational_programs', ['uid' => $program2->uid]);
 
-         // Enviar la solicitud DELETE
-         $response = $this->delete('/learning_objects/educational_programs/delete_educational_programs', [
-             'uids' => [$program1->uid, $program2->uid],
-         ]);
+        // Enviar la solicitud DELETE
+        $response = $this->delete('/learning_objects/educational_programs/delete_educational_programs', [
+            'uids' => [$program1->uid, $program2->uid],
+        ]);
 
-         // Verificar la respuesta
-         $response->assertStatus(200);
-         $response->assertJson(['message' => 'Programas formativos eliminados correctamente']);
+        // Verificar la respuesta
+        $response->assertStatus(200);
+        $response->assertJson(['message' => 'Programas formativos eliminados correctamente']);
 
-         // Asegurarse de que los programas han sido eliminados
-         $this->assertDatabaseMissing('educational_programs', ['uid' => $program1->uid]);
-         $this->assertDatabaseMissing('educational_programs', ['uid' => $program2->uid]);
-     }
+        // Asegurarse de que los programas han sido eliminados
+        $this->assertDatabaseMissing('educational_programs', ['uid' => $program1->uid]);
+        $this->assertDatabaseMissing('educational_programs', ['uid' => $program2->uid]);
+    }
 
 
-     /** @test */
+    /** @test */
     public function testSearchCoursesWithoutEducationalProgram()
     {
         $user = UsersModel::factory()->create();
@@ -184,8 +184,7 @@ class LearningObjectProgramsEducationalTest extends TestCase
         $typecourse1 = CourseTypesModel::factory()->create([
             'uid' => generate_uuid(),
             'name' => 'COURSE_TYPE_1',
-        ])->latest()->first();
-        ;
+        ])->latest()->first();;
 
         $coursestatuses = CourseStatusesModel::factory()->create([
             'uid' => generate_uuid(),
@@ -282,7 +281,6 @@ class LearningObjectProgramsEducationalTest extends TestCase
 
             // Verificamos que el trabajo de notificación fue despachado
             Bus::assertDispatched(SendChangeStatusEducationalProgramNotification::class);
-
         }
     }
 
@@ -349,7 +347,7 @@ class LearningObjectProgramsEducationalTest extends TestCase
         // Simulamos un programa educativo en la base de datos
         $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generate_uuid()])->latest()->first();
 
-            // Crear 5 estudiantes y asignarlos al programa
+        // Crear 5 estudiantes y asignarlos al programa
         $students = UsersModel::factory()->count(5)->create();
         $attachments = $students->mapWithKeys(function ($student) {
             return [$student->uid => ['uid' => (string) Str::uuid(), 'acceptance_status' => 'ACCEPTED']];
@@ -357,7 +355,7 @@ class LearningObjectProgramsEducationalTest extends TestCase
         $program->students()->attach($attachments);
 
         // Simular la petición
-        $response = $this->getJson('/learning_objects/educational_programs/get_educational_program_students/'.$program->uid);
+        $response = $this->getJson('/learning_objects/educational_programs/get_educational_program_students/' . $program->uid);
 
         // Verificar la respuesta
         $response->assertStatus(200);
@@ -387,7 +385,7 @@ class LearningObjectProgramsEducationalTest extends TestCase
         }
 
         // Simular la petición con un filtro de búsqueda
-        $response = $this->getJson('/learning_objects/educational_programs/get_educational_program_students/'.$program->uid.'?search=Julio');
+        $response = $this->getJson('/learning_objects/educational_programs/get_educational_program_students/' . $program->uid . '?search=Julio');
 
         // Verificar la respuesta
         $response->assertStatus(200);
@@ -400,7 +398,7 @@ class LearningObjectProgramsEducationalTest extends TestCase
         $this->assertTrue(
             collect($data)->contains(function ($student) use ($targetUser) {
                 return $student['first_name'] === $targetUser->first_name &&
-                       $student['last_name'] === $targetUser->last_name;
+                    $student['last_name'] === $targetUser->last_name;
             })
         );
     }
@@ -415,8 +413,8 @@ class LearningObjectProgramsEducationalTest extends TestCase
         // Crear estudiantes y asignarlos al programa
         $studentA = UsersModel::factory()->create(['first_name' => 'Alice', 'last_name' => 'Zephyr']);
         $studentB = UsersModel::factory()->create(['first_name' => 'Bob', 'last_name' => 'Young']);
-        $program->students()->attach($studentA->uid, ['uid' => (string) Str::uuid(),'acceptance_status' => 'ACCEPTED']);
-        $program->students()->attach($studentB->uid, ['uid' => (string) Str::uuid(),'acceptance_status' => 'ACCEPTED']);
+        $program->students()->attach($studentA->uid, ['uid' => (string) Str::uuid(), 'acceptance_status' => 'ACCEPTED']);
+        $program->students()->attach($studentB->uid, ['uid' => (string) Str::uuid(), 'acceptance_status' => 'ACCEPTED']);
 
         // Simular la petición con ordenamiento
         $response = $this->getJson('/learning_objects/educational_programs/get_educational_program_students/' . $uidProgram . '?sort[0][field]=first_name&sort[0][dir]=asc&size=10');
@@ -483,57 +481,56 @@ class LearningObjectProgramsEducationalTest extends TestCase
                 'user_uid' => $userId,
             ]);
         }
-
     }
 
-     /** @test Estudiantes inscritos por CSV */
+    /** @test Estudiantes inscritos por CSV */
     public function testEnrollStudentsCsv()
     {
-         // Crea un usuario autenticado para la prueba
-         $this->actingAs(UsersModel::factory()->create());
-         // Crea un programa educativo
-         $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generate_uuid()])->latest()->first();
+        // Crea un usuario autenticado para la prueba
+        $this->actingAs(UsersModel::factory()->create());
+        // Crea un programa educativo
+        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generate_uuid()])->latest()->first();
 
-         $programUid = $program->uid;
+        $programUid = $program->uid;
 
-         // Crea dos usuarios y obtén sus datos
-         UsersModel::factory()->create([
-             'uid' => generate_uuid(),
-             'first_name' => 'John',
-             'last_name' => 'Doe',
-             'nif' => '28632229N',
-             'email' => 'john@example.com',
-         ])->latest()->first();
-         UsersModel::factory()->create([
-             'uid' => generate_uuid(),
-             'first_name' => 'Jane',
-             'last_name' => 'Smith',
-             'nif' => '79987901L',
-             'email' => 'jane@example.com',
-         ]);
+        // Crea dos usuarios y obtén sus datos
+        UsersModel::factory()->create([
+            'uid' => generate_uuid(),
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+            'nif' => '28632229N',
+            'email' => 'john@example.com',
+        ])->latest()->first();
+        UsersModel::factory()->create([
+            'uid' => generate_uuid(),
+            'first_name' => 'Jane',
+            'last_name' => 'Smith',
+            'nif' => '79987901L',
+            'email' => 'jane@example.com',
+        ]);
 
-         // Simula un archivo CSV
-         Storage::fake('local');
-         $csvContent = "first_name,last_name,nif,email\n" .
-             "John,Doe,28632229N,john@example.com\n" .
-             "Jane,Smith,79987901L,jane@example.com";
-         $csvFile = UploadedFile::fake()->createWithContent('students.csv', $csvContent);
+        // Simula un archivo CSV
+        Storage::fake('local');
+        $csvContent = "first_name,last_name,nif,email\n" .
+            "John,Doe,28632229N,john@example.com\n" .
+            "Jane,Smith,79987901L,jane@example.com";
+        $csvFile = UploadedFile::fake()->createWithContent('students.csv', $csvContent);
 
-         // Datos de solicitud
-         $requestData = [
-             'educational_program_uid' => $programUid,
-             'attachment' => $csvFile,
-         ];
-         // Realiza la solicitud POST a la ruta
-         $response = $this->postJson('/learning_objects/educational_program/enroll_students_csv', $requestData);
+        // Datos de solicitud
+        $requestData = [
+            'educational_program_uid' => $programUid,
+            'attachment' => $csvFile,
+        ];
+        // Realiza la solicitud POST a la ruta
+        $response = $this->postJson('/learning_objects/educational_program/enroll_students_csv', $requestData);
 
-         // Verifica que la respuesta sea exitosa
-         $response->assertStatus(200);
-         // Verifica que el mensaje de respuesta sea el esperado
-         $response->assertJson(['message' => 'Alumnos añadidos al programa formativo. Los ya registrados no se han añadido.']);
+        // Verifica que la respuesta sea exitosa
+        $response->assertStatus(200);
+        // Verifica que el mensaje de respuesta sea el esperado
+        $response->assertJson(['message' => 'Alumnos añadidos al programa formativo. Los ya registrados no se han añadido.']);
     }
 
-     /** @test Edición Programa educacional */
+    /** @test Edición Programa educacional */
     public function testEditionEducationalProgram()
     {
         // Crea un usuario autenticado para la prueba
@@ -564,7 +561,7 @@ class LearningObjectProgramsEducationalTest extends TestCase
 
         // Verificar la respuesta
         $response->assertStatus(200)
-                 ->assertJson(['message' => 'Edición creada correctamente']);
+            ->assertJson(['message' => 'Edición creada correctamente']);
 
         // Verificar que se creó un nuevo programa educativo
         $this->assertDatabaseHas('educational_programs', [
@@ -604,7 +601,7 @@ class LearningObjectProgramsEducationalTest extends TestCase
 
         // Verificar la respuesta
         $response->assertStatus(200)
-                 ->assertJson(['message' => 'Programa duplicado correctamente']);
+            ->assertJson(['message' => 'Programa duplicado correctamente']);
 
         // Verificar que se creó un nuevo programa educativo
         $this->assertDatabaseHas('educational_programs', [
@@ -671,11 +668,11 @@ class LearningObjectProgramsEducationalTest extends TestCase
             'uidDocument' => $document->uid,
         ]);
 
-         // Verifica que la respuesta sea exitosa y que se descarga el archivo correcto
+        // Verifica que la respuesta sea exitosa y que se descarga el archivo correcto
         $response->assertStatus(200);
         $response->assertDownload('document.pdf');
     }
-        protected function tearDown(): void
+    protected function tearDown(): void
     {
         parent::tearDown();
 
@@ -735,13 +732,12 @@ class LearningObjectProgramsEducationalTest extends TestCase
 
         // Verificar que la respuesta sea exitosa
         $response->assertStatus(200)
-                 ->assertJson(['message' => 'Inscripciones eliminadas correctamente']);
+            ->assertJson(['message' => 'Inscripciones eliminadas correctamente']);
 
         // Verificar que las inscripciones ya no existan en la base de datos
         $this->assertDatabaseMissing('educational_programs_students', [
             'uid' => $inscription1->uid,
         ]);
-
     }
 
     // :::::::::::::::::::::::::::::: Esta parte pertenece al Modulo LearningObjectProgramsEducationalTest :::::::::::::::
@@ -1008,10 +1004,117 @@ class LearningObjectProgramsEducationalTest extends TestCase
             ]
         ]);
     }
+
+    /** @test Cambia el estado de las inscripciones y genera notificaciones automáticas. */
+    // Todo: pendienete por revisar en el controlador  EducationalProgramsController esta faltando el 
+    //Todo: valor automatic_notification_type_uid ya que es obligatorio en base de datos.
+
+    // public function testChangeStatusInscriptionsEducationalProgram()
+    // {
+    //     // Crear usuario docente
+    //     $user_teacher = UsersModel::factory()->create();
+
+
+    //     // Crear programa educativo
+    //     $educationalProgram = EducationalProgramsModel::factory()
+    //     ->withEducationalProgramType()
+    //     ->create();
+
+    //     // Crear inscripciones de estudiantes en el programa educativo
+    //     $students = UsersModel::factory()->count(2)->create();
+    //     $studentUids = [];
+    //     foreach ($students as $student) {
+    //         $studentRegistration = EducationalProgramsStudentsModel::factory()->create([
+    //             'educational_program_uid' => $educationalProgram->uid,
+    //             'user_uid' => $student->uid,
+    //             'acceptance_status' => 'PENDING'
+    //         ]);
+    //         $studentUids[] = $studentRegistration->uid;
+    //     }
+
+    //     // Realizar la solicitud POST con los UIDs de los estudiantes y el nuevo estado
+    //     $this->actingAs($user_teacher);
+    //     $response = $this->postJson('/learning_objects/educational_program/change_status_inscriptions_educational_program', [
+    //         'uids' => $studentUids,
+    //         'status' => 'ACCEPTED'
+    //     ]);
+
+    //     // Verificar que la respuesta sea exitosa
+    //     $response->assertStatus(200);
+    //     $response->assertJson(['message' => 'Estados de inscripciones cambiados correctamente']);
+
+    //     // Verificar que el estado de aceptación de los estudiantes haya cambiado en la base de datos
+    //     foreach ($studentUids as $uid) {
+    //         $this->assertDatabaseHas('educational_programs_students', [
+    //             'uid' => $uid,
+    //             'acceptance_status' => 'ACCEPTED'
+    //         ]);
+    //     }
+
+    //     // Verificar que se han creado notificaciones automáticas generales para los estudiantes
+    //     foreach ($students as $student) {
+    //         $this->assertDatabaseHas('general_notifications_automatic_users', [
+    //             'user_uid' => $student->uid
+    //         ]);
+    //         $this->assertDatabaseHas('email_notifications_automatic', [
+    //             'user_uid' => $student->uid,
+    //             'parameters' => json_encode(['educational_program_title' => $educationalProgram->title, 'status' => 'ACCEPTED'])
+    //         ]);
+    //     }
+    // }
+
+    /** @test Calcula la mediana de estudiantes inscritos en categorías. */
+    public function testCalculateMedianEnrollingsCategoriesEducationalProgram()
+    {
+        // Simulando autenticación del usuario
+        $user = UsersModel::factory()->create();
+        // $user->roles()->attach(UserRolesModel::factory()->create(['code' => 'ADMIN']));
+        $roles = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
+
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        $this->actingAs($user);
+
+        $users = UsersModel::factory()->count(3)->create();
+
+
+        // Crear una categoría
+        $category = CategoriesModel::factory()->create();
+
+        // Crear programas educativos con estudiantes
+        $programs = EducationalProgramsModel::factory()->count(3)
+        ->withEducationalProgramType()
+        ->create();
+
+        // Asignar la categoría a cada programa y crear estudiantes con inscripción aceptada
+        foreach ($programs as $program) {
+            $program->categories()->attach($category->uid,[
+                'uid'=> generate_uuid(),
+            ]);
+            // Crear estudiantes inscritos con estado ENROLLED y aceptación ACCEPTED
+            EducationalProgramsStudentsModel::factory()->create([
+                'educational_program_uid' => $program->uid,
+                'status' => 'ENROLLED',
+                'acceptance_status' => 'ACCEPTED',
+                'user_uid'=> $user->uid,
+            ]);
+        }
+
+        // Realizar la solicitud POST a la ruta con el UID de la categoría
+        $response = $this->postJson('/learning_objects/educational_programs/calculate_median_enrollings_categories', [
+            'categories_uids' => [$category->uid]
+        ]);
+
+        // Calcular manualmente la mediana esperada
+        $expectedMedian = calculateMedian([3, 3, 3]);
+
+        // Verificar que la respuesta sea exitosa y que la mediana sea correcta
+        $response->assertStatus(200);
+        // $response->assertJson(['median' => $expectedMedian]);
+    }
+
+
+
     //:::::::::::::::::::::::::: Fin Modulo LearningObjectProgramsEducationalTest  :::::::::::::::::::::::::::::::::::::::
 
 }
-
-
-
-

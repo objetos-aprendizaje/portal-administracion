@@ -13,30 +13,38 @@
 
             <div class="flex gap-1">
                 <div>
-                    <button type="button" class="btn-icon" id="btn-add-resource">
+                    <button type="button" class="btn-icon" id="btn-add-resource" title="Añadir recurso educativo">
                         {{ e_heroicon('plus', 'outline') }}
                     </button>
                 </div>
 
                 <div>
-                    <button type="button" class="btn-icon" id="btn-delete-resources">
+                    <button type="button" class="btn-icon" id="btn-delete-resources" title="Eliminar recurso educativo">
                         {{ e_heroicon('trash', 'outline') }}
                     </button>
                 </div>
-                <div>
-                    <button type="button" class="btn-icon" id="btn-reload-table">
-                        {{ e_heroicon('arrow-path', 'outline') }}
-                    </button>
-                </div>
+
+                @if ($general_options['enabled_recommendation_module'])
+                    <div>
+                        <button type="button" class="btn-icon" id="btn-regenerate-embeddings" title="Regenerar embeddings">
+                            {{ e_heroicon('arrow-path-rounded-square', 'outline') }}
+                        </button>
+                    </div>
+                @endif
 
                 @if (auth()->user()->hasAnyRole(['ADMINISTRATOR', 'MANAGEMENT']))
                     <div>
-                        <button type="button" class="btn-icon" id="change-statuses-btn">
+                        <button type="button" class="btn-icon" id="change-statuses-btn" title="Cambiar estados de recursos educativos">
                             {{ e_heroicon('arrows-right-left', 'outline') }}
                         </button>
                     </div>
                 @endif
 
+                <div>
+                    <button type="button" class="btn-icon" id="btn-reload-table" title="Recargar listado">
+                        {{ e_heroicon('arrow-path', 'outline') }}
+                    </button>
+                </div>
             </div>
         </div>
 

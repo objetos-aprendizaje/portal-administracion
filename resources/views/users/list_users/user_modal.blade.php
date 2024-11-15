@@ -63,7 +63,11 @@
                         <label for="user_rol_uid">Roles <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input id="roles" name="roles" autocomplete="off" placeholder="Introduce roles" />
+                        <select id="roles" name="roles" name="roles[]" multiple>
+                            @foreach ($userRoles as $userRol)
+                                <option value="{{ $userRol->uid }}">{{ $userRol->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
 

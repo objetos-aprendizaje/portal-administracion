@@ -6,6 +6,7 @@ use Tests\TestCase;
 use App\Models\UsersModel;
 use App\Models\UserRolesModel;
 use App\Models\FooterPagesModel;
+use App\Models\HeaderPagesModel;
 use App\Models\TooltipTextsModel;
 use App\Models\GeneralOptionsModel;
 use Illuminate\Support\Facades\Auth;
@@ -82,19 +83,102 @@ class AdministrationFooterPageTest extends TestCase
 
         ]);
 
+        $footer = FooterPagesModel::factory()->create()->latest()->first();
+
         // Realizar la solicitud POST para guardar las opciones
         $response = $this->postJson('/administration/footer_pages/save_footer_page', [
             'legalAdvice' => 'Texto legal actualizado',
             'name' => 'nombre footer',
             'slug' => 'texto-legal',
             'content' => 'content',
-            'acceptance_required' => 0
+            'acceptance_required' => 0,
+            'footer_page_uid'=> $footer->uid,
         ]);
 
         // Verificar que la respuesta sea exitosa
         $response->assertStatus(200)
-                 ->assertJson(['message' => 'Página de footer creada correctamente']);
+                 ->assertJson(['message' => 'Página de footer actualizada correctamente']);
 
+    }
+
+    public function testSaveSlugExistFooterPages()
+    {
+
+        // Crear una opción general para probar la actualización
+        GeneralOptionsModel::create([
+            'option_name' => 'legalAdvice',
+            'option_value' => 'Texto legal',
+
+        ]);
+
+        $footer = FooterPagesModel::factory()->create()->latest()->first();
+
+        // Realizar la solicitud POST para guardar las opciones
+        $response = $this->postJson('/administration/footer_pages/save_footer_page', [
+            'legalAdvice' => 'Texto legal actualizado',
+            'name' => 'nombre footer',
+            'slug' => 'footer-page-original',
+            'content' => 'content',
+            'acceptance_required' => 0,
+            'footer_page_uid'=> generate_uuid(),
+        ]);
+
+        // Verificar que se haya lanzado la excepción
+        $this->assertNotNull($response->exception);
+        $this->assertInstanceOf(OperationFailedException::class, $response->exception);
+        $this->assertEquals("El slug intriducido ya existe", $response->exception->getMessage());
+
+        // Verificar que no se haya guardado nada en la base de datos
+        $this->assertDatabaseMissing('footer_pages', [
+            'slug' => 'pagina-existente',
+            'name' => 'Nueva Página de Footer',
+        ]);
+
+        // // Verificar que la respuesta sea exitosa
+        // $response->assertStatus(406)
+        //          ->assertJson(['message' => 'Página de footer actualizada correctamente']);
+    }
+
+    public function testSaveHeaderPagesFooterPages()
+    {
+
+        // Crear una opción general para probar la actualización
+        GeneralOptionsModel::create([
+            'option_name' => 'legalAdvice',
+            'option_value' => 'Texto legal',
+
+        ]);
+
+        $header = HeaderPagesModel::factory()->create(
+            [
+                'slug'=> 'header-page-original'
+            ]
+        )->latest()->first();
+
+        // Realizar la solicitud POST para guardar las opciones
+        $response = $this->postJson('/administration/footer_pages/save_footer_page', [
+            'legalAdvice' => 'Texto legal actualizado',
+            'name' => 'nombre footer',
+            'slug' => 'header-page-original',
+            'content' => 'content',
+            'acceptance_required' => 0,
+            
+        ]);
+
+        // Verificar que se haya lanzado la excepción
+        $this->assertNotNull($response->exception);
+        $this->assertInstanceOf(OperationFailedException::class, $response->exception);
+        $this->assertEquals("El slug intriducido ya existe", $response->exception->getMessage());
+
+        // Verificar que no se haya guardado nada en la base de datos
+        $this->assertDatabaseMissing('footer_pages', [
+            'slug' => 'pagina-existente',
+            'name' => 'Nueva Página de Footer',
+        ]);
+
+        // // Verificar que la respuesta sea exitosa
+        // $response->assertStatus(406)
+        //          ->assertJson(['message' => 'Página de footer actualizada correctamente']);
     }
 
     /** @test Obtener Footer page */

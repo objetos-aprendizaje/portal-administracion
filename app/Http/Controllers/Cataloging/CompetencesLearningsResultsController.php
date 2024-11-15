@@ -428,14 +428,14 @@ class CompetencesLearningsResultsController extends BaseController
     }
 
 
-    private function searchFatherCompetence($uid, $broader_relations_skill_pillar)
-    {
-        foreach ($broader_relations_skill_pillar as $row) {
-            if ($this->extractuidUrl($row[1]) == $uid) {
-                return $row;
-            }
-        }
-    }
+    // private function searchFatherCompetence($uid, $broader_relations_skill_pillar)
+    // {
+    //     foreach ($broader_relations_skill_pillar as $row) {
+    //         if ($this->extractuidUrl($row[1]) == $uid) {
+    //             return $row;
+    //         }
+    //     }
+    // }
 
 
     private function buildHierarchy($data)

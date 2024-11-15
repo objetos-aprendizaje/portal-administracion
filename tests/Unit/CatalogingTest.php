@@ -11,6 +11,7 @@ use App\Models\TooltipTextsModel;
 use Illuminate\Http\UploadedFile;
 use App\Models\GeneralOptionsModel;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
@@ -278,9 +279,32 @@ class CatalogingTest extends TestCase
         }
     }
 
+    public function testDeleteCategories()
+    {
+        // Crear categorías de prueba
+        $category1 = CategoriesModel::factory()->create(['name' => 'Categoría 1', 'uid' => generate_uuid()]);
+        $category2 = CategoriesModel::factory()->create(['name' => 'Categoría 2', 'uid' => generate_uuid()]);
+
+        // Simular la autenticación del usuario
+        $this->actingAs(UsersModel::factory()->create());
+
+        // Simular la solicitud DELETE
+        $response = $this->deleteJson('/cataloging/categories/delete_categories', [
+            'uids' => [$category1->uid, $category2->uid],
+        ]);
+
+        // Verificar que la respuesta sea correcta
+        $response->assertStatus(200);
+        $response->assertJson(['message' => 'Categorías eliminadas correctamente']);
+
+        // Verificar que las categorías han sido eliminadas
+        $this->assertDatabaseMissing('categories', ['uid' => $category1->uid]);
+        $this->assertDatabaseMissing('categories', ['uid' => $category2->uid]);
+
+    }
+
     /**
      * @test Buscar Categoria
-     * @return void
      */
     public function testGetCategoriesWithSearch()
     {
@@ -762,7 +786,6 @@ class CatalogingTest extends TestCase
                 'uids' => [$uidResource],
             ]);
 
-            // Verifica que la respuesta sea correcta
             $responseDelete->assertStatus(200);
             $responseDelete->assertJson(['message' => 'Tipos de recurso educativo eliminados correctamente']);
 

@@ -2,12 +2,14 @@
 
 namespace Tests\Unit;
 
+use Mockery;
 use Tests\TestCase;
 use App\Models\UsersModel;
 use Illuminate\Http\Request;
 use App\Models\UserRolesModel;
 use Illuminate\Support\Carbon;
 use App\Models\TooltipTextsModel;
+use Illuminate\Support\Facades\DB;
 use App\Models\GeneralOptionsModel;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
@@ -15,8 +17,8 @@ use Illuminate\Support\Facades\Schema;
 use App\Models\NotificationsTypesModel;
 use App\Models\GeneralNotificationsModel;
 use App\Models\NotificationsPerUsersModel;
+use App\Models\UserGeneralNotificationsModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Notifications\NotificationServiceProvider;
 use App\Models\DestinationsGeneralNotificationsRolesModel;
 use App\Http\Controllers\Notifications\GeneralNotificationsController;
 
@@ -717,6 +719,305 @@ class NotificationsTest extends TestCase
         ]);
     }
 
+    /** @test */
+    public function testSearchNotificationsByTitle()
+    {
+
+        $notificactiontype1= NotificationsTypesModel::factory()->create()->first();
+        $notificactiontype2= NotificationsTypesModel::factory()->create()->first();
+
+        // Crea algunas notificaciones para probar.
+        GeneralNotificationsModel::factory()->create([
+            'title' => 'Notificación importante',
+            //'description' => 'Esta es una descripción importante.',
+            'notification_type_uid' => $notificactiontype1->uid,
+
+        ]);
+
+        GeneralNotificationsModel::factory()->create([
+            'title' => 'Otra notificación',
+            //'description' => 'Descripción secundaria.',
+            'notification_type_uid' => $notificactiontype2->uid,
+        ]);
+
+        // Realiza la solicitud a la ruta.
+        $response = $this->get('/notifications/general/get_list_general_notifications?search=importante');
+
+        // Asegúrate de que la respuesta sea exitosa.
+        $response->assertStatus(200);
 
 
+    }
+
+       /** @test */
+       public function testFilterNotificationsByUsers()
+       {
+           // Crea algunos usuarios.
+           $user1 = UsersModel::factory()->create(['uid' => generate_uuid(), 'first_name' => 'User One'])->first();
+           $user2 = UsersModel::factory()->create(['uid' => generate_uuid(), 'first_name' => 'User Two'])->first();
+
+           $notificactiontype1= NotificationsTypesModel::factory()->create()->first();
+           $notificactiontype2= NotificationsTypesModel::factory()->create()->first();
+
+           // Crea notificaciones asociadas a los usuarios.
+           $notification1 = GeneralNotificationsModel::factory()->create([
+               'title' => 'Notificación para User One',
+               'description' => 'Descripción de la notificación para User One.',
+               'notification_type_uid' => $notificactiontype1->uid,
+
+           ]);
+           $notification1->users()->attach($user1->uid,['uid' => generate_uuid()]); // Asocia la notificación con el usuario 1.
+
+           $notification2 = GeneralNotificationsModel::factory()->create([
+               'title' => 'Notificación para User Two',
+               'description' => 'Descripción de la notificación para User Two.',
+               'notification_type_uid' => $notificactiontype2->uid,
+               // otros campos necesarios...
+           ]);
+           $notification2->users()->attach($user2->uid,['uid' => generate_uuid()]); // Asocia la notificación con el usuario 2.
+
+           // Realiza la solicitud a la ruta con filtro por usuarios.
+    $response = $this->get('/notifications/general/get_list_general_notifications?filters[0][database_field]=users&filters[0][value][]=' . $user1->uid);
+
+           // Asegúrate de que la respuesta sea exitosa.
+           $response->assertStatus(200);
+
+
+       }
+
+       public function testFilterNotificationByType()
+        {
+            // Crea algunos tipos de notificaciones.
+            $notificationType1 = NotificationsTypesModel::factory()->create(['uid' => generate_uuid(), 'name' => 'Type A']);
+            $notificationType2 = NotificationsTypesModel::factory()->create(['uid' => generate_uuid(), 'name' => 'Type B']);
+
+            // Crea notificaciones asociadas a los tipos.
+            $notification1 = GeneralNotificationsModel::factory()->create([
+                'title' => 'Notificación tipo A',
+                'description' => 'Descripción de la notificación tipo A.',
+                'notification_type_uid' => $notificationType1->uid,
+                'type' => 'ROLES',
+            ]);
+
+            $notification2 = GeneralNotificationsModel::factory()->create([
+                'title' => 'Notificación tipo B',
+                'description' => 'Descripción de la notificación tipo B.',
+                'notification_type_uid' => $notificationType2->uid,
+                'type' => 'USERS',
+            ]);
+
+            // Realiza la solicitud a la ruta con filtro por tipo.
+            $response = $this->get('/notifications/general/get_list_general_notifications?filters[0][database_field]=type&filters[0][value]=USERS');
+
+            // Asegúrate de que la respuesta sea exitosa.
+            $response->assertStatus(200);
+        }
+
+        public function testGetGeneralNotificationNotFound()
+        {
+            // Genera un UID que no existe en la base de datos.
+            $nonExistentUid = '00000000-0000-0000-0000-000000000000';
+
+            // Realiza la solicitud a la ruta con el UID no existente.
+            $response = $this->get('/notifications/general/get_general_notification/' . $nonExistentUid);
+
+            // Asegúrate de que la respuesta tenga el código de estado 406.
+            $response->assertStatus(406);
+
+            // Verifica que el mensaje de error sea el esperado.
+            $response->assertJson(['message' => 'La notificación general no existe']);
+        }
+
+        public function testSaveGeneralNotificationWithExistingUid()
+        {
+
+            $user = UsersModel::factory()->create()->latest()->first();
+            $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+            $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+
+            // Autenticar al usuario
+            Auth::login($user);
+
+            // Crea algunos tipos de notificaciones.
+            $notificationType1 = NotificationsTypesModel::factory()->create(['uid' => generate_uuid(), 'name' => 'Type A']);
+            // Crea una notificación existente en la base de datos.
+            $notification = GeneralNotificationsModel::factory()->create([
+                'title' => 'Notificación Original',
+                'description' => 'Descripción original.',
+                'notification_type_uid' => $notificationType1->uid,
+            ]);
+
+            // Crea un payload para actualizar la notificación.
+            $payload = [
+                'notification_general_uid' => $notification->uid, // Usamos el UID existente
+                'title' => 'Notificación Actualizada',
+                'description' => 'Descripción actualizada.',
+                'start_date' => now()->addDays(1)->toISOString(),
+                'end_date' => now()->addDays(2)->toISOString(),
+                'type' => 'USERS', // Cambia a USERS si es necesario
+                'notification_type_uid' => $notificationType1->uid,
+                'users' => [$user->uid]
+            ];
+
+            $response = $this->postJson('/notifications/general/save_general_notifications', $payload);
+
+            // Asegúrate de que la respuesta tenga el código de estado 200.
+            $response->assertStatus(200);
+
+            // Verifica el mensaje de éxito.
+            $response->assertJson(['message' => 'Notificación general actualizada correctamente']);
+
+            // Verifica que la notificación se haya actualizado en la base de datos.
+            $this->assertDatabaseHas('general_notifications', [
+                'uid' => $notification->uid, // Verificamos que se haya actualizado la misma notificación
+                'title' => 'Notificación Actualizada',
+                'description' => 'Descripción actualizada.',
+            ]);
+
+        }
+
+        public function testSaveGeneralNotificationWithRoles()
+        {
+
+            $user = UsersModel::factory()->create()->latest()->first();
+            $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);
+            $roles2 = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]);
+            $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+
+            // Autenticar al usuario
+            Auth::login($user);
+
+            // Crea algunos tipos de notificaciones.
+            $notificationType1 = NotificationsTypesModel::factory()->create(['uid' => generate_uuid(), 'name' => 'Type A']);
+
+            // Crea una notificación existente en la base de datos.
+            $notification = GeneralNotificationsModel::factory()->create([
+                'title' => 'Notificación Original',
+                'description' => 'Descripción original.',
+                'notification_type_uid' => $notificationType1->uid,
+            ]);
+
+            // Crea un payload para actualizar la notificación, asegurándote de incluir roles.
+            $payload = [
+                'notification_general_uid' => $notification->uid, // Usamos el UID existente
+                'title' => 'Notificación con Roles',
+                'description' => 'Descripción de la notificación con roles.',
+                'start_date' => now()->addDays(1)->toISOString(),
+                'end_date' => now()->addDays(2)->toISOString(),
+                'type' => 'ROLES', // Especificamos que es del tipo ROLES
+                'notification_type_uid' => $notificationType1->uid,
+                'roles' => [$roles->uid, $roles2->uid],
+            ];
+
+
+            // Realiza la solicitud para guardar la notificación.
+            $response = $this->postJson('/notifications/general/save_general_notifications', $payload);
+
+            // Asegúrate de que la respuesta tenga el código de estado 200.
+            $response->assertStatus(200);
+
+            // Verifica el mensaje de éxito.
+            $response->assertJson(['message' => 'Notificación general actualizada correctamente']);
+
+            // Verifica que la notificación se haya actualizado en la base de datos.
+            $this->assertDatabaseHas('general_notifications', [
+                'uid' => $notification->uid, // Verificamos que se haya actualizado la misma notificación
+                'title' => 'Notificación con Roles',
+                'description' => 'Descripción de la notificación con roles.',
+            ]);
+        }
+
+        public function testGetUserViewsGeneralNotificationWithSorting()
+        {
+            // Crea algunos usuarios en la base de datos.
+            $user1 = UsersModel::factory()->create([
+                'first_name' => 'Alice',
+                'last_name' => 'Smith',
+                'email' => 'alice@example.com',
+            ]);
+
+            $user2 = UsersModel::factory()->create([
+                'first_name' => 'Bob',
+                'last_name' => 'Johnson',
+                'email' => 'bob@example.com',
+            ]);
+
+            // Crea notificaciones generales y asocia vistas de usuario.
+            $generalNotification = GeneralNotificationsModel::factory()->create();
+
+            UserGeneralNotificationsModel::factory()->create([
+                'user_uid' => $user1->uid,
+                'general_notification_uid' => $generalNotification->uid,
+                'view_date' => now(),
+            ]);
+
+            UserGeneralNotificationsModel::factory()->create([
+                'user_uid' => $user2->uid,
+                'general_notification_uid' => $generalNotification->uid,
+                'view_date' => now(),
+            ]);
+
+            // Realiza la solicitud a la ruta correspondiente.
+            $response = $this->getJson('/notifications/general/get_users_views_general_notification/'.$generalNotification->uid.'?sort[0][field]=user_uid&sort[0][dir]=asc&size=10');
+
+            // Asegúrate de que la respuesta tenga el código de estado 200.
+            $response->assertStatus(200);
+
+        }
+        /**
+         * Notificación general por usuario no existe
+         */
+        public function testGetGeneralNotificationUserNotFound()
+        {
+
+        // Simulamos un UID válido pero inexistente
+        $notification_general_uid = '00000000-0000-0000-0000-000000000000';
+
+        // Llamamos al endpoint
+        $response = $this->get("/notifications/general/get_general_notification_user/{$notification_general_uid}");
+
+        // Verificamos que se devuelve un código 406 y el mensaje adecuado
+        $response->assertStatus(406)
+                 ->assertJson([
+                     'message' => 'La notificación general no existe'
+                 ]);
+        }
+
+        public function testGetNotificationsPerUserWithSorting()
+        {
+            // Crear un usuario ficticio
+            $user = UsersModel::factory()->create(['uid' => generate_uuid()])->first();
+
+            // Crear algunas notificaciones con diferentes fechas de visualización
+            $notification1 = $user->notifications()->create([
+                'uid' => generate_uuid(),
+                'title' => 'Notificación 1',
+                'description' => 'Descripción 1',
+                'view_date' => now()->subDays(2), // Fecha más antigua
+                'start_date' =>now(),
+                'end_date' =>now()->subDays(2),
+
+            ],['uid'=>generate_uuid()]);
+
+            $notification2 = $user->notifications()->create([
+                'uid' => generate_uuid(),
+                'title' => 'Notificación 2',
+                'description' => 'Descripción 2',
+                'view_date' => now()->subDays(1), // Fecha más reciente
+                'start_date' =>now(),
+                'end_date' =>now()->subDays(2),
+            ],['uid'=>generate_uuid()]);
+
+            // Simular la solicitud con ordenación por view_date descendente
+            $response = $this->get('/notifications/notifications_per_users/get_notifications/' . $user->uid . '?size=10&sort[0][field]=pivot.view_date&sort[0][dir]=desc');
+
+            // Obtener los datos de la respuesta
+            json_decode($response->getContent(), true)['data'];
+
+
+            // Verificar el estado de la respuesta
+            $response->assertStatus(200);
+        }
 }

@@ -639,6 +639,9 @@ button.element-disabled {
         @apply flex sm:flex-row flex-col mb-4 gap-2;
     }
 
+    & .field .label-container {
+        @apply flex;
+    }
 
     & .field .label-container label {
         @apply w-auto break-words text-sm font-roboto-regular;

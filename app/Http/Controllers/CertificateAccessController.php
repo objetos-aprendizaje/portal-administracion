@@ -2,67 +2,82 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\UsersModel;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Routing\Controller as BaseController;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Redirect;
-use App\Models\UserRolesModel;
-use App\Models\UserRoleRelationshipsModel;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 
-class CertificateAccessController extends BaseController
-{
+class CertificateAccessController extends BaseController {
     use AuthorizesRequests, ValidatesRequests;
 
-    public function index()
-    {
+    public function index(Request $request) {
 
-        if ($_SERVER["REDIRECT_SSL_CLIENT_VERIFY"]=="SUCCESS"){
+        $certificateClient = $request->header(env('FMNT_CERT_HEADER'));
 
-            $user = UsersModel::where('email', strtolower($_SERVER["REDIRECT_SSL_CLIENT_SAN_Email_0"]))->first();
+        $certificateClient = "-----BEGIN CERTIFICATE-----\n"
+            . wordwrap($certificateClient, 64, "\n", true)
+            . "\n-----END CERTIFICATE-----";
 
-            if ($user){
+        if (!empty($certificateClient)) {
+            $validate = $this->validateClientCert($certificateClient);
+        } else {
+            return redirect("/login?e=certificate-error");
+        }
 
-                return redirect($this->redirectWithTokenX509($user));
+        if ($validate) {
+            $certInfo = openssl_x509_parse($certificateClient);
 
-            }else{
+            $first_name = $certInfo['subject']['GN'];
+            $last_name = $certInfo['subject']['SN'];
+            $temp = explode("-", $certInfo['subject']['serialNumber']);
+            $nif = strtoupper(trim($temp[1]));
 
-                $user = new UsersModel();
-                $user->uid = generate_uuid();
-                $user->first_name = $_SERVER["REDIRECT_SSL_CLIENT_S_DN_G"];
-                $user->last_name = $_SERVER["REDIRECT_SSL_CLIENT_S_DN_G"];
-                $nif_temp = explode(" - ",$_SERVER["SSL_CLIENT_S_DN_CN"]);
-                $user->nif = $nif_temp[1];
-                $user->email = $_SERVER["REDIRECT_SSL_CLIENT_SAN_Email_0"];
-                $user->logged_x509 = true;
-                $user->save();
+            $data = json_encode([
+                'first_name' => $first_name,
+                'last_name' => $last_name,
+                'nif' => $nif,
+            ]);
 
-                $rol = UserRolesModel::where("code", "TEACHER")->first();
-                $rol_relation = new UserRoleRelationshipsModel();
-                $rol_relation->uid = generate_uuid();
-                $rol_relation->user_uid = $user->uid;
-                $rol_relation->user_role_uid = $rol;
-                $rol_relation->save();
+            $expiration = time() + 60; // 1 minute
+            $hash = md5($data . $expiration . env('KEY_CHECK_CERTIFICATE_ACCESS'));
+            $origin = isset($_GET['origin']) && $_GET['origin'] == 'portal_web' ? env('FRONT_URL') : env('APP_URL');
 
-                $user = UsersModel::where('email', strtolower($_SERVER["REDIRECT_SSL_CLIENT_SAN_Email_0"]))->first();
-
-                return redirect($this->redirectWithTokenX509($user));
-
-            }
-
-        }else{
-
-            return redirect(env('DOMINIO_PRINCIPAL')."/login?e=certificate-error");
-
+            return redirect($origin . "/login/certificate?data=" . urlencode($data) . "&expiration=" . $expiration . "&hash=" . $hash);
+        } else {
+            return redirect("/login?e=certificate-error");
         }
     }
-    private function redirectWithTokenX509($user){
 
-        $user->token_x509 = generateToken();
-        $user->save();
-        $url = env('DOMINIO_PRINCIPAL')."/token_login/".$user->token_x509;
-        return $url;
+    private function validateClientCert($certificateClient) {
+        // Cargar el certificado de la CA
+        $caCertPath = public_path('cert/AC_Raiz_FNMT-RCM_SHA256.pem');
+        if (!file_exists($caCertPath)) {
+            Log::error('No se encuentra el certificado de la CA en la ruta especificada');
+            return false;
+        }
 
+        // Cargar el certificado como recurso X.509
+        $x509 = openssl_x509_read($certificateClient);
+
+        $certPem = '';
+        openssl_x509_export($x509, $certPem);
+
+        if (!$certPem) {
+            return false;  // El certificado es inválido o no pudo ser leído
+        }
+
+        // Verificar el certificado usando OpenSSL
+        $valid = openssl_x509_checkpurpose($certPem, X509_PURPOSE_SSL_CLIENT, [$caCertPath]);
+
+        if ($valid === true) {
+            return true; // El certificado es válido
+        } elseif ($valid === false) {
+            Log::error('Certificado no válido o no verificado');
+            return false;
+        } else {
+            Log::error('Error al procesar la validación del certificado');
+            return false;
+        }
     }
 }

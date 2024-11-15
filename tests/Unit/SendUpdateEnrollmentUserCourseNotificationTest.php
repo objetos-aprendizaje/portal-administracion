@@ -43,7 +43,6 @@ class SendUpdateEnrollmentUserCourseNotificationTest extends TestCase
         // Asociar el usuario con el curso a través de la tabla pivot `courses_students`
         $user->coursesStudents()->attach($course->uid, [
             'acceptance_status' => 'ACCEPTED',
-            'calification_type' => 'NUMERIC',
             'credential' => 'some_credential',
             'uid' => $uid,
         ]);
@@ -116,7 +115,6 @@ class SendUpdateEnrollmentUserCourseNotificationTest extends TestCase
         // Asociar el usuario con el curso a través de la tabla pivot `courses_students`
         $user->coursesStudents()->attach($course->uid, [
             'acceptance_status' => 'REJECTED',
-            'calification_type' => 'NUMERIC',
             'credential' => 'some_credential',
             'uid' => $uid,
         ]);

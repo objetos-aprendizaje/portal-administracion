@@ -19,8 +19,9 @@ class HeaderPagesModelFactory extends Factory
         return [
             'uid' => generate_uuid(),
             'order' => 1,
-            'name' => 'nombre header',
-            'content' => 'Contenido'
+            'name' => 'nombre pagina header',
+            'content' => 'Contenido',
+            'slug' => 'nueva-pagina-header',
         ];
     }
 }

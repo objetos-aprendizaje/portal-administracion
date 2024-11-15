@@ -80,6 +80,7 @@ export function hideLoader() {
  */
 function adjustPadding() {
     var navbar = document.getElementById("poa-header");
+    if (!navbar) return;
     var body = document.body;
     var navbarHeight = navbar.offsetHeight;
     body.style.paddingTop = navbarHeight + "px";
@@ -320,24 +321,33 @@ export function changeColorColoris(element, color) {
  *
  * @param {*} flatpickrDate - Objeto Flatpickr con las fechas seleccionadas. Este objeto
  *                            contiene un array 'selectedDates' que incluye objetos Date.
+ * @param {boolean} showTime - Indica si se debe incluir la hora en la fecha formateada.
  * @returns {string[]} Array de cadenas con las fechas formateadas en 'YYYY-MM-DD'.
  *                     Si el usuario seleccionó un rango de fechas, se devolverán dos
  *                     fechas en el array; si solo seleccionó una fecha, el array
  *                     contendrá un solo elemento.
  */
-export function getFlatpickrDateRangeSql(flatpickrDate) {
+export function getFlatpickrDateRangeSql(flatpickrDate, showTime = true) {
     // Obtiene el rango de fechas seleccionado desde flatpickr
     let dateRange = flatpickrDate.selectedDates;
 
-    // Formatea las fechas a YYYY-MM-DD HH:MM:SS
-    let formattedDates = dateRange.map((date) => {
-        return date.toISOString().replace("T", " ").substring(0, 19);
-    });
+    let formattedDates = null;
+    if (showTime) {
+        // Formatea las fechas a YYYY-MM-DD HH:MM:SS
+        formattedDates = dateRange.map((date) => {
+            return date.toISOString().replace("T", " ").substring(0, 19);
+        });
+    } else {
+        // Formatea las fechas a YYYY-MM-DD
+        formattedDates = dateRange.map((date) => {
+            return date.toISOString().substring(0, 10) + " 00:00:00";
+        });
+    }
 
     return formattedDates;
 }
 
-export function getFlatpickrDateRange(flatpickrDate) {
+export function getFlatpickrDateRange(flatpickrDate, showTime = true) {
     // Obtiene el rango de fechas seleccionado desde flatpickr
     let dateRange = flatpickrDate.selectedDates;
 
@@ -348,6 +358,8 @@ export function getFlatpickrDateRange(flatpickrDate) {
             month: "2-digit",
             year: "numeric",
         });
+
+        if (!showTime) return datePart;
         let timePart = date.toLocaleTimeString("es-ES", {
             hour: "2-digit",
             minute: "2-digit",
@@ -622,13 +634,13 @@ export function instanceFlatpickr(idElement) {
 
     return flatpickrInstance;
 }
-
 export function instanceFlatpickrNoHour(idElement) {
     const flatpickrInstance = flatpickr("#" + idElement, {
         mode: "range",
         dateFormat: "d-m-Y",
         enableTime: true,
         locale: Spanish,
+        enableTime: false,
         onClose(selectedDates, dateStr, instance) {
             if (selectedDates.length < 2) {
                 setTimeout(() => {
@@ -637,7 +649,6 @@ export function instanceFlatpickrNoHour(idElement) {
             }
         },
     });
-
     return flatpickrInstance;
 }
 
@@ -994,7 +1005,7 @@ export function showElement(element, show) {
 
 export function debounce(func, wait) {
     let timeout;
-    return function(...args) {
+    return function (...args) {
         clearTimeout(timeout);
         timeout = setTimeout(() => func.apply(this, args), wait);
     };
@@ -1004,7 +1015,8 @@ function getAllLabelsOfPage() {
     const labels = document.querySelectorAll("label");
     labels.forEach((label, index) => {
         if (label.htmlFor != "") {
-            let findElement = findByInputId(tooltiptexts, label.htmlFor);
+            const formId = label.closest('form')?.id || '';
+            let findElement = findByInputId(tooltiptexts, label.htmlFor, formId);
             if (findElement) {
                 const div_tooltp_i = tag(
                     "div",
@@ -1032,8 +1044,8 @@ function getAllLabelsOfPage() {
     addEventsToTooltipTexts();
 }
 
-function findByInputId(array, inputId) {
-    const item = array.find((item) => item.input_id === inputId);
+function findByInputId(array, inputId, formId) {
+    const item = array.find((item) => item.input_id === inputId && item.form_id === formId);
     return item ? { uid: item.uid, description: item.description } : null;
 }
 

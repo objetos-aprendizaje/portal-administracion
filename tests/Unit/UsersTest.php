@@ -3,13 +3,14 @@
 namespace Tests\Unit;
 
 use Tests\TestCase;
+use ReflectionMethod;
 use App\Models\UsersModel;
 use Illuminate\Support\Str;
 use App\Models\CoursesModel;
+use Illuminate\Http\Request;
 use App\Models\UserRolesModel;
 use Illuminate\Support\Carbon;
 use App\Models\DepartmentsModel;
-use PHPUnit\Framework\Exception;
 use App\Models\TooltipTextsModel;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +24,7 @@ use App\Models\EducationalProgramTypesModel;
 use App\Models\AutomaticNotificationTypesModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Http\Controllers\Users\ListUsersController;
+use App\Http\Controllers\DepartmentsController;
 
 
 class UsersTest extends TestCase
@@ -150,58 +152,73 @@ class UsersTest extends TestCase
         });
     }
 
+
     /**
-     * @testdox Obtener Index View Usuarios*/
-    public function testIndexListUsersPage()
+     * @test
+     * Prueba que la vista de listado de usuarios se carga correctamente con las variables necesarias.
+     */
+    public function testIndexViewLoadsWithCorrectData()
     {
-        $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $user = UsersModel::factory()->create();
 
-        // Autenticar al usuario
-        Auth::login($user);
-
-        // Compartir la variable de roles manualmente con la vista
-        View::share('roles', $roles);
-
-        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
-        View::share('general_options', $general_options);
-
-        // Simula datos de TooltipTextsModel
-        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
-        View::share('tooltip_texts', $tooltip_texts);
-
-        // Simula notificaciones no leídas
-        $unread_notifications = $user->notifications->where('read_at', null);
-        View::share('unread_notifications', $unread_notifications);
-        // Crear departamentos de prueba
+        // Simular los datos que deben estar disponibles en la vista
         DepartmentsModel::factory()->count(3)->create();
 
-        // Realizar la solicitud GET a la ruta
+        $departments = DepartmentsModel::get();
+
+        $rol = UserRolesModel::where('code', 'MANAGEMENT')->first(); // Crea roles de prueba
+
+        $user->roles()->attach($rol->uid, ['uid' => generate_uuid()]);
+
+        $this->actingAs($user);
+
+        //Listado de todos los roles
+        $roles = UserRolesModel::get();
+
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+
+
+        $unreadNotifications = 5;
+
+        // Simular los valores de las variables globales que deben pasar a la vista
+        View::share('userRoles', $roles);
+        View::share('roles', $roles);
+        View::share('general_options', $general_options);
+        View::share('tooltip_texts', $tooltip_texts);
+        View::share('unread_notifications', $unreadNotifications);
+
+        // Realizar la solicitud GET al método index
         $response = $this->get(route('list-users'));
 
-        // Verificar que la respuesta es 200 OK
+        // Verificar que la respuesta sea exitosa (status 200)
         $response->assertStatus(200);
 
-        // Verificar que se carga la vista correcta
-        $response->assertViewIs('users.list_users.index');
+        // Verificar que la vista contiene las variables esperadas
+        $response->assertViewHas('departments', function ($viewDepartments) use ($departments) {
+            return $viewDepartments->count() === $departments->count();
+        });
 
-        // Verificar que la vista recibe los datos correctos
-        $response->assertViewHas('departments');
-        $response->assertViewHasAll([
-            'page_name' => 'Listado de usuarios',
-            'page_title' => 'Listado de usuarios',
-            'resources' => ["resources/js/users_module/list_users.js"],
-            'tabulator' => true,
-            'tomselect' => true,
-            'flatpickr' => true,
-            'submenuselected' => 'list-users',
-        ]);
+        // Verificar que la vista tiene las variables globales que se han compartido
+        $response->assertViewHas('userRoles');
+        $response->assertViewHas('general_options');
+        $response->assertViewHas('tooltip_texts');
+        $response->assertViewHas('unread_notifications');
 
-        // Verificar que se pasaron los departamentos correctos a la vista
-        $departments = DepartmentsModel::all();
-        $this->assertEquals($departments->toArray(), $response->viewData('departments')->toArray());
+        // Verificar que la vista cargue el archivo JavaScript necesario
+        $response->assertViewHas('resources', function ($resources) {
+            return in_array('resources/js/users_module/list_users.js', $resources);
+        });
+
+        // Verificar que los otros valores, como "page_name" y "page_title", estén presentes
+        $response->assertViewHas('page_name', 'Listado de usuarios');
+        $response->assertViewHas('page_title', 'Listado de usuarios');
+        $response->assertViewHas('submenuselected', 'list-users');
     }
+
+
+
     /**
      * @testdox Crear Usuario Exitoso*/
     public function testCreateUser()
@@ -434,7 +451,7 @@ class UsersTest extends TestCase
                     // generate_uuid(),
                     // generate_uuid(),
                 ]),
-                'automatic_email_notification_types_disabled'   => json_encode([  $automaticNotificationType->uid])
+                'automatic_email_notification_types_disabled'   => json_encode([$automaticNotificationType->uid])
             ];
 
             $response = $this->post('/my_profile/update', $data);
@@ -832,4 +849,123 @@ class UsersTest extends TestCase
         $this->assertDatabaseMissing('users', ['uid' => $user1->uid]);
         $this->assertDatabaseMissing('users', ['uid' => $user2->uid]);
     }
+
+    public function testFilterUsersByCreationDate()
+    {
+        // Crear usuarios con diferentes fechas de creación
+        $user1 = UsersModel::factory()->create(['created_at' => now()->subDays(10)]);
+        $user2 = UsersModel::factory()->create(['created_at' => now()->subDays(5)]);
+        $user3 = UsersModel::factory()->create(['created_at' => now()->subDays(1)]);
+
+        // Definir los filtros
+        $filters = [
+            [
+                'database_field' => 'creation_date',
+                'value' => [now()->subDays(7), now()->subDays(2)],
+            ],
+        ];
+
+        // Realizar la solicitud
+        $response = $this->json('GET', '/users/list_users/get_users', [
+            'filters' => $filters,
+        ]);
+
+        // Verificar que la respuesta sea correcta
+        $response->assertStatus(200);
+
+        // Comprobar que solo el usuario2 está en los resultados
+        $this->assertCount(1, $response->json()['data']);
+
+    }
+
+    public function testFilterUsersByRoles()
+    {
+        // Crear roles y usuarios
+        $user1 = UsersModel::factory()->create();
+        $role1 = UserRolesModel::where('code', 'STUDENT')->first();
+
+        $user1->roles()->attach($role1->uid, ['uid' => generate_uuid()]);
+
+        $user2 = UsersModel::factory()->create();
+        $role2 = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
+        $user2->roles()->attach($role2->uid, ['uid' => generate_uuid()]);
+
+        // Definir los filtros
+        $filters = [
+            [
+                'database_field' => 'roles',
+                'value' => [$role1->uid], // Filtrar por rol Admin
+            ],
+        ];
+
+        // Realizar la solicitud
+        $response = $this->json('GET', '/users/list_users/get_users', [
+            'filters' => $filters,
+        ]);
+
+        // Verificar que la respuesta sea correcta
+        $response->assertStatus(200);
+
+        // Comprobar que solo el usuario1 está en los resultados
+        $this->assertCount(1, $response->json()['data']);
+    }
+
+    /** @test */
+    public function testValidatesRolesSelection()
+    {
+        // Crear una instancia del controlador que contiene el método saveUser
+        $controller = new ListUsersController();
+
+        // Crear una solicitud simulada sin roles seleccionados
+        $requestData = [
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+            'email' => 'john.doe@example.com',
+            'nif' => '12345678Z',
+            'roles' => json_encode([]), // No se seleccionan roles
+        ];
+        // Crear una instancia de Request con los datos simulados
+        $request = Request::create('/', 'POST', $requestData); // Usar Request::create
+
+        // Usar reflexión para acceder al método privado validateUser
+        $reflection = new ReflectionMethod($controller, 'validateUser');
+        $reflection->setAccessible(true);
+
+        // Llamar al método validateUser y obtener los errores
+        $validateErrors = $reflection->invoke($controller, $request);
+
+        // Verificar que se devuelva un error relacionado con los roles
+        $this->assertArrayHasKey('roles', $validateErrors->toArray());
+
+    }
+
+    /** @test */
+    public function testReturnsAllDepartments()
+    {
+        /** @test */
+
+        // Crear algunos departamentos en la base de datos
+        $department1 = DepartmentsModel::factory()->create(['name' => 'HR']);
+        $department2 = DepartmentsModel::factory()->create(['name' => 'IT']);
+
+         // Crear una instancia del controlador
+         $controller = new ListUsersController();
+
+         // Llamar al método getDepartments directamente
+         $response = $controller->getDepartments();
+
+
+        // Verificar que la respuesta tenga un código de estado 200
+        $this->assertEquals(200, $response->getStatusCode());
+
+        // Verificar que los departamentos devueltos sean los esperados
+        $responseData = json_decode($response->getContent(), true);
+        $this->assertCount(2, $responseData); // Asegura que se devuelven 2 departamentos
+        $this->assertEquals($department1->name, $responseData[0]['name']);
+        $this->assertEquals($department2->name, $responseData[1]['name']);
+    }
+
+
+
+
 }

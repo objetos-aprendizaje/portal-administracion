@@ -57,47 +57,10 @@ class CoursesModel extends Model
         'creator_user_uid',
         'identifier',
         'certification_type_uid',
-        'embeddings',
-        'course_lms_id'
+        'course_lms_id',
+        'certidigital_credential_uid'
     ];
 
-    protected $dateFields = [
-        'inscription_start_date',
-        'inscription_finish_date',
-        'realization_start_date',
-        'realization_finish_date',
-        'enrolling_start_date',
-        'enrolling_finish_date'
-    ];
-
-    public function getAttribute($key)
-    {
-        if (in_array($key, $this->dateFields)) {
-            return $this->getDateInTimezone($this->attributes[$key], env('TIMEZONE_DISPLAY'));
-        }
-
-        return parent::getAttribute($key);
-    }
-
-    public function setAttribute($key, $value)
-    {
-        if (in_array($key, $this->dateFields)) {
-            $this->attributes[$key] = $this->setDateInUTC($value, env('TIMEZONE_DISPLAY'));
-            return $this;
-        }
-
-        return parent::setAttribute($key, $value);
-    }
-
-    protected function getDateInTimezone($value, $timezone)
-    {
-        return Carbon::parse($value)->setTimezone($timezone)->format('Y-m-d H:i:s');
-    }
-
-    protected function setDateInUTC($value, $timezone)
-    {
-        return Carbon::parse($value, $timezone)->setTimezone('UTC');
-    }
 
     public function call()
     {
@@ -136,7 +99,7 @@ class CoursesModel extends Model
             'courses_students',
             'course_uid',
             'user_uid'
-        )->withPivot(['acceptance_status', 'status', 'uid'])->as('course_student_info');
+        )->withPivot(['acceptance_status', 'status', 'calification_info', 'uid'])->as('course_student_info');
     }
 
     public function courseDocuments()
@@ -291,5 +254,18 @@ class CoursesModel extends Model
     public function visits()
     {
         return $this->hasMany(CoursesVisitsModel::class, 'course_uid', 'uid');
+    }
+
+    public function embeddings() {
+        return $this->hasOne(CoursesEmbeddingsModel::class, 'course_uid', 'uid');
+    }
+
+    public function certidigitalCredential()
+    {
+        return $this->belongsTo(CertidigitalCredentialsModel::class, 'certidigital_credential_uid', 'uid');
+    }
+
+    public function certidigitalAssesments() {
+        return $this->hasMany(CertidigitalAssesmentsModel::class, 'course_uid', 'uid');
     }
 }

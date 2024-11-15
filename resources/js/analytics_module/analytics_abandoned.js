@@ -22,7 +22,29 @@ document.addEventListener("DOMContentLoaded", function () {
         .addEventListener("click", function () {
             analyticsAbandonedTableFromGraph.download("csv", "datos.csv");
         });
+
+    document
+        .getElementById("threshold-abandoned-courses-form")
+        .addEventListener("submit", saveThresholdAbandonedCoursesForm);
 });
+
+function saveThresholdAbandonedCoursesForm() {
+    const formData = new FormData(this);
+
+    const params = {
+        url: "/analytics/abandoned/save_threshold_abandoned_courses",
+        method: "POST",
+        body: formData,
+        loader: true,
+        toast: true,
+    };
+
+    apiFetch(params).then(() => {
+        document.getElementById("d3_graph_x_axis").innerHTML = "";
+        document.getElementById("d3_graph").innerHTML = "";
+        drawGraph();
+    });
+}
 
 function drawTable() {
     const columns = [
@@ -64,7 +86,6 @@ function drawTable() {
     controlsPagination(analyticsAbandonedTable, "analytics-abandoned");
 }
 function drawGraph() {
-    //get data
     let datas;
     const params = {
         url: "/analytics/users/get_abandoned_graph",

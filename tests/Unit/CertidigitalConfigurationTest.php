@@ -20,7 +20,8 @@ class CertidigitalConfigurationTest extends TestCase
     /**
      * @testdox Inicialización de inicio de sesión
      */
-    public function setUp(): void {
+    public function setUp(): void
+    {
         parent::setUp();
         $this->withoutMiddleware();
         // Asegúrate de que la tabla 'qvkei_settings' existe
@@ -31,7 +32,7 @@ class CertidigitalConfigurationTest extends TestCase
     public function testIndexRouteReturnsViewCertidigitalConfiguration()
     {
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
         // Autenticar al usuario
@@ -41,7 +42,7 @@ class CertidigitalConfigurationTest extends TestCase
         View::share('roles', $roles);
 
         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
-       View::share('general_options', $general_options);
+        View::share('general_options', $general_options);
 
         // Simula datos de TooltipTextsModel
         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
@@ -70,39 +71,64 @@ class CertidigitalConfigurationTest extends TestCase
     }
 
     /**
-* @test  Guarda CertidigitalConfiguration */
+     * @test  Guarda CertidigitalConfiguration */
 
-public function testSaveCertidigitalForm()
-{
-    // Simular el inicio de sesión del usuario
+    public function testSaveCertidigitalForm()
+    {
+        // Simular el inicio de sesión del usuario
 
-    $user = UsersModel::factory()->create();
-    $this->actingAs($user);
+        $user = UsersModel::factory()->create();
+        $this->actingAs($user);
 
 
-    // Datos de prueba para el formulario
-    $formData = [
-        'certidigital_url' => 'https://example.com',
-        'certidigital_client_id' => 'client_id',
-        'certidigital_client_secret' => 'client_secret',
-        'certidigital_username' => 'username',
-        'certidigital_password' => 'password',
-    ];
+        // Datos de prueba para el formulario
+        $formData = [
+            'certidigital_url' => 'https://example.com',
+            'certidigital_client_id' => 'client_id',
+            'certidigital_client_secret' => 'client_secret',
+            'certidigital_username' => 'username',
+            'certidigital_password' => 'password',
+        ];
 
-    // Hacer una solicitud POST a la ruta
-    $response = $this->post('/administration/certidigital/save_certidigital_form', $formData);
+        // Hacer una solicitud POST a la ruta
+        $response = $this->post('/administration/certidigital/save_certidigital_form', $formData);
 
-    // Comprobar que la respuesta es correcta
-    $response->assertStatus(200);
+        // Comprobar que la respuesta es correcta
+        $response->assertStatus(200);
 
-    // Comprobar que la respuesta contiene el mensaje de éxito
-    $response->assertJson(['message' => 'Configuración de certidigital correctamente']);
+        // Comprobar que la respuesta contiene el mensaje de éxito
+        $response->assertJson(['message' => 'Configuración de certidigital correctamente']);
 
-    // Comprobar que los datos se hayan guardado correctamente en la base de datos
-    $this->assertDatabaseHas('general_options', ['option_name' => 'certidigital_url', 'option_value' => 'https://example.com']);
-    $this->assertDatabaseHas('general_options', ['option_name' => 'certidigital_client_id', 'option_value' => 'client_id']);
-    $this->assertDatabaseHas('general_options', ['option_name' => 'certidigital_client_secret', 'option_value' => 'client_secret']);
-    $this->assertDatabaseHas('general_options', ['option_name' => 'certidigital_username', 'option_value' => 'username']);
-    $this->assertDatabaseHas('general_options', ['option_name' => 'certidigital_password', 'option_value' => 'password']);
-}
+        // Comprobar que los datos se hayan guardado correctamente en la base de datos
+        $this->assertDatabaseHas('general_options', ['option_name' => 'certidigital_url', 'option_value' => 'https://example.com']);
+        $this->assertDatabaseHas('general_options', ['option_name' => 'certidigital_client_id', 'option_value' => 'client_id']);
+        $this->assertDatabaseHas('general_options', ['option_name' => 'certidigital_client_secret', 'option_value' => 'client_secret']);
+        $this->assertDatabaseHas('general_options', ['option_name' => 'certidigital_username', 'option_value' => 'username']);
+        $this->assertDatabaseHas('general_options', ['option_name' => 'certidigital_password', 'option_value' => 'password']);
+    }
+
+    /**
+     * @test Eroor 422 al tratar de Guardar CertidigitalConfiguration */
+
+    public function testSaveCertidigitalWithError422() {
+
+        // Simular el inicio de sesión del usuario
+
+        $user = UsersModel::factory()->create();
+        $this->actingAs($user);
+
+        $formData = [
+            'certidigital_url' => 'https://example.com',           
+        ];
+
+        // Hacer una solicitud POST a la ruta
+        $response = $this->post('/administration/certidigital/save_certidigital_form', $formData);
+
+         // Comprobar que la respuesta es correcta
+         $response->assertStatus(422);
+
+         // Comprobar que la respuesta contiene el mensaje correcto
+        $response->assertJson(['message' => 'Algunos campos son incorrectos']);        
+
+    }
 }

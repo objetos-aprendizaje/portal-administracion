@@ -25,7 +25,7 @@ class ListUsersController extends BaseController
     {
 
         $departments = DepartmentsModel::get();
-
+        $userRoles = UserRolesModel::get();
         return view(
             "users.list_users.index",
             [
@@ -38,7 +38,8 @@ class ListUsersController extends BaseController
                 "tomselect" => true,
                 "flatpickr" => true,
                 "submenuselected" => "list-users",
-                "departments" => $departments
+                "departments" => $departments,
+                "userRoles" => $userRoles
             ]
         );
     }
@@ -130,9 +131,6 @@ class ListUsersController extends BaseController
      */
     public function getUser($user_uid)
     {
-        if (!$user_uid) {
-            return response()->json(['message' => env('ERROR_MESSAGE')], 400);
-        }
 
         $user = UsersModel::where('uid', $user_uid)->with('roles', 'department')->first();
 

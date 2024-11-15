@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Analytics;
 
+use App\Models\CoursesStudentsModel;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Models\UserRolesModel;
+use App\Models\UsersAccessesModel;
 use App\Models\UsersModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +25,8 @@ class AnalyticsUsersController extends BaseController
         // Obtenemos el total de usuarios
         $total_users = UsersModel::count();
 
+        $userRoles = UserRolesModel::all();
+
         return view(
             'analytics.users_per_role.index',
             [
@@ -33,9 +37,11 @@ class AnalyticsUsersController extends BaseController
                 ],
                 "roles_with_user_count" => "roles_with_user_count",
                 "total_users" => $total_users,
+                "userRoles" => $userRoles,
                 "tabulator" => true,
                 "submenuselected" => "analytics-users",
                 "flatpickr" => true,
+                "tomselect" => true,
             ]
         );
     }
@@ -44,10 +50,7 @@ class AnalyticsUsersController extends BaseController
     {
 
         $size = $request->get('size', 1);
-        $search = $request->get('search');
         $sort = $request->get('sort');
-
-        //$data = UserRolesModel::withCount('users')->get()->toArray();
 
         $query = UserRolesModel::withCount('users');
         if (isset($sort) && !empty($sort)) {
@@ -71,12 +74,12 @@ class AnalyticsUsersController extends BaseController
         return response()->json($data, 200);
     }
 
-    public function getUsersRolesGraph() {
+    public function getUsersRolesGraph()
+    {
 
         $query = UserRolesModel::withCount('users')->get()->toArray();
 
         return response()->json($query, 200);
-
     }
     public function getStudents(Request $request)
     {
@@ -84,6 +87,7 @@ class AnalyticsUsersController extends BaseController
         $size = $request->get('size', 1);
         $search = $request->get('search');
         $sort = $request->get('sort');
+        $filters = $request->get('filters');
 
         $query = UsersModel::query()->with('roles');
 
@@ -97,13 +101,40 @@ class AnalyticsUsersController extends BaseController
             }
         }
 
+        $query->addSelect([
+            'last_login' => UsersAccessesModel::select('date')
+                ->whereColumn('user_uid', 'users.uid')
+                ->orderBy('date', 'desc')
+                ->limit(1)
+        ]);
+
+        $query->addSelect([
+            'count_courses' => CoursesStudentsModel::selectRaw("count(courses_students.course_uid)")
+                ->whereColumn('user_uid', 'users.uid')
+        ]);
+
+        if ($filters) {
+            foreach ($filters as $filter) {
+                if ($filter['database_field'] == 'creation_date') {
+                    if (count($filter['value']) == 2) {
+                        $query->whereBetween('created_at', [$filter['value'][0], $filter['value'][1]]);
+                    }
+                } else if ($filter['database_field'] == "roles") {
+                    $query->whereHas('roles', function ($query) use ($filter) {
+                        $query->whereIn('user_roles.uid', $filter['value']);
+                    });
+                }
+            }
+        }
+
         $data = $query->paginate($size);
 
 
         return response()->json($data, 200);
     }
 
-    public function getStudentsData(Request $request){
+    public function getStudentsData(Request $request)
+    {
 
         $requestData = $request->all();
 
@@ -112,37 +143,37 @@ class AnalyticsUsersController extends BaseController
         $second_graph = "";
         $third_graph = "";
 
-        if ($requestData['filter_type'] == null){
+        if ($requestData['filter_type'] == null) {
             $dateFormat = 'YYYY-MM-DD';
-        }else{
+        } else {
             $dateFormat = $requestData['filter_type'];
         }
 
-        if ($requestData['filter_date'] == null){
+        if ($requestData['filter_date'] == null) {
 
             $hoy = Carbon::today();
             $lunes = $hoy->copy()->startOfWeek();
             $lunesString = $lunes->format('Y-m-d');
             $domingo = $hoy->copy()->endOfWeek();
             $domingoString = $domingo->format('Y-m-d');
-            $requestData['filter_date'] = $lunesString.",".$domingoString;
+            $requestData['filter_date'] = $lunesString . "," . $domingoString;
         }
 
-        $dates = explode(",",$requestData['filter_date']);
+        $dates = explode(",", $requestData['filter_date']);
 
         $first_graph = DB::table('users_accesses')
             ->select(DB::raw('to_char(date, \'' . $dateFormat . '\') as period'), DB::raw('count(*) as access_count'))
             ->where('user_uid', $requestData['user_uid'])
             ->whereBetween('date', [
-                    Carbon::parse($dates[0])->startOfDay(),
-                    Carbon::parse($dates[1])->endOfDay()
-                ])
+                Carbon::parse($dates[0])->startOfDay(),
+                Carbon::parse($dates[1])->endOfDay()
+            ])
             ->groupBy('period')
             ->orderBy('period', 'asc')
             ->get();
 
         $maxFristGraphCount = 0;
-        if (!empty($first_graph->max('access_count'))){
+        if (!empty($first_graph->max('access_count'))) {
             $maxFristGraphCount = $first_graph->max('access_count');
         }
 
@@ -150,15 +181,15 @@ class AnalyticsUsersController extends BaseController
             ->select(DB::raw('to_char(access_date, \'' . $dateFormat . '\') as period'), DB::raw('count(*) as access_count'))
             ->where('user_uid', $requestData['user_uid'])
             ->whereBetween('access_date', [
-                    Carbon::parse($dates[0])->startOfDay(),
-                    Carbon::parse($dates[1])->endOfDay()
-                ])
+                Carbon::parse($dates[0])->startOfDay(),
+                Carbon::parse($dates[1])->endOfDay()
+            ])
             ->groupBy('period')
             ->orderBy('period', 'asc')
             ->get();
 
         $maxSecondGraphCount = 0;
-        if (!empty($second_graph->max('access_count'))){
+        if (!empty($second_graph->max('access_count'))) {
             $maxSecondGraphCount = $second_graph->max('access_count');
         }
 
@@ -166,15 +197,15 @@ class AnalyticsUsersController extends BaseController
             ->select(DB::raw('to_char(date, \'' . $dateFormat . '\') as period'), DB::raw('count(*) as access_count'))
             ->where('user_uid', $requestData['user_uid'])
             ->whereBetween('date', [
-                    Carbon::parse($dates[0])->startOfDay(),
-                    Carbon::parse($dates[1])->endOfDay()
-                ])
+                Carbon::parse($dates[0])->startOfDay(),
+                Carbon::parse($dates[1])->endOfDay()
+            ])
             ->groupBy('period')
             ->orderBy('period', 'asc')
             ->get();
 
         $maxThirdGraphCount = 0;
-        if (!empty($third_graph->max('access_count'))){
+        if (!empty($third_graph->max('access_count'))) {
             $maxThirdGraphCount = $third_graph->max('access_count');
         }
 
@@ -227,8 +258,16 @@ class AnalyticsUsersController extends BaseController
         $data[] = $maxSecondGraphCount;
         $data[] = $maxThirdGraphCount;
 
+        $lastLogin = UsersAccessesModel::select('date')
+            ->where('user_uid', $requestData['user_uid'])
+            ->orderBy('date', 'desc')
+            ->first();
+
+        $data['last_login'] = $lastLogin->date ?? null;
+
+        $data['count_inscribed_courses'] = CoursesStudentsModel::where('user_uid', $requestData['user_uid'])
+            ->count();
+
         return response()->json($data, 200);
     }
 }
-
-

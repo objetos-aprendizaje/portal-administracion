@@ -17,7 +17,7 @@ class DepartmentsApiController extends BaseController
 
         $errorsValidation = $this->validateDepartments($departments);
 
-        if($errorsValidation) {
+        if ($errorsValidation) {
             return response()->json(['errors' => $errorsValidation], 400);
         }
 
@@ -26,7 +26,8 @@ class DepartmentsApiController extends BaseController
         return response()->json(['message' => 'Departamentos añadidos correctamente'], 200);
     }
 
-    public function getDepartments(){
+    public function getDepartments()
+    {
         $departments = DepartmentsModel::all();
 
         return response()->json($departments, 200);
@@ -34,9 +35,19 @@ class DepartmentsApiController extends BaseController
 
     public function updateDepartment(Request $request, $uid)
     {
+        $rules = [
+            "name" => "required|string",
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 400);
+        }
+
         $department = DepartmentsModel::where('uid', $uid)->first();
 
-        if(!$department) {
+        if (!$department) {
             return response()->json(['message' => 'Departamento no encontrado'], 404);
         }
 
@@ -52,13 +63,13 @@ class DepartmentsApiController extends BaseController
     {
         $department = DepartmentsModel::where('uid', $uid)->first();
 
-        if(!$department) {
+        if (!$department) {
             return response()->json(['message' => 'Departamento no encontrado'], 404);
         }
 
         // Se comprueba si está vinculado a usuarios
         $existsUsers = UsersModel::where('department_uid', $uid)->exists();
-        if($existsUsers) {
+        if ($existsUsers) {
             throw new OperationFailedException('No se puede eliminar el departamento porque está vinculado a usuarios');
         }
 
@@ -67,7 +78,8 @@ class DepartmentsApiController extends BaseController
         return response()->json(['message' => 'Departamento eliminado correctamente'], 200);
     }
 
-    private function saveDepartments($departments) {
+    private function saveDepartments($departments)
+    {
 
         foreach ($departments as $depart) {
             $department_bd = new DepartmentsModel();
@@ -76,10 +88,10 @@ class DepartmentsApiController extends BaseController
             $department_bd->name = $depart['name'];
             $department_bd->save();
         }
-
     }
 
-    private function validateDepartments($departments) {
+    private function validateDepartments($departments)
+    {
 
         $messages = [
             "name.required" => "El campo NAME es obligatorio",
@@ -97,7 +109,5 @@ class DepartmentsApiController extends BaseController
                 return $validator->errors();
             }
         }
-
     }
-
 }

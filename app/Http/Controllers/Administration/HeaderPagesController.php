@@ -38,18 +38,18 @@ class HeaderPagesController extends BaseController
         );
     }
 
-    public function saveHeaderPages(Request $request)
-    {
-        $updateData = [
-            'legal_advice' => $request->input('legalAdvice'),
-        ];
+    // public function saveHeaderPages(Request $request)
+    // {
+    //     $updateData = [
+    //         'legal_advice' => $request->input('legalAdvice'),
+    //     ];
 
-        foreach ($updateData as $key => $value) {
-            GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
-        }
+    //     foreach ($updateData as $key => $value) {
+    //         GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
+    //     }
 
-        return response()->json(['message' => 'Textos guardados correctamente']);
-    }
+    //     return response()->json(['message' => 'Textos guardados correctamente']);
+    // }
 
     public function getHeaderPages(Request $request)
     {
@@ -90,13 +90,19 @@ class HeaderPagesController extends BaseController
     {
 
         $messages = [
-            'order.numeric' => 'El campo Orden debe ser numérico.',
-            'slug.regex' => 'El campo Slug solo puede contener letras minúsculas, números, guiones y guiones bajos.'
+            'name.required' => 'El campo nombre es obligatorio',
+            'order.required' => 'El campo orden es obligatorio',
+            'order.numeric' => 'El campo orden debe ser numérico',
+            'slug.regex' => 'El campo Slug solo puede contener letras minúsculas, números, guiones y guiones bajos',
+            'slug.required' => 'El campo Slug es obligatorio',
+            'content.required' => 'El campo contenido es obligatorio',
         ];
 
         $validator_rules = [
+            'name' => 'required',
             'order' => 'required|numeric',
             'slug' => ['required', 'regex:/^[a-z0-9_-]+$/i', 'max:255'],
+            'content' => 'required',
         ];
 
         $validator = Validator::make($request->all(), $validator_rules, $messages);

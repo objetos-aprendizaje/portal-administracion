@@ -22,8 +22,8 @@ class ElementsModelFactory extends Factory
             'uid' => Str::uuid(),
             'name' => $this->faker->name(),
             'description' => $this->faker->text(),
-            'created_at' => Carbon::now()->format('Y-m-d\TH:i'),
-            'updated_at' => Carbon::now()->format('Y-m-d\TH:i'),
+            // 'created_at' => Carbon::now()->format('Y-m-d\TH:i'),
+            // 'updated_at' => Carbon::now()->format('Y-m-d\TH:i'),
         ];
     }
 }

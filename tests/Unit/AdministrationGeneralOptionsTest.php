@@ -26,26 +26,25 @@ class AdministrationGeneralOptionsTest extends TestCase
     /**
      * @testdox Inicialización de inicio de sesión
      */
-        public function setUp(): void {
-            parent::setUp();
-            $this->withoutMiddleware();
-            // Asegúrate de que la tabla 'qvkei_settings' existe
-            $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
-        }
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutMiddleware();
+        // Asegúrate de que la tabla 'qvkei_settings' existe
+        $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
+    }
 
-/** Group Lanes show*/
+    /** Group Lanes show*/
 
-/**
-*  @test  Obtener Index View Lanes Show */
-
-
+    /**
+     *  @test  Obtener Index View Lanes Show */
 
     public function testIndexViewLanesShow()
     {
 
         // Crear un usuario de prueba y asignar roles
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
         // Autenticar al usuario
@@ -55,7 +54,7 @@ class AdministrationGeneralOptionsTest extends TestCase
         View::share('roles', $roles);
 
         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
-       View::share('general_options', $general_options);
+        View::share('general_options', $general_options);
 
         // Simula datos de TooltipTextsModel
         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
@@ -85,8 +84,8 @@ class AdministrationGeneralOptionsTest extends TestCase
 
 
 
-/**
-*  @test  Guardar Lanes Show */
+    /**
+     *  @test  Guardar Lanes Show */
     public function testSaveLanesShow()
     {
         // Simular un usuario autenticado
@@ -106,7 +105,7 @@ class AdministrationGeneralOptionsTest extends TestCase
 
         // Verificar la respuesta
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Preferencias de carriles actualizados correctamente']);
+            ->assertJson(['message' => 'Preferencias de carriles actualizados correctamente']);
 
         // Verificar que los datos se hayan guardado en la base de datos
         $this->assertDatabaseHas('general_options', [
@@ -131,32 +130,32 @@ class AdministrationGeneralOptionsTest extends TestCase
     }
 
 
-/** Group LMS Systems*/
-/** @test Obtener Index View */
+    /** Group LMS Systems*/
+    /** @test Obtener Index View */
 
     public function testIndexRouteReturnsViewLms()
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-         $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
-         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
-         // Autenticar al usuario
-         Auth::login($user);
+        // Autenticar al usuario
+        Auth::login($user);
 
-         // Compartir la variable de roles manualmente con la vista
-         View::share('roles', $roles);
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
 
-         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
         View::share('general_options', $general_options);
 
-         // Simula datos de TooltipTextsModel
-         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
-         View::share('tooltip_texts', $tooltip_texts);
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
 
-         // Simula notificaciones no leídas
-         $unread_notifications = $user->notifications->where('read_at', null);
-         View::share('unread_notifications', $unread_notifications);
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
 
         // Realiza una solicitud GET a la ruta
         $response = $this->get(route('lms-systems'));
@@ -177,8 +176,9 @@ class AdministrationGeneralOptionsTest extends TestCase
         $response->assertViewHas('tabulator', true);
         $response->assertViewHas('submenuselected', 'lms-systems');
     }
-/**
- * @test  Guardar Lms Systems */
+    
+    /**
+     * @test  Guardar Lms Systems */
     public function testSaveLmsSystemCreatesNewLms()
     {
         // Crear un usuario y autenticar
@@ -200,7 +200,7 @@ class AdministrationGeneralOptionsTest extends TestCase
 
         // Verificar que la respuesta sea correcta
         $response->assertStatus(200)
-                ->assertJson(['message' => 'LMS añadido correctamente']);
+            ->assertJson(['message' => 'LMS añadido correctamente']);
 
         // Verificar que el sistema LMS se haya creado en la base de datos
         $this->assertDatabaseHas('lms_systems', [
@@ -210,8 +210,40 @@ class AdministrationGeneralOptionsTest extends TestCase
         ]);
     }
 
-/**
-*  @test  Actualiza LMS  */
+    /**
+     * @test  Update Lms Systems */
+    public function testUpdateSaveLmsSystems()
+    {
+        // Crear un usuario y autenticar
+        $user = UsersModel::factory()->create();
+        $this->actingAs($user);
+
+        $lms = LmsSystemsModel::factory()->create()->first();      
+
+
+        // Enviar una solicitud para crear un nuevo sistema LMS
+        $data = [
+            'lms_system_uid' => $lms->uid,
+            'name' => $lms->name,
+            'identifier' => $lms->identifier,
+        ];
+
+        $response = $this->postJson('/administration/lms_systems/save_lms_system', $data);
+
+        // Verificar que la respuesta sea correcta
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'LMS actualizado correctamente']);
+
+        // Verificar que el sistema LMS se haya creado en la base de datos
+        $this->assertDatabaseHas('lms_systems', [
+            'uid' => $lms->uid,
+            'name' => $lms->name,
+            'identifier' => $lms->identifier,
+        ]);
+    }
+
+    /**
+     *  @test  Actualiza LMS  */
     public function testSaveLmsSystemUpdatesExistingLms()
     {
 
@@ -241,8 +273,8 @@ class AdministrationGeneralOptionsTest extends TestCase
         ]);
     }
 
-/**
-*  @test  Guardar LMS campos obligatorio error */
+    /**
+     *  @test  Guardar LMS campos obligatorio error */
     public function testSaveLmsSystemValidationFails()
     {
         // Crear un usuario y autenticar
@@ -254,52 +286,51 @@ class AdministrationGeneralOptionsTest extends TestCase
 
         // Verificar que la respuesta sea un error de validación
         $response->assertStatus(422)
-                    ->assertJsonStructure(['message', 'errors']);
+            ->assertJsonStructure(['message', 'errors']);
     }
 
-/**
-*  @test  Elimina LMS  */
+    /**
+     *  @test  Elimina LMS  */
 
     public function testDeleteLmsSystems()
-        {
-            // Crear un usuario y autenticar
-            $user = UsersModel::factory()->create();
-            $this->actingAs($user);
+    {
+        // Crear un usuario y autenticar
+        $user = UsersModel::factory()->create();
+        $this->actingAs($user);
 
-            // Crear algunos sistemas LMS para eliminar
-            $lms1 = LmsSystemsModel::factory()->create([
-                'uid' => generate_uuid(),
-                'name' => 'Sistema LMS 1',
-                'identifier' => 'lms-1',
-            ]);
+        // Crear algunos sistemas LMS para eliminar
+        $lms1 = LmsSystemsModel::factory()->create([
+            'uid' => generate_uuid(),
+            'name' => 'Sistema LMS 1',
+            'identifier' => 'lms-1',
+        ]);
 
-            $lms2 = LmsSystemsModel::factory()->create([
-                'uid' => generate_uuid(),
-                'name' => 'Sistema LMS 2',
-                'identifier' => 'lms-2',
-            ]);
+        $lms2 = LmsSystemsModel::factory()->create([
+            'uid' => generate_uuid(),
+            'name' => 'Sistema LMS 2',
+            'identifier' => 'lms-2',
+        ]);
 
-            // Enviar una solicitud para eliminar los sistemas LMS
-            $response = $this->deleteJson('/administration/lms_systems/delete_lms_systems', [
-                'uids' => [$lms1->uid, $lms2->uid], // Enviar solo los UIDs
-            ]);
+        // Enviar una solicitud para eliminar los sistemas LMS
+        $response = $this->deleteJson('/administration/lms_systems/delete_lms_systems', [
+            'uids' => [$lms1->uid, $lms2->uid], // Enviar solo los UIDs
+        ]);
 
-            // Verificar que la respuesta sea correcta
-            $response->assertStatus(200)
-                     ->assertJson(['message' => 'LMS eliminados correctamente']);
+        // Verificar que la respuesta sea correcta
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'LMS eliminados correctamente']);
 
-            // Verificar que los sistemas LMS se hayan eliminado de la base de datos
-            $this->assertDatabaseMissing('lms_systems', [
-                'uid' => $lms1->uid,
-            ]);
-            $this->assertDatabaseMissing('lms_systems', [
-                'uid' => $lms2->uid,
-            ]);
-
+        // Verificar que los sistemas LMS se hayan eliminado de la base de datos
+        $this->assertDatabaseMissing('lms_systems', [
+            'uid' => $lms1->uid,
+        ]);
+        $this->assertDatabaseMissing('lms_systems', [
+            'uid' => $lms2->uid,
+        ]);
     }
 
 
-/** @test  Obtener LMS por uid*/
+    /** @test  Obtener LMS por uid*/
     public function testGetLmsSystemByUid()
     {
         // Crear un sistema LMS en la base de datos
@@ -318,31 +349,31 @@ class AdministrationGeneralOptionsTest extends TestCase
         $this->assertEquals($lmsSystem->identifier, $data['identifier']);
     }
 
-/** @test  Lista LMS conp parámetros por defecto*/
-     public function testListLmsSystemsWithDefaultParameters()
-     {
+    /** @test  Lista LMS conp parámetros por defecto*/
+    public function testListLmsSystemsWithDefaultParameters()
+    {
 
         LmsSystemsModel::factory()->count(3)->create();
 
 
-         $response = $this->get('/administration/lms_systems/get_lms_systems');
+        $response = $this->get('/administration/lms_systems/get_lms_systems');
 
-         $response->assertStatus(200);
-         $response->assertJsonStructure([
-             'current_page',
-             'data' => [
-                 '*' => [
-                     'uid',
-                     'name',
-                 ],
-             ],
-             'last_page',
-             'per_page',
-             'total',
-         ]);
-     }
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'current_page',
+            'data' => [
+                '*' => [
+                    'uid',
+                    'name',
+                ],
+            ],
+            'last_page',
+            'per_page',
+            'total',
+        ]);
+    }
 
-/** @test */
+    /** @test */
     public function testFilterLmsSystemsBySearch()
     {
 
@@ -351,10 +382,9 @@ class AdministrationGeneralOptionsTest extends TestCase
         $response = $this->get('/administration/lms_systems/get_lms_systems?search=LMS');
 
         $response->assertStatus(200);
-
     }
 
-/** @test Ordenar lista LMS*/
+    /** @test Ordenar lista LMS*/
     public function testSortLmsSystems()
     {
         LmsSystemsModel::factory()->create(['name' => 'LMS System 2']);
@@ -364,7 +394,5 @@ class AdministrationGeneralOptionsTest extends TestCase
         $response = $this->get('/administration/lms_systems/get_lms_systems?sort[0][field]=name&sort[0][dir]=asc&size=10');
 
         $response->assertStatus(200);
-
     }
-
 }

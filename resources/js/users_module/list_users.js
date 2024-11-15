@@ -105,29 +105,6 @@ function initHandlers() {
 function initializeTomSelect() {
     tomSelectRoles = getMultipleTomSelectInstance("#roles");
     tomSelectRolesFilter = getMultipleTomSelectInstance("#roles_filter");
-
-    fetch("/users/list_users/get_user_roles", {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-TOKEN": getCsrfToken(),
-        },
-    }).then(async (response) => {
-        const data = await response.json();
-        if (response.status === 200) {
-            data.forEach((rol) => {
-                tomSelectRoles.addOption({
-                    value: rol.uid,
-                    text: rol.name,
-                });
-
-                tomSelectRolesFilter.addOption({
-                    value: rol.uid,
-                    text: rol.name,
-                });
-            });
-        }
-    });
 }
 
 function exportUsers() {

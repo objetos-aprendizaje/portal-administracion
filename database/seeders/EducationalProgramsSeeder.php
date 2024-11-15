@@ -42,7 +42,7 @@ class EducationalProgramsSeeder extends Seeder
     {
         $this->faker = Faker::create();
         $this->calls = CallsModel::all();
-        $this->demoImages = collect(File::files(base_path('public/images/test-images')))
+        $this->demoImages = collect(File::files(base_path('public/test-images')))
             ->map(function ($file) {
                 return str_replace(base_path('public/'), '', $file->getPathname());
             })->toArray();

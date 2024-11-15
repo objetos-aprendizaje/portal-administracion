@@ -89,7 +89,7 @@ class CatalogingGetTest extends TestCase
 
 
         // Simular un request GET a la ruta sin filtros
-        $response = $this->getJson('/cataloging/certification_types/get_list_certification_types', []);
+        $response = $this->getJson('/cataloging/certification_types/get_list_certification_types?search=prueba&sort[0][field]=name&sort[0][dir]=asc');
 
         // Verificar que la respuesta sea correcta
         $response->assertStatus(200)

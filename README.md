@@ -1,66 +1,55 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Portal de Objetos de Aprendizaje (POA)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Descripción
 
-## About Laravel
+Este proyecto tiene como objetivo desarrollar el "Portal de Objetos de Aprendizaje" (POA), una plataforma en línea para facilitar la gestión, búsqueda y seguimiento de cursos y recursos educativos (imágenes, videos, iframes, scripts, etc.) por parte de varias universidades participantes. El POA incluye funcionalidades como la recomendación inteligente de recursos educativos y el seguimiento del progreso de los usuarios.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Características principales
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Gestión de cursos y recursos:** Alta, inscripción, administración y seguimiento de cursos y objetos de aprendizaje.
+- **Recomendación personalizada:** Ofrece recomendaciones de cursos y recursos basadas en las preferencias de los usuarios.
+- **Certificación y analítica:** Emite certificados de logros alcanzados y proporciona análisis detallado de los cursos, usuarios y recursos.
+- **Plataforma modular:** Compuesta por diferentes módulos funcionales como administración, catalogación, notificaciones, logs, etc.
+- **Multiuniversidad:** Cada universidad participante tiene su propia instancia independiente de la plataforma.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Módulos del sistema
 
-## Learning Laravel
+- **Portal web:** La interfaz a través de la cual interactúan los estudiantes.
+- **Módulo de Administración:** Gestión de la configuración del portal, permisos, integraciones, notificaciones y pasarela de pago.
+- **Módulo de Gestión:** Permite a los gestores manejar los cursos, inscripciones y recursos disponibles en la plataforma.
+- **Módulo de Catalogación:** Clasifica y organiza los objetos de aprendizaje en base a diversas categorías.
+- **Módulo de Usuarios:** Administra a todos los usuarios registrados en la plataforma, gestionando su acceso y perfiles.
+- **Módulo de Notificaciones:** Permite el envío de notificaciones tanto a través del portal web como por correo electrónico.
+- **Módulo de Objetos de Aprendizaje:** Gestiona la creación y administración de cursos y programas formativos.
+- **Módulo de Búsqueda:** Ofrece una búsqueda avanzada para localizar cursos y recursos utilizando criterios como temáticas, fechas o valoraciones.
+- **Módulo de Recomendación:** Proporciona recomendaciones basadas en el perfil y actividades previas de los usuarios.
+- **Módulo de Logs:** Almacena todos los logs relativos al uso de la plataforma. Creaciones, actualizaciones y eliminaciones.
+- **Módulo de Credenciales:** Emite certificados a los estudiantes que completan con éxito los cursos y programas formativos mediante la API de CertiDigital.
+- **Módulo de Analítica:** Proporciona informes detallados sobre la participación y el rendimiento en los cursos.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Arquitectura
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+La arquitectura del sistema incluye:
+- **Portal Web:** Accesible a usuarios estudiantes.
+- **Portal Backend:** Accesible para usuarios administradores, gestores y docentes.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Documentación
+- Toda la documentación se encuentra disponible en [Confluence](https://confluence.um.es/confluence/x/B4BjMw)
 
-## Laravel Sponsors
+## Integración
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+El sistema está diseñado para integrarse con los LMS de las universidades a través de APIs y servidores de eventos, lo que permite la inscripción automática de usuarios y la sincronización de información de cursos.
 
-### Premium Partners
+## Licencia
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+Este proyecto se distribuye bajo una licencia de código abierto, y los desarrollos resultantes estarán disponibles para todo el sistema universitario español.
 
-## Contributing
+## Contacto
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+**Responsables del proyecto**:
+- Universidad de Murcia.
+- Universidad Politécnica de Valencia.
+- Universidad de Zaragoza.
+- Universidad de Granada.
+- Universidad Politécnica de Madrid.
+- Universidad de Extremadura.

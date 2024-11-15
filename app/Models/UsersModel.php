@@ -42,7 +42,7 @@ class UsersModel extends Authenticatable
             'courses_students',
             'user_uid',
             'course_uid'
-        )->withPivot('calification_type', 'acceptance_status', 'credential')->select(['title']);
+        )->withPivot('acceptance_status', 'credential')->select(['title']);
     }
 
     public function coursesTeachers()

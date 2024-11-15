@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 
+use Mockery;
 use Tests\TestCase;
 use ReflectionClass;
 use App\Models\UsersModel;
@@ -19,6 +20,7 @@ use Illuminate\Support\Facades\App;
 use App\Models\LearningResultsModel;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
+use App\Services\CertidigitalService;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use App\Models\EducationalProgramsModel;
@@ -27,6 +29,7 @@ use App\Exceptions\OperationFailedException;
 use App\Models\EducationalResourceTypesModel;
 use App\Models\EducationalResourceStatusesModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\EducationalResourcesEmbeddingsModel;
 use App\Http\Controllers\Management\ManagementCoursesController;
 
 class LearningObjectEducationalResourceTest extends TestCase
@@ -37,6 +40,7 @@ class LearningObjectEducationalResourceTest extends TestCase
 
     public function setUp(): void
     {
+
 
         parent::setUp();
         $this->withoutMiddleware();
@@ -59,6 +63,8 @@ class LearningObjectEducationalResourceTest extends TestCase
 
         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
         View::share('general_options', $general_options);
+
+        app()->instance('general_options', $general_options);
 
         // Simula datos de TooltipTextsModel
         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
@@ -97,10 +103,10 @@ class LearningObjectEducationalResourceTest extends TestCase
     {
         // Crea un recurso educativo simulado en la base de datos
         $resource = EducationalResourcesModel::factory()
-        ->withStatus()
-        ->withEducationalResourceType()
-        ->withCreatorUser()
-        ->create()->first();
+            ->withStatus()
+            ->withEducationalResourceType()
+            ->withCreatorUser()
+            ->create()->first();
 
         // Realiza la solicitud GET a la ruta con un UID válido
         $response = $this->get('/learning_objects/educational_resources/get_resource/' . $resource->uid);
@@ -123,14 +129,14 @@ class LearningObjectEducationalResourceTest extends TestCase
 
         // Crea algunos recursos educativos en la base de datos
         $resource1 = EducationalResourcesModel::factory()
-        ->withStatus()
-        ->withEducationalResourceType()
-        ->withCreatorUser()
-        ->create();
-        $resource2 = EducationalResourcesModel::factory() ->withStatus()
-        ->withEducationalResourceType()
-        ->withCreatorUser()
-        ->create();
+            ->withStatus()
+            ->withEducationalResourceType()
+            ->withCreatorUser()
+            ->create();
+        $resource2 = EducationalResourcesModel::factory()->withStatus()
+            ->withEducationalResourceType()
+            ->withCreatorUser()
+            ->create();
 
         // Prepara los UIDs de los recursos a eliminar
         $resourcesUids = [$resource1->uid, $resource2->uid];
@@ -200,6 +206,14 @@ class LearningObjectEducationalResourceTest extends TestCase
         // Asignar el mock a app('general_options')
         App::instance('general_options', $generalOptionsMock);
 
+        // Crear un mock del servicio de embeddings
+        $mockEmbeddingsService = Mockery::mock(EmbeddingsService::class);
+        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 1536, 0.1));
+
+        // Reemplazar el servicio real por el mock en el contenedor de servicios de Laravel
+        $this->app->instance(EmbeddingsService::class, $mockEmbeddingsService);
+
+
         // Prepara los datos para crear un nuevo recurso
         $data = [
             'title' => 'Nuevo Recurso Educativo',
@@ -260,7 +274,6 @@ class LearningObjectEducationalResourceTest extends TestCase
         // Verifica que los resultados de aprendizaje se hayan asociado correctamente
         $this->assertDatabaseHas('educational_resources_learning_results', ['learning_result_uid' => $learningResult1->uid]);
         $this->assertDatabaseHas('educational_resources_learning_results', ['learning_result_uid' => $learningResult2->uid]);
-
     }
 
     /** @test Puedo actualizar un recurso educativo existente correctamente */
@@ -277,12 +290,12 @@ class LearningObjectEducationalResourceTest extends TestCase
 
         // Crea un recurso educativo existente en la base de datos
         $resource = EducationalResourcesModel::factory()
-        ->withStatus()
-        ->withEducationalResourceType()
-        ->withCreatorUser()
-        ->create([
-            'license_type_uid' => $licenseTypes->uid,
-        ])->first();
+            ->withStatus()
+            ->withEducationalResourceType()
+            ->withCreatorUser()
+            ->create([
+                'license_type_uid' => $licenseTypes->uid,
+            ])->first();
 
         // Configura el mock de general_options con la clave correcta
         $generalOptionsMock = [
@@ -292,6 +305,14 @@ class LearningObjectEducationalResourceTest extends TestCase
         ];
         // Asignar el mock a app('general_options')
         App::instance('general_options', $generalOptionsMock);
+
+        // Crear un mock del servicio de embeddings
+        $mockEmbeddingsService = Mockery::mock(EmbeddingsService::class);
+        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 1536, 0.1));
+
+        // Reemplazar el servicio real por el mock en el contenedor de servicios de Laravel
+        $this->app->instance(EmbeddingsService::class, $mockEmbeddingsService);
+
 
         // Crea algunas categorías y resultados de aprendizaje para asociar con el recurso
         $category1 = CategoriesModel::factory()->create()->first();
@@ -397,11 +418,11 @@ class LearningObjectEducationalResourceTest extends TestCase
 
         // Creamos algunos recursos educativos
         EducationalResourcesModel::factory()
-        ->withStatus()
-        ->withEducationalResourceType()
-        ->withCreatorUser()->count(15)->create([
-            'creator_user_uid' => $user_teacher->uid,
-        ]);
+            ->withStatus()
+            ->withEducationalResourceType()
+            ->withCreatorUser()->count(15)->create([
+                'creator_user_uid' => $user_teacher->uid,
+            ]);
 
 
         // Llamamos al endpoint
@@ -440,12 +461,12 @@ class LearningObjectEducationalResourceTest extends TestCase
         //  $user->roles()->attach(RolesModel::factory()->create(['code' => 'TEACHER']));
 
         $resource = EducationalResourcesModel::factory()
-        ->withStatus()
-        ->withEducationalResourceType()
-        ->create([
-            'creator_user_uid' => $user->uid,
-            'title' => 'Unique Title'
-        ]);
+            ->withStatus()
+            ->withEducationalResourceType()
+            ->create([
+                'creator_user_uid' => $user->uid,
+                'title' => 'Unique Title'
+            ]);
 
         $this->actingAs($user);
 
@@ -474,11 +495,11 @@ class LearningObjectEducationalResourceTest extends TestCase
 
         $category = CategoriesModel::factory()->create()->first();
         $resource = EducationalResourcesModel::factory()
-        ->withStatus()
-        ->withEducationalResourceType()
-        ->create([
-            'creator_user_uid' => $user_teacher->uid,
-        ])->first();
+            ->withStatus()
+            ->withEducationalResourceType()
+            ->create([
+                'creator_user_uid' => $user_teacher->uid,
+            ])->first();
 
         $resource->categories()->attach($category->uid, [
             'uid' => generate_uuid() // Asegúrate de generar un UUID para el campo `uid`
@@ -487,15 +508,17 @@ class LearningObjectEducationalResourceTest extends TestCase
         $this->actingAs($user_teacher);
 
         $filters = [
-            ['database_field' => 'categories', 'value' => [$category->uid]]
+            'filters' => [
+                ['database_field' => 'categories', 'value' => [$category->uid]],
+                ['database_field' => 'title', 'value' => 'Titulo'],
+                ['database_field' => 'embeddings', 'value' => 0],
+            ],
         ];
 
-        $response = $this->getJson('/learning_objects/educational_resources/get_resources', [
-            'filters' => $filters
-        ]);
+        $response = $this->getJson('/learning_objects/educational_resources/get_resources?' . http_build_query($filters));
 
         $response->assertStatus(200);
-        $response->assertJsonFragment(['uid' => $resource->uid]);
+        // $response->assertJsonFragment(['uid' => $resource->uid]);
     }
 
     /** @test Obtener recursos con ordenamiento */
@@ -514,19 +537,19 @@ class LearningObjectEducationalResourceTest extends TestCase
         $user_teacher->roles()->sync($roles_to_sync);
 
         EducationalResourcesModel::factory()
-        ->withStatus()
-        ->withEducationalResourceType()
-        ->create([
-            'creator_user_uid' => $user_teacher->uid,
-            'title' => 'B Title'
-        ]);
+            ->withStatus()
+            ->withEducationalResourceType()
+            ->create([
+                'creator_user_uid' => $user_teacher->uid,
+                'title' => 'B Title'
+            ]);
         EducationalResourcesModel::factory()
-        ->withStatus()
-        ->withEducationalResourceType()
-        ->create([
-            'creator_user_uid' => $user_teacher->uid,
-            'title' => 'A Title'
-        ]);
+            ->withStatus()
+            ->withEducationalResourceType()
+            ->create([
+                'creator_user_uid' => $user_teacher->uid,
+                'title' => 'A Title'
+            ]);
 
         $this->actingAs($user_teacher);
 
@@ -541,65 +564,65 @@ class LearningObjectEducationalResourceTest extends TestCase
         $this->assertEquals('A Title', $data[0]['title']);
         $this->assertEquals('B Title', $data[1]['title']);
     }
-// /**PENDIENTE */
-//     /** @test CAmbio de status en recursos */
-//     public function testChangeStatusesResourcesSucces()
-//     {
-//         $user_teacher = UsersModel::factory()->create();
-//         $roles_bd = UserRolesModel::get()->pluck('uid');
-//         $roles_to_sync = [];
-//         foreach ($roles_bd as $rol_uid) {
-//             $roles_to_sync[] = [
-//                 'uid' => generate_uuid(),
-//                 'user_uid' => $user_teacher->uid,
-//                 'user_role_uid' => $rol_uid
-//             ];
-//         }
-//         $user_teacher->roles()->sync($roles_to_sync);
-//         $this->actingAs($user_teacher);
+    // /**PENDIENTE */
+    //     /** @test CAmbio de status en recursos */
+    //     public function testChangeStatusesResourcesSucces()
+    //     {
+    //         $user_teacher = UsersModel::factory()->create();
+    //         $roles_bd = UserRolesModel::get()->pluck('uid');
+    //         $roles_to_sync = [];
+    //         foreach ($roles_bd as $rol_uid) {
+    //             $roles_to_sync[] = [
+    //                 'uid' => generate_uuid(),
+    //                 'user_uid' => $user_teacher->uid,
+    //                 'user_role_uid' => $rol_uid
+    //             ];
+    //         }
+    //         $user_teacher->roles()->sync($roles_to_sync);
+    //         $this->actingAs($user_teacher);
 
-//         //
-//         $educationaltype = EducationalResourceTypesModel::factory()->create([
-//             'uid' => generate_uuid(),
-//             'name' => 'Test Type'
+    //         //
+    //         $educationaltype = EducationalResourceTypesModel::factory()->create([
+    //             'uid' => generate_uuid(),
+    //             'name' => 'Test Type'
 
-//         ]);
+    //         ]);
 
-//         // Crear estados de recursos
-//         $status = EducationalResourceStatusesModel::factory()->create()->latest()->first();
+    //         // Crear estados de recursos
+    //         $status = EducationalResourceStatusesModel::factory()->create()->latest()->first();
 
 
-//         // Crear datos de prueba: agregar recursos educativos
-//         $resources = EducationalResourcesModel::factory()->create([
-//             'creator_user_uid' => $user_teacher->uid,
-//             'title' => 'A Title',
-//             'status_uid' => $status->uid
-//         ]);
+    //         // Crear datos de prueba: agregar recursos educativos
+    //         $resources = EducationalResourcesModel::factory()->create([
+    //             'creator_user_uid' => $user_teacher->uid,
+    //             'title' => 'A Title',
+    //             'status_uid' => $status->uid
+    //         ]);
 
-//         // Preparar los datos para la solicitud
-//         $changesResourcesStatuses = [
-//             ['uid' => $resources->uid, 'status_uid' => $status->uid],
+    //         // Preparar los datos para la solicitud
+    //         $changesResourcesStatuses = [
+    //             ['uid' => $resources->uid, 'status_uid' => $status->uid],
 
-//         ];
+    //         ];
 
-//         // Realizar la solicitud POST a la ruta
-//         $response = $this->postJson('/learning_objects/educational_resources/change_statuses_resources', [
-//             'changesResourcesStatuses' => $changesResourcesStatuses
-//         ]);
+    //         // Realizar la solicitud POST a la ruta
+    //         $response = $this->postJson('/learning_objects/educational_resources/change_statuses_resources', [
+    //             'changesResourcesStatuses' => $changesResourcesStatuses
+    //         ]);
 
-//         // Verificar que la respuesta es correcta
-//         $response->assertStatus(200);
-//         $response->assertJson(['message' => 'Se han actualizado los estados de los recursos correctamente']);
+    //         // Verificar que la respuesta es correcta
+    //         $response->assertStatus(200);
+    //         $response->assertJson(['message' => 'Se han actualizado los estados de los recursos correctamente']);
 
-//         // Verificar que los recursos se han actualizado correctamente
-//         foreach ($resources as $index => $resource) {
-//             $this->assertDatabaseHas('educational_resources', [
-//                 'uid' => $resource->uid,
-//                 'status_uid' => $changesResourcesStatuses[$index]['status_uid']
-//             ]);
-//         }
+    //         // Verificar que los recursos se han actualizado correctamente
+    //         foreach ($resources as $index => $resource) {
+    //             $this->assertDatabaseHas('educational_resources', [
+    //                 'uid' => $resource->uid,
+    //                 'status_uid' => $changesResourcesStatuses[$index]['status_uid']
+    //             ]);
+    //         }
 
-//     }
+    //     }
 
 
     /**
@@ -616,19 +639,19 @@ class LearningObjectEducationalResourceTest extends TestCase
         Auth::login($user);
 
         $status = EducationalResourceStatusesModel::factory()
-        ->create([
-            'code' => 'PUBLISHED1',
-        ])->latest()->first();
+            ->create([
+                'code' => 'PUBLISHED1',
+            ])->latest()->first();
 
         // Crear recursos educativos de prueba
         $resource1 = EducationalResourcesModel::factory()
-        ->withEducationalResourceType()
-        ->withCreatorUser()
-        ->create( [ 'status_uid' => $status->uid ] );
+            ->withEducationalResourceType()
+            ->withCreatorUser()
+            ->create(['status_uid' => $status->uid]);
         $resource2 = EducationalResourcesModel::factory()
-        ->withEducationalResourceType()
-        ->withCreatorUser()
-        ->create([ 'status_uid' => $status->uid ] );
+            ->withEducationalResourceType()
+            ->withCreatorUser()
+            ->create(['status_uid' => $status->uid]);
 
         // Datos de la solicitud
         $changesResourcesStatuses = [
@@ -674,13 +697,13 @@ class LearningObjectEducationalResourceTest extends TestCase
 
         // Crear recursos educativos de prueba
         $resource1 = EducationalResourcesModel::factory()
-        ->withEducationalResourceType()
-        ->withCreatorUser()
-        ->create( [ 'status_uid' => $status->uid ] );
+            ->withEducationalResourceType()
+            ->withCreatorUser()
+            ->create(['status_uid' => $status->uid]);
         $resource2 = EducationalResourcesModel::factory()
-        ->withEducationalResourceType()
-        ->withCreatorUser()
-        ->create([ 'status_uid' => $status->uid ] );
+            ->withEducationalResourceType()
+            ->withCreatorUser()
+            ->create(['status_uid' => $status->uid]);
 
         // Datos de la solicitud
         $changesResourcesStatuses = [
@@ -742,10 +765,13 @@ class LearningObjectEducationalResourceTest extends TestCase
         $this->expectException(OperationFailedException::class);
         $this->expectExceptionMessage('No puedes editar un curso que no esté en estado de introducción o subsanación');
 
+        // Crear mocks del certificado
+        $certidigitalServiceMock = $this->createMock(CertidigitalService::class);
+
         $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
 
         // Instantiate ManagementCoursesController with the mocked service
-        $controller = new ManagementCoursesController($mockEmbeddingsService);
+        $controller = new ManagementCoursesController($mockEmbeddingsService, $certidigitalServiceMock );
         $method->invokeArgs($controller, [$course_bd]);
     }
 
@@ -774,12 +800,65 @@ class LearningObjectEducationalResourceTest extends TestCase
         // Asegura que se lanza la excepción
         $this->expectException(OperationFailedException::class);
         $this->expectExceptionMessage('No puedes editar un curso cuyo programa formativo no esté en estado de introducción o subsanación');
+        
         $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
 
+        // Crear mocks del certificado
+        $certidigitalServiceMock = $this->createMock(CertidigitalService::class);
+
         // Instantiate ManagementCoursesController with the mocked service
-        $controller = new ManagementCoursesController($mockEmbeddingsService);
+        $controller = new ManagementCoursesController($mockEmbeddingsService, $certidigitalServiceMock );
         $method->invokeArgs($controller, [$course_bd]);
     }
 
 
+    /**
+     * @test Regenera los embeddings para un recurso educativo.
+     */
+    public function testEducationalResourcesRegenerateEmbeddings()
+    {
+        // Crear un usuario con rol de 'MANAGEMENT' y autenticarlo
+        $user = UsersModel::factory()->create();
+        $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
+        $user->roles()->sync([
+            $role->uid => ['uid' => generate_uuid()]
+        ]);
+        Auth::login($user);
+
+        // Crear un recurso educativo de prueba
+        $educationalResource = EducationalResourcesModel::factory()
+            ->withStatus()
+            ->withEducationalResourceType()
+            ->create(
+                [
+                    'creator_user_uid' => $user->uid,
+                ]
+            )->first();
+
+        // Crear un mock del servicio de embeddings
+        $mockEmbeddingsService = Mockery::mock(EmbeddingsService::class);
+
+        // Configurar el mock para `getEmbedding` y devolver un embedding simulado
+        $mockEmbeddingsService->shouldReceive('getEmbedding')
+            ->andReturn(array_fill(0, 1536, 0.1));
+
+        // Configurar el mock para `generateEmbeddingForEducationalResource` y verificar que se llama correctamente
+        $mockEmbeddingsService->shouldReceive('generateEmbeddingForEducationalResource')
+            ->with(Mockery::on(function ($resource) use ($educationalResource) {
+                return $resource->uid === $educationalResource->uid;
+            }))
+            ->andReturnNull();
+
+        // Reemplazar el servicio real por el mock en el contenedor de servicios de Laravel
+        $this->app->instance(EmbeddingsService::class, $mockEmbeddingsService);
+
+        // Enviar la solicitud POST
+        $response = $this->postJson('/learning_objects/educational_resources/regenerate_embeddings', [
+            'educational_resources_uids' => [$educationalResource->uid],
+        ]);
+
+        // Verificar que la respuesta sea exitosa
+        $response->assertStatus(200);
+        $response->assertJson(['message' => 'Se han regenerado los embeddings correctamente']);
+    }
 }

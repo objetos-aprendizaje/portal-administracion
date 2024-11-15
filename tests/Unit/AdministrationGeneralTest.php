@@ -284,6 +284,47 @@ class AdministrationGeneralTest extends TestCase
         }
     }
 
+
+     /** @test */
+     public function testSaveCarrouselWithError422()
+     {
+         $admin = UsersModel::factory()->create();
+         $roles_bd = UserRolesModel::get()->pluck('uid');
+         $roles_to_sync = [];
+         foreach ($roles_bd as $rol_uid) {
+             $roles_to_sync[] = [
+                 'uid' => generate_uuid(),
+                 'user_uid' => $admin->uid,
+                 'user_role_uid' => $rol_uid
+             ];
+         }
+ 
+         $admin->roles()->sync($roles_to_sync);
+         $this->actingAs($admin);
+ 
+         if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
+ 
+             // Prepara los datos iniciales
+             GeneralOptionsModel::create(['option_name' => 'carrousel_title', 'option_value' => '']);
+             GeneralOptionsModel::create(['option_name' => 'carrousel_description', 'option_value' => '']);
+             GeneralOptionsModel::create(['option_name' => 'main_slider_color_font', 'option_value' => '']);
+ 
+             // Datos que se enviarán en la solicitud
+             $data = [
+                 'carrousel_title' => 'Título del Carrousel',                
+             ];
+ 
+             // Realiza la solicitud POST
+             $response = $this->postJson('/administration/save_carrousel',$data);
+ 
+             // Verifica la respuesta
+             $response->assertStatus(422)
+                 ->assertJson(['message' => 'Algunos campos son incorrectos']);
+         }
+     }
+
+
+
     /**@group add_font */
     /** @test */
     public function testAddFont()
@@ -594,7 +635,7 @@ class AdministrationGeneralTest extends TestCase
     //             'route' => $filePath
     //         ]);
     //     }
-    // }
+    // }  
 
     /**
      * @test
@@ -730,31 +771,31 @@ class AdministrationGeneralTest extends TestCase
     }
 
 
-     /** @test *RegenerateAllEmbeddings*/
-     public function testRegeneratesEmbeddingsSuccessfully()
-     {
-         // Configurar datos de prueba
-         $options = ['openai_key' => 'valid_key'];
-         app()->instance('general_options', $options);
+    /** @test *RegenerateAllEmbeddings*/
+    public function testRegeneratesEmbeddingsSuccessfully()
+    {
+        // Configurar datos de prueba
+        $options = ['openai_key' => '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'];
+        app()->instance('general_options', $options);
 
-         // Simular que no hay un trabajo pendiente
-         DB::shouldReceive('table->where->exists')
-             ->once()
-             ->andReturn(false);
+        // Simular que no hay un trabajo pendiente
+        DB::shouldReceive('table->where->exists')
+            ->once()
+            ->andReturn(false);
 
-         // Verificar que se dispara el trabajo
-         Queue::fake();
-         Queue::assertNothingPushed();
+        // Verificar que se dispara el trabajo
+        Queue::fake();
+        Queue::assertNothingPushed();
 
-         $response = $this->postJson('/administration/regenerate_embeddings');
+        $response = $this->postJson('/administration/regenerate_embeddings');
 
-         $response->assertStatus(200)
-             ->assertJson(['message' => 'Embeddings regenerados correctamente']);
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'Embeddings regenerados correctamente']);
 
-         Queue::assertPushed(RegenerateAllEmbeddingsJob::class);
-     }
+        Queue::assertPushed(RegenerateAllEmbeddingsJob::class);
+    }
 
-     /** @test */
+    /** @test */
     public function testFailsIfOpenaiNotConfigured()
     {
         // Simular que no hay clave de OpenAI configurada
@@ -766,43 +807,43 @@ class AdministrationGeneralTest extends TestCase
         $response->assertJson(['message' => 'No se ha configurado la clave de OpenAI']);
     }
 
-     /** @test */
-     public function testFailsIfTherePendingJob()
-     {
-         // Configurar datos de prueba
-         $options = ['openai_key' => 'valid_key'];
-         app()->instance('general_options', $options);
+    /** @test */
+    public function testFailsIfTherePendingJob()
+    {
+        // Configurar datos de prueba
+        $options = ['openai_key' => 'valid_key'];
+        app()->instance('general_options', $options);
 
-         // Simular que hay un trabajo pendiente
-         DB::shouldReceive('table->where->exists')
-             ->once()
-             ->andReturn(true);
+        // Simular que hay un trabajo pendiente
+        DB::shouldReceive('table->where->exists')
+            ->once()
+            ->andReturn(true);
 
-         $response = $this->postJson('/administration/regenerate_embeddings');
+        $response = $this->postJson('/administration/regenerate_embeddings');
 
-         $response->assertJson(['message' => 'Ya se están regenerando los embeddings. Espere unos minutos.']);
-     }
+        $response->assertJson(['message' => 'Ya se están regenerando los embeddings. Espere unos minutos.']);
+    }
 
-     public function testSavesOpenaiSuccessfully()
-     {
-         // Datos de entrada
-         $data = ['openai_key' => 'sk-12345'];
+    public function testSavesOpenaiSuccessfully()
+    {
+        // Datos de entrada
+        $data = ['openai_key' => 'sk-12345'];
 
-         // Realizar la solicitud POST al endpoint
-         $response = $this->postJson('/administration/save_openai_form', $data);
+        // Realizar la solicitud POST al endpoint
+        $response = $this->postJson('/administration/save_openai_form', $data);
 
-         // Verificar que la respuesta sea correcta
-         $response->assertStatus(200)
-                  ->assertJson(['message' => 'Clave de OpenAI guardada correctamente']);
+        // Verificar que la respuesta sea correcta
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'Clave de OpenAI guardada correctamente']);
 
-         // Verificar que el valor se haya guardado en la base de datos
-         $this->assertDatabaseHas('general_options', [
-             'option_name' => 'openai_key',
-             'option_value' => 'sk-12345',
-         ]);
-     }
+        // Verificar que el valor se haya guardado en la base de datos
+        $this->assertDatabaseHas('general_options', [
+            'option_name' => 'openai_key',
+            'option_value' => 'sk-12345',
+        ]);
+    }
 
-      /** @test */
+    /** @test */
     public function testSavesGeneralOptionsSuccessfully()
     {
 
@@ -824,7 +865,7 @@ class AdministrationGeneralTest extends TestCase
 
         // Verificar que la respuesta sea correcta
         $response->assertStatus(200)
-                 ->assertJson(['message' => 'Opciones guardadas correctamente']);
+            ->assertJson(['message' => 'Opciones guardadas correctamente']);
 
         // Verificar que los valores se hayan actualizado en la base de datos
         $this->assertDatabaseHas('general_options', [
@@ -837,5 +878,4 @@ class AdministrationGeneralTest extends TestCase
             'option_value' => 'New operation value',
         ]);
     }
-
 }

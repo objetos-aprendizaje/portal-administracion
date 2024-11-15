@@ -34,7 +34,7 @@
                     <button type="submit" class="btn btn-primary">
                         Guardar {{ e_heroicon('paper-airplane', 'outline') }}</button>
 
-                    <button data-modal-id="center-modal" type="button"
+                    <button data-modal-id="license-modal" type="button"
                         class="btn btn-secondary close-modal-btn">Cancelar {{ e_heroicon('x-mark', 'outline') }}</button>
                 </div>
             </div>

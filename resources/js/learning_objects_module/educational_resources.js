@@ -127,6 +127,27 @@ function initHandlers() {
             resetFilters();
         });
 
+    const regenerateEmbeddingsBtn = document.getElementById(
+        "btn-regenerate-embeddings"
+    );
+
+    if (regenerateEmbeddingsBtn) {
+        regenerateEmbeddingsBtn.addEventListener("click", function () {
+            if (!selectedResources.length) {
+                showToast("No has seleccionado ningún recurso", "error");
+                return;
+            }
+
+            showModalConfirmation(
+                "Regenerar embeddings",
+                "¿Estás seguro de que quieres regenerar los embeddings de los recursos educativos seleccionados?"
+            ).then((result) => {
+                if (!result) return;
+                regenerateEmbeddingsEducationalResources();
+            });
+        });
+    }
+
     const generateTagsBtn = document.getElementById("generate-tags-btn");
     if (generateTagsBtn) {
         generateTagsBtn.addEventListener("click", () => {
@@ -384,6 +405,18 @@ function collectFilters() {
         );
     }
 
+    let selectElementFilterEmbeddings =
+        document.getElementById("filter_embeddings");
+    if (selectElementFilterEmbeddings.value) {
+        addFilter(
+            "¿Tiene embeddings?",
+            selectElementFilterEmbeddings.value,
+            selectElementFilterEmbeddings.value == "1" ? "Sí" : "No",
+            "filter_embeddings",
+            "embeddings"
+        );
+    }
+
     if (tomFilterSelectCategories) {
         const categoriesFilter = tomFilterSelectCategories.getValue();
 
@@ -461,6 +494,7 @@ function resetFilters() {
     tomFilterSelectCategories.clear();
     document.getElementById("filter_resource_way").value = "";
     document.getElementById("filter_educational_resource_type_uid").value = "";
+    document.getElementById("filter_embeddings").value = "";
 }
 
 /**
@@ -547,6 +581,17 @@ function initializeResourcesTable() {
         { title: "Descripción", field: "description", widthGrow: 2 },
         { title: "Tipo", field: "type.name", widthGrow: 2 },
         {
+            title: "¿Tiene embeddings?",
+            field: "embeddings_status",
+            formatter: function (cell, formatterParams, onRendered) {
+                const data = cell.getValue();
+                if (data == 0) return "No";
+                else return "Si";
+            },
+            widthGrow: 2,
+            visible: true,
+        },
+        {
             title: "",
             field: "actions",
             formatter: function (cell, formatterParams, onRendered) {
@@ -591,6 +636,24 @@ function initializeResourcesTable() {
 
     controlsPagination(resourcesTable, "resources-table");
     controlsSearch(resourcesTable, endPointTable, "resources-table");
+}
+
+function regenerateEmbeddingsEducationalResources() {
+    const educationalResourcesSelected = selectedResources.map((resource) => resource.uid);
+    const params = {
+        url: `/learning_objects/educational_resources/regenerate_embeddings`,
+        method: "POST",
+        stringify: true,
+        body: {
+            educational_resources_uids: educationalResourcesSelected,
+        },
+        toast: true,
+        loader: true,
+    };
+
+    apiFetch(params).then(() => {
+        resourcesTable.replaceData(endPointTable);
+    });
 }
 
 /**

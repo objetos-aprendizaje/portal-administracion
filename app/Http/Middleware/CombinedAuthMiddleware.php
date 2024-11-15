@@ -15,7 +15,6 @@ class CombinedAuthMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        $request->session()->regenerate();
         // Comprobamos si tenemos usuario
         if (Auth::check()) {
             try {
@@ -53,7 +52,7 @@ class CombinedAuthMiddleware
     private function loadUserData($user)
     {
 
-        $user = Auth::user()->with("roles")->first();
+        Auth::user()->load('roles');
 
         $notifications = $this->getNotifications($user);
 

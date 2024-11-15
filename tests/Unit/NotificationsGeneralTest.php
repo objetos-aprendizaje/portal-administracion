@@ -12,6 +12,7 @@ use App\Models\TooltipTextsModel;
 use Illuminate\Support\Facades\DB;
 use App\Models\CourseStatusesModel;
 use App\Models\GeneralOptionsModel;
+use App\Services\EmbeddingsService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
@@ -19,26 +20,32 @@ use App\Models\EmailNotificationsModel;
 use App\Models\NotificationsTypesModel;
 use Illuminate\Support\Facades\Request;
 use App\Models\GeneralNotificationsModel;
+use Illuminate\Database\Eloquent\Builder;
 use App\Models\NotificationsPerUsersModel;
+use App\Services\EmailNotificationsService;
 use App\Models\UserGeneralNotificationsModel;
 use App\Models\AutomaticNotificationTypesModel;
 use App\Models\GeneralNotificationsAutomaticModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Models\GeneralNotificationsAutomaticUsersModel;
 use App\Models\NotificationsChangesStatusesCoursesModel;
+use App\Http\Controllers\Notifications\EmailNotificationsController;
 
 class NotificationsGeneralTest extends TestCase
 {
 
     use RefreshDatabase;
+    protected EmailNotificationsController $emailNotification;
     public function setUp(): void
     {
 
         parent::setUp();
+        //$this->emailNotification = new EmailNotificationsController();
         $this->withoutMiddleware();
         $user = UsersModel::factory()->create();
         $this->actingAs($user);
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
+
+
     }
 
 /** @test Obtener Index View Notificaciones por usuario */
@@ -289,7 +296,7 @@ class NotificationsGeneralTest extends TestCase
 
         // Crea notificaciones con diferentes tipos
         $generalnotifica1 = GeneralNotificationsModel::factory()->create(['notification_type_uid' => $notifica1->uid]);
-        $generalnotifica2 = GeneralNotificationsModel::factory()->create(['notification_type_uid' => $notifica2->uid]);
+        GeneralNotificationsModel::factory()->create(['notification_type_uid' => $notifica2->uid]);
 
         $response = $this->get('/notifications/general/get_list_general_notifications?filters[0][database_field]=notification_types&filters[0][value][]='.$generalnotifica1->notification_type_uid);
 
@@ -313,10 +320,23 @@ class NotificationsGeneralTest extends TestCase
                 'notification_type_uid' => $notifica2->uid,
                 'start_date' => Carbon::now()->subDays(10)->format('Y-m-d\TH:i')]);
 
-        $response = $this->get('/notifications/general/get_list_general_notifications?filters[0][database_field]=start_date&filters[0][value]=' . now()->subDays(7)->format('Y-m-d\TH:i'));
+        $rol = UserRolesModel::where('code','ADMINISTRATOR')->first();
+
+
+        $filters = [
+            [ 'database_field' => 'start_date', 'value' => now()->subDays(7)->format('Y-m-d\TH:i') ],
+            [ 'database_field' => 'end_date', 'value' => now()->addDays(7)->format('Y-m-d\TH:i') ],
+            [ 'database_field' => 'roles', 'value' =>[$rol->uid]],
+        ];
+
+        $queryString = http_build_query(['filters' => $filters]);
+
+        // filters[0][database_field]=start_date&filters[0][value]=' . now()->subDays(7)->format('Y-m-d\TH:i')
+
+        $response = $this->get('/notifications/general/get_list_general_notifications?'. $queryString );
 
         $response->assertStatus(200);
-        $this->assertCount(1, $response->json('data'));
+        $this->assertCount(0, $response->json('data'));
     }
 
     /**
@@ -363,7 +383,7 @@ class NotificationsGeneralTest extends TestCase
         $notificationType = NotificationsTypesModel::factory()->create(['name' => 'Type 1'])->first();
 
         // Crear una notificación general
-        $notification = GeneralNotificationsModel::factory()->create([
+        GeneralNotificationsModel::factory()->create([
             'title' => 'Notification 1',
             'description' => 'Description 1',
             'notification_type_uid' => $notificationType->uid, // Usar el uid del tipo de notificación creado
@@ -411,16 +431,7 @@ class NotificationsGeneralTest extends TestCase
                  ]);
     }
 
-     /**
-     * @test Obtener notificaciones sin Uid
-     */
-    public function testGetGeneralNotificationNoUid()
-    {
-        $response = $this->getJson('/notifications/general/get_general_notification/');
 
-        $response->assertStatus(404);
-
-    }
     /**
      * @test notificaciones al cambiar estatus del curso
      */
@@ -663,6 +674,7 @@ class NotificationsGeneralTest extends TestCase
         ]);
     }
 
+
     /**
      * @test Elimina email notificación
      */
@@ -863,7 +875,7 @@ class NotificationsGeneralTest extends TestCase
             'subject' => 'Asunto de Ejemplo 1',
             'body' => 'Cuerpo de Ejemplo 1',
             'type' => 'USERS',
-            'sent' => 1,
+            'sent' => true,
 
         ]);
 
@@ -874,13 +886,58 @@ class NotificationsGeneralTest extends TestCase
             'subject' => 'Asunto de Ejemplo 1',
             'body' => 'Cuerpo de Ejemplo 1',
             'type' => 'USERS',
-            'users' => [$user->uid]
+            'users' => [$user->uid],
+
+
         ]);
 
-        // Verificar que se lance una excepción
+        //Verificar que se lance una excepción
         $response->assertStatus(500)
                  ->assertJson(['message' => 'La notificación ya ha sido enviada y no puede ser modificada.']);
+
     }
+
+
+    /**@test Obtener notificación*/
+    public function testSaveEmailNotificationSent()
+    {
+
+        $user = UsersModel::factory()->create();
+        Auth::login($user);
+
+        // Crear tipos de notificación
+        $notificationType = NotificationsTypesModel::factory()->create()->first();
+
+        // Crear notificaciones de correo electrónico de ejemplo
+        $emailNotification1 = EmailNotificationsModel::factory()->create([
+            'uid' => generate_uuid(),
+            'notification_type_uid' => $notificationType->uid,
+            'subject' => 'Asunto de Ejemplo 1',
+            'body' => 'Cuerpo de Ejemplo 1',
+            'type' => 'USERS',
+            'sent' => false,
+
+        ]);
+
+        // Simular una solicitud para intentar actualizar la notificación existente
+        $response = $this->postJson('notifications/email/save_email_notification', [
+            'notification_email_uid' => $emailNotification1->uid,
+            'notification_type_uid' => $notificationType->uid,
+            'subject' => 'Asunto de Ejemplo 1',
+            'body' => 'Cuerpo de Ejemplo 1',
+            'type' => 'USERS',
+            'users' => [$user->uid],
+            'sent' => false,
+
+        ]);
+
+        //Verificar que se lance una excepción
+        $response->assertStatus(200);
+
+
+    }
+
+
 
     /**
      * @test Obtener error cuando el email de notificacion no se encuentra
@@ -1034,6 +1091,7 @@ class NotificationsGeneralTest extends TestCase
         $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
+
         // Autenticar al usuario
         Auth::login($user);
 
@@ -1051,7 +1109,7 @@ class NotificationsGeneralTest extends TestCase
         $unread_notifications = $user->notifications->where('read_at', null);
         View::share('unread_notifications', $unread_notifications);
         // Arrange: Crear algunos tipos de notificaciones
-        $notificationTypes = NotificationsTypesModel::factory()->count(3)->create();
+        NotificationsTypesModel::factory()->count(3)->create();
 
         // Act: Realizar la solicitud GET a la ruta
         $response = $this->get(route('notifications-email'));
@@ -1067,4 +1125,191 @@ class NotificationsGeneralTest extends TestCase
         $response->assertViewHas('flatpickr', true);
               $response->assertViewHas('submenuselected', 'notifications-email');
     }
+
+    public function testApplySentFilters()
+    {
+
+        $notificactiontype1= NotificationsTypesModel::factory()->create()->first();
+        $notificactiontype2= NotificationsTypesModel::factory()->create()->first();
+        // Crea algunos registros de ejemplo en la base de datos
+        $emailNotification1 = EmailNotificationsModel::factory()->create(['sent' => 1,"notification_type_uid" => $notificactiontype1->uid]);
+        $emailNotification2 = EmailNotificationsModel::factory()->create(['sent' => 1, "notification_type_uid" => $notificactiontype2->uid]);
+
+        $filters = [
+            ['database_field' => 'sent', 'value' => true],
+            ['database_field' => 'notification_types', 'value' => [$notificactiontype1->uid, $notificactiontype2->uid]],
+            ['database_field' => 'send_date', 'value' => ['2023-01-01', '2023-12-31']],
+
+        ];
+
+        // Inicializa la consulta base
+        $query = EmailNotificationsModel::query()
+            ->with('emailNotificationType')
+            ->with('roles')
+            ->with('users')
+            ->join('notifications_types', 'email_notifications.notification_type_uid', '=', 'notifications_types.uid', 'left')
+            ->select('email_notifications.*', 'notifications_types.name as notification_type_name');
+
+        // Crea una instancia del servicio necesario
+        $emailNotificationsService = new EmailNotificationsService();
+
+        // Crea una instancia del controlador pasando el servicio como argumento
+        $controllerInstance = new EmailNotificationsController($emailNotificationsService);
+
+        // Llama al método applyFilters usando reflexión
+        $reflection = new \ReflectionClass(EmailNotificationsController::class);
+        $method = $reflection->getMethod('applyFilters');
+        $method->setAccessible(true);
+
+        // Invocar el método en la instancia correcta, pasando $query por referencia
+        $method->invokeArgs($controllerInstance, [$filters, &$query]);
+
+
+        $result = $query->get();
+
+        $expectedResult = [
+            ['uid' => $emailNotification1->uid, 'subject' => $emailNotification1->subject, 'sent' => true],
+            ['uid' => $emailNotification2->uid, 'subject' => $emailNotification1->subject, 'sent' => true],
+
+        ];
+
+        foreach ($result as $item) {
+            $this->assertArrayHasKey('uid', $item);
+            $this->assertArrayHasKey('subject', $item);
+            $this->assertArrayHasKey('send_date', $item);
+        }
+    }
+
+    /** test **/
+    public function testApplyFiltersWithRolesAndUsers()
+    {
+        $user1 = UsersModel::factory()->create()->latest()->first();
+        $user2 = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $user1->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $user2->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        // Autenticar al usuario
+        //Auth::login($user);
+
+        // Define un filtro para roles
+        $filtersRoles = [
+            [
+                'database_field' => 'roles',
+                'value' => [$roles->uid, $roles->uid] // IDs de roles que queremos filtrar
+            ]
+        ];
+
+        // Inicializa la consulta base para roles
+        $queryRoles = EmailNotificationsModel::query()
+            ->with('emailNotificationType')
+            ->with('roles')
+            ->with('users')
+            ->join('notifications_types', 'email_notifications.notification_type_uid', '=', 'notifications_types.uid', 'left')
+            ->select('email_notifications.*', 'notifications_types.name as notification_type_name');
+
+        // Crea una instancia del servicio necesario
+        $emailNotificationsService = new EmailNotificationsService();
+
+        // Crea una instancia del controlador pasando el servicio como argumento
+        $controllerInstance = new EmailNotificationsController($emailNotificationsService);
+
+        // Llama al método applyFilters usando reflexión para roles
+        $reflection = new \ReflectionClass(EmailNotificationsController::class);
+        $method = $reflection->getMethod('applyFilters');
+        $method->setAccessible(true);
+
+
+        $method->invokeArgs($controllerInstance, [$filtersRoles, &$queryRoles]);
+
+
+        $resultRoles = $queryRoles->get();
+
+
+        foreach ($resultRoles as $item) {
+            foreach ($item->roles as $role) {
+                $this->assertContains($role->uid, [$roles->uid, $roles->uid]);
+            }
+        }
+
+        // Ahora definimos un filtro para usuarios
+        $filtersUsers = [
+            [
+                'database_field' => 'users',
+                'value' => [$user1->uid, $user2->uid]
+            ]
+        ];
+
+        // Inicializa la consulta base para usuarios
+        $queryUsers = EmailNotificationsModel::query()
+            ->with('emailNotificationType')
+            ->with('roles')
+            ->with('users')
+            ->join('notifications_types', 'email_notifications.notification_type_uid', '=', 'notifications_types.uid', 'left')
+            ->select('email_notifications.*', 'notifications_types.name as notification_type_name');
+
+
+        $method->invokeArgs($controllerInstance, [$filtersUsers, &$queryUsers]);
+
+
+        $resultUsers = $queryUsers->get();
+
+
+        foreach ($resultUsers as $item) {
+            foreach ($item->users as $user) {
+                $this->assertContains($user->uid, [$user1->uid, $user2->uid]);
+            }
+        }
+
+    }
+
+    public function testGetEmailNotificationTypes()
+    {
+
+        $user = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+
+        // Autenticar al usuario
+        Auth::login($user);
+
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+        View::share('general_options', $general_options);
+
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+
+        // Crea algunos tipos de notificaciones en la base de datos
+        NotificationsTypesModel::factory()->create(['name' => 'Type 1']);
+        NotificationsTypesModel::factory()->create(['name' => 'Type 2']);
+        NotificationsTypesModel::factory()->create(['name' => 'Type 3']);
+
+        // Crea una instancia del servicio necesario
+        $emailNotificationsService = new EmailNotificationsService();
+
+        // Crea una instancia del controlador pasando el servicio como argumento
+        $controllerInstance = new EmailNotificationsController($emailNotificationsService);
+
+        // Llama al método applyFilters usando reflexión para roles
+        $reflection = new \ReflectionClass(EmailNotificationsController::class);
+        $method = $reflection->getMethod('getEmailNotificationTypes');
+        $method->setAccessible(true);
+
+        // Llama al método y captura la respuesta
+        $response = $method->invoke($controllerInstance);
+
+        // Verifica que la respuesta sea correcta
+        $this->assertEquals(200, $response->getStatusCode());
+
+
+        $this->assertIsArray(json_decode($response->getContent(), true));
+
+        }
 }

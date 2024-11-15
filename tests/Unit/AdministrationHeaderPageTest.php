@@ -4,7 +4,9 @@ namespace Tests\Unit;
 
 use Tests\TestCase;
 use App\Models\UsersModel;
+use Illuminate\Support\Str;
 use App\Models\UserRolesModel;
+use App\Models\FooterPagesModel;
 use App\Models\HeaderPagesModel;
 use App\Models\TooltipTextsModel;
 use App\Models\GeneralOptionsModel;
@@ -12,7 +14,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 
 class AdministrationHeaderPageTest extends TestCase
 {
@@ -82,12 +83,12 @@ class AdministrationHeaderPageTest extends TestCase
     /**
      * @test Crear Header Page*/
     public function testCreateHeaderPage()
-    {
+    {       
         // Datos de prueba para crear una nueva página de encabezado
         $data = [
             'name' => 'Nueva Página de Encabezado',
             'content' => 'Contenido de la nueva página.',
-            'slug' => 'nueva-pagina-encabezado',
+            'slug' => 'nueva-pagina-header',
             'order' => 1,
             'parent_page_uid' => null,
         ];
@@ -101,9 +102,125 @@ class AdministrationHeaderPageTest extends TestCase
 
         // Verificar que la página de encabezado se haya guardado en la base de datos
         $this->assertDatabaseHas('header_pages', [
-            'slug' => 'nueva-pagina-encabezado',
+            'slug' => 'nueva-pagina-header',
             'name' => 'Nueva Página de Encabezado',
         ]);
+    }
+
+    /**
+     * @test Crear Header Page*/
+    public function testCreateHeaderPageSlugExist()
+    {
+        HeaderPagesModel::factory()->create();     
+        // Datos de prueba para crear una nueva página de encabezado
+        $data = [
+            'name' => 'Nueva Página de Encabezado',
+            'content' => 'Contenido de la nueva página.',
+            'slug' => 'nueva-pagina-header',
+            'order' => 1,
+            'parent_page_uid' => null,
+        ];
+
+        // Realizar la solicitud POST
+        $response = $this->postJson('/administration/header_pages/save_header_page', $data);
+
+        // Verificar el estado de la respuesta
+        $response->assertStatus(406)
+            ->assertJson(['message' => 'El slug intriducido ya existe']);
+       
+    }
+
+    /**
+     * @test Actualizar Header Page*/
+    public function testSaveSlugExistHeaderPage()
+    {
+       HeaderPagesModel::factory()->create();     
+
+        // Datos de prueba para crear una nueva página de encabezado
+        $data = [
+            'header_page_uid' => generate_uuid(),
+            'name' => 'otro header',
+            'content' => 'Contenido de la nueva página.',
+            'slug' => 'nueva-pagina-header',
+            'order' => 1,
+            'parent_page_uid' => null,
+        ];
+
+        // Realizar la solicitud POST
+        $response = $this->postJson('/administration/header_pages/save_header_page', $data);
+
+        // Verificar el estado de la respuesta
+        $response->assertStatus(406)
+            ->assertJson(['message' => 'El slug intriducido ya existe']);        
+    }
+
+    /**
+     * @test  Al tratar de guardar si existe el slug en el footer arroja error */
+    public function testSaveSlugExistFooterPage()
+    {
+       FooterPagesModel::factory()->create();     
+
+        // Datos de prueba para crear una nueva página de encabezado
+        $data = [
+            'header_page_uid' => generate_uuid(),
+            'name' => 'footer page original',
+            'content' => 'Contenido de la nueva página.',
+            'slug' => 'footer-page-original',
+            'order' => 1,
+            'parent_page_uid' => null,
+        ];
+
+        // Realizar la solicitud POST
+        $response = $this->postJson('/administration/header_pages/save_header_page', $data);
+
+        // Verificar el estado de la respuesta
+        $response->assertStatus(406)
+            ->assertJson(['message' => 'El slug intriducido ya existe']);        
+    }
+    
+
+    /**
+     * @test Actualizar Header Page*/
+    public function testUpdateHeaderPage()
+    {
+        $header = HeaderPagesModel::factory()->create();     
+
+        // Datos de prueba para crear una nueva página de encabezado
+        $data = [
+            'header_page_uid' => $header->uid,
+            'name' => 'otro header',
+            'content' => 'Contenido de la nueva página.',
+            'slug' => 'otro-header',
+            'order' => 1,
+            'parent_page_uid' => null,
+        ];
+
+        // Realizar la solicitud POST
+        $response = $this->postJson('/administration/header_pages/save_header_page', $data);
+
+        // Verificar el estado de la respuesta
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'Página de header actualizada correctamente']);
+        
+    }
+
+
+
+    /**
+     * @test Crear Header Page*/
+    public function testCreateHeaderPageWithError422()
+    {
+        // Datos de prueba para crear una nueva página de encabezado
+        $data = [
+            'name' => 'Nueva Página de Encabezado',           
+        ];
+
+        // Realizar la solicitud POST
+        $response = $this->postJson('/administration/header_pages/save_header_page', $data);
+
+        // Verificar el estado de la respuesta
+        $response->assertStatus(422)
+            ->assertJson(['message' => 'Hay campos incorrectos']);        
     }
 
     /**

@@ -2,17 +2,11 @@
 
 namespace App\Http\Controllers\Analytics;
 
+use App\Models\CategoriesModel;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
-use App\Models\CoursesModel;
-use Illuminate\Support\Facades\DB;
-use App\Models\CoursesStudentsModel;
-use App\Models\CategoriesModel;
-use Carbon\Carbon;
-use DateTime;
-
 
 class AnalyticsTopCategoriesController extends BaseController
 {
@@ -20,8 +14,6 @@ class AnalyticsTopCategoriesController extends BaseController
 
     public function index()
     {
-
-
         return view(
             'analytics.top_categories.index',
             [
@@ -32,29 +24,33 @@ class AnalyticsTopCategoriesController extends BaseController
                 ],
                 "tabulator" => true,
                 "submenuselected" => "analytics-top-categories",
+                "tomselect" => true,
+                "flatpickr" => true
             ]
         );
-
     }
 
-    public function getTopCategories(Request $request){
-
+    public function getTopCategories(Request $request)
+    {
         $size = $request->get('size', 1);
         $search = $request->get('search');
         $sort = $request->get('sort');
+        $filters = $request->get('filters');
 
-        $query = DB::table('categories')
-            ->select('categories.name', DB::raw('COUNT(courses_students.user_uid) as student_count'))
-            ->leftJoin('course_categories', 'categories.uid', '=', 'course_categories.category_uid')
-            ->leftJoin('courses', 'course_categories.course_uid', '=', 'courses.uid')
-            ->leftJoin('courses_students', 'courses.uid', '=', 'courses_students.course_uid') // Corrección aquí
-            ->groupBy('categories.uid')
-            ->orderByDesc('student_count');
-
+        $query = $this->getTopCategoriesQuery($filters);
 
         // Aplicar búsqueda por nombre de categoría si es necesario
         if (!empty($search)) {
             $query->where('categories.name', 'LIKE', "%{$search}%");
+        }
+
+        // Aplicar ordenamiento
+        if (isset($sort) && !empty($sort)) {
+            foreach ($sort as $order) {
+                $query->orderBy($order['field'], $order['dir']);
+            }
+        } else {
+            $query->orderBy('student_count', 'desc');
         }
 
         // Aplicar paginación
@@ -63,23 +59,48 @@ class AnalyticsTopCategoriesController extends BaseController
         return response()->json($data, 200);
     }
 
-    public function getTopCategoriesGraph(){
+    public function getTopCategoriesGraph()
+    {
+        $filters = request()->get('filters');
+        $query = $this->getTopCategoriesQuery($filters);
+        $query->orderByDesc('student_count');
+        $data = $query->get();
 
-
-
-        $query = DB::table('categories')
-            ->select('categories.name', DB::raw('COUNT(courses_students.user_uid) as student_count'))
-            ->leftJoin('course_categories', 'categories.uid', '=', 'course_categories.category_uid')
-            ->leftJoin('courses', 'course_categories.course_uid', '=', 'courses.uid')
-            ->leftJoin('courses_students', 'courses.uid', '=', 'courses_students.course_uid') // Corrección aquí
-            ->groupBy('categories.uid')
-            ->orderByDesc('student_count')->get()->toArray();
-
-
-
-        return response()->json($query, 200);
+        return response()->json($data, 200);
     }
 
+    private function getTopCategoriesQuery($filters = null)
+    {
+        return CategoriesModel::select('categories.name')
+            ->selectSub(function ($query) use ($filters) {
+                $query->selectRaw('COUNT(courses_students.user_uid)')
+                    ->from('courses_students as courses_students')
+                    ->join('courses', 'courses.uid', '=', 'courses_students.course_uid')
+                    ->join('course_categories', 'courses.uid', '=', 'course_categories.course_uid')
+                    ->whereColumn('categories.uid', 'course_categories.category_uid');
+
+                if ($filters) $this->applyFilters($query, $filters);
+            }, 'student_count');
+    }
+
+    private function applyFilters(&$query, $filters)
+    {
+        foreach ($filters as $filter) {
+            if ($filter['database_field'] == 'acceptance_status') {
+                $query->whereIn('courses_students.acceptance_status', $filter['value']);
+            } else if ($filter['database_field'] == "status") {
+                $query->whereIn('courses_students.status', $filter['value']);
+            } elseif ($filter['database_field'] == 'created_at') {
+                if (count($filter['value']) == 2) {
+                    // Si recibimos un rango de fechas
+                    $query->where('courses_students.created_at', '<=', $filter['value'][1])
+                        ->where('courses_students.created_at', '>=', $filter['value'][0]);
+                } else {
+                    // Si recibimos solo una fecha
+                    $query->whereDate('courses_students.created_at', '<=', $filter['value'])
+                        ->whereDate('courses_students.created_at', '>=', $filter['value']);
+                }
+            }
+        }
+    }
 }
-
-

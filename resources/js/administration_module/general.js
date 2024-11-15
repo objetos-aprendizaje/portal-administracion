@@ -307,6 +307,11 @@ function controlDeleteFonts() {
 function submitOpenaiForm() {
     const formData = new FormData(this);
 
+    formData.append(
+        "enabled_recommendation_module",
+        document.getElementById("enabled_recommendation_module").checked ? 1 : 0
+    );
+
     const params = {
         url: "/administration/save_openai_form",
         method: "POST",

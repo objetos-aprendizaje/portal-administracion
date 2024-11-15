@@ -23,16 +23,17 @@ class AdministrationLoginSystemsTest extends TestCase
     /**
      * @testdox Inicialización de inicio de sesión
      */
-        public function setUp(): void {
-            parent::setUp();
-            $this->withoutMiddleware();
-            // Asegúrate de que la tabla 'qvkei_settings' existe
-            $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
-        }
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutMiddleware();
+        // Asegúrate de que la tabla 'qvkei_settings' existe
+        $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
+    }
 
-/**@group redes API */
+    /**@group redes API */
 
-/** @test  Obtener Index View Google */
+    /** @test  Obtener Index View Google */
     public function testIndexViewLoginSystems()
     {
         $user = UsersModel::factory()->create()->latest()->first();
@@ -47,7 +48,7 @@ class AdministrationLoginSystemsTest extends TestCase
         View::share('roles', $roles);
 
         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
-    View::share('general_options', $general_options);
+        View::share('general_options', $general_options);
 
         // Simula datos de TooltipTextsModel
         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
@@ -61,8 +62,8 @@ class AdministrationLoginSystemsTest extends TestCase
         $cas = Saml2TenantsModel::factory()->create(['key' => 'cas', 'uuid' => generate_uuid()])->first();
 
 
-       // Crear datos de ejemplo para GeneralOptionsModel
-       GeneralOptionsModel::create(['option_name' => 'cas_active', 'option_value' => 1])->first();
+        // Crear datos de ejemplo para GeneralOptionsModel
+        GeneralOptionsModel::create(['option_name' => 'cas_active', 'option_value' => 1])->first();
 
         // Simular la ruta
         $response = $this->get(route('login-systems'));
@@ -83,8 +84,62 @@ class AdministrationLoginSystemsTest extends TestCase
         $response->assertViewHas('submenuselected', 'login-systems');
     }
 
+    /** @test  Obtener Index View Google */
+    public function testIndexViewLoginSystemsWithRedirisActive()
+    {
+        $user = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);
+        // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
-/** @test  Submit Google */
+        // Autenticar al usuario
+        Auth::login($user);
+
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
+
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+        View::share('general_options', $general_options);
+
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
+
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
+
+        // Crear datos de ejemplo para Saml2TenantsModel
+        // $cas = Saml2TenantsModel::factory()->create(['key' => 'cas', 'uuid' => generate_uuid()])->first();
+
+        $rediris = Saml2TenantsModel::factory()->create(['key' => 'rediris', 'uuid' => generate_uuid()])->first();
+
+
+        // Crear datos de ejemplo para GeneralOptionsModel
+        GeneralOptionsModel::create(['option_name' => 'rediris_active', 'option_value' => 1])->first();
+
+        // Simular la ruta
+        $response = $this->get(route('login-systems'));
+
+        // Verificar que la respuesta sea exitosa
+        $response->assertStatus(200);
+
+        // Verificar que la vista correcta fue cargada
+        $response->assertViewIs('administration.login_systems');
+
+        // Verificar que los datos de la vista sean los correctos
+        $response->assertViewHas('page_name', 'Sistemas de inicio de sesión');
+        $response->assertViewHas('page_title', 'Sistemas de inicio de sesión');
+        $response->assertViewHas('resources', [
+            "resources/js/administration_module/login_systems.js"
+        ]);
+        // $response->assertViewHas('cas', $cas);
+        $response->assertViewHas('rediris', $rediris);
+        $response->assertViewHas('submenuselected', 'login-systems');
+    }
+
+
+    /** @test  Submit Google */
     public function testSubmitGoogleFormWithValidData()
     {
 
@@ -98,7 +153,7 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-                 ->assertJson(['message' => 'Login de Google guardado correctamente']);
+            ->assertJson(['message' => 'Login de Google guardado correctamente']);
 
         // Check if the data is saved in the database
         $this->assertDatabaseHas('general_options', [
@@ -115,8 +170,40 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
     }
 
-/** @test  Submit Google Invalido*/
-    public function testSubmitGoogleFormWithInvalidData()
+    /** @test  Submit Google Invalido */
+    public function testSubmitGoogleFormWithInValidData()
+    {
+
+        $admin = UsersModel::factory()->create();
+        $this->actingAs($admin);
+
+        $response = $this->postJson(route('google-login'), [
+            
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJson(['message' => 'Algunos campos son incorrectos']);
+    }
+
+     /** @test  Submit Facebook*/
+    public function testSubmitFacebookWithValidData()
+    {
+        $admin = UsersModel::factory()->create();
+        $this->actingAs($admin);
+
+        $response = $this->postJson(route('facebook-login'), [
+            'facebook_login_active' => 1, // Use 1 instead of true
+            'facebook_client_id'=> 'valid-client-id',
+            'facebook_client_secret'=> 'valid-client-secret'
+
+        ]);
+
+        $response->assertStatus(200);
+            // ->assertJsonStructure(['message', 'Login de Facebook guardado correctamente']);
+    }
+
+    /** @test  Submit Facebook Invalido*/
+    public function testSubmitFacebookWithInvalidData()
     {
         $admin = UsersModel::factory()->create();
         $this->actingAs($admin);
@@ -126,10 +213,10 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(422)
-                 ->assertJsonStructure(['message', 'errors']);
+            ->assertJsonStructure(['message', 'errors']);
     }
 
-/** @test  Submit Google Inactivo*/
+    /** @test  Submit Google Inactivo*/
     public function testSubmitGoogleFormWhenInactive()
     {
         $admin = UsersModel::factory()->create();
@@ -140,10 +227,10 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-                 ->assertJson(['message' => 'Login de Google guardado correctamente']);
+            ->assertJson(['message' => 'Login de Google guardado correctamente']);
     }
 
-/** @test  Submit Twitter */
+    /** @test  Submit Twitter */
     public function testSubmitTwitterFormWithValidData()
     {
         // Create a user and authenticate
@@ -157,7 +244,7 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Login de Twitter guardado correctamente']);
+            ->assertJson(['message' => 'Login de Twitter guardado correctamente']);
 
         // Check if the data is saved in the database
         $this->assertDatabaseHas('general_options', [
@@ -174,7 +261,7 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
     }
 
-/** @test  Submit Twitter  Invalido*/
+    /** @test  Submit Twitter  Invalido*/
     public function testSubmitTwitterFormWithInvalidData()
     {
         // Create a user and authenticate
@@ -187,10 +274,10 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(422)
-                ->assertJsonStructure(['message', 'errors']);
+            ->assertJsonStructure(['message', 'errors']);
     }
 
-/** @test  Submit Twitter Inactivo*/
+    /** @test  Submit Twitter Inactivo*/
     public function testSubmitTwitterFormWhenInactive()
     {
         // Create a user and authenticate
@@ -203,11 +290,11 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Login de Twitter guardado correctamente']);
+            ->assertJson(['message' => 'Login de Twitter guardado correctamente']);
     }
 
 
-/** @test  Submit Linkedin */
+    /** @test  Submit Linkedin */
     public function testSubmitLinkedinFormWithValidData()
     {
         // Create a user and authenticate
@@ -221,7 +308,7 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Login de Linkedin guardado correctamente']);
+            ->assertJson(['message' => 'Login de Linkedin guardado correctamente']);
 
         // Check if the data is saved in the database
         $this->assertDatabaseHas('general_options', [
@@ -238,7 +325,7 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
     }
 
-/** @test  Submit Linkedin Invalido*/
+    /** @test  Submit Linkedin Invalido*/
     public function testSubmitLinkedinFormWithInvalidData()
     {
         // Create a user and authenticate
@@ -251,10 +338,10 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(422)
-                ->assertJsonStructure(['message', 'errors']);
+            ->assertJsonStructure(['message', 'errors']);
     }
 
-/** @test  Submit Linkedin Inactivo*/
+    /** @test  Submit Linkedin Inactivo*/
     public function testSubmitLinkedinFormWhenInactive()
     {
         // Create a user and authenticate
@@ -267,10 +354,10 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Login de Linkedin guardado correctamente']);
+            ->assertJson(['message' => 'Login de Linkedin guardado correctamente']);
     }
 
-/** @test  Submit Cas */
+    /** @test  Submit Cas */
     public function testSubmitCasFormWithValidData()
     {
 
@@ -286,7 +373,7 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Login de CAS guardado correctamente']);
+            ->assertJson(['message' => 'Login de CAS guardado correctamente']);
 
         // Check if the data is saved in the database
         $this->assertDatabaseHas('saml2_tenants', [
@@ -298,7 +385,7 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
     }
 
-/** @test  Submit Cas Invalido*/
+    /** @test  Submit Cas Invalido*/
     public function testSubmitCasFormWithInvalidData()
     {
         // Create a user and authenticate
@@ -311,10 +398,10 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(422)
-                ->assertJsonStructure(['message', 'errors']);
+            ->assertJsonStructure(['message', 'errors']);
     }
 
-/** @test  Submit Cas con Cas existente*/
+    /** @test  Submit Cas con Cas existente*/
     public function testSubmitCasFormWithExistingCas()
     {
         // Create a user and authenticate
@@ -343,7 +430,7 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Login de CAS guardado correctamente']);
+            ->assertJson(['message' => 'Login de CAS guardado correctamente']);
 
         // Check if the data is updated in the database
         $this->assertDatabaseHas('saml2_tenants', [
@@ -356,7 +443,7 @@ class AdministrationLoginSystemsTest extends TestCase
     }
 
 
-/** @test  Submit Cas Inactivo*/
+    /** @test  Submit Cas Inactivo*/
     public function testSubmitCasFormWhenInactive()
     {
 
@@ -372,11 +459,11 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Login de CAS guardado correctamente']);
+            ->assertJson(['message' => 'Login de CAS guardado correctamente']);
     }
 
 
-/** @test  Submit Rediris */
+    /** @test  Submit Rediris */
     public function testSubmitRedirisFormWithValidData()
     {
 
@@ -392,7 +479,7 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Login de Rediris guardado correctamente']);
+            ->assertJson(['message' => 'Login de Rediris guardado correctamente']);
 
         // Check if the data is saved in the database
         $this->assertDatabaseHas('saml2_tenants', [
@@ -404,7 +491,7 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
     }
 
-/** @test  Submit Rediris Invalido */
+    /** @test  Submit Rediris Invalido */
     public function testSubmitRedirisFormWithInvalidData()
     {
 
@@ -417,10 +504,10 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(422)
-                ->assertJsonStructure(['message', 'errors']);
+            ->assertJsonStructure(['message', 'errors']);
     }
 
-/** @test  Submit Rediris Inactivo */
+    /** @test  Submit Rediris Inactivo */
     public function testSubmitRedirisFormWhenInactive()
     {
 
@@ -436,10 +523,10 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Login de Rediris guardado correctamente']);
+            ->assertJson(['message' => 'Login de Rediris guardado correctamente']);
     }
 
-/** @test  Submit Rediris existente */
+    /** @test  Submit Rediris existente */
     public function testSubmitRedirisFormWithExistingRediris()
     {
 
@@ -468,7 +555,7 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Login de Rediris guardado correctamente']);
+            ->assertJson(['message' => 'Login de Rediris guardado correctamente']);
 
         // Check if the data is updated in the database
         $this->assertDatabaseHas('saml2_tenants', [
@@ -481,30 +568,30 @@ class AdministrationLoginSystemsTest extends TestCase
     }
 
 
-/** Group Openai
- * @test  Guardar Openai */
+    /** Group Openai
+     * @test  Guardar Openai */
 
 
     public function testSaveOpenaiForm()
     {
-            $admin = UsersModel::factory()->create();
-            $roles_bd = UserRolesModel::get()->pluck('uid');
-            $roles_to_sync = [];
-            foreach ($roles_bd as $rol_uid) {
-                $roles_to_sync[] = [
-                    'uid' => generate_uuid(),
-                    'user_uid' => $admin->uid,
-                    'user_role_uid' => $rol_uid
-                ];
-            }
+        $admin = UsersModel::factory()->create();
+        $roles_bd = UserRolesModel::get()->pluck('uid');
+        $roles_to_sync = [];
+        foreach ($roles_bd as $rol_uid) {
+            $roles_to_sync[] = [
+                'uid' => generate_uuid(),
+                'user_uid' => $admin->uid,
+                'user_role_uid' => $rol_uid
+            ];
+        }
 
-            $admin->roles()->sync($roles_to_sync);
-            $this->actingAs($admin);
+        $admin->roles()->sync($roles_to_sync);
+        $this->actingAs($admin);
 
-            if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
+        if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
 
             // Datos de prueba
-            $openAiKey = 'fake_openai_key';
+            $openAiKey = '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';
 
             // Enviar la solicitud POST
             $response = $this->postJson('/administration/save_openai_form', [
@@ -513,7 +600,7 @@ class AdministrationLoginSystemsTest extends TestCase
 
             // Verificar la respuesta
             $response->assertStatus(200)
-                    ->assertJson(['message' => 'Clave de OpenAI guardada correctamente']);
+                ->assertJson(['message' => 'Clave de OpenAI guardada correctamente']);
 
             // Verificar que el valor se haya actualizado en la base de datos
             $this->assertDatabaseHas('general_options', [
@@ -522,5 +609,4 @@ class AdministrationLoginSystemsTest extends TestCase
             ]);
         }
     }
-
 }

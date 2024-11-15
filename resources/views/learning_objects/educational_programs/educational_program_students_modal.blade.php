@@ -17,31 +17,21 @@
             <div class="table-control-header">
                 @include('partials.table-search', ['table' => 'educational-program-students-table'])
 
-
                 <div class="flex gap-1">
-                    <div>
-                        <button id="approve-students-btn" type="button" class="btn-icon"
-                            data-educational-program-uid="">{{ e_heroicon('check', 'outline') }}</button>
-                    </div>
+                    <button id="approve-students-btn" type="button" class="btn-icon"
+                        data-educational-program-uid="">{{ e_heroicon('check', 'outline') }}</button>
 
-                    <div>
-                        <button id="reject-students-btn" type="button" class="btn-icon"
-                            data-educational-program-uid="">{{ e_heroicon('x-mark', 'outline') }}</button>
-                    </div>
+                    <button id="reject-students-btn" type="button" class="btn-icon"
+                        data-educational-program-uid="">{{ e_heroicon('x-mark', 'outline') }}</button>
 
-                    <div>
-                        <button id="delete-students-btn" type="button" class="btn-icon"
-                            data-educational-program-uid="">{{ e_heroicon('trash', 'outline') }}</button>
-                    </div>
+                    <button id="delete-students-btn" type="button" class="btn-icon"
+                        data-educational-program-uid="">{{ e_heroicon('trash', 'outline') }}</button>
 
-                    <div>
-                        <button id="enroll-students-btn" type="button" class="btn-icon"
-                            data-educational-program-uid="">{{ e_heroicon('plus', 'outline') }}</button>
-                    </div>
-                    <div>
-                        <button id="enroll-students-csv-btn" type="button" class="btn-icon"
-                            data-educational-program-uid="">{{ e_heroicon('arrow-up-tray', 'outline') }}</button>
-                    </div>
+                    <button id="enroll-students-btn" type="button" class="btn-icon"
+                        data-educational-program-uid="">{{ e_heroicon('plus', 'outline') }}</button>
+
+                    <button id="enroll-students-csv-btn" type="button" class="btn-icon"
+                        data-educational-program-uid="">{{ e_heroicon('arrow-up-tray', 'outline') }}</button>
                 </div>
             </div>
 

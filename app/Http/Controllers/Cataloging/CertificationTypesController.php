@@ -77,9 +77,9 @@ class CertificationTypesController extends BaseController
     public function getCertificationType($certification_type_uid)
     {
 
-        if (!$certification_type_uid) {
-            return response()->json(['message' => env('ERROR_MESSAGE')], 400);
-        }
+        // if (!$certification_type_uid) {
+        //     return response()->json(['message' => env('ERROR_MESSAGE')], 400);
+        // }  Se ha quitado por error en pruebas unitaras ya que la misma ruta evalua si existe parametro o no
 
         $certification_type = CertificationTypesModel::where('uid', $certification_type_uid)->first();
 

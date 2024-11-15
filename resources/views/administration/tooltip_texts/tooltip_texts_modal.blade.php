@@ -22,6 +22,16 @@
             <div class="poa-form">
                 <div class="field">
                     <div class="label-container label-center">
+                        <label for="form_id">ID del formulario <span class="text-red-500">*</span></label>
+                    </div>
+                    <div class="content-container">
+                        <input maxlength="100" class="required poa-input" placeholder="form_name" type="text" id="form_id"
+                            name="form_id" />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="label-container label-center">
                         <label for="input_id">ID del campo <span class="text-red-500">*</span></label>
                     </div>
                     <div class="content-container">

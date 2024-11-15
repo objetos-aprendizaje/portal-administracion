@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\CoursesEmbeddingsModel;
 use App\Models\CoursesModel;
+use App\Models\EducationalResourcesEmbeddingsModel;
 use App\Models\EducationalResourcesModel;
 use App\Models\GeneralOptionsModel;
 use Illuminate\Database\Eloquent\Collection;
@@ -43,13 +45,15 @@ class EmbeddingsService
     {
         $text = $course->title . ' ' . $course->description;
 
-        $embedding = $this->getEmbedding($text);
-        Log::info('Embedding generated for course ' . $course->uid . ': ' . json_encode($embedding));
+        $embeddings = $this->getEmbedding($text);
+        Log::info('Embedding generated for course ' . $course->uid. ': ' . json_encode($embeddings));
 
-        // Update the course with the new embedding
-        $course->update([
-            'embeddings' => $embedding,
-        ]);
+        if ($embeddings) {
+            CoursesEmbeddingsModel::updateOrCreate(
+                ['course_uid' => $course->uid],
+                ['embeddings' => $embeddings]
+            );
+        }
     }
 
     public function generateEmbeddingForEducationalResource(EducationalResourcesModel $educationalResource)
@@ -59,9 +63,12 @@ class EmbeddingsService
         Log::error('Embedding generated for educational resource ' . $educationalResource->uid . ': ' . json_encode($embedding));
 
         // Update the educational resource with the new embedding
-        $educationalResource->update([
-            'embeddings' => $embedding,
-        ]);
+        if ($embedding) {
+            EducationalResourcesEmbeddingsModel::updateOrCreate(
+                ['educational_resource_uid' => $educationalResource->uid],
+                ['embeddings' => $embedding]
+            );
+        }
     }
 
     public function getSimilarCourses(CoursesModel $course, $limit = 5)

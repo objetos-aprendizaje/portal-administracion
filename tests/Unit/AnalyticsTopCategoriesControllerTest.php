@@ -24,73 +24,93 @@ class AnalyticsTopCategoriesControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-/**
- * @testdox Inicialización de inicio de sesión
- */
-    public function setUp(): void {
+    /**
+     * @testdox Inicialización de inicio de sesión
+     */
+    public function setUp(): void
+    {
         parent::setUp();
         $this->withoutMiddleware();
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
-         // Autenticar al usuario
-         Auth::login($user);
+        // Autenticar al usuario
+        Auth::login($user);
 
-         // Compartir la variable de roles manualmente con la vista
-         View::share('roles', $roles);
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
 
-         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
         View::share('general_options', $general_options);
 
-         // Simula datos de TooltipTextsModel
-         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
-         View::share('tooltip_texts', $tooltip_texts);
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
 
-         // Simula notificaciones no leídas
-         $unread_notifications = $user->notifications->where('read_at', null);
-         View::share('unread_notifications', $unread_notifications);
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
     }
 
-
-
- /** @test */
-    public function testFilterCategoriesSearch()
+    /**
+     * @test
+     * Prueba obtener las categorías principales con filtros, búsqueda y ordenamiento.
+     */
+    public function testGetTopCategoriesWithFiltersAndSorting()
     {
-        $user1 = UsersModel::factory()->create()->latest()->first();
-        $user2 = UsersModel::factory()->create()->latest()->first();
+        // Crear categorías de prueba
+        $category1 = CategoriesModel::factory()->create(['name' => 'Matemáticas']);
+        $category2 = CategoriesModel::factory()->create(['name' => 'Ciencia']);
 
-        // Preparar datos de prueba usando factories
-        $category1 = CategoriesModel::factory()->create(['uid' => generate_uuid(),'name' => 'Mathematics']);
-        $category2 = CategoriesModel::factory()->create(['uid' => generate_uuid(),'name' => 'Science']);
-        $category3 = CategoriesModel::factory()->create(['uid' => generate_uuid(),'name' => 'History']);
+        // Crear estudiantes relacionados con las categorías
+        $student1 = UsersModel::factory()->create();
+        $student2 = UsersModel::factory()->create();
 
-        $course1 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['uid' => generate_uuid(),'title' => 'Course 1']);
-        $course2 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['uid' => generate_uuid(),'title' => 'Course 2']);
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create();
 
-        CourseCategoriesModel::factory()->create(['course_uid' => $course1->uid, 'category_uid' => $category1->uid]);
-        CourseCategoriesModel::factory()->create(['course_uid' => $course1->uid, 'category_uid' => $category2->uid]);
-        CourseCategoriesModel::factory()->create(['course_uid' => $course2->uid, 'category_uid' => $category2->uid]);
-        CourseCategoriesModel::factory()->create(['course_uid' => $course2->uid, 'category_uid' => $category3->uid]);
+        CourseCategoriesModel::factory()->create(['course_uid' => $course->uid, 'category_uid' => $category1->uid]);
+        CourseCategoriesModel::factory()->create(['course_uid' => $course->uid, 'category_uid' => $category2->uid]);
 
-        CoursesStudentsModel::factory()->create(['course_uid' => $course1->uid, 'user_uid' => $user1->uid]);
-        CoursesStudentsModel::factory()->create(['course_uid' => $course2->uid, 'user_uid' => $user2->uid]);
+        // Asignar estudiantes a las categorías
+        CoursesStudentsModel::factory()->create([
+            'user_uid' => $student1->uid,
+            'course_uid' => $course->uid,
+        ]);
+        CoursesStudentsModel::factory()->create([
+            'user_uid' => $student2->uid,
+            'course_uid' => $course->uid,
+        ]);
 
-        // Realizar la solicitud al endpoint con búsqueda
-        $response = $this->getJson(route('get-top-categories', [
-            'size' => 10,
-            'search' => 'Math', // Búsqueda por parte del nombre
-            'sort' => null,
-        ]));
+        // Crear filtros y ordenamientos
+        $filters = [
+            ['database_field' => 'categories.uid', 'value' => [$category1->uid, $category2->uid],],
+            ['database_field' => 'acceptance_status', 'value' => ['ACCEPTED'],],
+            ['database_field' => 'status', 'value' => ['ENROLLED'],],
+            ['database_field' => 'created_at', 'value' => [now()->subDays(31), now()->subDays(15)],],
 
-        // Verificar la respuesta
-        $response->assertStatus(200)
-                ->assertJsonCount(1, 'data'); // Solo debería devolver una categoría
+        ];
+        $sort = [['field' => 'name', 'dir' => 'asc']];
 
-        // Verificar que el resultado sea correcto
-        $this->assertEquals('Mathematics', $response->json('data.0.name'));
+        // Realizar la solicitud POST con filtros, búsqueda y ordenamiento
+        $response = $this->postJson(route('get-top-categories'), [
+            'size' => 2,
+            'search' => 'Matemáticas',
+            'sort' => $sort,
+            'filters' => $filters,
+        ]);
+
+        // Verificar que la respuesta es exitosa
+        $response->assertStatus(200);
+
+        // Verificar que los datos de la categoría están en la respuesta
+        $responseData = $response->json('data');
+        $this->assertCount(1, $responseData);
+        $this->assertEquals('Matemáticas', $responseData[0]['name']);
     }
+
+
 
     /** @test */
     public function testIndexLoadsTopCategoriesView()
@@ -107,12 +127,55 @@ class AnalyticsTopCategoriesControllerTest extends TestCase
         // Verificar que los datos pasados a la vista sean correctos
         $response->assertViewHas('page_name', 'TOP Categorias');
         $response->assertViewHas('page_title', 'TOP Categorias');
-        $response->assertViewHas('resources', [            
+        $response->assertViewHas('resources', [
             "resources/js/analytics_module/analytics_top_categories.js"
         ]);
         $response->assertViewHas('tabulator', true);
         $response->assertViewHas('submenuselected', 'analytics-top-categories');
     }
 
+    /**
+     * @test
+     * Prueba obtener los datos de categorías principales para el gráfico.
+     */
+    public function testGetTopCategoriesGraphWithFilters()
+    {
+        // Crear categorías de prueba
+        $category1 = CategoriesModel::factory()->create(['name' => 'Historia']);
+        $category2 = CategoriesModel::factory()->create(['name' => 'Geografía']);
 
+        // Crear estudiantes relacionados con las categorías
+        $student1 = UsersModel::factory()->create();
+        $student2 = UsersModel::factory()->create();
+
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create();
+
+        CourseCategoriesModel::factory()->create(['course_uid' => $course->uid, 'category_uid' => $category1->uid]);
+        CourseCategoriesModel::factory()->create(['course_uid' => $course->uid, 'category_uid' => $category2->uid]);
+
+        // Asignar estudiantes a las categorías
+        CoursesStudentsModel::factory()->create(['user_uid' => $student1->uid, 'course_uid' => $course->uid, ]);
+        
+        CoursesStudentsModel::factory()->create(['user_uid' => $student2->uid, 'course_uid' => $course->uid,]);
+
+        // Crear filtros
+        $filters = [
+            ['database_field' => 'categories.uid', 'value' => [$category1->uid, $category2->uid]],
+            ['database_field' => 'created_at', 'value' => [now()->addDays(1)],],
+        ];
+
+        // Realizar la solicitud POST con filtros
+        $response = $this->postJson(route('get-top-categories-graph'), [
+            'filters' => $filters,
+        ]);
+
+        // Verificar que la respuesta es exitosa
+        $response->assertStatus(200);
+
+        // Verificar que los datos de la categoría están en la respuesta
+        $responseData = $response->json();
+        $this->assertCount(2, $responseData); // Verificar que hay 2 categorías
+        $this->assertEquals('Historia', $responseData[0]['name']);
+        $this->assertEquals('Geografía', $responseData[1]['name']);
+    }
 }

@@ -2,74 +2,57 @@
 
 namespace App\Http\Controllers\Analytics;
 
+use App\Models\CategoriesModel;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use App\Models\CoursesModel;
 use App\Models\EducationalResourcesModel;
+use App\Models\EducationalResourceTypesModel;
+use App\Models\LicenseTypesModel;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 
-class AnalyticsPoaController extends BaseController
+class AnalyticsResourcesController extends BaseController
 {
     use AuthorizesRequests, ValidatesRequests;
 
     public function index()
     {
-
+        $educational_resources_types = EducationalResourceTypesModel::all();
+        $categories = CategoriesModel::with('parentCategory')->get();
+        $license_types = LicenseTypesModel::get();
 
         return view(
-            'analytics.poa.index',
+            'analytics.resources.index',
             [
-                "page_name" => "Analíticas de objetos de aprendizaje y recursos",
-                "page_title" => "Analíticas de objetos de aprendizaje y recursos",
+                "page_name" => "Analíticas de recursos",
+                "page_title" => "Analíticas de recursos",
                 "resources" => [
-                    "resources/js/analytics_module/analytics_poa.js"
+                    "resources/js/analytics_module/analytics_resources.js"
                 ],
                 "tabulator" => true,
                 "submenuselected" => "analytics-poa",
                 "flatpickr" => true,
+                "educational_resources_types" => $educational_resources_types,
+                "categories" => $categories,
+                "license_types" => $license_types,
+                "tabulator" => true,
+                "tomselect" => true,
             ]
         );
     }
 
-    public function getPoa(Request $request)
+    public function getPoaGraph()
     {
-
-        $size = $request->get('size', 1);
-        $search = $request->get('search');
-        $sort = $request->get('sort');
-
-        $query = CoursesModel::withCount('visits')->withCount('accesses');
-
-        if ($search) {
-            $query->where('title', 'ILIKE', "%{$search}%");
-        }
-
-        if (isset($sort) && !empty($sort)) {
-            foreach ($sort as $order) {
-                $query->orderBy($order['field'], $order['dir']);
-            }
-        }else{
-            $query->orderBy('visits_count', 'DESC');
-        }
-        // Ahora aplicamos la paginación antes de obtener los resultados.
-        $data = $query->paginate($size);
-
-        return response()->json($data, 200);
-    }
-
-    public function getPoaGraph() {
-
         $query = CoursesModel::withCount('accesses')->orderBy('accesses_count', 'DESC')->get()->toArray();
-
         return response()->json($query, 200);
-
     }
 
-    public function getPoaAccesses(Request $request){
+    public function getPoaAccesses(Request $request)
+    {
         $size = $request->get('size', 1);
         $search = $request->get('search');
         $sort = $request->get('sort');
@@ -77,9 +60,11 @@ class AnalyticsPoaController extends BaseController
         // Consulta para obtener el primer y último acceso de cada curso
         $query = DB::table('courses')
             ->join('courses_accesses', 'courses.uid', '=', 'courses_accesses.course_uid')
-            ->select('courses.title',
-                    DB::raw('MIN(courses_accesses.access_date) as first_access'),
-                    DB::raw('MAX(courses_accesses.access_date) as last_access'))
+            ->select(
+                'courses.title',
+                DB::raw('MIN(courses_accesses.access_date) as first_access'),
+                DB::raw('MAX(courses_accesses.access_date) as last_access')
+            )
             ->groupBy('courses.uid');
 
         // Ordenamiento basado en los criterios del cliente
@@ -97,7 +82,6 @@ class AnalyticsPoaController extends BaseController
 
         // Retornar la respuesta en formato JSON
         return response()->json($data, 200);
-
     }
 
     public function getPoaResources(Request $request)
@@ -106,6 +90,7 @@ class AnalyticsPoaController extends BaseController
         $size = $request->get('size', 1);
         $search = $request->get('search');
         $sort = $request->get('sort');
+        $filters = $request->get('filters');
 
         $query = EducationalResourcesModel::withCount(['accesses', 'visits' => function ($query) {
             $query->whereNull('user_uid');
@@ -119,33 +104,68 @@ class AnalyticsPoaController extends BaseController
             foreach ($sort as $order) {
                 $query->orderBy($order['field'], $order['dir']);
             }
-        }else{
+        } else {
             $query->orderBy('accesses_count', 'DESC');
         }
+
+        if($filters) $this->applyFilters($filters, $query);
+
         // Ahora aplicamos la paginación antes de obtener los resultados.
         $data = $query->paginate($size);
 
         return response()->json($data, 200);
     }
 
-    public function getPoaGraphResources() {
-
-        $query = EducationalResourcesModel::withCount('accesses')->orderBy('accesses_count', 'DESC')->get()->toArray();
-
-        return response()->json($query, 200);
-
+    private function applyFilters($filters, &$query)
+    {
+        foreach ($filters as $filter) {
+            if ($filter['database_field'] == "categories") {
+                $query->whereHas('categories', function ($query) use ($filter) {
+                    $query->whereIn('categories.uid', $filter['value']);
+                });
+            } else if ($filter['database_field'] == "embeddings") {
+                if ($filter['value'] == 1) $query->whereNotNull('embeddings');
+                else $query->whereNull('embeddings');
+            } else {
+                $query->where($filter['database_field'], $filter['value']);
+            }
+        }
     }
-    public function getPoaResourcesAccesses(Request $request){
+
+    public function getPoaGraphResources()
+    {
+        $filters = request()->get('filters');
+
+        $query = EducationalResourcesModel::withCount('accesses')->orderBy('accesses_count', 'DESC');
+
+        if($filters) $this->applyFilters($filters, $query);
+
+        $data = $query->get();
+
+        if(empty($data->toArray())){
+            $query = EducationalResourcesModel::withCount('accesses')->orderBy('accesses_count', 'DESC');
+            $data = $query->get();
+            foreach ($data as $item) {
+                $item->accesses_count = 0;
+            }
+        }
+
+        return response()->json($data, 200);
+    }
+
+    public function getPoaResourcesAccesses(Request $request)
+    {
         $size = $request->get('size', 1);
-        $search = $request->get('search');
         $sort = $request->get('sort');
 
         // Consulta para obtener el primer y último acceso de cada curso
         $query = DB::table('educational_resources')
             ->join('educational_resource_access', 'educational_resources.uid', '=', 'educational_resource_access.educational_resource_uid')
-            ->select('educational_resources.title',
-                    DB::raw('MIN(educational_resource_access.date) as first_access'),
-                    DB::raw('MAX(educational_resource_access.date) as last_access'))
+            ->select(
+                'educational_resources.title',
+                DB::raw('MIN(educational_resource_access.date) as first_access'),
+                DB::raw('MAX(educational_resource_access.date) as last_access')
+            )
             ->groupBy('educational_resources.uid');
 
         // Ordenamiento basado en los criterios del cliente
@@ -163,30 +183,29 @@ class AnalyticsPoaController extends BaseController
 
         // Retornar la respuesta en formato JSON
         return response()->json($data, 200);
-
     }
-    public function getCoursesData(Request $request){
+    public function getCoursesData(Request $request)
+    {
 
         $requestData = $request->all();
 
 
-        if ($requestData['filter_type'] == null){
+        if ($requestData['filter_type'] == null) {
             $dateFormat = 'YYYY-MM-DD';
-
-        }else{
+        } else {
             $dateFormat = $requestData['filter_type'];
         }
 
-        if ($requestData['filter_date'] == null){
+        if ($requestData['filter_date'] == null) {
             $hoy = Carbon::today();
             $lunes = $hoy->copy()->startOfWeek();
             $lunesString = $lunes->format('Y-m-d');
             $domingo = $hoy->copy()->endOfWeek();
             $domingoString = $domingo->format('Y-m-d');
-            $requestData['filter_date'] = $lunesString.",".$domingoString;
+            $requestData['filter_date'] = $lunesString . "," . $domingoString;
         }
 
-        $dates = explode(",",$requestData['filter_date']);
+        $dates = explode(",", $requestData['filter_date']);
 
         // Obtener los accesos agrupados por mes y contar los accesos
 
@@ -200,7 +219,7 @@ class AnalyticsPoaController extends BaseController
 
 
         $maxAccessCount = 0;
-        if (!empty($accesses->max('access_count'))){
+        if (!empty($accesses->max('access_count'))) {
             $maxAccessCount = $accesses->max('access_count');
         }
 
@@ -213,14 +232,14 @@ class AnalyticsPoaController extends BaseController
             ->get();
 
         $maxVisitsCount = 0;
-        if (!empty($visits->max('access_count'))){
+        if (!empty($visits->max('access_count'))) {
             $maxVisitsCount = $visits->max('access_count');
         }
 
         $differentUsers = DB::table('courses_accesses')
             ->select(DB::raw('count(DISTINCT user_uid) as different_users'))
             ->where('course_uid', $requestData['course_uid'])
-            ->when(isset($dates[0]) && isset($dates[1]), function($query) use ($dates) {
+            ->when(isset($dates[0]) && isset($dates[1]), function ($query) use ($dates) {
                 return $query->whereBetween(DB::raw('CAST(access_date AS DATE)'), [date('Y-m-d', strtotime($dates[0])), date('Y-m-d', strtotime($dates[1]))]);
             })
             ->first()->different_users;
@@ -271,12 +290,12 @@ class AnalyticsPoaController extends BaseController
             ->orderBy('ca.access_date', 'desc')
             ->first();
 
-        if (!empty($lastAccess)){
+        if (!empty($lastAccess)) {
             $resultLastAccess = [
                 'access_date' => $lastAccess->access_date,
                 'user_name' => $lastAccess->first_name . ' ' . $lastAccess->last_name,
             ];
-        }else{
+        } else {
             $resultLastAccess = [
                 'access_date' => "",
                 'user_name' => "",
@@ -290,12 +309,12 @@ class AnalyticsPoaController extends BaseController
             ->orderBy('ca.access_date', 'desc')
             ->first();
 
-        if (!empty($lastVisit)){
+        if (!empty($lastVisit)) {
             $resultLastVisit = [
                 'access_date' => $lastVisit->access_date,
                 'user_name' => $lastVisit->first_name . ' ' . $lastVisit->last_name,
             ];
-        }else{
+        } else {
             $resultLastVisit = [
                 'access_date' => "",
                 'user_name' => "",
@@ -322,27 +341,28 @@ class AnalyticsPoaController extends BaseController
         return response()->json($dataToSend, 200);
     }
 
-    public function getResourcesData(Request $request){
+    public function getResourcesData(Request $request)
+    {
 
         $requestData = $request->all();
 
 
-        if ($requestData['filter_type_resource'] == null){
+        if ($requestData['filter_type_resource'] == null) {
             $dateFormat = 'YYYY-MM-DD';
-        }else{
+        } else {
             $dateFormat = $requestData['filter_type_resource'];
         }
 
-        if ($requestData['filter_date_resource'] == null){
+        if ($requestData['filter_date_resource'] == null) {
             $hoy = Carbon::today();
             $lunes = $hoy->copy()->startOfWeek();
             $lunesString = $lunes->format('Y-m-d');
             $domingo = $hoy->copy()->endOfWeek();
             $domingoString = $domingo->format('Y-m-d');
-            $requestData['filter_date_resource'] = $lunesString.",".$domingoString;
+            $requestData['filter_date_resource'] = $lunesString . "," . $domingoString;
         }
 
-        $dates = explode(",",$requestData['filter_date_resource']);
+        $dates = explode(",", $requestData['filter_date_resource']);
 
         // Obtener los accesos agrupados por mes y contar los accesos
 
@@ -355,7 +375,7 @@ class AnalyticsPoaController extends BaseController
             ->get();
 
         $maxAccessCount = 0;
-        if (!empty($accesses->max('access_count'))){
+        if (!empty($accesses->max('access_count'))) {
             $maxAccessCount = $accesses->max('access_count');
         }
 
@@ -369,14 +389,14 @@ class AnalyticsPoaController extends BaseController
             ->get();
 
         $maxVisitsCount = 0;
-        if (!empty($visits->max('access_count'))){
+        if (!empty($visits->max('access_count'))) {
             $maxVisitsCount = $visits->max('access_count');
         }
 
         $differentUsers = DB::table('educational_resource_access')
-            ->select(DB::raw('count(DISTINCT user_uid) as different_users'))
+            ->select(DB::raw('count(uid) as different_users'))
             ->where('educational_resource_uid', $requestData['educational_resource_uid'])
-            ->when(isset($dates[0]) && isset($dates[1]), function($query) use ($dates) {
+            ->when(isset($dates[0]) && isset($dates[1]), function ($query) use ($dates) {
                 return $query->whereBetween(DB::raw('CAST(date AS DATE)'), [date('Y-m-d', strtotime($dates[0])), date('Y-m-d', strtotime($dates[1]))]);
             })
             ->first()->different_users;
@@ -429,12 +449,12 @@ class AnalyticsPoaController extends BaseController
             ->orderBy('ca.date', 'desc')
             ->first();
 
-        if (!empty($lastAccess)){
+        if (!empty($lastAccess)) {
             $resultLastAccess = [
                 'access_date' => $lastAccess->date,
                 'user_name' => $lastAccess->first_name . ' ' . $lastAccess->last_name,
             ];
-        }else{
+        } else {
             $resultLastAccess = [
                 'access_date' => "",
                 'user_name' => "",
@@ -448,16 +468,15 @@ class AnalyticsPoaController extends BaseController
             ->orderBy('ca.date', 'desc')
             ->first();
 
-        if (!empty($lastVisit)){
+        if (!empty($lastVisit)) {
             $resultLastVisit = [
                 'access_date' => $lastVisit->date
             ];
-        }else{
+        } else {
             $resultLastVisit = [
                 'access_date' => ""
             ];
         }
-
 
         // Extraer solo los datos necesarios
         $dataToSend = [
@@ -474,5 +493,3 @@ class AnalyticsPoaController extends BaseController
         return response()->json($dataToSend, 200);
     }
 }
-
-

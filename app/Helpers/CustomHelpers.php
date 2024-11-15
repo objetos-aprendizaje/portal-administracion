@@ -359,32 +359,52 @@ function readCsv($routeCsv)
     return $csv;
 }
 
-function adaptDatesCourseEducationalProgram($courseOrEducationalProgram, $collection = false)
+function adaptDatesModel($model, $dateFields, $collection = false)
+{
+    if ($collection) {
+        $model->transform(function ($model) use ($dateFields) {
+            foreach ($dateFields as $field) {
+                if (isset($model->$field)) {
+                    $model->$field = Carbon::parse($model->$field)->setTimezone(env('TIMEZONE_DISPLAY'))->format('Y-m-d H:i:s');
+                }
+            }
+
+            return $model;
+        });
+    } else {
+        foreach ($dateFields as $field) {
+            if (isset($model->$field)) {
+                $model->$field = Carbon::parse($model->$field)->setTimezone(env('TIMEZONE_DISPLAY'))->format('Y-m-d H:i:s');
+            }
+        }
+    }
+}
+
+function adaptRequestDatesToUTC(&$request)
 {
     $dateFields = [
-        'inscription_start_date',
-        'inscription_finish_date',
         'realization_start_date',
         'realization_finish_date',
+        'inscription_start_date',
+        'inscription_finish_date',
         'enrolling_start_date',
         'enrolling_finish_date'
     ];
 
-    if ($collection) {
-        $courseOrEducationalProgram->transform(function ($course) use ($dateFields) {
-            foreach ($dateFields as $field) {
-                if (isset($course->$field)) {
-                    $course->$field = Carbon::parse($course->$field)->setTimezone(env('TIMEZONE_DISPLAY'))->format('Y-m-d H:i:s');
-                }
-            }
+    $adaptedDates = [];
 
-            return $course;
-        });
-    } else {
-        foreach ($dateFields as $field) {
-            if (isset($courseOrEducationalProgram->$field)) {
-                $courseOrEducationalProgram->$field = Carbon::parse($courseOrEducationalProgram->$field)->setTimezone(env('TIMEZONE_DISPLAY'))->format('Y-m-d H:i:s');
-            }
+    foreach ($dateFields as $field) {
+        if ($request->has($field)) {
+            $adaptedDates[$field] = adaptDateToUTC($request->input($field))->format('Y-m-d H:i:s');
         }
     }
+
+    $request->merge($adaptedDates);
+}
+
+function adaptDateToUTC($date){
+    $date = new DateTime($date, new DateTimeZone(env('TIMEZONE_DISPLAY')));
+    $date->setTimezone(new DateTimeZone('UTC'));
+
+    return $date;
 }

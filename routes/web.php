@@ -30,10 +30,9 @@ use App\Http\Controllers\LearningObjects\EducationalResourcesController;
 use App\Http\Controllers\Logs\LogsController;
 use App\Http\Controllers\Users\ListUsersController;
 use App\Http\Controllers\Analytics\AnalyticsUsersController;
-use App\Http\Controllers\Analytics\AnalyticsPoaController;
+use App\Http\Controllers\Analytics\AnalyticsResourcesController;
 use App\Http\Controllers\Analytics\AnalyticsAbandonedController;
 use App\Http\Controllers\Analytics\AnalyticsTopCategoriesController;
-use App\Http\Controllers\Api\UpdateCourseController;
 use App\Http\Controllers\Cataloging\CertificationTypesController;
 use App\Http\Controllers\Cataloging\CompetencesLearningsResultsController;
 use App\Http\Controllers\Credentials\StudentsCredentialsController;
@@ -56,8 +55,10 @@ use App\Http\Controllers\LearningObjects\LearningObjetsController;
 use App\Http\Controllers\Administration\TooltipTextsController;
 use App\Http\Controllers\Api\DepartmentsApiController;
 use App\Http\Controllers\Administration\DepartmentsController;
+use App\Http\Controllers\Analytics\AnalyticsCoursesController;
 use App\Http\Controllers\Api\ApiCoursesController;
 use App\Http\Controllers\Api\ApiUsersController;
+use App\Http\Controllers\GetEmailController;
 
 /*
 |--------------------------------------------------------------------------
@@ -280,6 +281,9 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::post('/learning_objects/courses/delete_inscriptions_course', [ManagementCoursesController::class, 'deleteInscriptionsCourse']);
         Route::post('/learning_objects/courses/duplicate_course/{course_uid}', [ManagementCoursesController::class, 'duplicateCourse']);
         Route::post('/learning_objects/courses/create_edition', [ManagementCoursesController::class, 'editionCourse']);
+        Route::post('/learning_objects/courses/regenerate_embeddings', [ManagementCoursesController::class, 'regenerateEmbeddings']);
+
+        Route::post('/learning_objects/courses/send_credentials', [ManagementCoursesController::class, 'sendCredentials']);
 
         Route::get('/learning_objects/educational_resources', [EducationalResourcesController::class, 'index'])->name('learning-objects-educational-resources');
 
@@ -306,6 +310,7 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::delete('/learning_objects/educational_resources/delete_resources', [EducationalResourcesController::class, 'deleteResources']);
         Route::post('/learning_objects/educational_resources/save_resource', [EducationalResourcesController::class, 'saveResource']);
         Route::get('/learning_objects/educational_resources/get_resources', [EducationalResourcesController::class, 'getResources']);
+        Route::post('/learning_objects/educational_resources/regenerate_embeddings', [EducationalResourcesController::class, 'regenerateEmbeddings']);
         Route::get('/learning_objects/educational_programs/get_educational_programs', [EducationalProgramsController::class, 'getEducationalPrograms']);
         Route::post('/learning_objects/educational_programs/save_educational_program', [EducationalProgramsController::class, 'saveEducationalProgram']);
         Route::post('/learning_objects/educational_programs/calculate_median_enrollings_categories', [EducationalProgramsController::class, 'calculateMedianEnrollingsCategories']);
@@ -335,35 +340,39 @@ Route::middleware(['combined.auth'])->group(function () {
     Route::middleware(['role:ADMINISTRATOR,MANAGEMENT'])->group(function () {
         Route::get('/logs/list_logs', [LogsController::class, 'index'])->name('list-logs');
         Route::get('/analytics/users', [AnalyticsUsersController::class, 'index'])->name('analytics-users');
-        Route::get('/analytics/poa', [AnalyticsPoaController::class, 'index'])->name('analytics-poa');
+        Route::get('/analytics/resources', [AnalyticsResourcesController::class, 'index'])->name('analytics-resources');
         Route::get('/analytics/abandoned', [AnalyticsAbandonedController::class, 'index'])->name('analytics-abandoned');
+        Route::post('/analytics/abandoned/save_threshold_abandoned_courses', [AnalyticsAbandonedController::class, 'saveThresholdAbandonedCourses']);
         Route::get('/analytics/top_categories', [AnalyticsTopCategoriesController::class, 'index'])->name('analytics-top-categories');
 
+        Route::get('/analytics/courses', [AnalyticsCoursesController::class, 'index'])->name('analytics-courses');
+        Route::post('/analytics/courses/get_poa_graph', [AnalyticsCoursesController::class, 'getPoaGraph'])->name('analytics-poa-graph');
+        Route::post('/analytics/courses/get_courses_data', [AnalyticsCoursesController::class, 'getCoursesData'])->name('analytics-courses-data');
+        Route::post('/analytics/courses/get', [AnalyticsCoursesController::class, 'getCourses'])->name('analytics-courses-get');
+        Route::get('/analytics/courses/get_courses_statuses_graph', [AnalyticsCoursesController::class, 'getCoursesStatusesGraph'])->name('analytics-courses-statuses-graph-get');
 
         Route::get('/logs/list_logs/get_logs', [LogsController::class, 'getLogs']);
 
         Route::get('/analytics/users/get_user_roles', [AnalyticsUsersController::class, 'getUsersRoles'])->name('analytics-users-roles');
         Route::get('/analytics/users/get_user_roles_graph', [AnalyticsUsersController::class, 'getUsersRolesGraph'])->name('analytics-users-roles-graph');
-        Route::get('/analytics/users/get_students', [AnalyticsUsersController::class, 'getStudents'])->name('analytics-students');
+        Route::post('/analytics/users/get_students', [AnalyticsUsersController::class, 'getStudents'])->name('analytics-students');
         Route::post('/analytics/users/get_students_data', [AnalyticsUsersController::class, 'getStudentsData'])->name('analytics-students-data');
 
-        Route::get('/analytics/users/get_poa_get', [AnalyticsPoaController::class, 'getPoa'])->name('analytics-poa-get');
-        Route::get('/analytics/users/get_poa_graph', [AnalyticsPoaController::class, 'getPoaGraph'])->name('analytics-poa-graph');
-        Route::get('/analytics/users/get_poa_accesses', [AnalyticsPoaController::class, 'getPoaAccesses'])->name('analytics-poa-accesses');
-        Route::get('/analytics/users/get_poa_course_modal/{courseUid}', [AnalyticsPoaController::class, 'getPoaCourseModal']);
-        Route::post('/analytics/users/get_courses_data', [AnalyticsPoaController::class, 'getCoursesData'])->name('analytics-courses-data');
+        Route::get('/analytics/users/get_poa_accesses', [AnalyticsResourcesController::class, 'getPoaAccesses'])->name('analytics-poa-accesses');
+        Route::get('/analytics/users/get_poa_course_modal/{courseUid}', [AnalyticsResourcesController::class, 'getPoaCourseModal']);
+        Route::post('/analytics/users/get_courses_data', [AnalyticsResourcesController::class, 'getCoursesData'])->name('analytics-courses-data');
 
-        Route::get('/analytics/users/get_poa_resources', [AnalyticsPoaController::class, 'getPoaResources'])->name('analytics-poa-resources');
-        Route::get('/analytics/users/get_poa_graph_resources', [AnalyticsPoaController::class, 'getPoaGraphResources'])->name('analytics-poa-graph-resources');
-        Route::get('/analytics/users/get_poa_resources_accesses', [AnalyticsPoaController::class, 'getPoaResourcesAccesses'])->name('analytics-poa-resources-accesses');
-        Route::post('/analytics/users/get_resources_data', [AnalyticsPoaController::class, 'getResourcesData'])->name('analytics-resources-data');
+        Route::post('/analytics/users/get_poa_resources', [AnalyticsResourcesController::class, 'getPoaResources'])->name('analytics-poa-resources');
+        Route::post('/analytics/users/get_poa_graph_resources', [AnalyticsResourcesController::class, 'getPoaGraphResources'])->name('analytics-poa-graph-resources');
+        Route::get('/analytics/users/get_poa_resources_accesses', [AnalyticsResourcesController::class, 'getPoaResourcesAccesses'])->name('analytics-poa-resources-accesses');
+        Route::post('/analytics/users/get_resources_data', [AnalyticsResourcesController::class, 'getResourcesData'])->name('analytics-resources-data');
 
         Route::get('/analytics/users/get_abandoned', [AnalyticsAbandonedController::class, 'getAbandoned'])->name('analytics-abandoned-get');
         Route::get('/analytics/users/get_abandoned_graph', [AnalyticsAbandonedController::class, 'getAbandonedGraph'])->name('analytics-abandoned-graph');
 
-        Route::get('/analytics/users/get_top_table', [AnalyticsTopCategoriesController::class, 'getTopCategories'])->name('get-top-categories');
+        Route::post('/analytics/users/get_top_table', [AnalyticsTopCategoriesController::class, 'getTopCategories'])->name('get-top-categories');
 
-        Route::get('/analytics/users/get_top_graph', [AnalyticsTopCategoriesController::class, 'getTopCategoriesGraph'])->name('get-top-categories-graph');
+        Route::post('/analytics/users/get_top_graph', [AnalyticsTopCategoriesController::class, 'getTopCategoriesGraph'])->name('get-top-categories-graph');
 
         Route::post('/learning_objects/educational_resources/change_statuses_resources', [EducationalResourcesController::class, 'changeStatusesResources']);
     });
@@ -442,6 +451,8 @@ Route::middleware('guest')->group(function () {
 
     Route::post('/login/authenticate', [LoginController::class, 'authenticate']);
 
+    Route::get('/login/certificate', [LoginController::class, 'loginCertificate'])->name('login-certificate');
+
     Route::get('auth/{login_method}', [LoginController::class, 'redirectToSocialLogin']);
 
     Route::get('/auth/callback/{login_method}', [LoginController::class, 'handleSocialCallback']);
@@ -479,6 +490,10 @@ Route::middleware(['api_front_auth'])->group(function () {
 });
 
 Route::get('/certificate-access', [CertificateAccessController::class, 'index'])->name('certificate-access');
+Route::post('/get-email', [GetEmailController::class, 'index'])->name('get-email');
+Route::post('/get-email/add', [CertificateAccessController::class, 'addUser'])->name('add-user');
+
+
 Route::get('/token_login/{token}', [LoginController::class, 'tokenLogin']);
 
 // Ruta para mostrar el formulario de restablecimiento de contraseña

@@ -24,26 +24,27 @@ class AdministrationDepartamentsTest extends TestCase
 {
     use RefreshDatabase;
 
-/**
- * @testdox Inicialización de inicio de sesión
- */
-    public function setUp(): void {
+    /**
+     * @testdox Inicialización de inicio de sesión
+     */
+    public function setUp(): void
+    {
         parent::setUp();
         $this->withoutMiddleware();
         // Asegúrate de que la tabla 'qvkei_settings' existe
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
-         // Simular un usuario autenticado
-         $user = UsersModel::factory()->create();
-         $this->actingAs($user);
+        // Simular un usuario autenticado
+        $user = UsersModel::factory()->create();
+        $this->actingAs($user);
     }
 
 
-/** @test Obtener Index View Departamentos */
+    /** @test Obtener Index View Departamentos */
     public function testIndexViewTheDepartaments()
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
         // Autenticar al usuario
@@ -53,7 +54,7 @@ class AdministrationDepartamentsTest extends TestCase
         View::share('roles', $roles);
 
         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
-       View::share('general_options', $general_options);
+        View::share('general_options', $general_options);
 
         // Simula datos de TooltipTextsModel
         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
@@ -81,18 +82,19 @@ class AdministrationDepartamentsTest extends TestCase
         $response->assertViewHas('tabulator', true);
         $response->assertViewHas('submenuselected', 'departments');
     }
-/** @test Crea departamento*/
+
+    /** @test Crea departamento*/
     public function testSaveDepartmentWithValidData()
     {
-         // Simular un usuario autenticado
-         $user = UsersModel::factory()->create();
-         $this->actingAs($user);
+        // Simular un usuario autenticado
+        $user = UsersModel::factory()->create();
+        $this->actingAs($user);
 
         $departament = DepartmentsModel::factory()->create()->first();
         $this->assertDatabaseHas('departments', ['uid' => $departament->uid]);
 
         $data = [
-            'uid'=> $departament->uid,
+            'uid' => $departament->uid,
             'name' => $departament->name,
         ];
 
@@ -101,7 +103,7 @@ class AdministrationDepartamentsTest extends TestCase
 
         // Verificar que el departamento se haya guardado en la base de datos
         $this->assertDatabaseHas('departments', [
-            'uid'=> $departament->uid,
+            'uid' => $departament->uid,
             'name' => $departament->name,
         ]);
 
@@ -110,20 +112,46 @@ class AdministrationDepartamentsTest extends TestCase
         $this->assertEquals('Departamento añadida correctamente', json_decode($response->getContent(), true)['message']);
     }
 
-/* @test Crea departamento data invalidad Error*/
+    /** @test Actualiza un departamento*/
+    public function testUpdateDepartmentWithValidData()
+    {
+        // Simular un usuario autenticado
+        $user = UsersModel::factory()->create();
+        $this->actingAs($user);
+
+        $departament = DepartmentsModel::factory()->create()->first();       
+
+        $data = [
+            'department_uid'=>  $departament->uid,            
+            'name' => $departament->name,
+        ];
+
+        $response = $this->postJson('/administration/departments/save_department', $data);
+
+        // Verificar que el departamento se haya guardado en la base de datos
+        $this->assertDatabaseHas('departments', [
+            'uid' => $departament->uid,
+            'name' => $departament->name,
+        ]);
+
+        // Verificar que la respuesta sea correcta
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals('Departamento actualizada correctamente', json_decode($response->getContent(), true)['message']);
+    }
+
+    /* @test Crea departamento data invalidad Error*/
     public function testSaveDepartmentWithInvalidData()
     {
 
+        $departament = DepartmentsModel::factory()->create()->first();
+        $this->assertDatabaseHas('departments', ['uid' => $departament->uid]);
 
-       $departament = DepartmentsModel::factory()->create()->first();
-       $this->assertDatabaseHas('departments', ['uid' => $departament->uid]);
-
-       $data = [
-           'uid'=> $departament->uid,
+        $data = [
+            'uid' => $departament->uid,
             'name' => '',
-       ];
+        ];
 
-       $response = $this->postJson('/administration/departments/save_department', $data);
+        $response = $this->postJson('/administration/departments/save_department', $data);
 
 
         // Verificar que la respuesta sea un error 422
@@ -131,8 +159,8 @@ class AdministrationDepartamentsTest extends TestCase
         $this->assertEquals('Algunos campos son incorrectos', json_decode($response->getContent(), true)['message']);
         $this->assertArrayHasKey('name', json_decode($response->getContent(), true)['errors']);
     }
-/**
- * @test Obtener listado departamento*/
+    /**
+     * @test Obtener listado departamento*/
     public function testGetDepartmentReturnsCorrectData()
     {
         // Crear un departamento en la base de datos
@@ -149,8 +177,9 @@ class AdministrationDepartamentsTest extends TestCase
             'name' => $department->name,
         ]);
     }
-/**
- * @test Elimina departamento*/
+    
+    /**
+     * @test Elimina departamento*/
     public function testDeleteDepartmentsWithoutUsersReturnsSuccess()
     {
         // Crear departamentos de prueba
@@ -171,8 +200,31 @@ class AdministrationDepartamentsTest extends TestCase
         $this->assertDatabaseMissing('departments', ['uid' => $department2->uid]);
     }
 
-/** @test Obtener todos los departamentos */
-public function testGetDepartments()
+     /**
+     * @test Elimina departamento*/
+    public function testDeleteDepartmentsWithoutUsersReturnsException()
+    {
+        // Crear departamentos de prueba
+        $department1 = DepartmentsModel::factory()->create();
+        
+        UsersModel::factory()->create([
+            'department_uid'=> $department1->uid,
+        ]);        
+
+        // Hacer la solicitud DELETE a la ruta
+        $response = $this->delete('/administration/departments/delete_departments', [
+            'uids' => [$department1->uid],
+        ]);
+
+        // Verificar que la respuesta sea correcta
+        $response->assertStatus(406);
+        $response->assertJson(['message' => 'No se pueden eliminar los departamentos porque hay usuarios vinculados a ellos']);
+
+      
+    }
+
+    /** @test Obtener todos los departamentos */
+    public function testGetDepartments()
     {
         // Crea algunos departamentos para la prueba
         DepartmentsModel::factory()->create(['name' => 'Finance']);
@@ -212,4 +264,6 @@ public function testGetDepartments()
         $this->assertCount(1, $response->json('data'));
         $this->assertEquals('Finance', $response->json('data.0.name'));
     }
+
+
 }

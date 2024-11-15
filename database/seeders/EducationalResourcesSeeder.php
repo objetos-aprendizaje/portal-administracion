@@ -48,7 +48,7 @@ class EducationalResourcesSeeder extends Seeder
             $query->where('code', 'TEACHER');
         })->get();
 
-        $this->demoImages = collect(File::files(base_path('public/images/test-images')))
+        $this->demoImages = collect(File::files(base_path('public/test-images')))
             ->map(function ($file) {
                 return str_replace(base_path('public/'), '', $file->getPathname());
             })->toArray();

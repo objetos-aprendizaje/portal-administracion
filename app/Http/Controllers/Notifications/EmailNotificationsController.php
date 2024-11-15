@@ -83,10 +83,10 @@ class EmailNotificationsController extends BaseController
 
     public function getEmailNotification($notification_general_uid)
     {
-
-        if (!$notification_general_uid) {
-            return response()->json(['message' => env('ERROR_MESSAGE')], 400);
-        }
+        //Se comenta ya que  la misma ruta comprueba si tiene parametros o no.
+        // if (!$notification_general_uid) {
+        //     return response()->json(['message' => env('ERROR_MESSAGE')], 400);
+        // }
 
         $email_notification = EmailNotificationsModel::where('uid', $notification_general_uid)->with('roles')->with('users')->with('emailNotificationType')->first();
 

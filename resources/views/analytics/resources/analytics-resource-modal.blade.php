@@ -1,13 +1,13 @@
-<div id="analytics-course-modal" class="modal">
+<div id="analytics-resource-modal" class="modal">
 
     <div class="modal-body w-full md:max-w-[1000px]">
 
         <div class="modal-header">
             <div>
-                <h2 id="analytics-course-modal-title" class="modal-title"></h2>
+                <h2 id="analytics-resource-modal-title" class="modal-title"></h2>
             </div>
             <div>
-                <button data-modal-id="analytics-course-modal" class="modal-close-modal-btn close-modal-btn">
+                <button data-modal-id="analytics-resource-modal" class="modal-close-modal-btn close-modal-btn">
                     <?php e_heroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
@@ -21,53 +21,45 @@
 
                     <div class="field mt-2">
                         <div class="label-container label-center">
-                            <label for="last_access">Último acceso al curso:</label>
+                            <label for="last_access_resource">Último acceso al recurso:</label>
                         </div>
                         <div class="content-container mt-1">
-                            <div id="last_access"></div>
+                            <div id="last_access_resource"></div>
                         </div>
                     </div>
                     <div class="field mt-2">
                         <div class="label-container label-center">
-                            <label for="last_visit">Última visita al curso: </label>
+                            <label for="last_visit_resource">Última visita al recurso: </label>
                         </div>
                         <div class="content-container mt-1">
-                            <div id="last_visit"></div>
+                            <div id="last_visit_resource"></div>
                         </div>
                     </div>
                     <div class="field mt-2">
                         <div class="label-container label-center">
-                            <label for="unique_users">Usuarios únicos:</label>
+                            <label for="unique_users_resource">Total de visitas y accesos:</label>
                         </div>
                         <div class="content-container mt-1">
-                            <div id="unique_users"></div>
-                        </div>
-                    </div>
-                    <div class="field mt-2">
-                        <div class="label-container label-center">
-                            <label for="insribed_users">Usuarios inscritos: </label>
-                        </div>
-                        <div class="content-container mt-1">
-                            <div id="insribed_users"></div>
+                            <div id="unique_users_resource"></div>
                         </div>
                     </div>
 
                     <div class="field mt-2">
                         <div class="label-container label-center">
-                            <label for="filter_date_accesses">Periodo</label>
+                            <label for="filter_date_accesses_resource">Periodo</label>
                         </div>
                         <div class="content-container mt-1">
-                            <input type="datetime-local" placeholder="Selecciona un rango de fechas" class="poa-input" id="filter_date_accesses"
-                                name="filter_date_accesses" />
+                            <input type="datetime-local" placeholder="Selecciona un rango de fechas" class="poa-input" id="filter_date_accesses_resource"
+                                name="filter_date_accesses_resource" />
                         </div>
                     </div>
 
                     <div class="field mt-2">
                         <div class="label-container label-center">
-                            <label for="filter_type">Selecciona tipo de periodo:</label>
+                            <label for="filter_type_resource">Tipo de periodo:</label>
                         </div>
                         <div class="content-container mt-1">
-                            <select id="filter_type" name="filter_day" class="poa-input">
+                            <select id="filter_type_resource" name="filter_day_resource" class="poa-input">
                                 <option value="">Selecciona</option>
                                 <option value="YYYY-MM-DD">Día</option>
                                 <option value="YYYY-MM">Mes</option>
@@ -79,7 +71,7 @@
                 </div>
             </form>
             <h3>Número de accesos/visitas</h3>
-            <div id="first_graph"></div>
+            <div id="second_graph"></div>
         </div>
 
     </div>

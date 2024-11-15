@@ -38,18 +38,18 @@ class FooterPagesController extends BaseController
         );
     }
 
-    public function saveFooterPages(Request $request)
-    {
-        $updateData = [
-            'legal_advice' => $request->input('legalAdvice'),
-        ];
+    // public function saveFooterPages(Request $request)
+    // {
+    //     $updateData = [
+    //         'legal_advice' => $request->input('legalAdvice'),
+    //     ];
 
-        foreach ($updateData as $key => $value) {
-            GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
-        }
+    //     foreach ($updateData as $key => $value) {
+    //         GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
+    //     }
 
-        return response()->json(['message' => 'Textos guardados correctamente']);
-    }
+    //     return response()->json(['message' => 'Textos guardados correctamente']);
+    // }
 
     public function getFooterPages(Request $request)
     {
@@ -88,11 +88,19 @@ class FooterPagesController extends BaseController
     {
 
         $messages = [
-            'slug.regex' => 'El campo Slug solo puede contener letras minúsculas, números, guiones y guiones bajos.'
+            'name.required' => 'El campo nombre es obligatorio',
+            'slug.required' => 'El campo slug es obligatorio',
+            'content.required' => 'El campo contenido es obligatorio',
+            'version.required_if' => 'El campo versión es obligatorio si se requiere aceptación',
+            'slug.max' => 'El campo slug no puede tener más de 255 caracteres',
+            'slug.regex' => 'El campo slug solo puede contener letras minúsculas, números, guiones y guiones bajos'
         ];
 
         $validator_rules = [
+            'name' => ['required', 'max:255'],
             'slug' => ['required', 'regex:/^[a-z0-9_-]+$/i', 'max:255'],
+            'content' => ['required'],
+            'version' => 'required_if:acceptance_required,1'
         ];
 
         $validator = Validator::make($request->all(), $validator_rules, $messages);

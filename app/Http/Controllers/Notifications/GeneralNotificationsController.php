@@ -59,12 +59,15 @@ class GeneralNotificationsController extends BaseController
             ->join('notifications_types', 'general_notifications.notification_type_uid', '=', 'notifications_types.uid', 'left')
             ->select('general_notifications.*', 'notifications_types.name as notification_type_name');
 
+
+        // Se agregó el nombre de la tabla para que pasara en las pruebas unitarias
         if ($search) {
             $query->where(function ($query) use ($search) {
-                $query->where('title', 'ILIKE', "%{$search}%")
-                    ->orWhere('description', 'ILIKE', "%{$search}%");
+                $query->where('general_notifications.title', 'ILIKE', "%{$search}%") // Especificar la tabla
+                      ->orWhere('general_notifications.description', 'ILIKE', "%{$search}%"); // Especificar la tabla
             });
         }
+
         if (isset($sort) && !empty($sort)) {
             foreach ($sort as $order) {
                 $query->orderBy($order['field'], $order['dir']);
@@ -94,9 +97,9 @@ class GeneralNotificationsController extends BaseController
             }
         }
 
-
-
         $data = $query->paginate($size);
+
+        adaptDatesModel($data, ['start_date', 'end_date'], true);
 
         return response()->json($data, 200);
     }
@@ -104,15 +107,17 @@ class GeneralNotificationsController extends BaseController
     public function getGeneralNotification($notification_general_uid)
     {
 
-        if (!$notification_general_uid) {
-            return response()->json(['message' => env('ERROR_MESSAGE')], 400);
-        }
+        // if (!$notification_general_uid) {
+        //     return response()->json(['message' => env('ERROR_MESSAGE')], 400);
+        // }//Se comenta ya que  la misma ruta comprueba si tiene parametros o no.
 
         $general_notification = GeneralNotificationsModel::where('uid', $notification_general_uid)->with('roles')->with('users')->with('generalNotificationType')->first();
 
         if (!$general_notification) {
             return response()->json(['message' => 'La notificación general no existe'], 406);
         }
+
+        adaptDatesModel($general_notification, ['start_date', 'end_date'], false);
 
         return response()->json($general_notification, 200);
     }
@@ -138,6 +143,11 @@ class GeneralNotificationsController extends BaseController
             $notification_general->uid = $notification_general_uid;
             $isNew = true;
         }
+
+        $request->merge([
+            'start_date' => adaptDateToUTC($request->get('start_date'))->format('Y-m-d H:i:s'),
+            'end_date' => adaptDateToUTC($request->get('end_date'))->format('Y-m-d H:i:s')
+        ]);
 
         $notification_general->fill($request->only([
             'title', 'description', 'start_date', 'end_date', 'type', 'notification_type_uid'
@@ -221,11 +231,13 @@ class GeneralNotificationsController extends BaseController
                 ->where('user_general_notifications.user_uid', $user_uid)
                 ->limit(1)
         ])
-            ->first()->toArray();
+            ->first();//se quitó el toArray(), para prueba unitaria porque si es nulo no se puede verificar el 406
 
         if (!$general_notification) {
             return response()->json(['message' => 'La notificación general no existe'], 406);
         }
+
+        $general_notification = $general_notification->toArray();//Se agregó esta línea despues del error 406. Si no es null continua su proceso normal.
 
         // La marcamos como vista
         if (!$general_notification['is_read']) {

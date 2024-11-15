@@ -17,6 +17,7 @@ use App\Models\GeneralOptionsModel;
 use App\Services\EmbeddingsService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
+use App\Services\CertidigitalService;
 use Illuminate\Support\Facades\Schema;
 use App\Models\EducationalProgramsModel;
 use App\Http\Controllers\SliderController;
@@ -344,12 +345,15 @@ class CarrouselsTest extends TestCase
             'belongs_to_educational_program' => true,
         ]);
 
+        // Crear mocks del certificado
+        $certidigitalServiceMock = $this->createMock(CertidigitalService::class);
+
         // Create a mock for EmbeddingsService
 
         $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
 
         // Instantiate ManagementCoursesController with the mocked service
-        $controller = new ManagementCoursesController($mockEmbeddingsService);
+        $controller = new ManagementCoursesController($mockEmbeddingsService, $certidigitalServiceMock);
 
         // Usamos reflexión para acceder al método privado
         $reflection = new \ReflectionClass($controller);
@@ -383,12 +387,15 @@ class CarrouselsTest extends TestCase
             'featured_big_carrousel_image_path' => 'image.jpg',
         ]);
 
+        // Crear mocks del certificado
+        $certidigitalServiceMock = $this->createMock(CertidigitalService::class);
+
 
          // Create a mock for EmbeddingsService
          $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
 
         // Instantiate ManagementCoursesController with the mocked service
-        $controller = new ManagementCoursesController($mockEmbeddingsService);
+        $controller = new ManagementCoursesController($mockEmbeddingsService, $certidigitalServiceMock );
 
 
         // Usamos reflexión para acceder al método privado
@@ -421,12 +428,14 @@ class CarrouselsTest extends TestCase
             'featured_big_carrousel_image_path' => null,
         ]);
 
+        // Crear mocks del certificado
+        $certidigitalServiceMock = $this->createMock(CertidigitalService::class);
 
         // Create a mock for EmbeddingsService
         $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
 
         // Instantiate ManagementCoursesController with the mocked service
-        $controller = new ManagementCoursesController($mockEmbeddingsService);
+        $controller = new ManagementCoursesController($mockEmbeddingsService, $certidigitalServiceMock );
 
         // Usamos reflexión para acceder al método privado
         $reflection = new \ReflectionClass($controller);

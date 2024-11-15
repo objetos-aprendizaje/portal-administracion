@@ -92,6 +92,7 @@ class AdministrationTooltipTextTest extends TestCase {
             'uid' => $tool->uid,
             'input_id' => $tool->input_id,
             'description' => $tool->description,
+            'form_id'=> 'form-id-1',
         ];
 
         // Enviar una solicitud para guardar un nuevo texto de tooltip
@@ -106,8 +107,11 @@ class AdministrationTooltipTextTest extends TestCase {
             'uid' => $tool->uid,
             'input_id' => $tool->input_id,
             'description' => $tool->description,
+            // 'form_id'=> 'form-id-1',
         ]);
     }
+
+    
 
 /**
  * @test Actualiza Tool Tip */
@@ -122,9 +126,11 @@ class AdministrationTooltipTextTest extends TestCase {
 
         // Datos de prueba para la solicitud
         $data = [
+            'tooltip_text_uid'=> $tool->uid,
             'uid' => $tool->uid,
             'input_id' => $tool->input_id,
             'description' => $tool->description,
+            'form_id'=> 'form-id-1',
         ];
 
         $data['description'] = 'Nuevo texto de tooltip';

@@ -25,10 +25,11 @@ class AdministrationSuggestionsTest extends TestCase
 {
     use RefreshDatabase;
 
-/**
- * @testdox Inicialización de inicio de sesión
- */
-    public function setUp(): void {
+    /**
+     * @testdox Inicialización de inicio de sesión
+     */
+    public function setUp(): void
+    {
         parent::setUp();
         $this->withoutMiddleware();
         // Asegúrate de que la tabla 'qvkei_settings' existe
@@ -42,23 +43,23 @@ class AdministrationSuggestionsTest extends TestCase
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
-         // Autenticar al usuario
+        // Autenticar al usuario
         Auth::login($user);
 
-         // Compartir la variable de roles manualmente con la vista
+        // Compartir la variable de roles manualmente con la vista
         View::share('roles', $roles);
 
         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
         View::share('general_options', $general_options);
 
-         // Simula datos de TooltipTextsModel
+        // Simula datos de TooltipTextsModel
         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
         View::share('tooltip_texts', $tooltip_texts);
 
-         // Simula notificaciones no leídas
+        // Simula notificaciones no leídas
         $unread_notifications = $user->notifications->where('read_at', null);
         View::share('unread_notifications', $unread_notifications);
 
@@ -85,7 +86,7 @@ class AdministrationSuggestionsTest extends TestCase
 
     /**
      * @test Elimina Footer error*/
-     public function testDeleteNonExistingFooterPages()
+    public function testDeleteNonExistingFooterPages()
     {
         // Datos de entrada para la eliminación de un UID que no existe
         $data = [
@@ -97,11 +98,11 @@ class AdministrationSuggestionsTest extends TestCase
 
         // Verifica la respuesta
         $response->assertStatus(200) // Asegúrate de que la respuesta sea 200, ya que el método no lanza un error si no encuentra el UID
-                ->assertJson(['message' => 'Páginas de footer eliminadas correctamente']);
+            ->assertJson(['message' => 'Páginas de footer eliminadas correctamente']);
     }
 
-/**
-*  @test  Sugerencias y mejoras*/
+    /**
+     *  @test  Sugerencias y mejoras*/
     public function testSavesEmailSuggestions()
     {
 
@@ -110,7 +111,7 @@ class AdministrationSuggestionsTest extends TestCase
 
         $emailuid = Str::uuid();
         $data = [
-            'uid'=> $emailuid,
+            'uid' => $emailuid,
             'email' => 'test@example.com', // Asegúrate de que sea una cadena
         ];
 
@@ -118,17 +119,17 @@ class AdministrationSuggestionsTest extends TestCase
         $response = $this->postJson('/administration/suggestions_improvements/save_email', $data);
 
         $response->assertStatus(200)
-                    ->assertJson([
-                        'message' => 'Email añadido correctamente',
-                    ]);
+            ->assertJson([
+                'message' => 'Email añadido correctamente',
+            ]);
 
         $this->assertDatabaseHas('suggestion_submission_emails', [
             'email' => 'test@example.com',
         ]);
     }
 
-/**
-*  @test  Sugerencias y mejoras Invalido Email*/
+    /**
+     *  @test  Sugerencias y mejoras Invalido Email*/
     public function testInvalidEmailReturnsError()
     {
         $user = UsersModel::factory()->create();
@@ -143,13 +144,13 @@ class AdministrationSuggestionsTest extends TestCase
 
         // Verifica que la respuesta tenga el código de estado 406 y el mensaje esperado
         $response->assertStatus(406)
-                    ->assertJson([
-                        'message' => 'El email es inválido',
-                    ]);
+            ->assertJson([
+                'message' => 'El email es inválido',
+            ]);
     }
 
-/**
-*  @test  Elimina email - Sugerencias y mejoras */
+    /**
+     *  @test  Elimina email - Sugerencias y mejoras */
     public function testDeleteEmailsWithValidUids()
     {
 
@@ -173,13 +174,13 @@ class AdministrationSuggestionsTest extends TestCase
 
         // Assert: Check response status and message
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Emails eliminados correctamente']);
+            ->assertJson(['message' => 'Emails eliminados correctamente']);
 
         // Assert: Check that the email has been deleted from the database
         $this->assertDatabaseMissing('suggestion_submission_emails', ['uid' => $email1->uid]);
     }
-/**
-*  @test  Elimina email con uid invalido*/
+    /**
+     *  @test  Elimina email con uid invalido*/
     public function testDeleteEmailsWithInvalidUids()
     {
         // Create a user and authenticate
@@ -192,13 +193,13 @@ class AdministrationSuggestionsTest extends TestCase
         ]);
 
         $response->assertStatus(200) // Assuming the method does not throw an error for non-existing IDs
-                ->assertJson(['message' => 'Emails eliminados correctamente']);
+            ->assertJson(['message' => 'Emails eliminados correctamente']);
 
         // Verify that no emails are deleted since they didn't exist
         $this->assertDatabaseCount('suggestion_submission_emails', 0); // Adjust this if you want to check for existing emails
     }
-/**
-*  @test  Elimina email sin uid*/
+    /**
+     *  @test  Elimina email sin uid*/
     public function testDeleteEmailsWithoutUids()
     {
 
@@ -211,11 +212,11 @@ class AdministrationSuggestionsTest extends TestCase
         ]);
 
         $response->assertStatus(200) // Assuming the method handles empty arrays gracefully
-                ->assertJson(['message' => 'Emails eliminados correctamente']);
+            ->assertJson(['message' => 'Emails eliminados correctamente']);
     }
 
-/**
-*  @test  Obtener GET emails con paginación*/
+    /**
+     *  @test  Obtener GET emails con paginación*/
     public function testGetEmailsWithPagination()
     {
         // Crear varios correos electrónicos en la base de datos
@@ -243,8 +244,8 @@ class AdministrationSuggestionsTest extends TestCase
         ]);
     }
 
-/**
-*  @test  Obtener buscar emails */
+    /**
+     *  @test  Obtener buscar emails */
     public function testSearchEmails()
     {
         // Crear correos electrónicos en la base de datos
@@ -256,9 +257,8 @@ class AdministrationSuggestionsTest extends TestCase
 
         // Comprobar que la respuesta es correcta
         $response->assertStatus(200);
-
     }
-/** @test Obtener orden en emails*/
+    /** @test Obtener orden en emails*/
     public function testSortEmails()
     {
         // Crear correos electrónicos en la base de datos
@@ -277,9 +277,58 @@ class AdministrationSuggestionsTest extends TestCase
         $this->assertEquals('b@example.com', $data[1]['email']);
     }
 
+    /**
+     *  @test  Guardar Redirección */
+    public function testSaveRedirection()
+    {
+        // Simular un usuario autenticado
+        $user = UsersModel::factory()->create();
+        $this->actingAs($user);
+       
+        $educational_type = EducationalProgramTypesModel::factory()->create();
 
-/**
-*  @test  Redirección consulta Error*/
+        $data = [            
+            'educational_program_type_uid' => $educational_type->uid,
+            'type' => 'web',
+            'contact' => 'https://test.com'
+        ];
+        // Enviar la solicitud POST
+        $response = $this->postJson('/administration/redirection_queries_educational_program_types/save_redirection_query', $data);
+
+        // Verificar la respuesta
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'Redirección guardada correctamente']);
+    }
+
+    /**
+     *  @test Actualizar Redirección */
+    public function testUpdateRedirection()
+    {
+        // Simular un usuario autenticado
+        $user = UsersModel::factory()->create();
+        $this->actingAs($user);
+
+        $redirec = RedirectionQueriesEducationalProgramTypesModel::factory()->create()->first();
+
+        $educational_type = EducationalProgramTypesModel::factory()->create();
+
+        $data = [
+            'redirection_query_uid' =>$redirec->uid,
+            'educational_program_type_uid' => $educational_type->uid,
+            'type' => 'web',
+            'contact' => 'https://test.com'
+        ];
+        // Enviar la solicitud POST
+        $response = $this->postJson('/administration/redirection_queries_educational_program_types/save_redirection_query', $data);
+
+        // Verificar la respuesta
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'Redirección guardada correctamente']);
+    }
+
+
+    /**
+     *  @test  Redirección consulta Error*/
     public function testSaveRedirectionQueryError()
     {
         // Simular un usuario autenticado
@@ -291,19 +340,18 @@ class AdministrationSuggestionsTest extends TestCase
         $this->assertDatabaseHas('redirection_queries_educational_program_types', ['uid' => $redirec->uid]);
 
         // Enviar la solicitud POST
-        $response = $this->postJson('/administration/redirection_queries_educational_program_types/save_redirection_query',[
-            'uids' => [$redirec->uid, ]
+        $response = $this->postJson('/administration/redirection_queries_educational_program_types/save_redirection_query', [
+            'uids' => [$redirec->uid,]
         ]);
 
         // Verificar la respuesta
         $response->assertStatus(422)
-                ->assertJson(['message' => 'Hay campos incorrectos']);
-
+            ->assertJson(['message' => 'Hay campos incorrectos']);
     }
 
 
     /**
-    *  @test  Redirección consulta Error*/
+     *  @test  Redirección consulta Error*/
     public function testSaveRedirectionQueryValidationErrors()
     {
         // Simular un usuario autenticado
@@ -321,17 +369,17 @@ class AdministrationSuggestionsTest extends TestCase
 
         // Verificar la respuesta de error
         $response->assertStatus(422)
-                ->assertJson([
-                    'message' => 'Hay campos incorrectos',
-                    'errors' => [
-                        'educational_program_type_uid' => ['El tipo de programa formativo es obligatorio'],
-                        'contact' => ['El contacto debe ser una URL válida.'],
-                    ],
-                ]);
+            ->assertJson([
+                'message' => 'Hay campos incorrectos',
+                'errors' => [
+                    'educational_program_type_uid' => ['El tipo de programa formativo es obligatorio'],
+                    'contact' => ['El contacto debe ser una URL válida.'],
+                ],
+            ]);
     }
 
     /**
-    *  @test  Redirección consulta email invalido*/
+     *  @test  Redirección consulta email invalido*/
     public function testSaveRedirectionQueryInvalidEmail()
     {
         // Simular un usuario autenticado
@@ -350,16 +398,16 @@ class AdministrationSuggestionsTest extends TestCase
 
         // Verificar la respuesta de error
         $response->assertStatus(422)
-                ->assertJson([
-                    'message' => 'Hay campos incorrectos',
-                    'errors' => [
-                        'contact' => ['El contacto debe ser un correo electrónico válido.'],
-                    ],
-                ]);
+            ->assertJson([
+                'message' => 'Hay campos incorrectos',
+                'errors' => [
+                    'contact' => ['El contacto debe ser un correo electrónico válido.'],
+                ],
+            ]);
     }
 
     /**
-    *  @test  Borrar Redirección consulta */
+     *  @test  Borrar Redirección consulta */
     public function testDeleteRedirectionQuery()
     {
 
@@ -374,19 +422,17 @@ class AdministrationSuggestionsTest extends TestCase
             'contact' => 'example@example.com',
         ];
 
-            // Envia la solicitud DELETE para eliminar las redirecciones
-            $response = $this->deleteJson('/administration/redirection_queries_educational_program_types/delete_redirections_queries',$data);
+        // Envia la solicitud DELETE para eliminar las redirecciones
+        $response = $this->deleteJson('/administration/redirection_queries_educational_program_types/delete_redirections_queries', $data);
 
-            // Verifica la respuesta
-            $response->assertStatus(200)
-                    ->assertJson(['message' => 'Redirección eliminada correctamente']);
-
-
+        // Verifica la respuesta
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'Redirección eliminada correctamente']);
     }
 
 
-/**
-*  @test  Obtener page redirección consulta Programa Educacional con paginación*/
+    /**
+     *  @test  Obtener page redirección consulta Programa Educacional con paginación*/
     public function testGetRedirectionsQueriesWithPagination()
     {
         // Crear tipos de programas educativos
@@ -425,8 +471,8 @@ class AdministrationSuggestionsTest extends TestCase
         ]);
     }
 
-/**
-*  @test  Obtener page redirección consulta Programa Educacional por búsqueda*/
+    /**
+     *  @test  Obtener page redirección consulta Programa Educacional por búsqueda*/
     public function testSearchRedirectionsQueries()
     {
         // Crear tipos de programas educativos
@@ -447,10 +493,9 @@ class AdministrationSuggestionsTest extends TestCase
 
         // Comprueba que la respuesta es correcta
         $response->assertStatus(200);
-
     }
 
-/** @test  verifica el orden de las redirecciones de las conultas programas educativos*/
+    /** @test  verifica el orden de las redirecciones de las conultas programas educativos*/
     public function testSortRedirectionsQueries()
     {
         // Crear tipos de programas educativos
@@ -480,10 +525,9 @@ class AdministrationSuggestionsTest extends TestCase
         // Comprobar el orden de los registros
         $this->assertEquals('A_contact@example.com', $data[0]['contact']);
         $this->assertEquals('B_contact@example.com', $data[1]['contact']);
-
     }
 
-/** @test  Obtiene Redirección por uid*/
+    /** @test  Obtiene Redirección por uid*/
     public function testGetRedirectionQueryByUid()
     {
         // Crear un tipo de programa educativo
@@ -510,5 +554,4 @@ class AdministrationSuggestionsTest extends TestCase
         $this->assertEquals($programType1->uid, $data['educational_program_type']['uid']);
         $this->assertEquals($programType1->name, $data['educational_program_type']['name']);
     }
-
 }
