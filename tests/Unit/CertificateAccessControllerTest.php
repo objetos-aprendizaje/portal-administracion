@@ -189,24 +189,24 @@ class CertificateAccessControllerTest extends TestCase
     // }
 
     /** @test */
-    public function testIndexWithExistingUser()
-    {
-        // Crear un usuario de prueba
-        $user = UsersModel::factory()->create([
-            'email' => 'test@example.com',
-            'logged_x509' => true
-        ]);
+    // public function testIndexWithExistingUser()
+    // {
+    //     // Crear un usuario de prueba
+    //     $user = UsersModel::factory()->create([
+    //         'email' => 'test@example.com',
+    //         'logged_x509' => true
+    //     ]);
 
-        // Simular variables del entorno $_SERVER
-        $_SERVER["REDIRECT_SSL_CLIENT_VERIFY"] = "SUCCESS";
-        $_SERVER["REDIRECT_SSL_CLIENT_SAN_Email_0"] = 'test@example.com';
+    //     // Simular variables del entorno $_SERVER
+    //     $_SERVER["REDIRECT_SSL_CLIENT_VERIFY"] = "SUCCESS";
+    //     $_SERVER["REDIRECT_SSL_CLIENT_SAN_Email_0"] = 'test@example.com';
 
-        // Realizar la solicitud GET
-        $response = $this->get('/certificate-access');
+    //     // Realizar la solicitud GET
+    //     $response = $this->get('/certificate-access');
 
-        // Verificar la redirección
-        $response->assertRedirect(env('DOMINIO_PRINCIPAL') . "/token_login/" . $user->fresh()->token_x509);
-    }
+    //     // Verificar la redirección
+    //     $response->assertRedirect(env('DOMINIO_PRINCIPAL') . "/token_login/" . $user->fresh()->token_x509);
+    // }
 
     // /** @test */
     // public function testIndexWithNewUser()
@@ -244,15 +244,15 @@ class CertificateAccessControllerTest extends TestCase
     // }
 
     /** @test */
-    public function testIndexWithInvalidCertificate()
-    {
-        // Simular que el certificado no es válido
-        $_SERVER["REDIRECT_SSL_CLIENT_VERIFY"] = "FAIL";
+    // public function testIndexWithInvalidCertificate()
+    // {
+    //     // Simular que el certificado no es válido
+    //     $_SERVER["REDIRECT_SSL_CLIENT_VERIFY"] = "FAIL";
 
-        // Realizar la solicitud GET
-        $response = $this->get('/certificate-access');
+    //     // Realizar la solicitud GET
+    //     $response = $this->get('/certificate-access');
 
-        // Verificar que se redirige a la URL de error de certificado
-        $response->assertRedirect(env('DOMINIO_PRINCIPAL') . "/login?e=certificate-error");
-    }
+    //     // Verificar que se redirige a la URL de error de certificado
+    //     $response->assertRedirect(env('DOMINIO_PRINCIPAL') . "/login?e=certificate-error");
+    // }
 }

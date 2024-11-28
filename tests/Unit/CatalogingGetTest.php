@@ -65,6 +65,17 @@ class CatalogingGetTest extends TestCase
                 'created_at',
                 'updated_at'
             ]);
+
+
+        $courseTypeUid = generate_uuid();
+
+        $response = $this->getJson('/cataloging/course_types/get_course_type/' . $courseTypeUid);
+
+        // Verificar que la respuesta sea correcta
+        $response->assertStatus(406)
+            ->assertJson([
+                'message' => 'El tipo de curso no existe',
+            ]);
     }
 
     /**
@@ -158,62 +169,10 @@ class CatalogingGetTest extends TestCase
             ->assertJson([
                 'message' => 'El tipo de certificación no existe',
             ]);
-    }
+    }  
 
-    /**
-     * @test Obtener todos los recursos educativos
-     */
+    
 
-    public function testGetEducationalResourceTypesReturnsJson()
-    {
-        $user = UsersModel::factory()->create();
-        $this->actingAs($user);
-        // Crear algunos registros de tipo de recurso educativo
-        EducationalResourceTypesModel::factory()->count(5)->create();
-
-        // Realizar la solicitud a la ruta
-        $response = $this->get('/cataloging/educational_resources_types/get_list_educational_resource_types');
-
-        // Verificar que la respuesta sea un JSON
-        $response->assertStatus(200);
-        $response->assertJsonStructure([
-            'current_page',
-            'data' => [
-                '*' => [
-                    'uid',
-                    'name',
-
-                ],
-            ],
-            'last_page',
-            'total',
-        ]);
-    }
-
-    /**
-     * @test Obtener un uid de los recursos educativos
-     */
-    public function testGetEducationalResourceUid()
-    {
-        $user = UsersModel::factory()->create();
-        $this->actingAs($user);
-
-        // Crear un registro de tipo de recurso educativo
-        $educationalresourse = EducationalResourceTypesModel::factory()->create()->first();
-        $this->assertDatabaseHas('educational_resource_types', ['uid' => $educationalresourse->uid]);
-
-        $data = [
-            'uid' => $educationalresourse->uid,
-        ];
-
-
-        // Realizar la solicitud a la ruta con el UID
-        $response = $this->get('/cataloging/educational_resources_types/get_educational_resource_type/' . $data['uid']);
-
-        // Verificar que la respuesta sea un JSON y contenga los datos correctos
-        $response->assertStatus(200);
-        $response->assertJsonFragment(['uid' => $educationalresourse->uid]);
-    }
     /**
      * @test Obtener Categorias por Búsqueda
      */
@@ -363,7 +322,6 @@ class CatalogingGetTest extends TestCase
 
         // Verificar que los resultados estén ordenados correctamente
         $response = $this->get('/cataloging/competences_learnings_results/get_competences?search=&sort[0][field]=name&sort[0][dir]=asc');
-
     }
 
 
@@ -557,96 +515,9 @@ class CatalogingGetTest extends TestCase
         $response->assertViewHas('coloris', true);
         $response->assertViewHas('submenuselected', 'cataloging-competences-learning-results');
         $response->assertViewHas('infiniteTree', true);
-    }
+    }    
 
-    /**
-     * @test
-     * Verifica que el método index() del EducationalResourceTypesController
-     * retorna la vista correcta con los datos necesarios si el usuario tiene acceso.
-     */
-    public function testLoadsTheEducationalResourcesTypesViewWithProperDataWhenAccessIsAllowedERT()
-    {
-        // Crear un usuario y asignarle el rol 'MANAGEMENT'
-        $user = UsersModel::factory()->create();
-        $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
-        $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
-        ]);
-        Auth::login($user);
-
-        // Simular la configuración de general_options
-        app()->instance('general_options', [
-            'managers_can_manage_educational_resources_types' => true,
-        ]);
-
-        View::share('roles', $user->roles->toArray());
-
-        $tooltip_texts = TooltipTextsModel::get();
-        View::share('tooltip_texts', $tooltip_texts);
-
-        // Crear tipos de recursos educativos de prueba
-        $resourceType1 = EducationalResourceTypesModel::factory()->create();
-        $resourceType2 = EducationalResourceTypesModel::factory()->create();
-
-        // Realizar la solicitud GET a la ruta correspondiente
-        $response = $this->get(route('cataloging-educational-resources'));
-
-        // Verificar que la respuesta sea 200 (OK)
-        $response->assertStatus(200);
-
-        // Verificar que la vista cargada es la correcta
-        $response->assertViewIs('cataloging.educational_resource_types.index');
-
-        // Verificar que la vista tiene los datos correctos para 'educational_resource_types'
-        $response->assertViewHas('educational_resource_types', function ($viewData) use ($resourceType1, $resourceType2) {
-            return in_array($resourceType1->toArray(), $viewData) &&
-                   in_array($resourceType2->toArray(), $viewData);
-        });
-
-        // Verificar que otros datos están presentes en la vista
-        $response->assertViewHas('page_name', 'Tipos de recursos educativos');
-        $response->assertViewHas('page_title', 'Tipos de recursos educativos');
-        $response->assertViewHas('submenuselected', 'cataloging-educational-resources');
-    }
-
-    /**
-     * @test
-     * Verifica que el método index() del EducationalResourceTypesController
-     * redirige a la vista de acceso denegado si el usuario no tiene acceso.
-     */
-    public function testRedirectsToAccessNotAllowedWhenAccessIsDeniedERT()
-    {
-        // Crear un usuario y asignarle el rol 'MANAGEMENT'
-        $user = UsersModel::factory()->create();
-        $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
-        $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
-        ]);
-        Auth::login($user);
-
-        View::share('roles', $user->roles->toArray());
-
-        $tooltip_texts = TooltipTextsModel::get();
-        View::share('tooltip_texts', $tooltip_texts);
-
-        // Simular la configuración de general_options
-        app()->instance('general_options', [
-            'managers_can_manage_educational_resources_types' => false,
-        ]);
-
-        // Realizar la solicitud GET a la ruta correspondiente
-        $response = $this->get(route('cataloging-educational-resources'));
-
-        // Verificar que la respuesta sea 200 (OK)
-        $response->assertStatus(200);
-
-        // Verificar que la vista cargada es la de acceso denegado
-        $response->assertViewIs('access_not_allowed');
-
-        // Verificar que la vista tiene los datos correctos
-        $response->assertViewHas('title', 'No tienes permiso para administrar los tipos de recurso educativo');
-        $response->assertViewHas('description', 'El administrador ha bloqueado la administración de tipos de recurso educativo a los gestores.');
-    }
+    
 
     /**
      * @test
@@ -684,7 +555,7 @@ class CatalogingGetTest extends TestCase
         // Verificar que la vista tiene los datos correctos para 'educational_program_types'
         $response->assertViewHas('educational_program_types', function ($viewData) use ($programType1, $programType2) {
             return in_array($programType1->toArray(), $viewData) &&
-                   in_array($programType2->toArray(), $viewData);
+                in_array($programType2->toArray(), $viewData);
         });
 
         // Verificar que otros datos están presentes en la vista
@@ -703,25 +574,25 @@ class CatalogingGetTest extends TestCase
     public function it_displays_categories_and_nested_categories()
     {
         $user = UsersModel::factory()->create()->latest()->first();
-         $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
-         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
-         // Autenticar al usuario
-         Auth::login($user);
+        // Autenticar al usuario
+        Auth::login($user);
 
-         // Compartir la variable de roles manualmente con la vista
-         View::share('roles', $roles);
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
 
-         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
         View::share('general_options', $general_options);
 
-         // Simula datos de TooltipTextsModel
-         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
-         View::share('tooltip_texts', $tooltip_texts);
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
 
-         // Simula notificaciones no leídas
-         $unread_notifications = $user->notifications->where('read_at', null);
-         View::share('unread_notifications', $unread_notifications);
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
 
         // Creamos una instancia del controlador de prueba
         $controller = new CategoriesController();
@@ -749,14 +620,5 @@ class CatalogingGetTest extends TestCase
         $this->assertNotNull($categories);
         // Verificamos que categories_anidated esté presente en la vista
         CategoriesModel::whereNull('parent_category_uid')->with('subcategories')->get()->toArray();
-
     }
-
 }
-
-
-
-
-
-
-

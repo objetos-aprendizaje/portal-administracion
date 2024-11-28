@@ -23,6 +23,10 @@ class EmbeddingsService
 
     public function getEmbedding($text)
     {
+        if(!app('general_options')['enabled_recommendation_module']) {
+            return null;
+        }
+
         if (!$this->openAiApiKey) {
             Log::error('OpenAI API key not found.');
             return null;
@@ -37,6 +41,7 @@ class EmbeddingsService
             ]);
             return $response->json()['data'][0]['embedding'];
         } catch (\Exception $e) {
+            Log::error("Error generating embedding for text: $text");
             return null;
         }
     }

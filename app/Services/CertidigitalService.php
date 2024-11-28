@@ -2,14 +2,16 @@
 
 namespace App\Services;
 
-use App\Exceptions\OperationFailedException;
 use App\Models\CertidigitalAchievementsModel;
 use App\Models\CertidigitalActivitiesModel;
 use App\Models\CertidigitalAssesmentsModel;
 use App\Models\CertidigitalCredentialsModel;
 use App\Models\CertidigitalLearningOutcomesModel;
+use App\Models\CourseGlobalCalificationsModel;
 use App\Models\CoursesModel;
 use App\Models\CoursesStudentsModel;
+use App\Models\EducationalProgramsModel;
+use App\Models\EducationalProgramsStudentsModel;
 use Exception;
 use Illuminate\Support\Facades\Http;
 
@@ -17,80 +19,216 @@ class CertidigitalService
 {
     public function __construct() {}
 
-    public function getValidToken()
+    public function createUpdateEducationalProgramCredential($educationalProgramUid)
     {
-        $token = session('certidigital_token');
-        $tokenExpires = session('certidigital_token_expires');
+        $educationalProgram = EducationalProgramsModel::where('uid', $educationalProgramUid)->with([
+            "courses",
+            "courses.blocks.learningResults",
+            "courses.blocks.subBlocks.elements.subElements",
+            'certidigitalCredential'
+        ])->first();
 
-        if (!$token || !$tokenExpires || now()->greaterThan($tokenExpires)) {
-            $token = $this->refreshToken();
+        $credential = $this->createUpdateCredential($educationalProgram->courses, $educationalProgram->name, $educationalProgram->description,  $educationalProgram->certidigitalCredential);
+
+        if ($credential) {
+            $educationalProgram->certidigital_credential_uid = $credential;
+            $educationalProgram->save();
         }
-
-        return $token;
     }
 
-    public function createCoursesCredentials($courses)
+    public function createUpdateCourseTeacherCredential($courseUid)
     {
-        $achievementsCourses = [];
+        $course = CoursesModel::where('uid', $courseUid)->with([
+            "blocks",
+            "certidigitalTeacherCredential.activities",
+        ])->first();
 
-        foreach ($courses as $course) {
-            // Recargar el curso
-            $course = CoursesModel::where('uid', $course->uid)->with([
-                "educational_program",
-                "embeddings",
-                "blocks.learningResults",
-                "blocks.subBlocks.elements.subElements",
-                "certidigitalCredential",
-            ])->first();
+        // Si ya existe la credencial, se vacía todo lo que hay en ella
+        if ($course->certidigitalTeacherCredential) {
+            $this->cleanCredential($course->certidigitalTeacherCredential);
+        }
 
-            // Si ya tiene una credencial, se vacía todo lo que hay en ella
-            if ($course->certidigitalCredential) {
-                $this->cleanCredential($course->certidigitalCredential);
+        $activities = [];
+        foreach ($course->blocks as $block) {
+            $activities[] = $this->createActivity($block->name);
+        }
+
+        // Si ya existe la credencial, se vinculan las actividades a ella.
+        // Si no existe, se crea la credencial y se vinculan las actividades a ella.
+        if ($course->certidigitalTeacherCredential) {
+            $this->vinculateActivitiesToCredential($activities, $course->certidigitalTeacherCredential);
+        } else {
+            $credential = $this->createCredential($course->title, $course->description, null, $activities);
+            $course->certidigital_teacher_credential_uid = $credential['ocbid'];
+            $course->save();
+        }
+    }
+
+    private function vinculateActivitiesToCredential($activities, $credential)
+    {
+        $generalOptions = app('general_options');
+
+        // Quitar actividades
+        $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/credentials/{$credential->id}/performed?issuingCenterId={$generalOptions['certidigital_center_id']}";
+        $data = [
+            "oid" => array_column($activities, "oid"),
+            "singleOid" => 0
+        ];
+
+        $this->sendRequest($endpoint, $data, false);
+
+        // Vincular actividades
+        CertidigitalActivitiesModel::whereIn('uid', array_column($activities, 'ocbid'))->update(['certidigital_credential_uid' => $credential->uid]);
+    }
+
+    public function createUpdateCourseCredential($courseUid)
+    {
+        $course = CoursesModel::where('uid', $courseUid)->with([
+            "educational_program",
+            "embeddings",
+            "blocks.learningResults",
+            "blocks.subBlocks.elements.subElements",
+            "certidigitalCredential",
+        ])->first();
+
+        $credential = $this->createUpdateCredential([$course], $course->title, $course->description, $course->certidigitalCredential);
+
+        if ($credential) {
+            $course->certidigital_credential_uid = $credential;
+            $course->save();
+        }
+    }
+
+    public function emissionsCredentialEducationalProgram($educationalProgramUid, $studentsUids = null)
+    {
+        $uidsCoursesEducationalProgram = CoursesModel::where('educational_program_uid', $educationalProgramUid)->pluck('uid')->toArray();
+
+        $educationalProgram = EducationalProgramsModel::where('uid', $educationalProgramUid)->with([
+            'certidigitalCredential',
+            'courses',
+            'courses.certidigitalAssesments',
+            'courses.blocks.learningResults.certidigitalAssesments' => function ($query) use ($uidsCoursesEducationalProgram) {
+                $query->whereIn('course_block_uid', function ($subQuery) use ($uidsCoursesEducationalProgram) {
+                    $subQuery->select('uid')
+                        ->from('course_blocks')
+                        ->whereIn('course_uid', $uidsCoursesEducationalProgram);
+                });
+            },
+            'students' => function ($query) use ($studentsUids) {
+                if ($studentsUids) $query->whereIn('user_uid', $studentsUids);
+            },
+            'students.courseGlobalCalifications' => function ($query) use ($uidsCoursesEducationalProgram) {
+                $query->whereIn('course_uid', $uidsCoursesEducationalProgram);
+            },
+            'students.courseBlocksLearningResultsCalifications' => function ($query) use ($uidsCoursesEducationalProgram) {
+                $query->whereIn('course_block_uid', function ($subQuery) use ($uidsCoursesEducationalProgram) {
+                    $subQuery->select('uid')
+                        ->from('course_blocks')
+                        ->whereIn('course_uid', $uidsCoursesEducationalProgram);
+                });
+            },
+            'students.courseLearningResultCalifications' => function ($query) use ($uidsCoursesEducationalProgram) {
+                $query->whereIn('course_uid', $uidsCoursesEducationalProgram);
             }
+        ])->first();
 
-            // Todos los resultados de aprendizaje GLOBALES para incluir SUBLOGROS
-            $learningResults = $this->getAllLearningResultsCourse($course);
-            $assesmentCourse = $this->createAssesment($course->title);
-            $achievementsLearningResults = [];
-            foreach ($learningResults as $learningResult) {
-                $learningOutcome = $this->createLearningOutcome($learningResult['name'], null);
-                $assesment = $this->createAssesment($learningResult['name'], null, $learningResult['uid']);
+        $allLearningResults = $educationalProgram->courses->flatMap(function ($course) {
+            return $course->blocks->flatMap(function ($block) {
+                return $block->learningResults;
+            })->unique("uid");
+        });
 
-                // Buscamos los bloques que contienen el resultado de aprendizaje
-                $achievementsBlocks = [];
+        $recipients = [];
+        $entities = [];
+        foreach ($educationalProgram->students as $student) {
+
+            $basicDataStudent = $this->getBasicDataEmissionCredential($student, $educationalProgram->certidigitalCredential->uid);
+
+            $fields = [];
+            $fields = array_merge($fields, $basicDataStudent);
+
+            foreach ($educationalProgram->courses as $course) {
                 foreach ($course->blocks as $block) {
-                    foreach ($block->learningResults as $learningResultBlock) {
-                        if ($learningResultBlock->uid == $learningResult['uid']) {
-                            $assesmentLearningResultBlock = $this->createAssesment($learningResultBlock->name, $block->uid, $learningResultBlock->uid);
-                            $achievementLearningResultBlock = $this->createAchievement($learningResultBlock->name . ' B:' . $block->name, null, null, [$assesmentLearningResultBlock]);
-                            $achievementsBlocks[] = $achievementLearningResultBlock;
-                        }
+                    foreach ($block->learningResults as $learningResult) {
+                        // Calificación correspondiente al bloque y al resultado
+                        $calification = $student->courseBlocksLearningResultsCalifications->filter(function ($calification) use ($learningResult, $block) {
+                            return $calification->course_block_uid === $block->uid && $calification->learning_result_uid === $learningResult->uid;
+                        })->first();
+
+                        if (!$calification) continue;
+
+                        $certidigitalAssesment = $course->certidigitalAssesments->filter(function ($assesment) use ($learningResult, $block) {
+                            return $assesment->learning_result_uid === $learningResult->uid && $assesment->course_block_uid === $block->uid;
+                        })->first();
+
+                        $calificationData = [
+                            [
+                                'fieldPathIdentifier' => "{#{$educationalProgram->certidigitalCredential->uid}}.ASM{{$certidigitalAssesment->uid}}.grade.noteLiteral(es)",
+                                'value' => $calification->calification_info,
+                            ]
+                        ];
+
+                        $fields = array_merge($fields, $calificationData);
+                    }
+
+                    // Nota por cada resultado de aprendizaje global
+                    foreach ($allLearningResults as $learningResult) {
+                        $calification = $student->courseLearningResultCalifications->filter(function ($calification) use ($learningResult, $course) {
+                            return $calification->learning_result_uid === $learningResult->uid && $calification->course_uid === $course->uid;
+                        })->first();
+
+                        if (!$calification) continue;
+
+                        $assesmentLearningResult = $course->certidigitalAssesments->filter(function ($assesment) use ($learningResult, $course) {
+                            return $assesment->learning_result_uid === $learningResult->uid && !$assesment->course_block_uid && $assesment->course_uid === $course->uid;
+                        })->first();
+
+                        $calificationData = [
+                            [
+                                'fieldPathIdentifier' => "{#{$educationalProgram->certidigitalCredential->uid}}.ASM{{$assesmentLearningResult->uid}}.grade.noteLiteral(es)",
+                                'value' => $calification->calification_info,
+                            ]
+                        ];
+
+                        $fields = array_merge($fields, $calificationData);
                     }
                 }
 
-                // Creación de los logros globales
-                $achievementGlobal =  $this->createAchievement($learningResult['name'], $achievementsBlocks, [$learningOutcome], [$assesment]);
-                $achievementsLearningResults[] = $achievementGlobal;
-            }
+                // Incluir la calificación global
+                $assesmentGlobal = $course->certidigitalAssesments->filter(function ($assesment) use ($course) {
+                    return !$assesment->learning_result_uid && !$assesment->course_block_uid && $assesment->course_uid === $course->uid;
+                })->first();
 
-            // Actividades
-            $activities = [];
-            foreach ($course->blocks as $block) {
-                $activities[] = $this->createActivity($block->name);
-            }
+                $studentCourseGlobalCalifications = $student->courseGlobalCalifications->filter(function ($calification) use ($course) {
+                    return $calification->course_uid === $course->uid;
+                })->first();
 
-            $achievementsCourses[] = $this->createAchievement($course->title, $achievementsLearningResults, null, [$assesmentCourse], $activities);
+                $calificationData = [
+                    [
+                        'fieldPathIdentifier' => "{#{$educationalProgram->certidigitalCredential->uid}}.ASM{{$assesmentGlobal->uid}}.grade.noteLiteral(es)",
+                        'value' => $studentCourseGlobalCalifications->calification_info,
+                    ]
+                ];
+
+                $fields = array_merge($fields, $calificationData);
+            }
+            $entities[] = [
+                "fields" => $fields
+            ];
+
+            $recipients[] = [
+                "entities" => $entities
+            ];
         }
 
-        $credential = $this->createCredential($course->title, $course->description, $achievementsCourses);
+        $finalStructure = [
+            "recipients" => $recipients
+        ];
 
-        $course->certidigital_credential_uid = $credential['ocbid'];
-        $course->save();
-
-        return $credential;
+        $this->emitCredentialsEducationalProgram($educationalProgram, $finalStructure, $educationalProgram->certidigitalCredential);
     }
 
-    public function emissionCredentials($courseUid)
+    public function emissionCredentialsCourse($courseUid, $studentsUids = null)
     {
         $course = CoursesModel::where('uid', $courseUid)->with([
             'certidigitalCredential',
@@ -101,6 +239,15 @@ class CertidigitalService
                         ->from('course_blocks')
                         ->where('course_uid', $courseUid);
                 });
+            },
+            'students' => function ($query) use ($studentsUids, $courseUid) {
+                if ($studentsUids) $query->whereIn('user_uid', $studentsUids);
+                // Añadir una subconsulta para obtener la calificación de cada estudiante
+                $query->addSelect([
+                    'global_calification_info' => CourseGlobalCalificationsModel::selectRaw('calification_info')
+                        ->whereColumn('user_uid', 'users.uid')
+                        ->where('course_uid', $courseUid)
+                ]);
             },
             'students.courseBlocksLearningResultsCalifications' => function ($query) use ($courseUid) {
                 $query->whereIn('course_block_uid', function ($subQuery) use ($courseUid) {
@@ -183,7 +330,7 @@ class CertidigitalService
             $calificationData = [
                 [
                     'fieldPathIdentifier' => "{#{$course->certidigitalCredential->uid}}.ASM{{$assesmentGlobal->uid}}.grade.noteLiteral(es)",
-                    'value' => $student->course_student_info->calification_info,
+                    'value' => $student->global_calification_info,
                 ]
             ];
 
@@ -203,19 +350,327 @@ class CertidigitalService
         ];
 
         //Todo: Enviar a Certidigital
-        $this->emitCredentials($course, $finalStructure);
+        $this->emitCredentialsCourse($course, $finalStructure);
     }
 
-    private function emitCredentials($course, $data)
+    public function sendCourseCredentials($coursesUids, $studentUid = [])
+    {
+        $courses = CoursesModel::whereIn('uid', $coursesUids)->with([
+            'students' => function ($query) use ($studentUid) {
+                $query->where('user_uid', $studentUid);
+            },
+        ])->get();
+
+        $emissionsBlockUuids = [];
+        foreach ($courses as $course) {
+            foreach ($course->students as $student) {
+                $emissionsBlockUuids[] = $student->course_student_info->emissions_block_uuid;
+            }
+        }
+
+        $this->sendEmissionsRequest($emissionsBlockUuids);
+
+        foreach ($courses as $course) {
+            foreach ($course->students as $student) {
+                $student->course_student_info->credential_sent = true;
+                $student->course_student_info->save();
+            }
+        }
+    }
+
+    public function sendCredentialsEducationalPrograms($educationalProgramsUids, $studentUid)
+    {
+        $educationalPrograms = EducationalProgramsModel::whereIn("uid", $educationalProgramsUids)->with([
+            "students" => function ($query) use ($studentUid) {
+                $query->where("user_uid", $studentUid);
+            }
+        ])->get();
+
+        $emissionsBlockUuids = [];
+        foreach ($educationalPrograms as $educationalProgram) {
+            foreach ($educationalProgram->students as $student) {
+                $emissionsBlockUuids[] = $student->educational_program_student_info->emissions_block_uuid;
+            }
+        }
+
+        $this->sendEmissionsRequest($emissionsBlockUuids);
+
+        foreach ($educationalPrograms as $educationalProgram) {
+            foreach ($educationalProgram->students as $student) {
+                $student->educational_program_student_info->credential_sent = true;
+                $student->educational_program_student_info->save();
+            }
+        }
+    }
+
+    public function sealCoursesCredentials($coursesUids, $studentUid)
+    {
+        $courses = CoursesModel::whereIn('uid', $coursesUids)->with([
+            'students' => function ($query) use ($studentUid) {
+                $query->where('user_uid', $studentUid)->first();
+            },
+        ])->get();
+
+        $emissionsBlockUuids = [];
+        foreach ($courses as $course) {
+            foreach ($course->students as $student) {
+                $emissionsBlockUuids[] = $student->course_student_info->emissions_block_uuid;
+            }
+        }
+
+        $this->sealEmissionsRequest($emissionsBlockUuids);
+
+        foreach ($courses as $course) {
+            foreach ($course->students as $student) {
+                $student->course_student_info->credential_sealed = true;
+                $student->course_student_info->save();
+            }
+        }
+    }
+
+    public function sealEducationalProgramsCredentials($educationalProgramsUids, $studentUid)
+    {
+        $educationalPrograms = EducationalProgramsModel::whereIn("uid", $educationalProgramsUids)->with([
+            "students" => function ($query) use ($studentUid) {
+                $query->where("user_uid", $studentUid)->first();
+            }
+        ])->get();
+
+        $emissionsBlockUuids = [];
+        foreach ($educationalPrograms as $educationalProgram) {
+            foreach ($educationalProgram->students as $student) {
+                $emissionsBlockUuids[] = $student->educational_program_student_info->emissions_block_uuid;
+            }
+        }
+
+        $this->sealEmissionsRequest($emissionsBlockUuids);
+
+        foreach ($educationalPrograms as $educationalProgram) {
+            foreach ($educationalProgram->students as $student) {
+                $student->educational_program_student_info->credential_sealed = true;
+                $student->educational_program_student_info->save();
+            }
+        }
+    }
+
+    private function sendEmissionsRequest($emissionsBlockUuids)
     {
         $generalOptions = app('general_options');
+        $endpoint = "{$generalOptions['certidigital_url']}/certi-admin/api/v1/emissions/send";
 
-        // Emisión del bloque
-        $credentialUid = $course->certidigitalCredential->id;
-        $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/credentials/{$credentialUid}/issuecredentials?issuingCenterId={$generalOptions['certidigital_center_id']}&locale=es";
-        $response = $this->sendRequest($endpoint, $data, false);
+        $this->sendRequest($endpoint, $emissionsBlockUuids, false);
+    }
 
-        $emissions = $response->json();
+    private function sealEmissionsRequest($emissionsBlockUuids)
+    {
+        $generalOptions = app('general_options');
+        $endpoint = "{$generalOptions['certidigital_url']}/certi-admin/api/v1/emissions/seal";
+
+        $data = [
+            "uuidList" => $emissionsBlockUuids,
+            "issuingCenterId" => $generalOptions['certidigital_center_id']
+        ];
+
+        $this->sendRequest($endpoint, $data, false);
+    }
+
+    private function createUpdateCredential($courses, $titleCredential = "", $descriptionCredential = "", $certidigitalCredential = null)
+    {
+        $achievementsCourses = [];
+
+        foreach ($courses as $course) {
+            // Recargar el curso
+            $course = CoursesModel::where('uid', $course->uid)->with([
+                "educational_program",
+                "embeddings",
+                "blocks.learningResults",
+                "blocks.subBlocks.elements.subElements",
+                "certidigitalCredential",
+            ])->first();
+
+            // Si ya tiene una credencial, se vacía todo lo que hay en ella
+            if ($certidigitalCredential) {
+                $this->cleanCredential($certidigitalCredential);
+            }
+
+            // Todos los resultados de aprendizaje GLOBALES para incluir SUBLOGROS
+            $learningResults = $this->getAllLearningResultsCourse($course);
+            $assesmentCourse = $this->createAssesment($course->title, $course->uid);
+            $achievementsLearningResults = [];
+            foreach ($learningResults as $learningResult) {
+                $learningOutcome = $this->createLearningOutcome($learningResult['name'], null);
+                $assesment = $this->createAssesment($learningResult['name'], $course->uid, null, $learningResult['uid']);
+
+                // Buscamos los bloques que contienen el resultado de aprendizaje
+                $achievementsBlocks = [];
+                foreach ($course->blocks as $block) {
+                    foreach ($block->learningResults as $learningResultBlock) {
+                        if ($learningResultBlock->uid == $learningResult['uid']) {
+                            $assesmentLearningResultBlock = $this->createAssesment($learningResultBlock->name, $course->uid, $block->uid, $learningResultBlock->uid);
+                            $achievementLearningResultBlock = $this->createAchievement($learningResultBlock->name . ' B:' . $block->name, null, null, [$assesmentLearningResultBlock]);
+                            $achievementsBlocks[] = $achievementLearningResultBlock;
+                        }
+                    }
+                }
+
+                // Creación de los logros globales
+                $achievementGlobal =  $this->createAchievement($learningResult['name'], $achievementsBlocks, [$learningOutcome], [$assesment]);
+                $achievementsLearningResults[] = $achievementGlobal;
+            }
+
+            // Actividades
+            $activities = [];
+            foreach ($course->blocks as $block) {
+                $activities[] = $this->createActivity($block->name);
+            }
+
+            $achievementsCourses[] = $this->createAchievement($course->title, $achievementsLearningResults, null, [$assesmentCourse], $activities);
+        }
+
+        if (!$certidigitalCredential) {
+            $credential = $this->createCredential($titleCredential, $descriptionCredential, $achievementsCourses);
+            return $credential['ocbid'];
+        } else {
+            $this->vinculateAchievementsToCredential($achievementsCourses, $certidigitalCredential);
+            return null;
+            // TODO Actualizar la credencial
+        }
+    }
+
+    private function createCredential($name, $description = null, $achievements = null, $activities = null)
+    {
+        $generalOptions = app('general_options');
+        $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/credentials?issuingCenterId={$generalOptions['certidigital_center_id']}";
+
+        $data = [
+            "title" => [
+                "contents" => [
+                    [
+                        "content" => $name,
+                        "language" => "es"
+                    ]
+                ]
+            ],
+            "validFrom" => now()->toIso8601String(),
+            "validUntil" => null,
+            "type" => [
+                "uri" => "http://data.europa.eu/snb/credential/e34929035b",
+                "targetName" => [
+                    "contents" => [
+                        [
+                            "content" => "Genérica",
+                            "language" => "es",
+                            "format" => "text/plain"
+                        ]
+                    ]
+                ],
+                "targetDescription" => null,
+                "targetFrameworkURI" => "http://data.europa.eu/snb/credential/25831c2",
+                "targetNotation" => null,
+                "targetFramework" => null
+            ],
+        ];
+
+        if ($description) {
+            $data['description'] = [
+                "contents" => [
+                    [
+                        "content" => $description,
+                        "language" => "es"
+                    ]
+                ]
+            ];
+        }
+
+        if ($achievements) {
+            $data['relAchieved'] = [
+                "oid" => array_column($achievements, "oid")
+            ];
+        }
+
+        if ($activities) {
+            $data['relPerformed'] = [
+                "oid" => array_column($activities, "oid")
+            ];
+        }
+
+        $response = $this->sendRequest($endpoint, $data, true);
+
+        CertidigitalCredentialsModel::create([
+            'uid' => $response->json()['ocbid'],
+            'id' => $response->json()['oid'],
+            'title' => $name
+        ]);
+
+        if ($achievements) {
+            CertidigitalAchievementsModel::whereIn('uid', array_column($achievements, "ocbid"))->update(['certidigital_credential_uid' => $response->json()['ocbid']]);
+        }
+
+        if ($activities) {
+            CertidigitalActivitiesModel::whereIn('uid', array_column($activities, "ocbid"))->update(['certidigital_credential_uid' => $response->json()['ocbid']]);
+        }
+
+        return $response->json();
+    }
+
+    private function cleanCredential($credential)
+    {
+        $this->cleanElementsAchievement($credential->achievements);
+
+        // Vaciar la credencial
+        $generalOptions = app('general_options');
+        $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/credentials/{$credential->id}/achieved?issuingCenterId={$generalOptions['certidigital_center_id']}";
+        $data = [
+            "oid" => []
+        ];
+        $this->sendRequest($endpoint, $data, false);
+
+        // Quitar actividades
+        $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/credentials/{$credential->id}/performed?issuingCenterId={$generalOptions['certidigital_center_id']}";
+        $data = [
+            "oid" => [],
+            "singleOid" => 0
+        ];
+
+        $this->sendRequest($endpoint, $data, false);
+    }
+
+    private function vinculateAchievementsToCredential($achievements, $certidigitalCredential)
+    {
+        $generalOptions = app('general_options');
+        $certidigitalCredentialOid = $certidigitalCredential->id;
+        $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/credentials/{$certidigitalCredentialOid}/achieved?issuingCenterId={$generalOptions['certidigital_center_id']}";
+        $data = [
+            "oid" => array_column($achievements, "oid")
+        ];
+
+        CertidigitalAchievementsModel::whereIn('uid', array_column($achievements, 'ocbid'))->update(['certidigital_credential_uid' => $certidigitalCredential->uid]);
+        $this->sendRequest($endpoint, $data, false);
+    }
+
+    private function emitCredentialsEducationalProgram($educationalProgram, $data, $certidigitalCredential)
+    {
+        $emissions = $this->emitCredentialsRequest($educationalProgram, $data);
+
+        foreach ($emissions as $emission) {
+            // Buscar el estudiante
+            $student = $educationalProgram->students->filter(function ($student) use ($emission) {
+                return $student->email === $emission['address'];
+            })->first();
+
+            // Actualizar el estudiante con la emisión
+            EducationalProgramsStudentsModel::where('user_uid', $student->uid)
+                ->where('educational_program_uid', $educationalProgram->uid)
+                ->update([
+                    'emissions_block_id' => $emission['emissionsBlockId'],
+                    'emissions_block_uuid' => $emission['uuid'],
+                ]);
+        }
+    }
+
+    private function emitCredentialsCourse($course, $data)
+    {
+        $emissions = $this->emitCredentialsRequest($course, $data);
         foreach ($emissions as $emission) {
             // Buscar el estudiante
             $student = $course->students->filter(function ($student) use ($emission) {
@@ -230,6 +685,20 @@ class CertidigitalService
                     'emissions_block_uuid' => $emission['uuid'],
                 ]);
         }
+    }
+
+    private function emitCredentialsRequest($course, $data)
+    {
+        $generalOptions = app('general_options');
+
+        // Emisión del bloque
+        $credentialUid = $course->certidigitalCredential->id;
+        $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/credentials/{$credentialUid}/issuecredentials?issuingCenterId={$generalOptions['certidigital_center_id']}&locale=es";
+        $response = $this->sendRequest($endpoint, $data, false);
+
+        $emissions = $response->json();
+
+        return $emissions;
     }
 
     private function getBasicDataEmissionCredential($student, $certidigitalCredentialUid)
@@ -251,80 +720,57 @@ class CertidigitalService
         return $data;
     }
 
-    private function cleanCredential($credential)
-    {
-        $this->cleanElementsAchievement($credential->achievements);
-    }
-
-    // TODO
     private function cleanElementsAchievement($achievements)
     {
         foreach ($achievements as $achievement) {
+            // Desvincular todo del achievement
+            $this->desvinculateAllElementsAchievement($achievement);
 
             if (isset($achievement->activities) && count($achievement->activities)) {
                 $this->deleteActivities($achievement->activities);
             }
 
-            if ($achievement->subAchievements) {
-                $this->cleanElementsAchievement($achievement->subAchievements);
+            if (isset($achievement->learningOutcomes) && count($achievement->learningOutcomes)) {
+                $this->deleteLearningOutcomes($achievement->learningOutcomes);
             }
+
+            if (isset($achievement->assesments) && count($achievement->assesments)) {
+                $this->deleteAssesments($achievement->assesments);
+            }
+
+            if ($achievement->subAchievements) {
+                $this->deleteAchievements($achievement->subAchievements);
+            }
+
+            $this->deleteAchievements([$achievement]);
         }
     }
 
-    private function deleteActivities($activities)
+    private function desvinculateAllElementsAchievement($achievement)
     {
+        $achievementOid = $achievement['id'];
         $generalOptions = app('general_options');
 
-        foreach ($activities as $activity) {
-            $activityOid = $activity['id'];
-            $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/activities/$activityOid";
+        $data = [
+            "oid" => []
+        ];
 
-            $this->sendRequest($endpoint, [], false, "delete");
+        // Evaluaciones
+        $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/achievements/$achievementOid/provenBy?issuingCenterId={$generalOptions['certidigital_center_id']}";
+        // TODO eliminación de evaluaciones
+        //$this->sendRequest($endpoint, $data, false);
 
-            $activity->delete();
-        }
-    }
+        // Activities
+        $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/achievements/$achievementOid/influencedBy?issuingCenterId={$generalOptions['certidigital_center_id']}";
+        $this->sendRequest($endpoint, $data, false);
 
-    private function deleteAssesments($assesments)
-    {
-        $generalOptions = app('general_options');
+        // Sublogros
+        $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/achievements/$achievementOid/subAchievements?issuingCenterId={$generalOptions['certidigital_center_id']}";
+        $this->sendRequest($endpoint, $data, false);
 
-        foreach ($assesments as $activity) {
-            $activityOid = $activity['id'];
-            $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/assessments/$activityOid";
-
-            $this->sendRequest($endpoint, [], false, "delete");
-
-            $activity->delete();
-        }
-    }
-
-    private function deleteLearningOutcomes($learningOutcomes)
-    {
-        $generalOptions = app('general_options');
-
-        foreach ($learningOutcomes as $learningOutcome) {
-            $learningOutcomeOid = $learningOutcome['oid'];
-            $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/learning-outcomes/$learningOutcomeOid";
-
-            $this->sendRequest($endpoint, [], false, "delete");
-
-            $learningOutcome->delete();
-        }
-    }
-
-    private function deleteAchievements($achievements)
-    {
-        $generalOptions = app('general_options');
-
-        foreach ($achievements as $activity) {
-            $activityOid = $activity['oid'];
-            $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/activities/$activityOid";
-
-            $this->sendRequest($endpoint, [], false, "delete");
-
-            $activity->delete();
-        }
+        // learningOutcomes
+        $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/achievements/$achievementOid/learningOutcomes?issuingCenterId={$generalOptions['certidigital_center_id']}";
+        $this->sendRequest($endpoint, $data, false);
     }
 
     private function vinculateAssesmentToAchievement($assesment, $achievement)
@@ -339,47 +785,6 @@ class CertidigitalService
         $this->sendRequest($endpoint, $data, false);
 
         CertidigitalAssesmentsModel::where('uid', $assesment['ocbid'])->update(['certidigital_achievement_uid' => $achievement['ocbid']]);
-    }
-
-    // Se recorre todos los bloques del curso y se saca de forma unitaria los resultados de aprendizaje
-    private function getAllLearningResultsCourse($course)
-    {
-        $learningResults = [];
-
-        foreach ($course->blocks as $block) {
-            foreach ($block->learningResults as $learningResult) {
-                $learningResults[$learningResult->uid] = $learningResult->toArray();
-            }
-        }
-
-        return $learningResults;
-    }
-
-    private function refreshToken()
-    {
-        $generalOptions = app('general_options');
-
-        $params = [
-            'grant_type' => 'password',
-            'client_id' => $generalOptions['certidigital_client_id'],
-            'client_secret' => $generalOptions['certidigital_client_secret'],
-            'username' => $generalOptions['certidigital_username'],
-            'password' => $generalOptions['certidigital_password'],
-        ];
-
-        $certidigitalUrlToken = $generalOptions['certidigital_url_token'];
-        $response = Http::asForm()
-            ->withoutVerifying()
-            ->post($certidigitalUrlToken, $params);
-
-        if ($response->status() != 200) {
-            throw new \Exception('Error refreshing Certidigital token');
-        }
-
-        session()->put('certidigital_token', $response->json()['access_token']);
-        session()->put('certidigital_token_expires', now()->addSeconds($response->json()['expires_in']));
-
-        return $response->json()['access_token'];
     }
 
     private function createAchievement($name, $achievementChilds = null, $learningResults = null, $assesments = null, $activities = null)
@@ -475,7 +880,7 @@ class CertidigitalService
         return $response->json();
     }
 
-    private function createAssesment($name, $courseBlockUid = null, $learningResultUid = null)
+    private function createAssesment($name, $courseUid = null, $courseBlockUid = null, $learningResultUid = null)
     {
         $generalOptions = app('general_options');
         $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/assessments?issuingCenterId={$generalOptions['certidigital_center_id']}";
@@ -498,10 +903,68 @@ class CertidigitalService
             'id' => $response->json()['oid'],
             'title' => $name,
             'course_block_uid' => $courseBlockUid,
-            'learning_result_uid' => $learningResultUid
+            'learning_result_uid' => $learningResultUid,
+            'course_uid' => $courseUid
         ]);
 
         return $response->json();
+    }
+
+    private function deleteActivities($activities)
+    {
+        $generalOptions = app('general_options');
+
+        foreach ($activities as $activity) {
+            $activityOid = $activity['id'];
+            $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/activities/$activityOid";
+
+            $this->sendRequest($endpoint, [], false, "delete");
+
+            $activity->delete();
+        }
+    }
+
+    private function deleteAssesments($assesments)
+    {
+        $generalOptions = app('general_options');
+
+        foreach ($assesments as $assesment) {
+            $assesmentOid = $assesment['id'];
+            $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/assessments/$assesmentOid";
+
+            //TODO Eliminar las evaluaciones
+            //$this->sendRequest($endpoint, [], false, "delete");
+
+            $assesment->delete();
+        }
+    }
+
+    private function deleteLearningOutcomes($learningOutcomes)
+    {
+        $generalOptions = app('general_options');
+
+        foreach ($learningOutcomes as $learningOutcome) {
+            $learningOutcomeOid = $learningOutcome['oid'];
+            $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/learning-outcomes/$learningOutcomeOid";
+
+            $this->sendRequest($endpoint, [], false, "delete");
+
+            $learningOutcome->delete();
+        }
+    }
+
+    private function deleteAchievements($achievements)
+    {
+        $generalOptions = app('general_options');
+
+        foreach ($achievements as $achievement) {
+
+            $activievementOid = $achievement['oid'];
+            $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/achievements/$activievementOid";
+
+            $this->sendRequest($endpoint, [], false, "delete");
+            $achievement->delete();
+        }
     }
 
     private function createLearningOutcome($learningResultName, $learningResultOriginCode)
@@ -548,72 +1011,6 @@ class CertidigitalService
         return $response->json();
     }
 
-    private function createCredential($name, $description = null, $achievements = null)
-    {
-        $generalOptions = app('general_options');
-        $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/credentials?issuingCenterId={$generalOptions['certidigital_center_id']}";
-
-        $data = [
-            "title" => [
-                "contents" => [
-                    [
-                        "content" => $name,
-                        "language" => "es"
-                    ]
-                ]
-            ],
-            "validFrom" => now()->toIso8601String(),
-            "validUntil" => null,
-            "type" => [
-                "uri" => "http://data.europa.eu/snb/credential/e34929035b",
-                "targetName" => [
-                    "contents" => [
-                        [
-                            "content" => "Genérica",
-                            "language" => "es",
-                            "format" => "text/plain"
-                        ]
-                    ]
-                ],
-                "targetDescription" => null,
-                "targetFrameworkURI" => "http://data.europa.eu/snb/credential/25831c2",
-                "targetNotation" => null,
-                "targetFramework" => null
-            ],
-        ];
-
-        if ($description) {
-            $data['description'] = [
-                "contents" => [
-                    [
-                        "content" => $description,
-                        "language" => "es"
-                    ]
-                ]
-            ];
-        }
-
-        if ($achievements) {
-            $data['relAchieved'] = [
-                "oid" => array_column($achievements, "oid")
-            ];
-        }
-
-        $response = $this->sendRequest($endpoint, $data, true);
-
-        CertidigitalCredentialsModel::create([
-            'uid' => $response->json()['ocbid'],
-            'id' => $response->json()['oid'],
-            'title' => $name
-        ]);
-
-        if ($achievements) {
-            CertidigitalAchievementsModel::whereIn('uid', array_column($achievements, "ocbid"))->update(['certidigital_credential_uid' => $response->json()['ocbid']]);
-        }
-
-        return $response->json();
-    }
-
     private function sendRequest($endpoint, $data, $addCommonFields = true, $method = 'POST')
     {
         $token = $this->getValidToken();
@@ -632,13 +1029,74 @@ class CertidigitalService
             ];
         }
 
-        $response = Http::withToken($token)
-            ->withoutVerifying()
-            ->$method($endpoint, $data);
+        $response = $this->request($endpoint, $data, $token, $method);
 
-        if (!in_array($response->status(), [200, 201])) {
-            throw new Exception('Error in the request to Certidigital');
+        if (!in_array($response->status(), [200, 201, 204, 404])) {
+            throw new Exception('Error in the request to Certidigital ' . $response->status());
         }
+
+        return $response;
+    }
+
+    // Se recorre todos los bloques del curso y se saca de forma unitaria los resultados de aprendizaje
+    private function getAllLearningResultsCourse($course)
+    {
+        $learningResults = [];
+
+        foreach ($course->blocks as $block) {
+            foreach ($block->learningResults as $learningResult) {
+                $learningResults[$learningResult->uid] = $learningResult->toArray();
+            }
+        }
+
+        return $learningResults;
+    }
+
+    private function refreshToken()
+    {
+        $generalOptions = app('general_options');
+
+        $params = [
+            'grant_type' => 'password',
+            'client_id' => $generalOptions['certidigital_client_id'],
+            'client_secret' => $generalOptions['certidigital_client_secret'],
+            'username' => $generalOptions['certidigital_username'],
+            'password' => $generalOptions['certidigital_password'],
+        ];
+
+        $certidigitalUrlToken = $generalOptions['certidigital_url_token'];
+        $response = $this->request($certidigitalUrlToken, $params);
+
+        if ($response->status() != 200) {
+            throw new \Exception('Error refreshing Certidigital token');
+        }
+
+        session()->put('certidigital_token', $response->json()['access_token']);
+        session()->put('certidigital_token_expires', now()->addSeconds($response->json()['expires_in']));
+
+        return $response->json()['access_token'];
+    }
+
+    private function getValidToken()
+    {
+        $token = session('certidigital_token');
+        $tokenExpires = session('certidigital_token_expires');
+
+        if (!$token || !$tokenExpires || now()->greaterThan($tokenExpires)) {
+            $token = $this->refreshToken();
+        }
+
+        return $token;
+    }
+
+    private function request($url, $data, $token = null, $method = "POST")
+    {
+        if ($token) $httpRequest = Http::withToken($token);
+        else $httpRequest = Http::asForm();
+
+        if (env('APP_ENV') == 'local') $httpRequest->withoutVerifying();
+
+        $response = $httpRequest->$method($url, $data);
 
         return $response;
     }

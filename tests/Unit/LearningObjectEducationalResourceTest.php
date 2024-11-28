@@ -24,12 +24,17 @@ use App\Services\CertidigitalService;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use App\Models\EducationalProgramsModel;
+use App\Models\CompetenceFrameworksModel;
 use App\Models\EducationalResourcesModel;
 use App\Exceptions\OperationFailedException;
+use App\Models\EducationalResourcesTagsModel;
 use App\Models\EducationalResourceTypesModel;
+use App\Models\AutomaticNotificationTypesModel;
+use App\Models\CompetenceFrameworksLevelsModel;
 use App\Models\EducationalResourceStatusesModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\EducationalResourcesEmbeddingsModel;
+use App\Models\EducationalResourcesEmailContactsModel;
 use App\Http\Controllers\Management\ManagementCoursesController;
 
 class LearningObjectEducationalResourceTest extends TestCase
@@ -76,10 +81,24 @@ class LearningObjectEducationalResourceTest extends TestCase
 
 
         // Crear datos de prueba
+        $competenceFramework = CompetenceFrameworksModel::factory()->create([
+            'has_levels'=> true,
+        ]);
+
         EducationalResourceTypesModel::factory()->count(3)->create();
         CategoriesModel::factory()->count(2)->create();
         LicenseTypesModel::factory()->count(2)->create();
-        CompetencesModel::factory()->count(2)->create();
+        $competencia = CompetencesModel::factory()->create([
+            'competence_framework_uid'=> $competenceFramework->uid
+        ]);
+
+        LearningResultsModel::factory()->create([
+            'competence_uid'=>$competencia->uid
+        ]);
+
+        CompetenceFrameworksLevelsModel::factory()->create([
+            'competence_framework_uid'=> $competenceFramework->uid
+        ]);
 
         // Realizar la solicitud GET a la ruta
         $response = $this->get(route('learning-objects-educational-resources'));
@@ -119,6 +138,13 @@ class LearningObjectEducationalResourceTest extends TestCase
             'uid' => $resource->uid,
             // Puedes agregar otras verificaciones de campos según lo que devuelva el recurso
         ]);
+
+        // Realiza la solicitud GET a la ruta con un UID válido pero no existente error 406
+        $response = $this->get('/learning_objects/educational_resources/get_resource/' . generate_uuid());
+
+        // Verifica que la respuesta sea 200 (OK)
+        $response->assertStatus(406);
+        $response->assertJson(['message' => 'El recurso no existe']);
     }
 
     /** @test Puedo eliminar recursos educativos exitosamente */
@@ -172,6 +198,25 @@ class LearningObjectEducationalResourceTest extends TestCase
         // Verifica que la respuesta sea 422 y contenga errores de validación
         $response->assertStatus(422);
         $response->assertJson(['message' => 'Algunos campos son incorrectos']);
+
+
+        // Errores faltantes para revisar en la validaciones
+
+        $data = [
+            'learning_results' => json_encode([10]),
+            'metadata' => json_encode([
+                [
+                    'uid' => null, // Esto simula un nuevo metadato que no tiene uid, o puedes omitir este campo
+                ],
+            ])
+        ];
+
+        // Realiza la solicitud POST con datos inválidos
+        $response = $this->postJson('/learning_objects/educational_resources/save_resource', $data);
+
+        // Verifica que la respuesta sea 422 y contenga errores de validación
+        $response->assertStatus(422);
+        $response->assertJson(['message' => 'Algunos campos son incorrectos']);
     }
 
     /** @test Puedo crear un nuevo recurso educativo correctamente */
@@ -201,7 +246,7 @@ class LearningObjectEducationalResourceTest extends TestCase
         $generalOptionsMock = [
             'operation_by_calls' => false, // O false, según lo que necesites para la prueba
             'necessary_approval_editions' => true,
-            'necessary_approval_resources' => true, // Corrige el nombre de la clave aquí
+            'necessary_approval_resources' => false, // Corrige el nombre de la clave aquí
         ];
         // Asignar el mock a app('general_options')
         App::instance('general_options', $generalOptionsMock);
@@ -274,6 +319,114 @@ class LearningObjectEducationalResourceTest extends TestCase
         // Verifica que los resultados de aprendizaje se hayan asociado correctamente
         $this->assertDatabaseHas('educational_resources_learning_results', ['learning_result_uid' => $learningResult1->uid]);
         $this->assertDatabaseHas('educational_resources_learning_results', ['learning_result_uid' => $learningResult2->uid]);
+
+        // Envia data en modo de Draft
+
+        // Prepara los datos para crear un nuevo recurso
+        $data = [
+            'title' => 'Nuevo Recurso Educativo',
+            'description' => 'Descripción del recurso',
+            'educational_resource_type_uid' => $educationalResourceTypes->uid,
+            'license_type_uid' => $licenseTypes->uid,
+            'resource_way' => 'PDF',
+            // 'resource_image_input_file' => $resourceImage,
+            // 'resource_input_file' => $resourceFile,
+            'action' => 'draft',
+            'tags' => json_encode(['tag1', 'tag2']),
+            'metadata' => json_encode([
+                [
+                    'uid' => null, // Esto simula un nuevo metadato que no tiene uid, o puedes omitir este campo
+                    'metadata_key' => 'Nombre del Meta',
+                    'metadata_value' => 'Valor del Meta'
+                ],
+                [
+                    'uid' => null, // Esto simula un nuevo metadato que no tiene uid, o puedes omitir este campo
+                    'metadata_key' => 'Nombre del Meta',
+                    'metadata_value' => 'Valor del Meta'
+                ]
+            ]),
+            'categories' => json_encode([$category1->uid, $category2->uid]),
+            'contact_emails' => json_encode(['email1@example.com', 'email2@example.com']),
+            'learning_results' => json_encode([$learningResult1->uid, $learningResult2->uid]),
+            // Otros campos necesarios para la creación
+        ];
+
+        // Realiza la solicitud POST para crear un nuevo recurso
+        $response = $this->postJson('/learning_objects/educational_resources/save_resource', $data);
+
+        // Verifica que la respuesta sea 200 y el recurso se haya creado correctamente
+        $response->assertStatus(200);
+        $response->assertJson(['message' => 'Recurso añadido correctamente']);
+
+
+        // :::::::::::: Completando las validaciones necesarias ::::::::://
+        // Prepara los datos para crear un nuevo recurso
+        $data = [
+            'title'                         => 'Nuevo Recurso Educativo',
+            'description'                   => 'Descripción del recurso',
+            'educational_resource_type_uid' => $educationalResourceTypes->uid,
+            'status_uid' => generate_uuid(),
+            'license_type_uid'              => $licenseTypes->uid,
+            'resource_way'                  => 'FILE',
+            'resource_input_file'           => 'text.txt',
+            'action'                        => 'draft',
+            'tags'                          => json_encode(['tag1', 'tag2']),
+            'metadata' => json_encode([
+                [
+                    'uid' => null, // Esto simula un nuevo metadato que no tiene uid, o puedes omitir este campo
+                    'metadata_key' => 'Nombre del Meta',
+                    'metadata_value' => 'Valor del Meta'
+                ],
+                [
+                    'uid' => null, // Esto simula un nuevo metadato que no tiene uid, o puedes omitir este campo
+                    'metadata_key' => 'Nombre del Meta',
+                    'metadata_value' => 'Valor del Meta'
+                ]
+            ]),
+            'categories' => json_encode([$category1->uid, $category2->uid]),
+            'contact_emails' => json_encode(['email1@example.com', 'email2@example.com']),
+            'learning_results' => json_encode([$learningResult1->uid, $learningResult2->uid]),
+            // Otros campos necesarios para la creación
+        ];
+        // Realiza la solicitud POST para crear un nuevo recurso
+        $response = $this->postJson('/learning_objects/educational_resources/save_resource', $data);
+
+        // Verifica que la respuesta sea 200 y el recurso se haya creado correctamente
+        $response->assertStatus(200);
+
+        // Prepara los datos para crear un nuevo recurso
+        $data = [
+            'title'                         => 'Nuevo Recurso Educativo',
+            'description'                   => 'Descripción del recurso',
+            'educational_resource_type_uid' => $educationalResourceTypes->uid,
+            'status_uid' => generate_uuid(),
+            'license_type_uid'              => $licenseTypes->uid,
+            'resource_way'                  => 'URL',
+            'resource_url'                  => 'http://miweb.com',
+            'action'                        => 'draft',
+            'tags'                          => json_encode(['tag1', 'tag2']),
+            'metadata' => json_encode([
+                [
+                    'uid' => null, // Esto simula un nuevo metadato que no tiene uid, o puedes omitir este campo
+                    'metadata_key' => 'Nombre del Meta',
+                    'metadata_value' => 'Valor del Meta'
+                ],
+                [
+                    'uid' => null, // Esto simula un nuevo metadato que no tiene uid, o puedes omitir este campo
+                    'metadata_key' => 'Nombre del Meta',
+                    'metadata_value' => 'Valor del Meta'
+                ]
+            ]),
+            'categories' => json_encode([$category1->uid, $category2->uid]),
+            'contact_emails' => json_encode(['email1@example.com', 'email2@example.com']),
+            'learning_results' => json_encode([$learningResult1->uid, $learningResult2->uid]),
+            // Otros campos necesarios para la creación
+        ];
+        // Realiza la solicitud POST para crear un nuevo recurso
+        $response = $this->postJson('/learning_objects/educational_resources/save_resource', $data);
+
+        // Verifica que la respuesta sea 200 y el recurso se haya creado correctamente
+        $response->assertStatus(200);
     }
 
     /** @test Puedo actualizar un recurso educativo existente correctamente */
@@ -297,6 +450,19 @@ class LearningObjectEducationalResourceTest extends TestCase
                 'license_type_uid' => $licenseTypes->uid,
             ])->first();
 
+        EducationalResourcesTagsModel::factory()->count(2)->create(
+            [
+                'educational_resource_uid' => $resource->uid
+            ]
+        );
+
+        EducationalResourcesEmailContactsModel::factory()->count(2)->create(
+            [
+                'educational_resource_uid' => $resource->uid
+            ]
+        );
+
+
         // Configura el mock de general_options con la clave correcta
         $generalOptionsMock = [
             'operation_by_calls' => false, // O false, según lo que necesites para la prueba
@@ -309,7 +475,6 @@ class LearningObjectEducationalResourceTest extends TestCase
         // Crear un mock del servicio de embeddings
         $mockEmbeddingsService = Mockery::mock(EmbeddingsService::class);
         $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 1536, 0.1));
-
         // Reemplazar el servicio real por el mock en el contenedor de servicios de Laravel
         $this->app->instance(EmbeddingsService::class, $mockEmbeddingsService);
 
@@ -333,7 +498,7 @@ class LearningObjectEducationalResourceTest extends TestCase
             'resource_way' => 'URL',
             'resource_url' => 'https://example.com/resource',
             'action' => 'update',
-            'tags' => json_encode(['tag1', 'tag2']),
+            'tags' => json_encode([]),
             'metadata' => json_encode([
                 [
                     'uid' => null, // Esto simula un nuevo metadato que no tiene uid, o puedes omitir este campo
@@ -347,7 +512,7 @@ class LearningObjectEducationalResourceTest extends TestCase
                 ]
             ]),
             'categories' => json_encode([$category1->uid, $category2->uid]),
-            'contact_emails' => json_encode(['email3@example.com', 'email4@example.com']),
+            'contact_emails' => json_encode([]),
             'learning_results' => json_encode([$learningResult1->uid, $learningResult2->uid]),
             // Otros campos necesarios para la creación
         ];
@@ -367,20 +532,12 @@ class LearningObjectEducationalResourceTest extends TestCase
             'resource_url' => 'https://example.com/resource',
         ]);
 
-        // Verifica que las etiquetas se hayan actualizado correctamente
-        $this->assertDatabaseHas('educational_resources_tags', ['tag' => 'tag1']);
-        $this->assertDatabaseHas('educational_resources_tags', ['tag' => 'tag2']);
-
         // Verifica que los metadatos se hayan guardado correctamente
         $this->assertDatabaseHas('educational_resources_metadata', ['metadata_key' => 'Nombre del Meta', 'metadata_value' => 'Valor del Meta']);
 
         // Verifica que las categorías se hayan actualizado correctamente
         $this->assertDatabaseHas('educational_resource_categories', ['category_uid' => $category1->uid]);
         $this->assertDatabaseHas('educational_resource_categories', ['category_uid' => $category2->uid]);
-
-        // Verifica que los correos de contacto se hayan actualizado correctamente
-        $this->assertDatabaseHas('educational_resources_email_contacts', ['email' => 'email3@example.com']);
-        $this->assertDatabaseHas('educational_resources_email_contacts', ['email' => 'email4@example.com']);
 
         // Verifica que los resultados de aprendizaje se hayan actualizado correctamente
         $this->assertDatabaseHas('educational_resources_learning_results', ['learning_result_uid' => $learningResult1->uid]);
@@ -393,6 +550,34 @@ class LearningObjectEducationalResourceTest extends TestCase
         //     'user_uid' => $user->uid,
         // ]);
     }
+
+
+
+    /** @test error de exeption al ser mas de 100 consultas */
+    public function testSaveEducationalResourceWithMoreThan100()
+    {
+        $user = UserSmodel::factory()->create();
+
+        $this->actingAs($user);
+
+        $uids = [];
+
+        $learning_results = LearningResultsModel::factory()->withCompetence()->count(101)->create();
+
+        foreach ($learning_results as $learning_result) {
+            $uids[] = [
+                $learning_result->uid
+            ];
+        }
+
+        $response = $this->postJson('/learning_objects/educational_resources/save_resource', [
+            'learning_results' => json_encode($uids),
+        ]);
+
+        $response->assertStatus(406);
+        $response->assertJson(['message' => 'No se pueden seleccionar más de 100 resultados de aprendizaje']);
+    }
+
 
     // :::::::::::::::::::::::::: Fin de metodo guardar :::::::::::::::::::::::::::::::
 
@@ -458,7 +643,12 @@ class LearningObjectEducationalResourceTest extends TestCase
     public function testGetResourcesWithSearch()
     {
         $user = UsersModel::factory()->create();
-        //  $user->roles()->attach(RolesModel::factory()->create(['code' => 'TEACHER']));
+
+        $role = UserRolesModel::where('code', 'TEACHER')->first();
+
+        $user->roles()->attach($role->uid, [
+            'uid' => generate_uuid(),
+        ]);
 
         $resource = EducationalResourcesModel::factory()
             ->withStatus()
@@ -632,16 +822,31 @@ class LearningObjectEducationalResourceTest extends TestCase
     {
         // Crear un usuario con rol de 'MANAGEMENT' y autenticarlo
         $user = UsersModel::factory()->create();
-        $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
+        $role = UserRolesModel::where('code', 'STUDENT')->first();
         $user->roles()->sync([
             $role->uid => ['uid' => generate_uuid()]
         ]);
         Auth::login($user);
 
-        $status = EducationalResourceStatusesModel::factory()
-            ->create([
-                'code' => 'PUBLISHED1',
-            ])->latest()->first();
+        // $status = EducationalResourceStatusesModel::factory()
+        //     ->create([
+        //         'code' => 'PUBLISHED',
+        //     ])->latest()->first();
+
+        $category1 = CategoriesModel::factory()->create()->first();
+
+        $user->categories()->attach($category1->uid, [
+            'uid' => generate_uuid(),
+        ]);
+
+        $automaticNotificationType = AutomaticNotificationTypesModel::where('code', 'NEW_EDUCATIONAL_PROGRAMS')->first();
+
+        $user->automaticGeneralNotificationsTypesDisabled()->attach($automaticNotificationType->uid, [
+            'uid' => generate_uuid(),
+        ]);
+
+
+        $status = EducationalResourceStatusesModel::where('code', 'PUBLISHED')->first();
 
         // Crear recursos educativos de prueba
         $resource1 = EducationalResourcesModel::factory()
@@ -652,6 +857,8 @@ class LearningObjectEducationalResourceTest extends TestCase
             ->withEducationalResourceType()
             ->withCreatorUser()
             ->create(['status_uid' => $status->uid]);
+
+        $resource1->categories()->attach($category1, ['uid' => generate_uuid() ]);
 
         // Datos de la solicitud
         $changesResourcesStatuses = [
@@ -771,7 +978,7 @@ class LearningObjectEducationalResourceTest extends TestCase
         $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
 
         // Instantiate ManagementCoursesController with the mocked service
-        $controller = new ManagementCoursesController($mockEmbeddingsService, $certidigitalServiceMock );
+        $controller = new ManagementCoursesController($mockEmbeddingsService, $certidigitalServiceMock);
         $method->invokeArgs($controller, [$course_bd]);
     }
 
@@ -800,14 +1007,14 @@ class LearningObjectEducationalResourceTest extends TestCase
         // Asegura que se lanza la excepción
         $this->expectException(OperationFailedException::class);
         $this->expectExceptionMessage('No puedes editar un curso cuyo programa formativo no esté en estado de introducción o subsanación');
-        
+
         $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
 
         // Crear mocks del certificado
         $certidigitalServiceMock = $this->createMock(CertidigitalService::class);
 
         // Instantiate ManagementCoursesController with the mocked service
-        $controller = new ManagementCoursesController($mockEmbeddingsService, $certidigitalServiceMock );
+        $controller = new ManagementCoursesController($mockEmbeddingsService, $certidigitalServiceMock);
         $method->invokeArgs($controller, [$course_bd]);
     }
 

@@ -19,7 +19,7 @@ class EducationalProgramsModel extends Model
         'enrolling_start_date', 'enrolling_finish_date', 'min_required_students', 'validate_student_registrations',
         'evaluation_criteria', 'cost', 'featured_slider', 'featured_slider_title', 'featured_slider_description',
         'featured_slider_color_font', 'featured_slider_image_path', 'featured_main_carrousel',
-        'educational_program_status_uid', 'realization_start_date', 'realization_finish_date', 'payment_mode'
+        'educational_program_status_uid', 'realization_start_date', 'realization_finish_date', 'payment_mode', 'certidigital_credential_uid'
     ];
 
     public $incrementing = false;
@@ -99,7 +99,7 @@ class EducationalProgramsModel extends Model
             'educational_programs_students',
             'educational_program_uid',
             'user_uid'
-        )->withPivot(['acceptance_status', 'status', 'uid'])->as('educational_program_student_info');
+        )->withPivot(['acceptance_status', 'status', 'uid', 'emissions_block_uuid', 'credential_sent', 'credential_sealed'])->as('educational_program_student_info');
     }
 
     public function student_documents()
@@ -132,5 +132,10 @@ class EducationalProgramsModel extends Model
             'educational_program_uid',
             'uid'
         );
+    }
+
+    public function certidigitalCredential()
+    {
+        return $this->belongsTo(CertidigitalCredentialsModel::class, 'certidigital_credential_uid', 'uid');
     }
 }

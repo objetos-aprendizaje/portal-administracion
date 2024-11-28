@@ -77,8 +77,12 @@ class EducationalProgramsSeeder extends Seeder
 
     private function addInscriptionEducationalPrograms()
     {
+        $educationalProgramsDataset = $this->getEducatinalProgramsDataset(120, 10);
+
         for ($i = 0; $i < 10; $i++) {
             $customData = [
+                'name' => $educationalProgramsDataset[$i]['title'],
+                'description' => $educationalProgramsDataset[$i]['description'],
                 'payment_mode' => 'SINGLE_PAYMENT',
 
                 'inscription_start_date' => adjustDateRandomly('-1 year'),
@@ -97,8 +101,12 @@ class EducationalProgramsSeeder extends Seeder
 
     private function addEnrollingEducationalPrograms()
     {
+        $educationalProgramsDataset = $this->getEducatinalProgramsDataset(130, 10);
+
         for ($i = 0; $i < 10; $i++) {
             $customData = [
+                'name' => $educationalProgramsDataset[$i]['title'],
+                'description' => $educationalProgramsDataset[$i]['description'],
                 'payment_mode' => 'SINGLE_PAYMENT',
 
                 'inscription_start_date' => adjustDateRandomly('-2 year'),
@@ -117,8 +125,12 @@ class EducationalProgramsSeeder extends Seeder
 
     private function addRealizationEducationalPrograms()
     {
-        for ($i = 1; $i <= 10; $i++) {
+        $educationalProgramsDataset = $this->getEducatinalProgramsDataset(140, 10);
+
+        for ($i = 0; $i < 10; $i++) {
             $customData = [
+                'name' => $educationalProgramsDataset[$i]['title'],
+                'description' => $educationalProgramsDataset[$i]['description'],
                 'payment_mode' => $this->faker->randomElement(['INSTALLMENT_PAYMENT', 'SINGLE_PAYMENT']),
 
                 'inscription_start_date' => adjustDateRandomly('-2 year'),
@@ -137,8 +149,11 @@ class EducationalProgramsSeeder extends Seeder
 
     private function addFinishedEducationalPrograms()
     {
-        for ($i = 1; $i <= 10; $i++) {
+        $educationalProgramsDataset = $this->getEducatinalProgramsDataset(150, 10);
+        for ($i = 0; $i < 10; $i++) {
             $customData = [
+                'name' => $educationalProgramsDataset[$i]['title'],
+                'description' => $educationalProgramsDataset[$i]['description'],
                 'payment_mode' => 'SINGLE_PAYMENT',
 
                 'inscription_start_date' => adjustDateRandomly('-3 year'),
@@ -282,5 +297,14 @@ class EducationalProgramsSeeder extends Seeder
                 ]);
             }
         }
+    }
+
+    private function getEducatinalProgramsDataset($start, $end)
+    {
+        $csv = readCsv('database/seeders/dataset_learning_objects.csv');
+
+        // Filtrar los cursos que se encuentran entre las posiciones start y end
+        $courses = array_slice($csv, $start, $end);
+        return $courses;
     }
 }

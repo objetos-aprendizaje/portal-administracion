@@ -57,8 +57,8 @@ class ChangeStatusToFinishedTest extends TestCase
     // Refrescar el modelo del curso
     $course->refresh();
 
-    // Verificar que el estado del curso se haya cambiado a 'ENROLLING'
-    $this->assertEquals('ENROLLING', $course->status->code);
+    // Verificar que el estado del curso se haya cambiado a 'FINISHED'
+    $this->assertEquals('FINISHED', $course->status->code);
 
     // Verificar que se haya enviado una notificación general
     $this->assertDatabaseHas('general_notifications_automatic', [
@@ -96,7 +96,7 @@ class ChangeStatusToFinishedTest extends TestCase
         $course->refresh();
 
         // Verificar que el estado del curso se haya cambiado a 'ENROLLING'
-        $this->assertEquals('ENROLLING', $course->status->code);
+        $this->assertEquals('FINISHED', $course->status->code);
 
         // Verificar que no se haya enviado ninguna notificación por email
         Queue::assertNotPushed(SendEmailJob::class);

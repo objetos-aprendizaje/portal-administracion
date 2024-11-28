@@ -53,6 +53,7 @@ class JobsSendChangeStatusCourseNotificationTest extends TestCase
             'identifier' => 'identifier',
             'featured_big_carrousel_approved' => 0,
             'featured_big_carrousel' => 0,
+            'status_reason' => 'por prueba',
         ])->first();
 
         // Crear el tipo de notificación automática

@@ -42,7 +42,7 @@ class UsersModel extends Authenticatable
             'courses_students',
             'user_uid',
             'course_uid'
-        )->withPivot('acceptance_status', 'credential')->select(['title']);
+        )->withPivot('acceptance_status', 'credential', 'emissions_block_id', 'emissions_block_uuid', 'credential_sent', 'credential_sealed')->select(['title']);
     }
 
     public function coursesTeachers()
@@ -169,5 +169,10 @@ class UsersModel extends Authenticatable
     public function courseLearningResultCalifications()
     {
         return $this->hasMany(CourseLearningResultCalificationsModel::class, 'user_uid');
+    }
+
+    public function courseGlobalCalifications()
+    {
+        return $this->hasMany(CourseGlobalCalificationsModel::class, 'user_uid');
     }
 }

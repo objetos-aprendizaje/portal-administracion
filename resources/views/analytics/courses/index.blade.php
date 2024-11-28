@@ -5,7 +5,7 @@
 
         <h2>Cursos por estado</h2>
         <p>
-            Representa el número de cursos por agrupado por estado.
+            Representa el número de cursos agrupado por estado.
         </p>
 
         <div id="d3_graph_courses"></div>
@@ -44,7 +44,7 @@
             <div class="table-container mt-12" id="tooltip_1">
                 <h2>Gráfico</h2>
                 <p>
-                    Representa el TOP de los cursos más visitados por los alumnos.
+                    Representa el TOP de los cursos más accedidos por los alumnos.
                 </p>
                 <div id="d3_graph"></div>
                 <div id="d3_graph_x_axis" class="hidden"></div>

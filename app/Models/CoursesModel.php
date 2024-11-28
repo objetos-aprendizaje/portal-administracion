@@ -99,7 +99,7 @@ class CoursesModel extends Model
             'courses_students',
             'course_uid',
             'user_uid'
-        )->withPivot(['acceptance_status', 'status', 'calification_info', 'uid'])->as('course_student_info');
+        )->withPivot(['acceptance_status', 'status', 'emissions_block_uuid', 'credential_sealed', 'uid'])->as('course_student_info');
     }
 
     public function courseDocuments()
@@ -263,6 +263,10 @@ class CoursesModel extends Model
     public function certidigitalCredential()
     {
         return $this->belongsTo(CertidigitalCredentialsModel::class, 'certidigital_credential_uid', 'uid');
+    }
+
+    public function certidigitalTeacherCredential() {
+        return $this->belongsTo(CertidigitalCredentialsModel::class, 'certidigital_teacher_credential_uid', 'uid');
     }
 
     public function certidigitalAssesments() {

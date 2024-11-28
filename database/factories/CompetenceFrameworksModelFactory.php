@@ -23,6 +23,7 @@ class CompetenceFrameworksModelFactory extends Factory
             'name' => $this->faker->word(3),
             'description' => $this->faker->text(),
             'origin_code' => $this->faker->url(),
+            
             'created_at' => Carbon::now()->format('Y-m-d\TH:i'),
             'updated_at' => Carbon::now()->format('Y-m-d\TH:i'),
         ];

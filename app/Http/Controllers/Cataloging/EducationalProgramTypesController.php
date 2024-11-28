@@ -75,9 +75,9 @@ class EducationalProgramTypesController extends BaseController
     public function getEducationalProgramType($educational_program_type_uid)
     {
 
-        if (!$educational_program_type_uid) {
-            return response()->json(['message' => env('ERROR_MESSAGE')], 400);
-        }
+        // if (!$educational_program_type_uid) {
+        //     return response()->json(['message' => env('ERROR_MESSAGE')], 400);
+        // }
 
         $educational_program_type = EducationalProgramTypesModel::where('uid', $educational_program_type_uid)->first();
 

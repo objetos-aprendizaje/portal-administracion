@@ -33,7 +33,7 @@
         <div class="table-container mt-12">
             <h2>Gráfico</h2>
             <p>
-                Representa el TOP de los recursos formativos más visitados por los alumnos.
+                Representa el TOP de los recursos formativos más accedidos por los alumnos.
             </p>
             <div id="d3_graph_resources"></div>
             <div id="d3_graph_resources_x_axis" class="hidden"></div>

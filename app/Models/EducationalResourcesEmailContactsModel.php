@@ -16,10 +16,12 @@ class EducationalResourcesEmailContactsModel extends Model
     protected $keyType = 'string';
 
     public $incrementing = false;
+    // Desactivado los timestamps
+    public $timestamps = false;
 
     protected $fillable = [
-        "uid", "educational_resource_uid", "email"
+        "uid",
+        "educational_resource_uid",
+        "email"
     ];
-
-
 }

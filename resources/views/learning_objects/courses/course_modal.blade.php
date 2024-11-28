@@ -207,22 +207,6 @@
 
                 </div>
 
-                <div class="field mt-2">
-                    <div class="label-container label-center">
-                        <label for="calification_type">Tipo de calificación <span class="text-danger">*</span></label>
-                    </div>
-
-                    <div class="content-container mt-1">
-                        <div class="select-container">
-                            <select id="calification_type" name="calification_type" class="poa-select w-full">
-                                <option value="" selected>Selecciona tipo de calificación</option>
-                                <option value="NUMERICAL">Numérica</option>
-                                <option value="TEXTUAL">Textual</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="field mt-2" data-id="presentation_video_url">
                     <div class="label-container label-center">
                         <label for="presentation_video_url">URL Vídeo de presentación</label>

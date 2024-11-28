@@ -299,10 +299,20 @@ class LearningObjectEducationalResourceUsersTest extends TestCase
             ['field' => 'title', 'dir' => 'asc']
         ];
 
+        
+        $sortParams = [
+            'sort' => [                
+                ['field' => 'title', 'dir' => 'asc']
+            ],
+            'size' => 10
+        ];
+
+        // Convert the parameters to a query string
+        $queryString = http_build_query($sortParams);
+
+
         // Hacer la solicitud GET pasando el parámetro de ordenamiento como un array
-        $response = $this->getJson("/learning_objects/educational_resources_per_users/get_notifications/{$user->uid}", [
-            'sort' => $sort
-        ]);
+        $response = $this->getJson("/learning_objects/educational_resources_per_users/get_notifications/{$user->uid}?".$queryString);
 
         // Verificar la respuesta
         $response->assertStatus(200)

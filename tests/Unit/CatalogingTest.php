@@ -5,8 +5,10 @@ namespace Tests\Unit;
 use Tests\TestCase;
 use App\Models\UsersModel;
 use Illuminate\Support\Str;
+use App\Models\CoursesModel;
 use App\Models\UserRolesModel;
 use App\Models\CategoriesModel;
+use App\Models\CourseTypesModel;
 use App\Models\TooltipTextsModel;
 use Illuminate\Http\UploadedFile;
 use App\Models\GeneralOptionsModel;
@@ -33,7 +35,7 @@ class CatalogingTest extends TestCase
 
 
 
-/** @test */
+    /** @test */
     public function testUserManagementRoleAccessCategories()
     {
 
@@ -68,22 +70,22 @@ class CatalogingTest extends TestCase
         $response->assertStatus(200);
     }
 
-/** @test */
-      public function testUserNotManagementCannotAccess()
-      {
+    /** @test */
+    public function testUserNotManagementCannotAccess()
+    {
 
 
-          // Simulamos un usuario sin el rol 'MANAGEMENT'
-          $user = UsersModel::factory()->create();
+        // Simulamos un usuario sin el rol 'MANAGEMENT'
+        $user = UsersModel::factory()->create();
 
-          // Asegúrate de que el rol exista en la base de datos
-          $roles = UserRolesModel::where('code', 'TEACHER')->first();
+        // Asegúrate de que el rol exista en la base de datos
+        $roles = UserRolesModel::where('code', 'TEACHER')->first();
 
-          // Adjuntamos el rol con un uid generado
-          $user->roles()->attach($roles->uid, ['uid' => Str::uuid()]);
+        // Adjuntamos el rol con un uid generado
+        $user->roles()->attach($roles->uid, ['uid' => Str::uuid()]);
 
-          Auth::login($user);
-          View::share('roles', $roles);
+        Auth::login($user);
+        View::share('roles', $roles);
 
         // Simula datos de TooltipTextsModel
         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
@@ -106,10 +108,10 @@ class CatalogingTest extends TestCase
 
         // Verificamos que se produzca un error 403
         $response->assertStatus(200);
-      }
+    }
 
-/**
-* @testdox Crear Categoría Exitoso*/
+    /**
+     * @testdox Crear Categoría Exitoso*/
     public function testCreateCategory()
     {
         $admin = UsersModel::factory()->create();
@@ -143,8 +145,8 @@ class CatalogingTest extends TestCase
         }
     }
 
-/**
- * @testdox Crear Categoría sin imagen*/
+    /**
+     * @testdox Crear Categoría sin imagen*/
     public function testCreateCategoryWithoutImage()
     {
         $admin = UsersModel::factory()->create();
@@ -172,8 +174,8 @@ class CatalogingTest extends TestCase
         }
     }
 
-/**
- * @testdox Crear Categoría con validacion de error*/
+    /**
+     * @testdox Crear Categoría con validacion de error*/
     public function testSaveCategoryValidationErrors()
     {
         $response = $this->postJson('/cataloging/categories/save_category', []);
@@ -181,8 +183,8 @@ class CatalogingTest extends TestCase
             ->assertJsonStructure(['message', 'errors']);
     }
 
-/**
- * @testdox Actualizar Categoría*/
+    /**
+     * @testdox Actualizar Categoría*/
     public function testUpdateCategory()
     {
 
@@ -234,8 +236,8 @@ class CatalogingTest extends TestCase
     }
 
 
-/**
- * @testdox Eliminar Categoría */
+    /**
+     * @testdox Eliminar Categoría */
     public function testDeleteCategory()
     {
         $admin = UsersModel::factory()->create();
@@ -300,7 +302,6 @@ class CatalogingTest extends TestCase
         // Verificar que las categorías han sido eliminadas
         $this->assertDatabaseMissing('categories', ['uid' => $category1->uid]);
         $this->assertDatabaseMissing('categories', ['uid' => $category2->uid]);
-
     }
 
     /**
@@ -329,25 +330,25 @@ class CatalogingTest extends TestCase
     {
         // Crear un usuario con el rol 'MANAGEMENT'
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]); // Crea roles de prueba
         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
-         // Autenticar al usuario
-         Auth::login($user);
+        // Autenticar al usuario
+        Auth::login($user);
 
-         // Compartir la variable de roles manualmente con la vista
-         View::share('roles', $roles);
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
 
-         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
         View::share('general_options', $general_options);
 
-         // Simula datos de TooltipTextsModel
-         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
-         View::share('tooltip_texts', $tooltip_texts);
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
 
-         // Simula notificaciones no leídas
-         $unread_notifications = $user->notifications->where('read_at', null);
-         View::share('unread_notifications', $unread_notifications);
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
 
         // Crear una opción general para permitir que los gestores administren categorías
         GeneralOptionsModel::create([
@@ -372,25 +373,25 @@ class CatalogingTest extends TestCase
     public function testIndexWithAccessDenied()
     {
         $user = UsersModel::factory()->create()->latest()->first();
-         $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
-         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
-         // Autenticar al usuario
-         Auth::login($user);
+        // Autenticar al usuario
+        Auth::login($user);
 
-         // Compartir la variable de roles manualmente con la vista
-         View::share('roles', $roles);
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
 
-         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
         View::share('general_options', $general_options);
 
-         // Simula datos de TooltipTextsModel
-         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
-         View::share('tooltip_texts', $tooltip_texts);
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
 
-         // Simula notificaciones no leídas
-         $unread_notifications = $user->notifications->where('read_at', null);
-         View::share('unread_notifications', $unread_notifications);
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
 
 
         // Crear una opción general para denegar que los gestores administren categorías
@@ -432,16 +433,16 @@ class CatalogingTest extends TestCase
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-         $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]);// Crea roles de prueba
-         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
-         // Autenticar al usuario
-         Auth::login($user);
+        // Autenticar al usuario
+        Auth::login($user);
 
-         // Compartir la variable de roles manualmente con la vista
-         View::share('roles', $roles);
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
 
-         $generalOptionsMock = [
+        $generalOptionsMock = [
             'operation_by_calls' => false, // O false, según lo que necesites para la prueba
             'necessary_approval_editions' => true,
             'necessary_approval_resources' => true,
@@ -450,67 +451,67 @@ class CatalogingTest extends TestCase
         // Asignar el mock a app('general_options')
         App::instance('general_options', $generalOptionsMock);
 
-         // Simula datos de TooltipTextsModel
-         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
-         View::share('tooltip_texts', $tooltip_texts);
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
 
-         // Simula notificaciones no leídas
-         $unread_notifications = $user->notifications->where('read_at', null);
-         View::share('unread_notifications', $unread_notifications);
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
 
-           // Crear categorías anidadas
-           $parentCategory = CategoriesModel::factory()->create([
-                'uid' => generate_uuid(),
-                'name' => 'Parent Category',
-                'parent_category_uid' => null
-           ])->first();
-
-
-           $childCategory1 = CategoriesModel::factory()->create([
-                'uid' => generate_uuid(),
-                'name' => 'Child Category 1',
-                'parent_category_uid' => $parentCategory->uid
-            ])->latest()->first();
+        // Crear categorías anidadas
+        $parentCategory = CategoriesModel::factory()->create([
+            'uid' => generate_uuid(),
+            'name' => 'Parent Category',
+            'parent_category_uid' => null
+        ])->first();
 
 
-            $childCategory2 = CategoriesModel::factory()->create([
-                'uid' => generate_uuid(),
-                'name' => 'Child Category 9',
-                'parent_category_uid' => $parentCategory->uid
-            ])->latest()->first();
+        $childCategory1 = CategoriesModel::factory()->create([
+            'uid' => generate_uuid(),
+            'name' => 'Child Category 1',
+            'parent_category_uid' => $parentCategory->uid
+        ])->latest()->first();
 
 
-           // Hacer una solicitud GET a la ruta
-           $response = $this->getJson('/cataloging/categories');
+        $childCategory2 = CategoriesModel::factory()->create([
+            'uid' => generate_uuid(),
+            'name' => 'Child Category 9',
+            'parent_category_uid' => $parentCategory->uid
+        ])->latest()->first();
 
 
-           // Verificar que la respuesta tenga el código HTTP 200
-           $response->assertStatus(200);
+        // Hacer una solicitud GET a la ruta
+        $response = $this->getJson('/cataloging/categories');
 
-            // Verificar que la vista se renderice correctamente
-            $response->assertViewHas('page_name', 'Categorías');
-            $response->assertViewHas('page_title', 'Categorías');
-            $response->assertViewHas('resources', [
-                "resources/js/cataloging_module/categories.js"
-            ]);
 
-            $response->assertViewHas('submenuselected', 'cataloging-categories');
-            // Obtener los datos de las categorías desde la vista
-            $data = $response->getOriginalContent()->getData();
+        // Verificar que la respuesta tenga el código HTTP 200
+        $response->assertStatus(200);
 
-            // Verificar que las categorías anidadas se carguen correctamente
-            $categories_anidated = $data['categories_anidated'];
-            $categories = $data['categories'];
+        // Verificar que la vista se renderice correctamente
+        $response->assertViewHas('page_name', 'Categorías');
+        $response->assertViewHas('page_title', 'Categorías');
+        $response->assertViewHas('resources', [
+            "resources/js/cataloging_module/categories.js"
+        ]);
 
-            $this->assertCount(1, $categories_anidated);
-            $this->assertCount(2, $categories_anidated[0]['subcategories']);
+        $response->assertViewHas('submenuselected', 'cataloging-categories');
+        // Obtener los datos de las categorías desde la vista
+        $data = $response->getOriginalContent()->getData();
 
-            // Verificar que las categorías planas se carguen correctamente
-            $this->assertCount(3, $categories);
-            }
+        // Verificar que las categorías anidadas se carguen correctamente
+        $categories_anidated = $data['categories_anidated'];
+        $categories = $data['categories'];
 
-/**
- * @testdox Crear Tipos de cursos exitoso*/
+        $this->assertCount(1, $categories_anidated);
+        $this->assertCount(2, $categories_anidated[0]['subcategories']);
+
+        // Verificar que las categorías planas se carguen correctamente
+        $this->assertCount(3, $categories);
+    }
+
+    /**
+     * @testdox Crear Tipos de cursos exitoso*/
     public function testCreateCourseType()
     {
         $admin = UsersModel::factory()->create();
@@ -549,10 +550,22 @@ class CatalogingTest extends TestCase
                 'description' => 'Descripción del curso de prueba',
             ]);
         }
+        // Presentar error 422 
+        $data = [
+            'description' => 'Descripción del curso de prueba',
+        ];
+
+        $response = $this->postJson('/cataloging/course_types/save_course_type', $data);
+        
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'message' => 'Algunos campos son incorrectos',
+            ]);
     }
 
-/**
- * @testdox Actualiza Tipos de cursos */
+    /**
+     * @testdox Actualiza Tipos de cursos */
     public function testUpdatesCourseType()
     {
 
@@ -570,38 +583,29 @@ class CatalogingTest extends TestCase
         $admin->roles()->sync($roles_to_sync);
         $this->actingAs($admin);
 
-        if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
-            $response = $this->postJson('/cataloging/course_types/save_course_type', [
-                'uid' => '999-12499-123456-12345-12111',
-                'name' => 'Nuevo tipo de curso',
-                'description' => 'Descripción del tipo de curso',
 
-            ]);
+        $courseType = CourseTypesModel::factory()->create();
+
+        $data= [
+            'course_type_uid' => $courseType->uid,
+            'name' => 'Editar tipo de course',
+            'description' => 'Descripción del tipo de curso',
+        ];        
+
+        if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
+            $response = $this->postJson('/cataloging/course_types/save_course_type', $data
+               );
 
             // Verifica quetipo de curso se haya creado correctamente
             $response->assertStatus(200)
-                ->assertJson(['message' => 'Tipo de curso añadido correctamente']);
+                ->assertJson(['message' => 'Tipo de curso actualizado correctamente']);
 
-            // Obtiene el uid del tipo de curso recién creado
-            $uid_tc = '999-12499-123456-12345-12111';
-            $this->assertNotNull($uid_tc, 'Tipo de curso no se creó correctamente.');
-
-
-            // Actualiza tipo de curso
-            $data = [
-                'name' => 'Tipo de curso actualizado',
-                'description' => 'Descripción actualizada del tipo de curso',
-            ];
-
-            $response = $this->postJson('/cataloging/course_types/save_course_type', $data);
-
-            // Verifica que la categoría se haya actualizado correctamente
-            $response->assertStatus(200);
+          
         }
     }
 
-/**
- * @testdox Elimina Tipos de cursos */
+    /**
+     * @testdox Elimina Tipos de cursos */
     public function testDeleteCourseType()
     {
         $admin = UsersModel::factory()->create();
@@ -639,160 +643,66 @@ class CatalogingTest extends TestCase
             $responseDelete->assertStatus(200);
             $responseDelete->assertJson(['message' => 'Tipos de curso eliminados correctamente']);
 
-
             $this->assertDatabaseMissing('course_types', ['uid' => $uid]);
-        }
-    }
 
-/**
- * @testdox Crear Recursos exitoso*/
-    public function testCreateResources()
-    {
-        $admin = UsersModel::factory()->create();
-        $roles_bd = UserRolesModel::get()->pluck('uid');
-        $roles_to_sync = [];
-        foreach ($roles_bd as $rol_uid) {
-            $roles_to_sync[] = [
-                'uid' => generate_uuid(),
-                'user_uid' => $admin->uid,
-                'user_role_uid' => $rol_uid
-            ];
-        }
+            // Eliminar varios Tipos de cursos
+            $courseTypes = CourseTypesModel::factory()->count(3)->create();
 
-        $admin->roles()->sync($roles_to_sync);
-        $this->actingAs($admin);
+            $uids=[];
 
-        if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
-            // Datos de prueba
-            $data = [
-                'name' => 'Recurso de Prueba',
-                'description' => 'Descripción del recurso',
-            ];
+            foreach($courseTypes as $type){
+                $uids[]=[
+                    $type->uid
+                ];
+            }
 
-            // Realiza la solicitud POST
-            $response = $this->postJson('/cataloging/educational_resources_types/save_educational_resource_type', $data);
-
-            // Verifica la respuesta
-            $response->assertStatus(200)
-                ->assertJson([
-                    'message' => 'Tipo de recurso educativo añadido correctamente',
-                ]);
-
-            // Verifica que el recurso fue creado en la base de datos
-            $this->assertDatabaseHas('educational_resource_types', [
-                'name' => 'Recurso de Prueba',
-                'description' => 'Descripción del recurso',
+            $responseDelete = $this->deleteJson('/cataloging/course_types/delete_course_types', [
+                'uids' => $uids,
             ]);
-        }
-    }
-
-/**
- * @test Validación de campos requeridos en recurso educativo*/
-    public function testValidatesRequiredfields()
-    {
-        // Datos de prueba incompletos
-        $data = [
-            'name' => '', // Campo requerido
-        ];
-
-        // Realizar la solicitud POST
-        $response = $this->postJson('/cataloging/educational_resources_types/save_educational_resource_type', $data);
-
-        // Verificar la respuesta
-        $response->assertStatus(422)
-            ->assertJsonStructure(['message', 'errors']);
-    }
-
-/**
- * @test  Actualiza recurso Educativo*/
-    public function testUpdatesResource()
-    {
-        $admin = UsersModel::factory()->create();
-        $roles_bd = UserRolesModel::get()->pluck('uid');
-        $roles_to_sync = [];
-        foreach ($roles_bd as $rol_uid) {
-            $roles_to_sync[] = [
-                'uid' => generate_uuid(),
-                'user_uid' => $admin->uid,
-                'user_role_uid' => $rol_uid
-            ];
-        }
-
-        $admin->roles()->sync($roles_to_sync);
-        $this->actingAs($admin);
-
-        if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
-            $uidResource = generate_uuid();
-            $response = $this->postJson('/cataloging/educational_resources_types/save_educational_resource_type', [
-                'uid' => $uidResource,
-                'name' => 'Nuevo recurso educativo',
-                'description' => 'Descripción del recurso educativo',
-
-            ]);
-
-            // Verifica queel recurso se haya creado correctamente
-            $response->assertStatus(200)
-                ->assertJson(['message' => 'Tipo de recurso educativo añadido correctamente']);
-
-            // Obtiene el uid del recurso recién creada
-            $this->assertNotNull($uidResource, 'Tipo de recurso educativo no se creó correctamente.');
-
-
-            // Actualiza el recurso
-            $data = [
-                'name' => 'Tipo de curso actualizado',
-                'description' => 'Descripción actualizada del tipo de curso',
-            ];
-
-            $response = $this->postJson('/cataloging/educational_resources_types/save_educational_resource_type', $data);
-
-            // Respuesta que el recurso se haya actualizado correctamente
-            $response->assertStatus(200);
-        }
-    }
-
-/**
- * @testdox Elimina recurso educativo */
-    public function testDeleteResource()
-    {
-        $admin = UsersModel::factory()->create();
-        $roles_bd = UserRolesModel::get()->pluck('uid');
-        $roles_to_sync = [];
-        foreach ($roles_bd as $rol_uid) {
-            $roles_to_sync[] = [
-                'uid' => generate_uuid(),
-                'user_uid' => $admin->uid,
-                'user_role_uid' => $rol_uid
-            ];
-        }
-
-        $admin->roles()->sync($roles_to_sync);
-        $this->actingAs($admin);
-
-        if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
-
-            $uidResource = generate_uuid();
-            $response = $this->postJson('/cataloging/course_types/save_course_type', [
-                'uid' => $uidResource,
-                'name' => 'Recurso',
-                'description' => 'Descripción Recurso',
-
-            ]);
-
-            $response->assertStatus(200);
-
-            // Realiza la solicitud DELETE
-            $responseDelete = $this->deleteJson('/cataloging/educational_resources_types/delete_educational_resource_types', [
-                'uids' => [$uidResource],
-            ]);
-
+            // Verifica que la respuesta sea correcta
             $responseDelete->assertStatus(200);
-            $responseDelete->assertJson(['message' => 'Tipos de recurso educativo eliminados correctamente']);
 
-            $this->assertDatabaseMissing('educational_resource_types', ['uid' => $uidResource]);
         }
     }
 
+    /**
+     * @testdox Elimina Tipos de cursos */
+    public function testDeleteCourseTypeWithError406()
+    {
+        $admin = UsersModel::factory()->create();
+        
+        $roles_bd = UserRolesModel::get()->pluck('uid');
+        $roles_to_sync = [];
+        foreach ($roles_bd as $rol_uid) {
+            $roles_to_sync[] = [
+                'uid' => generate_uuid(),
+                'user_uid' => $admin->uid,
+                'user_role_uid' => $rol_uid
+            ];
+        }
+        $admin->roles()->sync($roles_to_sync);
+        $this->actingAs($admin);
 
+        if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
+
+            $courseType = CourseTypesModel::factory()->create();
+
+            CoursesModel::factory()->withCourseStatus()->create(
+                [
+                    'course_type_uid'=> $courseType->uid
+                ]
+            );
+            // Realiza la solicitud DELETE
+            $responseDelete = $this->deleteJson('/cataloging/course_types/delete_course_types', [
+                'uids' => [$courseType->uid],
+            ]);
+
+            // Verifica que la respuesta sea correcta
+            $responseDelete->assertStatus(406);
+            $responseDelete->assertJson(['message' => 'No se pueden eliminar los tipos de curso porque están asociados a cursos']);
+
+        }
+    }
+
+    
 }
-

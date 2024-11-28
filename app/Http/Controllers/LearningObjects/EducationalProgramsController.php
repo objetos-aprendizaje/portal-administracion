@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Logs\LogsController;
 use App\Jobs\SendChangeStatusEducationalProgramNotification;
 use App\Jobs\SendEducationalProgramNotificationToManagements;
+use App\Models\AutomaticNotificationTypesModel;
 use App\Models\EducationalProgramTagsModel;
 use App\Models\CategoriesModel;
 use App\Models\CourseStatusesModel;
@@ -30,11 +31,19 @@ use League\Csv\Reader;
 use App\Models\EducationalProgramEmailContactsModel;
 use App\Models\EducationalProgramsPaymentTermsModel;
 use App\Rules\NifNie;
+use App\Services\CertidigitalService;
 use App\Services\KafkaService;
 use Illuminate\Support\Facades\Auth;
 
 class EducationalProgramsController extends BaseController
 {
+    protected $certidigitalService;
+
+    public function __construct(CertidigitalService $certidigitalService)
+    {
+        $this->certidigitalService = $certidigitalService;
+    }
+
     public function index()
     {
 
@@ -113,6 +122,13 @@ class EducationalProgramsController extends BaseController
         adaptDatesModel($data, $dates, true);
 
         return response()->json($data, 200);
+    }
+
+    public function sendCredentials(Request $request)
+    {
+        $educationalProgramUid = $request->input('educational_program_uid');
+        $this->certidigitalService->emissionsCredentialEducationalProgram($educationalProgramUid);
+        return response()->json(['message' => 'Se han enviado las credenciales correctamente'], 200);
     }
 
     // En función de la acción y del estado actual del curso, se establece el nuevo estado
@@ -256,6 +272,8 @@ class EducationalProgramsController extends BaseController
 
                 $this->sendNotificationCoursesAcceptedPublicationToKafka($courses);
             }
+
+            $this->certidigitalService->createUpdateEducationalProgramCredential($educational_program->uid);
 
             $this->logAction($isNew, $educational_program->name);
         });
@@ -471,10 +489,11 @@ class EducationalProgramsController extends BaseController
         $fields = $baseFields;
 
         if ($validateStudentsRegistrations) {
-            $fields = array_merge($fields, $conditionalFieldsDates, $conditionalRestFields);
+            $fields = array_merge($fields, $conditionalRestFields);
         }
 
-        if ($cost && $cost > 0 && $validateStudentsRegistrations == "SINGLE_PAYMENT") {
+        $paymentMode = $request->input('payment_mode');
+        if (($cost && $cost > 0 && $paymentMode == 'SINGLE_PAYMENT') || $validateStudentsRegistrations) {
             $fields = array_merge($fields, $conditionalFieldsDates, $conditionalFieldsGeneral);
         }
 
@@ -807,9 +826,9 @@ class EducationalProgramsController extends BaseController
 
     public function getEducationalProgram($educational_program_uid)
     {
-        if (!$educational_program_uid) {
-            return response()->json(['message' => env('ERROR_MESSAGE')], 400);
-        }
+        // if (!$educational_program_uid) {
+        //     return response()->json(['message' => env('ERROR_MESSAGE')], 400);
+        // }
 
         $educational_program = EducationalProgramsModel::where('uid', $educational_program_uid)->with(['courses', 'status', 'tags', 'categories', 'EducationalProgramDocuments', 'contact_emails', 'paymentTerms'])->first();
 
@@ -905,7 +924,7 @@ class EducationalProgramsController extends BaseController
 
         $educational_program_bd->save();
 
-        if($changeEducationalProgramStatus['status'] == 'ACCEPTED_PUBLICATION') {
+        if ($changeEducationalProgramStatus['status'] == 'ACCEPTED_PUBLICATION') {
             $this->sendNotificationCoursesAcceptedPublicationToKafka($educational_program_bd->courses);
         }
     }
@@ -981,7 +1000,6 @@ class EducationalProgramsController extends BaseController
             $enroll->uid = generate_uuid();
             $enroll->educational_program_uid = $request->get('EducationalProgramUid');
             $enroll->user_uid = $user;
-            $enroll->calification_type = "NUMERIC";
             $enroll->acceptance_status = 'PENDING';
             $messageLog = "Alumno añadido a programa formativo";
 
@@ -1042,6 +1060,8 @@ class EducationalProgramsController extends BaseController
 
         $generalNotificationAutomatic->entity = "educational_program";
         $generalNotificationAutomatic->entity_uid = $educationalProgram->uid;
+        $automaticNotificationType = AutomaticNotificationTypesModel::where('code', 'EDUCATIONAL_PROGRAMS_ENROLLMENT_COMMUNICATIONS')->first();
+        $generalNotificationAutomatic->automatic_notification_type_uid = $automaticNotificationType->uid;
         $generalNotificationAutomatic->created_at = now();
         $generalNotificationAutomatic->save();
 
@@ -1139,7 +1159,6 @@ class EducationalProgramsController extends BaseController
             $enroll->uid = generate_uuid();
             $enroll->educational_program_uid = $educational_program_uid;
             $enroll->user_uid = $user_uid;
-            $enroll->calification_type = "NUMERIC";
             $enroll->acceptance_status = 'PENDING';
             $messageLog = "Alumno añadido a programa formativo";
 
@@ -1192,6 +1211,8 @@ class EducationalProgramsController extends BaseController
 
         if ($action == "edition") {
             $new_educational_program->educational_program_origin_uid = $educational_program_uid;
+        } else {
+            $new_educational_program->educational_program_origin_uid = null;
         }
 
         $introduction_status = EducationalProgramStatusesModel::where('code', 'INTRODUCTION')->first();

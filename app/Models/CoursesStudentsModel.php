@@ -13,7 +13,18 @@ class CoursesStudentsModel extends Model
 
     protected $keyType = 'string';
 
-    protected $fillable = ['uid', 'course_uid', 'user_uid', 'credential', 'status', 'acceptance_status', 'emissions_block_id', 'emissions_block_uuid'];
+    protected $fillable = [
+        'uid',
+        'course_uid',
+        'user_uid',
+        'credential',
+        'status',
+        'acceptance_status',
+        'emissions_block_id',
+        'emissions_block_uuid',
+        'credential_sent',
+        'credential_sealed'
+    ];
 
     public function course()
     {

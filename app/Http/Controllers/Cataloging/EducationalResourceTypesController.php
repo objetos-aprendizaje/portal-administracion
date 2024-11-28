@@ -85,13 +85,13 @@ class EducationalResourceTypesController extends BaseController
 
     /**
      * Obtiene un tipo de recurso educativo por uid
-     */
+     */   
     public function getEducationalResourceType($educational_resource_type_uid)
     {
 
-        if (!$educational_resource_type_uid) {
-            return response()->json(['message' => env('ERROR_MESSAGE')], 400);
-        }
+        // if (!$educational_resource_type_uid) {
+        //     return response()->json(['message' => env('ERROR_MESSAGE')], 400);
+        // }
 
         $educational_resource_type = EducationalResourceTypesModel::where('uid', $educational_resource_type_uid)->first();
 

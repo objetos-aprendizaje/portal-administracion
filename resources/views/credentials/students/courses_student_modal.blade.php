@@ -20,6 +20,18 @@
 
             <div class="table-control-header">
                 @include('partials.table-search', ['table' => 'courses-student-table'])
+                <div class="flex gap-1">
+
+                    <button id="emit-credentials-btn" type="button" class="btn-icon" title="Emitir credenciales"
+                        data-course-uid="">{{ e_heroicon('arrow-path-rounded-square', 'outline') }}</button>
+
+                    <button id="send-credentials-btn" type="button" class="btn-icon" title="Enviar credenciales"
+                        data-course-uid="">{{ e_heroicon('paper-airplane', 'outline') }}</button>
+
+                    <button id="seal-credentials-btn" type="button" class="btn-icon" title="Sellar credenciales"
+                        data-course-uid="">{{ e_heroicon('check-badge', 'outline') }}</button>
+
+                </div>
             </div>
 
             <div class="table-container">
@@ -31,4 +43,5 @@
         </div>
     </div>
 
+    <input type="hidden" id="user-uid" value=""/>
 </div>

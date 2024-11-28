@@ -497,62 +497,6 @@ const columnsCoursesTable = [
             e.preventDefault();
             const btnArray = [
                 {
-                    icon: "user-group",
-                    type: "outline",
-                    tooltip: "Listado de alumnos del curso",
-                    action: (course) => {
-                        loadCourseStudentsModal(
-                            course.uid,
-                            course.validate_student_registrations
-                        );
-                    },
-                },
-                {
-                    icon: "document-duplicate",
-                    type: "outline",
-                    tooltip: "Duplicar curso",
-                    action: (course) => {
-                        showModalConfirmation(
-                            "¿Deseas duplicar esta edición?",
-                            "Se creará una nueva edición del curso con los mismos datos que la edición actual.",
-                            "duplicateCourse",
-                            [{ key: "course_uid", value: course.uid }]
-                        ).then((result) => {
-                            if (result) duplicateCourse(course.uid);
-                        });
-                    },
-                },
-                {
-                    icon: "folder-plus",
-                    type: "outline",
-                    tooltip: "Crear nueva edición a partir de este curso",
-                    action: (course) => {
-                        showModalConfirmation(
-                            "¿Deseas crear una nueva edición?",
-                            "Se creará una nueva edición del curso con los mismos datos que la edición actual.",
-                            "newEdition",
-                            [{ key: "course_uid", value: course.uid }]
-                        ).then((result) => {
-                            if (result) newEditionCourse(course.uid);
-                        });
-                    },
-                },
-                {
-                    icon: "document-arrow-up",
-                    type: "outline",
-                    tooltip: "Envío de credenciales",
-                    action: (course) => {
-                        showModalConfirmation(
-                            "Envío de credenciales",
-                            "¿Deseas enviar las credenciales a todos los usuarios que hayan finalizado?",
-                            "sendCredentials",
-                            [{ key: "course_uid", value: course.uid }]
-                        ).then((result) => {
-                            if (result) sendCredentialsCourse(course.uid);
-                        });
-                    },
-                },
-                {
                     icon: "academic-cap",
                     type: "outline",
                     tooltip: "Calificaciones",
@@ -561,6 +505,68 @@ const columnsCoursesTable = [
                     },
                 },
             ];
+
+            const cellData = cell.getRow().getData();
+            if (!cellData.belongs_to_educational_program) {
+                btnArray.push(
+                    {
+                        icon: "document-arrow-up",
+                        type: "outline",
+                        tooltip: "Envío de credenciales",
+                        action: (course) => {
+                            showModalConfirmation(
+                                "Envío de credenciales",
+                                "¿Deseas enviar las credenciales a todos los usuarios que hayan finalizado?",
+                                "sendCredentials",
+                                [{ key: "course_uid", value: course.uid }]
+                            ).then((result) => {
+                                if (result) sendCredentialsCourse(course.uid);
+                            });
+                        },
+                    },
+                    {
+                        icon: "user-group",
+                        type: "outline",
+                        tooltip: "Listado de alumnos del curso",
+                        action: (course) => {
+                            loadCourseStudentsModal(
+                                course.uid,
+                                course.validate_student_registrations
+                            );
+                        },
+                    },
+                    {
+                        icon: "folder-plus",
+                        type: "outline",
+                        tooltip: "Crear nueva edición a partir de este curso",
+                        action: (course) => {
+                            showModalConfirmation(
+                                "¿Deseas crear una nueva edición?",
+                                "Se creará una nueva edición del curso con los mismos datos que la edición actual.",
+                                "newEdition",
+                                [{ key: "course_uid", value: course.uid }]
+                            ).then((result) => {
+                                if (result) newEditionCourse(course.uid);
+                            });
+                        },
+                    },
+                    {
+                        icon: "document-duplicate",
+                        type: "outline",
+                        tooltip: "Duplicar curso",
+                        action: (course) => {
+                            showModalConfirmation(
+                                "¿Deseas duplicar esta edición?",
+                                "Se creará una nueva edición del curso con los mismos datos que la edición actual.",
+                                "duplicateCourse",
+                                [{ key: "course_uid", value: course.uid }]
+                            ).then((result) => {
+                                if (result) duplicateCourse(course.uid);
+                            });
+                        },
+                    }
+                );
+            }
 
             setTimeout(() => {
                 moreOptionsBtn(cell, btnArray);
@@ -1062,7 +1068,7 @@ function initHandlers() {
         "btn-regenerate-embeddings"
     );
 
-    if(regenerateEmbeddingsBtn) {
+    if (regenerateEmbeddingsBtn) {
         regenerateEmbeddingsBtn.addEventListener("click", function () {
             showModalConfirmation(
                 "Regenerar embeddings",
@@ -2015,6 +2021,13 @@ function initializeCoursesTable() {
             },
         },
         {
+            label: `${heroicon("academic-cap")} Calificaciones`,
+            action: function (e, column) {
+                const courseClicked = column.getData();
+                loadCalificationsCourse(courseClicked.uid);
+            },
+        },
+        {
             label: `${heroicon("user-group")} Listado de alumnos`,
             action: function (e, column) {
                 const courseClicked = column.getData();
@@ -2022,6 +2035,10 @@ function initializeCoursesTable() {
                     courseClicked.uid,
                     courseClicked.validate_student_registrations
                 );
+            },
+            disabled: function (column) {
+                const dataColumn = column.getData();
+                return dataColumn.belongs_to_educational_program;
             },
         },
         {
@@ -2035,6 +2052,10 @@ function initializeCoursesTable() {
                 ).then((result) => {
                     if (result) duplicateCourse(courseClicked.uid);
                 });
+            },
+            disabled: function (column) {
+                const dataColumn = column.getData();
+                return dataColumn.belongs_to_educational_program;
             },
         },
         {
@@ -2051,24 +2072,25 @@ function initializeCoursesTable() {
                     if (result) newEditionCourse(courseClicked.uid);
                 });
             },
+            disabled: function (column) {
+                const dataColumn = column.getData();
+                return dataColumn.belongs_to_educational_program;
+            },
         },
         {
             label: `${heroicon("document-arrow-up")} Envío de credenciales`,
             action: function (e, column) {
                 showModalConfirmation(
                     "Envío de credenciales",
-                    "¿Estás seguro de que quieres enviar las credenciales a los estudiantes seleccionados?"
+                    "¿Estás seguro de que quieres enviar las credenciales a los estudiantes del curso seleccionado?"
                 ).then((result) => {
                     const courseClicked = column.getData();
                     if (result) sendCredentialsCourse(courseClicked.uid);
                 });
             },
-        },
-        {
-            label: `${heroicon("academic-cap")} Calificaciones`,
-            action: function (e, column) {
-                const courseClicked = column.getData();
-                loadCalificationsCourse(courseClicked.uid);
+            disabled: function (column) {
+                const dataColumn = column.getData();
+                return dataColumn.belongs_to_educational_program;
             },
         },
     ];
@@ -2239,7 +2261,7 @@ function initializeCalificationsCourseTable(courseUid) {
                     last_name: r.last_name,
                     block: null,
                     learning_result: null,
-                    calification: r.course_student_info.calification_info,
+                    calification: r.calification_info,
                     _children: [
                         ...response.courseBlocks.map((block) => {
                             return {
@@ -3740,7 +3762,6 @@ function toggleFormFieldsAccessibility(isDisabled) {
 function setFieldsNewEdition() {
     // Ponemos readonly estos campos
     const idsReadOnly = [
-        "title",
         "description",
         "contact_information",
         "min_required_students",
@@ -3756,6 +3777,8 @@ function setFieldsNewEdition() {
         "inscription_finish_date",
         "realization_start_date",
         "realization_finish_date",
+        "enrolling_start_date",
+        "enrolling_finish_date",
         "cost",
         "presentation_video_url",
         "lms_url",
