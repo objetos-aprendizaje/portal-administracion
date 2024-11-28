@@ -328,10 +328,15 @@ Route::middleware(['combined.auth'])->group(function () {
 
         Route::post('/learning_objects/educational_program/new_edition_educational_program', [EducationalProgramsController::class, 'newEditionEducationalProgram']);
 
+        Route::post('/learning_objects/educational_programs/send_credentials', [EducationalProgramsController::class, 'sendCredentials']);
 
         Route::get('/credentials/students', [StudentsCredentialsController::class, 'index'])->name('credentials-students');
         Route::get('/credentials/students/get_students', [StudentsCredentialsController::class, 'getStudents'])->name('credentials-get-students');
         Route::get('/credentials/students/get_courses_student/{student_uid}', [StudentsCredentialsController::class, 'getCoursesStudents'])->name('credentials-get-courses-student');
+        Route::post('/credentials/students/emit_credentials', [StudentsCredentialsController::class, 'emitCredentials'])->name('emit-credentials');
+        Route::post('/credentials/students/send_credentials', [StudentsCredentialsController::class, 'sendCredentials'])->name('send-credentials');
+        Route::post('/credentials/students/seal_credentials', [StudentsCredentialsController::class, 'sealCredentials'])->name('seal-credentials');
+
         Route::get('/credentials/teachers', [TeachersCredentialsController::class, 'index'])->name('credentials-teachers');
         Route::get('/credentials/teachers/get_teachers', [TeachersCredentialsController::class, 'getTeachers'])->name('credentials-get-teachers');
         Route::get('/credentials/teachers/get_courses_teacher/{teacher_uid}', [TeachersCredentialsController::class, 'getCoursesTeacher'])->name('credentials-get-courses-teacher');

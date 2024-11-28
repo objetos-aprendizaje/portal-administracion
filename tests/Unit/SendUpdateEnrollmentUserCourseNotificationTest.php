@@ -44,6 +44,7 @@ class SendUpdateEnrollmentUserCourseNotificationTest extends TestCase
         $user->coursesStudents()->attach($course->uid, [
             'acceptance_status' => 'ACCEPTED',
             'credential' => 'some_credential',
+            // 'status'=> "ACCEPTED",
             'uid' => $uid,
         ]);
 

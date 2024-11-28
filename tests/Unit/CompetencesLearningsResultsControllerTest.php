@@ -30,7 +30,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
     }
 
 
-/** @testdox Crear Marco de competencias */
+    /** @testdox Crear Marco de competencias */
 
     public function testCreateCompetence()
     {
@@ -187,6 +187,35 @@ class CompetencesLearningsResultsControllerTest extends TestCase
                 'competence_uid' => $competence->uid,
             ]);
         }
+    }
+
+    /**
+     * @test Verifica asociación de resultados de aprendizaje a competencias*/
+    public function testCreateLearningResultWithError422()
+    {
+
+        $admin = UsersModel::factory()->create();
+
+        $rol = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
+
+        $admin->roles()->attach($rol->uid, ['uid' => generate_uuid()]);
+
+        $this->actingAs($admin);
+
+        // Datos para crear un nuevo resultado de aprendizaje
+        $data = [
+            // 'name' => 'Nuevo Resultado de Aprendizaje',
+            'description' => 'Descripción del nuevo resultado de aprendizaje',
+        ];
+
+        // Realiza la solicitud para crear el resultado de aprendizaje
+        $response = $this->postJson('/cataloging/competences_learnings_results/save_learning_result', $data);
+
+        // Verifica la respuesta
+        $response->assertStatus(422);
+        $response->assertJson(['message' => 'El nombre es obligatorio.']);
+        // $response->assertJson(['message' => 'Algunos campos son incorrectos']);
+
     }
 
     /**
@@ -505,7 +534,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
         $user = UsersModel::factory()->create();
         $this->actingAs($user);
 
-        $competence= CompetencesModel::factory()->create()->first();
+        $competence = CompetencesModel::factory()->create()->first();
 
         // Crear un resultado de aprendizaje existente
         $learningResult = LearningResultsModel::factory()->create([
@@ -545,8 +574,5 @@ class CompetencesLearningsResultsControllerTest extends TestCase
 
         // Verifica que la respuesta tenga un código de estado 422
         $response->assertStatus(422);
-
-
     }
-
 }

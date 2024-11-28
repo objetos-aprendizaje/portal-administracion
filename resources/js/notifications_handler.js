@@ -98,6 +98,17 @@ function openNotificationAutomatic(notificationAutomatic) {
                 notificationAutomatic.entity_uid,
             label: "Ir al curso",
         },
+        CHANGE_STATUS_COURSE: {
+            url:
+                "/learning_objects/courses?uid=" +
+                notificationAutomatic.entity_uid,
+            label: "Ir al curso",
+        },
+        NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS_MANAGEMENTS:
+        {
+            url: "/learning_objects/educational_resources",
+            label: "Ir a los recursos",
+        },
         NEW_COURSES_NOTIFICATIONS_MANAGEMENTS: {
             url: "/learning_objects/courses",
             label: "Ir a los cursos",
@@ -109,7 +120,7 @@ function openNotificationAutomatic(notificationAutomatic) {
         CHANGE_STATUS_EDUCATIONAL_PROGRAM: {
             url: "/learning_objects/educational_programs",
             label: "Ir a los programas",
-        }
+        },
     };
 
     const config = notificationConfig[code];

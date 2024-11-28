@@ -14,6 +14,7 @@ use App\Models\EducationalResourcesModel;
 use Illuminate\Support\Facades\Validator;
 use App\Exceptions\OperationFailedException;
 use App\Http\Controllers\Logs\LogsController;
+use App\Jobs\SendEducationalResourceNotificationToManagements;
 use App\Models\EducationalResourcesTagsModel;
 use App\Models\EducationalResourceTypesModel;
 use App\Models\AutomaticNotificationTypesModel;
@@ -133,9 +134,9 @@ class EducationalResourcesController extends BaseController
     public function getResource($resource_uid)
     {
 
-        if (!$resource_uid) {
-            return response()->json(['message' => env('ERROR_MESSAGE')], 400);
-        }
+        // if (!$resource_uid) {
+        //     return response()->json(['message' => env('ERROR_MESSAGE')], 400);
+        // }
 
         $resource = EducationalResourcesModel::where('uid', $resource_uid)->with([
             "creatorUser",
@@ -182,21 +183,27 @@ class EducationalResourcesController extends BaseController
 
         if ($isNew) {
             $new_resource_status = $this->getStatusResource($action);
-            if ($new_resource_status) $resource->status_uid = $new_resource_status->uid;
         } else {
             $actual_status_course = $resource->status['code'];
             $new_resource_status = $this->getStatusResource($action, $actual_status_course);
-            if ($new_resource_status) $resource->status_uid = $new_resource_status->uid;
         }
 
         $resource->license_type_uid = $request->input('license_type_uid');
 
-        return DB::transaction(function () use ($request, $resource, $isNew) {
+        return DB::transaction(function () use ($request, $resource, $isNew, $new_resource_status) {
             $embeddings = $this->generateResourceEmbeddings($request, $resource);
 
             $this->handleResourceImage($request, $resource);
             $this->fillResourceDetails($request, $resource);
             $this->handleResourceWay($request, $resource);
+
+            if ($new_resource_status) {
+                $resource->status_uid = $new_resource_status->uid;
+                if ($new_resource_status->code == "PENDING_APPROVAL") {
+                    dispatch(new SendEducationalResourceNotificationToManagements($resource->toArray()));
+                }
+            }
+
             $resource->save();
 
             if ($embeddings) {
@@ -354,12 +361,12 @@ class EducationalResourcesController extends BaseController
     // Si el gestor ha definido de forma global o a este usuario específico que se le aprueben automáticamente los recursos
     function checkAutomaticApproval()
     {
-        // Comprobamos si está de forma global
-        if (app('general_options')['necessary_approval_resources'] == 0) return true;
-
         // Comprobamos si está de forma específica
         $teacherApproved = AutomaticResourceAprovalUsersModel::where('user_uid', auth()->user()->uid)->exists();
         if ($teacherApproved) return true;
+
+        // Comprobamos si está de forma global
+        if (app('general_options')['necessary_approval_resources']) return true;
 
         return false;
     }
@@ -564,12 +571,12 @@ class EducationalResourcesController extends BaseController
             // Encuentra la intersección de las categorías del usuario y las categorías del recurso
             $commonCategories = $userCategoryUids->intersect($resourceCategoryUids);
             // Si hay categorías en común, el usuario debe ser incluido en el filtro
-            return !$commonCategories->isEmpty() && !$user->automaticGeneralNotificationsTypesDisabled->contains('code', 'NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS');
+            return !$commonCategories->isEmpty() && !$user->automaticGeneralNotificationsTypesDisabled->contains('code', 'NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS_MANAGEMENTS');
         });
 
         //Todo: se agregó esto ya que el campo automatic_notification_type_uid es obligatorio si no da error 500,
         //Todo solo se hizo para poder correr la prueba unitaria
-        $type = AutomaticNotificationTypesModel::where('code', 'NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS')->first();
+        $type = AutomaticNotificationTypesModel::where('code', 'NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS_MANAGEMENTS')->first();
         $generalNotificationAutomaticUid = generate_uuid();
         $generalAutomaticNotification = new GeneralNotificationsAutomaticModel();
         $generalAutomaticNotification->uid = $generalNotificationAutomaticUid;

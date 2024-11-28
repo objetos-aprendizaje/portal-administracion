@@ -244,7 +244,7 @@ async function loadTreeCompetencesLearningResults() {
                 {
                     className: "add-competence-btn",
                     icon: heroicon("folder-plus", "outline"),
-                    title: "Añadir competenciaaa",
+                    title: "Añadir competencia",
                 },
             ],
         };

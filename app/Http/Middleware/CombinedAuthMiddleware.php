@@ -112,6 +112,12 @@ class CombinedAuthMiddleware
             })
             ->where('start_date', '<=', now())
             ->where('end_date', '>=', now())
+            // Exclusión de notificaciones deshabilitadas por el usuario
+            ->whereNotIn('notification_type_uid', function ($query) use ($user_uid) {
+                $query->select('notification_type_uid')
+                    ->from('user_general_notification_types_disabled')
+                    ->where('user_general_notification_types_disabled.user_uid', $user_uid);
+            })
             ->select([
                 'general_notifications.uid as uid',
                 'general_notifications.title as title',

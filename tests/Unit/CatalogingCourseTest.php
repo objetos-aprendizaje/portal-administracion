@@ -36,35 +36,35 @@ class CatalogingCourseTest extends TestCase
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
     }
 
-/**
- * @test Index View Tipo de Curso
-*/
+    /**
+     * @test Index View Tipo de Curso
+     */
     public function testIndexViewCourseTypesWithAccess()
     {
         $user = UsersModel::factory()->create()->latest()->first();
-         $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]);// Crea roles de prueba
-         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
-         // Autenticar al usuario
-         Auth::login($user);
+        // Autenticar al usuario
+        Auth::login($user);
 
-         // Compartir la variable de roles manualmente con la vista
-         View::share('roles', $roles);
+        // Compartir la variable de roles manualmente con la vista
+        View::share('roles', $roles);
 
-         // Configura el mock de general_options con la clave correcta
-         $generalOptionsMock = [
+        // Configura el mock de general_options con la clave correcta
+        $generalOptionsMock = [
             'managers_can_manage_course_types' => true,
         ];
         // Asignar el mock a app('general_options')
         App::instance('general_options', $generalOptionsMock);
 
-         // Simula datos de TooltipTextsModel
-         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
-         View::share('tooltip_texts', $tooltip_texts);
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
 
-         // Simula notificaciones no leídas
-         $unread_notifications = $user->notifications->where('read_at', null);
-         View::share('unread_notifications', $unread_notifications);
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
 
         // Crear algunos tipos de curso de ejemplo
         CourseTypesModel::factory()->count(3)->create();
@@ -85,7 +85,7 @@ class CatalogingCourseTest extends TestCase
 
     /**
      * @test Index View Tipo de Curso usuario sin acceso
-    */
+     */
     public function testIndexViewCourseTypesWithoutAccess()
     {
         // Crear un usuario de prueba
@@ -119,12 +119,11 @@ class CatalogingCourseTest extends TestCase
 
         $response = $this->get('/cataloging/course_types');
 
-            // Verificar que la respuesta es la vista de acceso denegado
-            $response->assertStatus(200);
-            $response->assertViewIs('access_not_allowed');
-            $response->assertViewHas('title', 'No tienes permiso para administrar los tipos de cursos');
-            $response->assertViewHas('description', 'El administrador ha bloqueado la administración de tipos de cursos a los gestores.');
-
+        // Verificar que la respuesta es la vista de acceso denegado
+        $response->assertStatus(200);
+        $response->assertViewIs('access_not_allowed');
+        $response->assertViewHas('title', 'No tienes permiso para administrar los tipos de cursos');
+        $response->assertViewHas('description', 'El administrador ha bloqueado la administración de tipos de cursos a los gestores.');
     }
 
     /** @test */
@@ -132,7 +131,7 @@ class CatalogingCourseTest extends TestCase
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]); // Crea roles de prueba
         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
         // Autenticar al usuario
@@ -177,7 +176,7 @@ class CatalogingCourseTest extends TestCase
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]);// Crea roles de prueba
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]); // Crea roles de prueba
         $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
 
         // Autenticar al usuario
@@ -217,17 +216,24 @@ class CatalogingCourseTest extends TestCase
         $this->assertEquals('Mathematics', $sortedData[0]->name);
         $this->assertEquals('Physical', $sortedData[1]->name);
         $this->assertEquals('Science', $sortedData[2]->name);
-
     }
 
     /**
      * @test Import Esco Framework
-    */
-
+     */
     public function testImportEscoFramework()
     {
+        // Crear contenido simulado del archivo CSV
+        $csvContent = <<<CSV
+        column_0,column_1,column_2,column_3,column_4,column_5,column_6,column_7,column_8
+        code_0,Level 0,,,,,,,Description for Level 0
+        code_0,Level 0,code_1,Level 1,,,,,Description for Level 1
+        code_0,Level 0,code_1,Level 1,code_2,Level 2,,,,Description for Level 2
+        code_0,Level 0,code_1,Level 1,code_2,Level 2,code_3,Level 3,Description for Level 3
+        CSV;
+
         // Crear archivos de prueba
-        $skillsHierarchyFile = UploadedFile::fake()->create('skills_hierarchy.csv', 1);
+        $skillsHierarchyFile = UploadedFile::fake()->createWithContent('skills_hierarchy.csv', $csvContent);
         $skillsFile = UploadedFile::fake()->create('skills.csv', 1);
         $broaderRelationsSkillPillarFile = UploadedFile::fake()->create('broader_relations_skill_pillar.csv', 1);
 
@@ -240,12 +246,128 @@ class CatalogingCourseTest extends TestCase
 
         // Verificar que la respuesta sea correcta
         $response->assertStatus(200)
-                ->assertJson(['message' => 'Competencias y resultados de aprendizaje añadidos']);
+            ->assertJson(['message' => 'Competencias y resultados de aprendizaje añadidos']);
     }
 
+    // /**
+    //  * @test Import Esco Framework con Skills File
+    //  */
+    // public function testImportEscoFrameworkWithSkillsFile()
+    // {
+    //     // Crear contenido simulado para el archivo skills_hierarchy.csv
+    //     $skillsHierarchyContent = <<<CSV
+    //     column_0,column_1,column_2,column_3,column_4,column_5,column_6,column_7,column_8
+    //     code_0,Level 0,,,,,,,Description for Level 0
+    //     code_0,Level 0,code_1,Level 1,,,,,Description for Level 1
+    //     code_0,Level 0,code_1,Level 1,code_2,Level 2,,,,Description for Level 2
+    //     code_0,Level 0,code_1,Level 1,code_2,Level 2,code_3,Level 3,Description for Level 3
+    //     CSV;
+
+    //     // Crear contenido simulado para el archivo skills.csv
+    //     $skillsContent = <<<CSV
+    //     column_0,column_1,column_2,column_3,column_4,column_5,column_6,column_7,column_12
+    //     skill_code_0,Skill Name 0,,,,,,,,Skill Description 0
+    //     skill_code_1,Skill Name 1,,,,,,,,Skill Description 1
+    //     skill_code_2,Skill Name 2,,,,,,,,Skill Description 2
+    //     CSV;
+
+    //     // Crear contenido simulado para el archivo broader_relations_skill_pillar.csv
+    //     $broaderRelationsContent = <<<CSV
+    //     column_0,column_1,column_2,column_3
+    //     relation_code_0,skill_code_0,relation_name_0,competence_code_0
+    //     relation_code_1,skill_code_1,relation_name_1,competence_code_1
+    //     relation_code_2,skill_code_2,relation_name_2,competence_code_2
+    //     CSV;
+
+    //     // Crear archivos simulados
+    //     $skillsHierarchyFile = UploadedFile::fake()->createWithContent('skills_hierarchy.csv', $skillsHierarchyContent);
+    //     $skillsFile = UploadedFile::fake()->createWithContent('skills.csv', $skillsContent);
+    //     $broaderRelationsFile = UploadedFile::fake()->createWithContent('broader_relations_skill_pillar.csv', $broaderRelationsContent);
+
+    //     // Simular una solicitud POST a la ruta
+    //     $response = $this->postJson('/cataloging/competences_learnings_results/import_esco_framework', [
+    //         'skills_hierarchy_file' => $skillsHierarchyFile,
+    //         'skills_file' => $skillsFile,
+    //         'broader_relations_skill_pillar_file' => $broaderRelationsFile,
+    //     ]);
+
+    //     // Verificar que la respuesta sea correcta
+    //     $response->assertStatus(200)
+    //         ->assertJson(['message' => 'Competencias y resultados de aprendizaje añadidos']);
+    // }
+
     /**
-    * @test Import CSV Competencias Error Sin fichero
-    */
+     * @test Import Esco Framework con Skills y Competences
+     */
+    public function testImportEscoFrameworkWithSkillsAndCompetences()
+    {
+
+        CompetencesModel::factory()->create(
+            [
+                'origin_code'=>'origin_code_relation_1',
+            ]
+        );
+        
+        CompetencesModel::factory()->create(
+            [
+                'origin_code'=>'Skill Name 0',
+            ]
+        );
+
+        // Contenido para skills_hierarchy.csv
+        $skillsHierarchyContent = <<<CSV
+        column_0,column_1,column_2,column_3,column_4,column_5,column_6,column_7,column_8
+        code_0,Level 0,,,,,,,Description for Level 0
+        code_0,Level 0,code_1,Level 1,,,,,Description for Level 1
+        code_0,Level 0,code_1,Level 1,code_2,Level 2,,,,Description for Level 2
+        code_0,Level 0,code_1,Level 1,code_2,Level 2,code_3,Level 3,Description for Level 3
+        code_0,Level 0,code_1,Level 1,code_2,Level 2,code_3,Level 3,Description for Level 3
+        CSV;
+
+        // Contenido para skills.csv
+        $skillsContent = <<<CSV
+        column_0,column_1,column_2,column_3,column_4,column_5,column_6,column_7,column_8, column_9,column_10,column_11,column_12
+        skill_code_0,Skill Name 0,Skill Parent 0,,Skill Description 0,,,,,,,,Description012
+        skill_code_1,Skill Name 1,Skill Parent 1,,Skill Description 1,,,,,,,,Description112
+        skill_code_2,Skill Name 2,Skill Parent 2,,Skill Description 2,,,,,,,,Description212
+        skill_code_3,Skill Name 3,Skill Parent 3,,Skill Description 3,,,,,,,,Description312
+        skill_code_4,Skill Name 4,Skill Parent 4,,Skill Description 4,,,,,,,,Description412
+        CSV;
+
+        // Contenido para broader_relations_skill_pillar.csv
+        $broaderRelationsContent = <<<CSV
+        column_0,column_1,column_3,column_4
+        relation_code_0,Skill Name 0,competence_code_0,Skill Name 0
+        relation_code_1,Skill Name 1,competence_code_1,origin_code_relation_1
+        relation_code_2,Skill Name 2,competence_code_2,origin_code_relation_2
+        relation_code_3,Skill Name Nuevo,competence_code_3,Skill Name 3
+        relation_code_4,Otro,competence_code_4
+        CSV;
+
+        // Crear archivos simulados
+        $skillsHierarchyFile = UploadedFile::fake()->createWithContent('skills_hierarchy.csv', $skillsHierarchyContent);
+        $skillsFile = UploadedFile::fake()->createWithContent('skills.csv', $skillsContent);
+        $broaderRelationsFile = UploadedFile::fake()->createWithContent('broader_relations_skill_pillar.csv', $broaderRelationsContent);
+
+        // Simular una solicitud POST a la ruta
+        $response = $this->postJson('/cataloging/competences_learnings_results/import_esco_framework', [
+            'skills_hierarchy_file' => $skillsHierarchyFile,
+            'skills_file' => $skillsFile,
+            'broader_relations_skill_pillar_file' => $broaderRelationsFile,
+        ]);
+
+        // Validar la respuesta
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'Competencias y resultados de aprendizaje añadidos']);
+    }
+
+
+
+
+
+    /**
+     * @test Import CSV Competencias Error Sin fichero
+     */
     public function testImportCSVWithoutFile()
     {
         // Simular un request POST a la ruta sin el archivo
@@ -253,11 +375,11 @@ class CatalogingCourseTest extends TestCase
 
         // Verificar que la respuesta sea un error
         $response->assertStatus(422)
-                ->assertJson(['message' => 'No ha seleccionado ningún fichero']);
+            ->assertJson(['message' => 'No ha seleccionado ningún fichero']);
     }
     /**
-    * @test Import CSV Competencias Json Inválido
-    */
+     * @test Import CSV Competencias Json Inválido
+     */
 
     public function testImportCSVWithInvalidJson()
     {
@@ -278,22 +400,68 @@ class CatalogingCourseTest extends TestCase
     }
 
     /**
-    * @test Import Json Competencias fichero válido
-    */
+     * @test Import Json Competencias fichero válido
+     */
 
     public function testImportJsonWithValidFile()
     {
         // Crear un archivo
-    $jsonContent = json_encode([
-        ['name' => 'Competence 1', 'description' => 'Description 1'],
-        ['name' => 'Competence 2', 'description' => 'Description 2'],
-    ]);
+        $jsonContent = json_encode([
+            [
+                'name' => 'Competence 1',
+                'description' => 'Description 1',
+                'allsubcompetences' => [
+                    [
+                        'name' => 'Sub Competence 1',
+                        'description' => 'Sub Description 1',
+                    ],
+                ],
+                'all_subcompetences' => [
+                    [
+                        'name' => 'Sub Competence 1',
+                        'description' => 'Sub Description 1',
+                    ],
 
-    // Crear un archivo temporal para simular la carga del archivo
-    $file = UploadedFile::fake()->create('data.json', 0, null, true);
-    file_put_contents($file->getRealPath(), $jsonContent);
+                ],
+                'learning_results' =>[
+                    [
+                        'name' => 'Learning Result  ',
+                        'description' => 'Learning Result Description 1',
+                    ]
+                ]
+            ],
 
-    // Simular un request POST a la ruta
+            [
+                'name' => 'Competence 2',
+                'description' => 'Description 2',
+                'allsubcompetences' => [
+                    [
+                        'name' => 'Sub Competence 1',
+                        'description' => 'Sub Description 1',
+                    ],
+                ],
+                'all_subcompetences' => [
+                    [
+                        'name' => 'Sub Competence 1',
+                        'description' => 'Sub Description 1',
+                    ],
+
+                ],
+                'learning_results' =>[
+                    [
+                        'name' => 'Learning Result  ',
+                        'description' => 'Learning Result Description 1',
+                    ]
+                ]
+            ],
+
+        ]);
+
+        // Crear un archivo temporal para simular la carga del archivo
+        $file = UploadedFile::fake()->create('data.json', 0, null, true);
+        file_put_contents($file->getRealPath(), $jsonContent);
+
+        // Simular un request POST a la ruta
         try {
             $response = $this->postJson('/cataloging/import_csv', [
                 'data-json-import' => $file,
@@ -301,7 +469,7 @@ class CatalogingCourseTest extends TestCase
 
             // Verificar que la respuesta sea correcta
             $response->assertStatus(200)
-                    ->assertJson(['message' => 'Importación realizada']);
+                ->assertJson(['message' => 'Importación realizada']);
         } catch (\Exception $e) {
             // Verificar que la respuesta contenga el mensaje de error esperado
             $response = $this->postJson('/cataloging/import_csv', [
@@ -309,14 +477,14 @@ class CatalogingCourseTest extends TestCase
             ]);
 
             $response->assertStatus(500)
-                    ->assertJsonStructure(['error']);
+                ->assertJsonStructure(['error']);
         }
     }
 
     /*  Group certificación*/
     /**
-    * @test Guarda Tipo de Certificación
-    */
+     * @test Guarda Tipo de Certificación
+     */
     public function testSaveCertificationTypeWithValidData()
     {
         $admin = UsersModel::factory()->create();
@@ -349,13 +517,13 @@ class CatalogingCourseTest extends TestCase
 
             // Verificar que la respuesta sea correcta
             $response->assertStatus(200)
-                    ->assertJsonStructure(['message', 'certification_types']);
+                ->assertJsonStructure(['message', 'certification_types']);
         }
     }
 
     /**
-    * @test Guarda Tipo de Certificación
-    */
+     * @test Guarda Tipo de Certificación
+     */
     public function testUpdateCertificationType()
     {
         $admin = UsersModel::factory()->create();
@@ -380,7 +548,7 @@ class CatalogingCourseTest extends TestCase
 
             $cert = CertificationTypesModel::factory()->create(
                 [
-                    'category_uid'=> $category->uid
+                    'category_uid' => $category->uid
                 ]
             );
 
@@ -394,14 +562,13 @@ class CatalogingCourseTest extends TestCase
 
             // Verificar que la respuesta sea correcta
             $response->assertStatus(200);
-                   
         }
     }
 
     /*  Group certificación*/
     /**
-    * @test Guarda Tipo de Certificación
-    */
+     * @test Guarda Tipo de Certificación
+     */
     public function testSaveCertificationTypeWithInValidData()
     {
         $admin = UsersModel::factory()->create();
@@ -425,21 +592,20 @@ class CatalogingCourseTest extends TestCase
             $this->assertDatabaseHas('categories', ['uid' => $category->uid]);
 
             // request POST a la ruta con datos válidos
-            $response = $this->postJson('/cataloging/certification_types/save_certification_type', [               
-                
+            $response = $this->postJson('/cataloging/certification_types/save_certification_type', [
+
                 'description' => 'Description',
                 'category_uid' => $category->uid
             ]);
 
             // Verificar que la respuesta sea correcta
             $response->assertStatus(422);
-                  
         }
     }
 
     /**
-    * @test Elimina Tipo de Certificación
-    */
+     * @test Elimina Tipo de Certificación
+     */
     public function testDeleteCertificationTypes()
     {
         $admin = UsersModel::factory()->create();
@@ -482,7 +648,7 @@ class CatalogingCourseTest extends TestCase
 
             // Verificar que la respuesta sea correcta
             $response->assertStatus(200)
-                    ->assertJsonStructure(['message', 'certification_types']);
+                ->assertJsonStructure(['message', 'certification_types']);
 
             // Verificar que los tipos de certificación se hayan eliminado
             $this->assertDatabaseMissing('certification_types', ['uid' => $certificationType1->uid]);
@@ -491,8 +657,8 @@ class CatalogingCourseTest extends TestCase
     }
 
     /**
-    * @test Guarda Tipo de programas educacional
-    */
+     * @test Guarda Tipo de programas educacional
+     */
 
     public function testSaveEducationalProgramTypeWithValidData()
     {
@@ -519,8 +685,7 @@ class CatalogingCourseTest extends TestCase
             // Simular un request POST a la ruta con datos válidos
             // Generar un nombre único
             $uniqueName = 'Educational Program Type ' . Str::random(10);
-            $response = $this->postJson('/cataloging/educational_program_types/save_educational_program_type', [
-                'uid' => $educational->uid,
+            $response = $this->postJson('/cataloging/educational_program_types/save_educational_program_type', [                
                 'name' => $uniqueName,
                 'description' => $educational->description,
                 'managers_can_emit_credentials' => $educational->managers_can_emit_credentials,
@@ -529,14 +694,29 @@ class CatalogingCourseTest extends TestCase
 
             // Verificar que la respuesta sea correcta
             $response->assertStatus(200)
-                    ->assertJsonStructure(['message', 'educational_program_types'])
-                    ->assertJson(['message' => 'Tipo de programa formativo añadido correctamente']);
+                ->assertJsonStructure(['message', 'educational_program_types'])
+                ->assertJson(['message' => 'Tipo de programa formativo añadido correctamente']);
+
+            // Actualizar  Educational Program Type
+            $response = $this->postJson('/cataloging/educational_program_types/save_educational_program_type', [
+                    'educational_program_type_uid' => $educational->uid,
+                    'name' => 'Nombre Editado',
+                    'description' => $educational->description,
+                    'managers_can_emit_credentials' => $educational->managers_can_emit_credentials,
+                    'teachers_can_emit_credentials' => $educational->teachers_can_emit_credentials,
+            ]);     
+
+            // Verificar que la respuesta sea correcta
+            $response->assertStatus(200)
+            ->assertJson(['message' => 'Tipo de programa formativo actualizado correctamente']); 
+
+            
         }
     }
 
     /**
-    * @test Guarda Tipo de programas educacional Error nombre en uso
-    */
+     * @test Guarda Tipo de programas educacional Error nombre en uso
+     */
 
     public function testSaveEducationalProgramTypeNameInUse()
     {
@@ -570,13 +750,13 @@ class CatalogingCourseTest extends TestCase
 
             // Verificar que la respuesta sea correcta
             $response->assertStatus(422)
-                    ->assertJson(['message' => 'Algunos campos son incorrectos']);
+                ->assertJson(['message' => 'Algunos campos son incorrectos']);
         }
     }
 
-/**
-* @test Elimina Tipo de programas educacional
-*/
+    /**
+     * @test Elimina Tipo de programas educacional
+     */
     public function testDeleteEducationalProgramTypesSuccessfully()
     {
         $admin = UsersModel::factory()->create();
@@ -595,7 +775,7 @@ class CatalogingCourseTest extends TestCase
 
         if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
             $programType1 = EducationalProgramTypesModel::factory()->create()->first();
-                $this->assertDatabaseHas('educational_program_types', ['uid' => $programType1->uid]);
+            $this->assertDatabaseHas('educational_program_types', ['uid' => $programType1->uid]);
 
             // Simular un request DELETE a la ruta con los UIDs de los tipos a eliminar
             $response = $this->deleteJson('/cataloging/educational_program_types/delete_educational_program_types', [
@@ -604,18 +784,17 @@ class CatalogingCourseTest extends TestCase
 
             // Verificar que la respuesta sea correcta
             $response->assertStatus(200)
-                    ->assertJsonStructure(['message', 'educational_program_types'])
-                    ->assertJson(['message' => 'Tipos de programa formativo eliminados correctamente']);
+                ->assertJsonStructure(['message', 'educational_program_types'])
+                ->assertJson(['message' => 'Tipos de programa formativo eliminados correctamente']);
 
             // Verificar que los tipos de programa educativo se hayan eliminado
             $this->assertDatabaseMissing('educational_program_types', ['uid' => $programType1->uid]);
-
         }
     }
 
-/**
-* @test Obtiene todos los tipos de Programas educacionales
-*/
+    /**
+     * @test Obtiene todos los tipos de Programas educacionales
+     */
     public function testGetEducationalProgramTypesReturnsJson()
     {
         // Crear algunos registros de tipo de programa educativo
@@ -640,9 +819,9 @@ class CatalogingCourseTest extends TestCase
         ]);
     }
 
-/**
-* @test Obtiene la búsqueda de un Tipo de Programa Educacional
-*/
+    /**
+     * @test Obtiene la búsqueda de un Tipo de Programa Educacional
+     */
     public function testGetEducationalProgramTypesWithSearch()
     {
         // Crear registros de tipo de programa educativo
@@ -658,9 +837,9 @@ class CatalogingCourseTest extends TestCase
         $response->assertJsonFragment(['name' => 'Mathematics']);
     }
 
-/**
-* @test Obtiene listado tipo de Programas educacionales ordenados
-*/
+    /**
+     * @test Obtiene listado tipo de Programas educacionales ordenados
+     */
     public function testGetEducationalProgramTypesWithSorting()
     {
         // Crear registros de tipo de programa educativo
@@ -671,12 +850,11 @@ class CatalogingCourseTest extends TestCase
         $response = $this->get('/cataloging/educational_program_types/get_list_educational_program_types?sort[0][field]=name&sort[0][dir]=asc');
 
         $response->assertStatus(200);
-
     }
 
-/**
-* @test Obtiene un tipo de programa educativo por uid
-*/
+    /**
+     * @test Obtiene un tipo de programa educativo por uid
+     */
     public function testGetEducationalProgramTypeUid()
     {
         $admin = UsersModel::factory()->create();
@@ -709,9 +887,9 @@ class CatalogingCourseTest extends TestCase
         }
     }
 
-/**
-* @test Obtiene Error si tipo de programa educativo no existe
-*/
+    /**
+     * @test Obtiene Error si tipo de programa educativo no existe
+     */
     public function testGetEducationalProgramTypeNotFound()
     {
         // Hacer una solicitud GET a la ruta con un uid que no existe
@@ -726,8 +904,8 @@ class CatalogingCourseTest extends TestCase
     }
 
 
-/**
-* @test Lista de tipos de cursos */
+    /**
+     * @test Lista de tipos de cursos */
     public function testGetListCourseTypesWithoutSearch()
     {
         $user = UsersModel::factory()->create();
@@ -737,7 +915,7 @@ class CatalogingCourseTest extends TestCase
         $this->assertDatabaseHas('course_types', ['uid' => $coueseType1->uid]);
 
 
-        $data=[
+        $data = [
             'uid' => $coueseType1->uid,
             'name' => $coueseType1->name,
             'created_at' => $coueseType1->created_at,
@@ -746,17 +924,17 @@ class CatalogingCourseTest extends TestCase
 
 
         // Simular un request GET a la ruta sin parámetros de búsqueda
-        $response = $this->getJson('/cataloging/course_types/get_list_course_types',$data);
+        $response = $this->getJson('/cataloging/course_types/get_list_course_types', $data);
 
         // Verificar que la respuesta sea correcta
         $response->assertStatus(200)
-                ->assertJsonStructure(['data', 'current_page', 'last_page', 'per_page', 'total'])
-                ->assertJsonCount(1, 'data'); // Verificar que se devuelven 2 tipos de curso
+            ->assertJsonStructure(['data', 'current_page', 'last_page', 'per_page', 'total'])
+            ->assertJsonCount(1, 'data'); // Verificar que se devuelven 2 tipos de curso
     }
 
-/**
-* @test Exporta CSV Competencias
-*/
+    /**
+     * @test Exporta CSV Competencias
+     */
     public function testExportCsv()
     {
 
@@ -789,19 +967,16 @@ class CatalogingCourseTest extends TestCase
 
         // Verificar que la respuesta sea correcta
         $response->assertStatus(200)
-                ->assertJsonStructure([
-                    '*' => [
-                        'uid',
-                        'name',
-                        'description',
-                        'parent_competence_uid',
-                        'allsubcompetences',
-                    ],
-                ])
-                ->assertJsonCount(2) // Verificar que se devuelven 2 competencias
-                ->assertJsonFragment(['name' => $competence->name]);
-
+            ->assertJsonStructure([
+                '*' => [
+                    'uid',
+                    'name',
+                    'description',
+                    'parent_competence_uid',
+                    'allsubcompetences',
+                ],
+            ])
+            ->assertJsonCount(2) // Verificar que se devuelven 2 competencias
+            ->assertJsonFragment(['name' => $competence->name]);
     }
-
-
 }

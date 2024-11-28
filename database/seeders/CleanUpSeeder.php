@@ -8,6 +8,7 @@ use App\Models\CentersModel;
 use App\Models\CompetenceFrameworksModel;
 use App\Models\CompetencesModel;
 use App\Models\CourseDocumentsModel;
+use App\Models\CoursesAccesesModel;
 use App\Models\CoursesModel;
 use App\Models\CoursesStudentsDocumentsModel;
 use App\Models\CoursesStudentsModel;
@@ -22,6 +23,8 @@ use App\Models\EducationalsProgramsCategoriesModel;
 use App\Models\LearningResultsModel;
 use App\Models\LicenseTypesModel;
 use App\Models\LmsSystemsModel;
+use App\Models\UserGeneralNotificationsModel;
+use App\Models\UsersAccessesModel;
 use App\Models\UsersModel;
 use Illuminate\Database\Seeder;
 
@@ -32,8 +35,7 @@ class CleanUpSeeder extends Seeder
      */
     public function run(): void
     {
-        //
-
+        CoursesAccesesModel::query()->delete();
         CoursesModel::query()->delete();
         EducationalProgramsModel::query()->delete();
         CallsModel::query()->delete();
@@ -47,6 +49,7 @@ class CleanUpSeeder extends Seeder
         CoursesStudentsModel::query()->delete();
         EducationalProgramsStudentsModel::query()->delete();
         LmsSystemsModel::query()->delete();
+        UserGeneralNotificationsModel::query()->delete();
         UsersModel::query()->delete();
         EducationalProgramEmailContactsModel::query()->delete();
         EducationalsProgramsCategoriesModel::query()->delete();
@@ -56,5 +59,6 @@ class CleanUpSeeder extends Seeder
         LicenseTypesModel::query()->delete();
         CourseDocumentsModel::query()->delete();
         CoursesStudentsDocumentsModel::query()->delete();
+        UsersAccessesModel::query()->delete();
     }
 }

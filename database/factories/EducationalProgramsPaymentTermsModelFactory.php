@@ -22,6 +22,8 @@ class EducationalProgramsPaymentTermsModelFactory extends Factory
             'uid' => Str::uuid(),
             'name' => $this->faker->sentence(3),
             'cost' => $this->faker->randomFloat(2, 0, 1000),
+            'start_date'  => Carbon::now()->addDays(1)->format('Y-m-d\TH:i'),
+            'finish_date' => Carbon::now()->addDays(10)->format('Y-m-d\TH:i'),
         ];
     }
 }

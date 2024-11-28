@@ -44,7 +44,7 @@ class SendUpdateEnrollmentUserCourseNotification implements ShouldQueue
         $generalNotificationAutomaticUid = generate_uuid();
         $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
 
-        if ($this->courseStudent->status == "ACCEPTED") {
+        if ($this->courseStudent->acceptance_status == "ACCEPTED") {
             $generalNotificationAutomatic->title = "Inscripción a curso aceptada";
             $generalNotificationAutomatic->description = "Tu inscripción en el curso " . $this->courseStudent->course->title . " ha sido aceptada";
         } else {
@@ -63,7 +63,7 @@ class SendUpdateEnrollmentUserCourseNotification implements ShouldQueue
         $generalNotificationAutomaticUser = new GeneralNotificationsAutomaticUsersModel();
         $generalNotificationAutomaticUser->uid = generate_uuid();
         $generalNotificationAutomaticUser->general_notifications_automatic_uid = $generalNotificationAutomaticUid;
-        $generalNotificationAutomaticUser->user_uid = $this->courseStudent->uid;
+        $generalNotificationAutomaticUser->user_uid = $this->courseStudent->user_uid;
         $generalNotificationAutomaticUser->save();
     }
 
@@ -72,7 +72,7 @@ class SendUpdateEnrollmentUserCourseNotification implements ShouldQueue
             'course_title' => $this->courseStudent->course->title,
         ];
 
-        if ($this->courseStudent->status == "ACCEPTED") {
+        if ($this->courseStudent->acceptance_status == "ACCEPTED") {
             $subject = "Inscripción a curso aceptada";
             $emailParameters["status"] = "ACCEPTED";
         } else {

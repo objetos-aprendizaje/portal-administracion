@@ -21,6 +21,7 @@ use App\Models\CentersModel;
 use App\Models\CertificationTypesModel;
 use App\Models\CompetenceFrameworksModel;
 use App\Models\CourseCategoriesModel;
+use App\Models\CourseGlobalCalificationsModel;
 use App\Models\CourseLearningResultCalificationsModel;
 use App\Models\CoursesBlocksLearningResultsCalificationsModel;
 use App\Models\CoursesEmailsContactsModel;
@@ -229,7 +230,7 @@ class ManagementCoursesController extends BaseController
     public function sendCredentials(Request $request)
     {
         $courseUid = $request->input('course_uid');
-        $this->certidigitalService->emissionCredentials($courseUid);
+        $this->certidigitalService->emissionCredentialsCourse($courseUid);
 
         return response()->json(['message' => 'Se han enviado las credenciales correctamente'], 200);
     }
@@ -407,7 +408,7 @@ class ManagementCoursesController extends BaseController
             } else if ($filter['database_field'] == 'course_statuses') {
                 $query->whereIn('course_status_uid', $filter['value']);
             } else if ($filter['database_field'] == 'calls') {
-                $query->whereIn('call_uid', $filter['value']);
+                $query->whereIn('courses.call_uid', $filter['value']);
             } else if ($filter['database_field'] == 'educational_programs') {
                 $query->whereIn('educational_program_type_uid', $filter['value']);
             } else if ($filter['database_field'] == 'course_types') {
@@ -545,8 +546,6 @@ class ManagementCoursesController extends BaseController
             $newCourseStatus = $this->statusCourseBelongsEducationalProgram($action, $course_bd);
         } else {
             $newCourseStatus = $this->statusCourseNotBelongsEducationalProgram($action, $course_bd);
-
-            // dd($newCourseStatus->code,"540");
         }
 
         DB::transaction(function () use ($request, $course_bd, $belongsEducationalProgram, $isNew, $newCourseStatus) {
@@ -557,11 +556,6 @@ class ManagementCoursesController extends BaseController
 
             if ($newCourseStatus) {
                 $course_bd->course_status_uid = $newCourseStatus->uid;
-
-                // Notificación a los gestores si el curso está pendiente de aprobación para que lo revisen
-                if ($newCourseStatus->code == "PENDING_APPROVAL") {
-                    dispatch(new SendCourseNotificationToManagements($course_bd->toArray()));
-                }
             }
 
             // En función de si el curso pertenece a una nueva edición o no y no es gestor, se actualizarán o no ciertos campos
@@ -577,6 +571,11 @@ class ManagementCoursesController extends BaseController
                 $course_bd->save();
                 // Campos de tablas auxiliares
                 $this->updateAuxiliarDataCourse($course_bd, $request);
+            }
+
+            // Notificación a los gestores si el curso está pendiente de aprobación para que lo revisen
+            if ($newCourseStatus && $newCourseStatus->code == "PENDING_APPROVAL") {
+                dispatch(new SendCourseNotificationToManagements($course_bd->toArray()));
             }
 
             $image_file = $request->file('image_input_file');
@@ -598,8 +597,19 @@ class ManagementCoursesController extends BaseController
                 $this->sendNotificationCourseAcceptedPublicationToKafka($course_bd, $lmsSystem->identifier);
             }
 
-            // Creación de las credenciales de Certidigital
-            $this->certidigitalService->createCoursesCredentials([$course_bd]);
+            // Credencial para los docentes
+            $this->certidigitalService->createUpdateCourseTeacherCredential($course_bd->uid);
+
+            /*
+                Si el curso no pertenece a un programa formativo, se crea la credencial.
+                Si va a pertenecer a un programa formativo, ya lo tiene vinculado y éste tiene credencial, se actualiza la credencial del
+                programa educativo
+            */
+            if (!$course_bd->belongs_to_educational_program) {
+                $this->certidigitalService->createUpdateCourseCredential($course_bd->uid);
+            } else if ($course_bd->belongs_to_educational_program && $course_bd->educational_program && $course_bd->educational_program->certidigitalCredential) {
+                $this->certidigitalService->createUpdateEducationalProgramCredential($course_bd->educational_program->uid);
+            }
         }, 5);
 
         return response()->json(['message' => ($isNew) ? 'Se ha añadido el curso correctamente' : 'Se ha actualizado el curso correctamente'], 200);
@@ -618,7 +628,7 @@ class ManagementCoursesController extends BaseController
 
         if (!$course_bd->embeddings || $title != $course_bd->title || $description != $course_bd->description) {
             $embeddings = $this->embeddingsService->getEmbedding($title . ' ' . $description);
-            return $embeddings ?: $course_bd->embeddings->embeddings;
+            return $embeddings ?: $course_bd->embeddings->embeddings ?? null;
         }
 
         return $course_bd->embeddings->embeddings;
@@ -688,11 +698,22 @@ class ManagementCoursesController extends BaseController
             $coursesStudentsQuery = $course->students();
         }
 
-        $coursesStudentsQuery->with(["courseBlocksLearningResultsCalifications", "courseBlocksLearningResultsCalifications.block" => function ($query) use ($courseUid) {
-            return $query->where("course_uid", $courseUid);
-        }, "courseLearningResultCalifications" => function ($query) use ($courseUid) {
-            return $query->where("course_uid", $courseUid);
-        }]);
+        // Añadir una subconsulta para la calificación del curso
+        $coursesStudentsQuery->addSelect([
+            'calification_info' => CourseGlobalCalificationsModel::selectRaw('calification_info')
+                ->whereColumn('user_uid', 'users.uid')
+                ->where('course_uid', $courseUid)
+        ]);
+
+        $coursesStudentsQuery->with([
+            "courseBlocksLearningResultsCalifications",
+            "courseBlocksLearningResultsCalifications.block" => function ($query) use ($courseUid) {
+                return $query->where("course_uid", $courseUid);
+            },
+            "courseLearningResultCalifications" => function ($query) use ($courseUid) {
+                return $query->where("course_uid", $courseUid);
+            }
+        ]);
 
         if ($search) {
             $coursesStudentsQuery->where(function ($subQuery) use ($search) {
@@ -725,7 +746,8 @@ class ManagementCoursesController extends BaseController
         return response()->json([
             "coursesStudents" => $coursesStudents,
             "courseBlocks" => $courseBlocks,
-            "learningResults" => $learningResults
+            "learningResults" => $learningResults,
+            "course" => $course
         ], 200);
     }
 
@@ -735,7 +757,9 @@ class ManagementCoursesController extends BaseController
         $learningResultsCalifications = $request->input("learningResultsCalifications");
         $globalCalifications = $request->input("globalCalifications");
 
-        DB::transaction(function () use ($blocksLearningResultCalifications, $learningResultsCalifications, $globalCalifications, $courseUid) {
+        $course = CoursesModel::where("uid", $courseUid)->with("educational_program")->first();
+
+        DB::transaction(function () use ($blocksLearningResultCalifications, $learningResultsCalifications, $globalCalifications, $course) {
             foreach ($blocksLearningResultCalifications as $blockCalification) {
                 CoursesBlocksLearningResultsCalificationsModel::updateOrCreate(
                     [
@@ -756,7 +780,7 @@ class ManagementCoursesController extends BaseController
                     [
                         "user_uid" => $learningResultCalification["userUid"],
                         "learning_result_uid" => $learningResultCalification["learningResultUid"],
-                        "course_uid" => $courseUid
+                        "course_uid" => $course->uid
                     ],
                     [
                         "uid" => generate_uuid(),
@@ -767,11 +791,16 @@ class ManagementCoursesController extends BaseController
             }
 
             foreach ($globalCalifications as $globalCalification) {
-                CoursesStudentsModel::where("user_uid", $globalCalification["user_uid"])
-                    ->where("course_uid", $courseUid)
-                    ->update([
+                CourseGlobalCalificationsModel::updateOrCreate(
+                    [
+                        "user_uid" => $globalCalification["user_uid"],
+                        "course_uid" => $course->uid
+                    ],
+                    [
+                        "uid" => generate_uuid(),
                         "calification_info" => $globalCalification["calification_info"]
-                    ]);
+                    ]
+                );
             }
         });
 
@@ -884,7 +913,6 @@ class ManagementCoursesController extends BaseController
             'featured_slider_color_font' => 'required_if:featured_big_carrousel,1',
             'center_uid' => 'required|string',
             'evaluation_criteria' => 'required_if:validate_student_registrations,1',
-            'calification_type' => 'required|string',
             'teacher_no_coordinators' => [
                 function ($attribute, $value, $fail) use ($request) {
                     $teacher_coordinators = json_decode($request->input('teacher_coordinators'), true);
@@ -1034,7 +1062,6 @@ class ManagementCoursesController extends BaseController
             'evaluation_criteria.required_if' => 'Debes especificar unos criterios de evaluación si activas la validación de estudiantes',
             'realization_start_date.after_or_equal' => 'La fecha de inicio de realización no puede ser anterior a la fecha de fin de inscripción.',
             'realization_finish_date.after_or_equal' => 'La fecha de finalización de realización no puede ser anterior a la fecha de inicio de realización.',
-            'calification_type.required' => 'Debes especificar un tipo de calificación',
             'min_required_students.min' => 'El número mínimo de estudiantes no puede ser negativo.',
             'enrolling_start_date.required' => 'La fecha de inicio de matriculación es obligatoria.',
             'enrolling_finish_date.required' => 'La fecha de fin de matriculación es obligatoria.',
@@ -1086,6 +1113,8 @@ class ManagementCoursesController extends BaseController
 
     private function statusCourseBelongsEducationalProgram($action, $course_bd)
     {
+
+        if ($course_bd->status && $course_bd->status->code == "ADDED_EDUCATIONAL_PROGRAM") return null;
         $statuses = CourseStatusesModel::whereIn('code', [
             'INTRODUCTION',
             'READY_ADD_EDUCATIONAL_PROGRAM'
@@ -1159,6 +1188,7 @@ class ManagementCoursesController extends BaseController
     private function updateCourseFieldsNewEdition($request, $courseBd)
     {
         $fields = [
+            "title",
             "inscription_start_date",
             "inscription_finish_date",
             "realization_start_date",
@@ -1232,7 +1262,6 @@ class ManagementCoursesController extends BaseController
             'presentation_video_url',
             'cost',
             'featured_big_carrousel',
-            'calification_type',
             'enrolling_start_date',
             'enrolling_finish_date',
             'evaluation_criteria',
@@ -1257,7 +1286,6 @@ class ManagementCoursesController extends BaseController
                 'lms_url',
                 'lms_system_uid',
                 'belongs_to_educational_program',
-                'calification_type',
                 'realization_start_date',
                 'realization_finish_date',
                 'presentation_video_url',
@@ -1277,7 +1305,6 @@ class ManagementCoursesController extends BaseController
                 'featured_slider_color_font',
                 'evaluation_criteria',
                 'featured_small_carrousel',
-                'calification_type',
                 'belongs_to_educational_program',
                 'title',
                 'description',
@@ -1673,6 +1700,7 @@ class ManagementCoursesController extends BaseController
         }
 
         $newCourse = $this->getQueryCopyBaseCourse($courseBd);
+        $newCourse->course_origin_uid = null;
         $introductionStatus = CourseStatusesModel::where('code', 'INTRODUCTION')->first();
         $newCourse->course_status_uid = $introductionStatus->uid;
         $newCourse->title = $newCourse->title . " (copia)";

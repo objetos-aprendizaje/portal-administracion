@@ -386,7 +386,7 @@ function initializeEducationalProgramsTable() {
                         tooltip: "Duplicar programa formativo",
                         action: (educational_program) => {
                             handleDuplicationEducationalProgram(
-                                educational_program
+                                educational_program.uid
                             );
                         },
                     },
@@ -431,7 +431,7 @@ function initializeEducationalProgramsTable() {
                 action: function (e, column) {
                     const educationalProgramClicked = column.getData();
                     handleDuplicationEducationalProgram(
-                        educationalProgramClicked
+                        educationalProgramClicked.uid
                     );
                 },
             },
@@ -442,6 +442,18 @@ function initializeEducationalProgramsTable() {
                     handleNewEditionEducationalProgram(
                         educationalProgramClicked.uid
                     );
+                },
+            },
+            {
+                label: `${heroicon("document-arrow-up")} Envío de credenciales`,
+                action: function (e, column) {
+                    showModalConfirmation(
+                        "Envío de credenciales",
+                        "¿Estás seguro de que quieres enviar las credenciales a los estudiantes del programa seleccionado?"
+                    ).then((result) => {
+                        const educationalProgramClicked = column.getData();
+                        if (result) sendCredentialsEducationalProgram(educationalProgramClicked.uid);
+                    });
                 },
             },
         ],
@@ -470,6 +482,21 @@ function initializeEducationalProgramsTable() {
         educationalProgramsTable,
         "educational-resource-types-table"
     );
+}
+
+function sendCredentialsEducationalProgram(educationalProgramUid) {
+    const params = {
+        url: `/learning_objects/educational_programs/send_credentials`,
+        method: "POST",
+        stringify: true,
+        body: {
+            educational_program_uid: educationalProgramUid,
+        },
+        toast: true,
+        loader: true,
+    };
+
+    apiFetch(params);
 }
 
 async function loadEducationalProgramModal(educationalProgramUid) {

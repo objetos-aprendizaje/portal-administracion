@@ -106,7 +106,7 @@ class EmailNotificationsService
 
         if($notification->notification_type_uid) {
             $usersInterested = $usersInterested->filter(function ($user) use ($notification) {
-                return $notification->notification_type_uid || !$user->emailNotificationsTypesDisabled->contains('uid', $notification->notification_type_uid);
+                return $notification->notification_type_uid && !$user->emailNotificationsTypesDisabled->contains('uid', $notification->notification_type_uid);
             });
         }
 

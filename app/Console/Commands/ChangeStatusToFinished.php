@@ -45,7 +45,7 @@ class ChangeStatusToFinished extends Command
             })
             ->get();
 
-            $enrollingStatus = CourseStatusesModel::where('code', 'ENROLLING')->first();
+            $enrollingStatus = CourseStatusesModel::where('code', 'FINISHED')->first();
 
             foreach($courses as $course) {
                 $course->status()->associate($enrollingStatus);

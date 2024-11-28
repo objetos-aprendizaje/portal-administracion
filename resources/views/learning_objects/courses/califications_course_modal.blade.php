@@ -23,7 +23,9 @@
         @include('partials.table-pagination', ['table' => 'califications-course-table'])
 
         <div class="btn-block">
-            <button type="button" class="btn btn-primary" id="save-califications">Guardar</button>
+            <button type="button" class="btn btn-primary" id="save-califications">Guardar
+                {{ e_heroicon('paper-airplane', 'outline') }}
+            </button>
         </div>
 
     </div>

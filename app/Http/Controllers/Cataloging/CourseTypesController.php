@@ -88,9 +88,9 @@ class CourseTypesController extends BaseController
     public function getCourseType($course_type_uid)
     {
 
-        if (!$course_type_uid) {
-            return response()->json(['message' => env('ERROR_MESSAGE')], 400);
-        }
+        // if (!$course_type_uid) {
+        //     return response()->json(['message' => env('ERROR_MESSAGE')], 400);
+        // }
 
         $course_type = CourseTypesModel::where('uid', $course_type_uid)->first();
 

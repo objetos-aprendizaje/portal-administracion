@@ -108,6 +108,51 @@ class ApiKeyControllerTest extends TestCase
             'name' => $apikey->name,
             'api_key' => $apikey->api_key,
         ]);
+
+
+        // Actualizar
+        $data = [
+            'api_key_uid' => $apikey->uid,
+            'name' => 'nombre de clave actualizada',
+            'api_key' => $apikey->api_key,
+        ];
+
+
+         // Realiza la solicitud POST
+         $response = $this->postJson('/administration/api_keys/save_api_key', $data);
+
+         // Verifica la respuesta
+         $response->assertStatus(200)
+                 ->assertJson(['message' => 'Clave guardada correctamente']);
+
+
+
+
+    }
+
+    /** @test  Guardar Apikey con error*/
+    public function testSaveApiKeyWithError422()
+    {
+        // Crea un usuario y actúa como él
+        $admin = UsersModel::factory()->create();
+        $this->actingAs($admin);
+
+        // Datos de la solicitud
+        $apikey = ApiKeysModel::factory()->create()->first();       
+
+        $data = [           
+            'api_key' => $apikey->api_key,
+        ];
+
+        // Realiza la solicitud POST
+        $response = $this->postJson('/administration/api_keys/save_api_key', $data);
+
+        // Verifica la respuesta
+        $response->assertStatus(422)
+                ->assertJson(['message' => 'Hay campos incorrectos']);
+
+      
+
     }
 
     /** @test  Elimina Apikey Exitoso*/

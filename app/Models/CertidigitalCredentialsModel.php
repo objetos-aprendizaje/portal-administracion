@@ -32,4 +32,8 @@ class CertidigitalCredentialsModel extends Model
         return $this->hasMany(CertidigitalAchievementsModel::class, 'certidigital_credential_uid', 'uid');
     }
 
+    public function activities()
+    {
+        return $this->hasMany(CertidigitalActivitiesModel::class, 'certidigital_credential_uid', 'uid');
+    }
 }

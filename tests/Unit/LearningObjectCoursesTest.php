@@ -10,9 +10,12 @@ use Tests\TestCase;
 use RdKafka\Producer;
 use App\Models\CallsModel;
 use App\Models\UsersModel;
+use App\Models\BlocksModel;
 use App\Models\CentersModel;
 use App\Models\CoursesModel;
 use Illuminate\Http\Request;
+use App\Models\ElementsModel;
+use App\Models\SubblocksModel;
 use App\Models\UserRolesModel;
 use App\Services\KafkaService;
 use Illuminate\Support\Carbon;
@@ -21,6 +24,7 @@ use App\Models\LmsSystemsModel;
 use App\Models\CompetencesModel;
 use App\Models\CoursesTagsModel;
 use App\Models\CourseTypesModel;
+use App\Models\SubelementsModel;
 use App\Models\TooltipTextsModel;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +34,7 @@ use App\Services\EmbeddingsService;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
+use App\Models\CourseDocumentsModel;
 use App\Models\CoursesStudentsModel;
 use App\Models\LearningResultsModel;
 use Illuminate\Support\Facades\Auth;
@@ -396,8 +401,75 @@ class LearningObjectCoursesTest extends TestCase
             'title' => 'Curso de prueba',
             'course_status_uid' => $introductionStatus->uid,
             'belongs_to_educational_program' => false,
+            'payment_mode' => 'INSTALLMENT_PAYMENT',
         ])->latest()->first();
 
+        $courseBd->teachers()->attach($user->uid,[
+            'uid'=>generate_uuid(),
+        ]);
+
+        $category = CategoriesModel::factory()->create();
+
+        $courseBd->categories()->attach($category->uid,[
+            'uid'=> generate_uuid(),
+        ]);
+
+        CoursesPaymentTermsModel::factory()->create(
+            [
+                'course_uid' => $courseBd->uid,
+            ]
+        );
+
+        CourseDocumentsModel::factory()->create(
+            [
+                'course_uid' => $courseBd->uid,
+            ]
+        );
+
+
+        CoursesTagsModel::factory()->create(
+            [
+                'course_uid'=> $courseBd->uid
+            ]
+        );
+
+        $blocks = BlocksModel::factory()->count(3)->create([
+            'course_uid' =>$courseBd->uid,
+        ]);
+
+        $competence = CompetencesModel::factory()->create();
+
+        $learning = LearningResultsModel::factory()->withCompetence()->create();
+
+        foreach($blocks as $block ){
+
+            $block->competences()->attach($competence->uid,[
+                'uid'=> generate_uuid(),
+            ]);   
+
+            $block->learningResults()->attach($learning->uid,[
+                'uid'=> generate_uuid(),
+            ]); 
+
+            $subblock = SubblocksModel::factory()->create(
+                [
+                   'block_uid'=> $block->uid,
+                   'order'=> 2
+                ]
+            );
+            $element = ElementsModel::factory()->create(
+                [
+                    'subblock_uid'=> $subblock->uid,
+                    'order' => 1
+                ]
+            ); 
+            SubelementsModel::factory()->create(
+                [
+                    'element_uid'=> $element->uid,
+                    'order'=> 3
+                ]
+            );                              
+        }
 
         // Simular la solicitud
         $response = $this->postJson('/learning_objects/courses/create_edition', [
@@ -416,6 +488,48 @@ class LearningObjectCoursesTest extends TestCase
             'course_origin_uid' => $courseBd->uid,
             'course_status_uid' => $courseBd->course_status_uid,
         ]);
+
+
+        // belongs_to_educational_program en true y  406  No se puede crear una edición de un curso de programa
+        $courseBd = CoursesModel::factory()->withCourseType()->create([
+            'title' => 'Curso de prueba',
+            'course_status_uid' => $introductionStatus->uid,
+            'belongs_to_educational_program' => true,
+        ]);  
+        // Simular la solicitud
+        $response = $this->postJson('/learning_objects/courses/create_edition', [
+            'course_uid' => $courseBd->uid,
+        ]);
+
+        // Verificar la respuesta HTTP
+        $response->assertStatus(406)
+        ->assertJson([
+            'message' => 'No se puede crear una edición de un curso de programa',
+        ]);
+
+        $courseBd = CoursesModel::factory()->withCourseType()->create([
+            'title' => 'Curso de prueba',
+            'course_status_uid' => $introductionStatus->uid,
+            'belongs_to_educational_program' => false,
+        ]); 
+
+        // 406  Ya existe una edición activa de este curso  
+        CoursesModel::factory()->withCourseType()->create([
+            'title' => 'Curso de prueba',
+            'course_status_uid' => $introductionStatus->uid,
+            'course_origin_uid' =>  $courseBd->uid,
+            'belongs_to_educational_program' => false,            
+        ]);
+        // Simular la solicitud
+        $response = $this->postJson('/learning_objects/courses/create_edition', [
+            'course_uid' => $courseBd->uid,
+        ]);
+
+        $response->assertStatus(406)
+        ->assertJson([
+            'message' => 'Ya existe una edición activa de este curso',
+        ]);
+
     }
 
     /** @test  puede obtener todas las competencias */
@@ -532,6 +646,19 @@ class LearningObjectCoursesTest extends TestCase
         $this->assertEquals(1, CoursesStudentsModel::where('course_uid', $courseUid)
             ->where('user_uid', $userAlreadyEnrolled->uid)
             ->count());
+        
+
+        // Datos de solicitud con datos faltante para arrojar error 406 "No se han seleccionado alumnos"
+         $requestData = [
+            'courseUid' => $courseUid,            
+        ];
+
+        // Realiza la solicitud POST a la ruta
+        $response = $this->postJson('/learning_objects/courses/enroll_students', $requestData);
+
+        $response->assertStatus(406);
+        $response->assertJson(['message' => 'No se han seleccionado alumnos']);    
+
     }
 
     // /** @test Puede inscribir estudiantes desde csv */

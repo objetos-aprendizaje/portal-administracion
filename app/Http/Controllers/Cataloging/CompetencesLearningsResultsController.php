@@ -246,16 +246,17 @@ class CompetencesLearningsResultsController extends BaseController
         return response()->json(['message' => $isNew ? 'Competencia añadida correctamente' : 'Competencia modificada correctamente'], 200);
     }
 
-    public function getListCompetences(Request $request)
-    {
-        $search = $request->input("search");
+    //Todo: este método esta presentado error ya que dentro de el no existe el método getCompetencesLearningResultsAnidated
+    // public function getListCompetences(Request $request)
+    // {
+    //     $search = $request->input("search");
 
-        $competences = $this->getCompetencesLearningResultsAnidated($search);
+    //     $competences = $this->getCompetencesLearningResultsAnidated($search);
 
-        $html = view('cataloging.competences_learnings_results.competences', ['competences' => $competences->toArray(), 'first_loop' => true])->render();
+    //     $html = view('cataloging.competences_learnings_results.competences', ['competences' => $competences->toArray(), 'first_loop' => true])->render();
 
-        return response()->json(['html' => $html]);
-    }
+    //     return response()->json(['html' => $html]);
+    // }
 
     public function deleteCompetencesLearningResults(Request $request)
     {
@@ -306,9 +307,12 @@ class CompetencesLearningsResultsController extends BaseController
         ];
 
         $validator = Validator::make($request->all(), $rules, $messages);
+        
 
         if ($validator->fails()) {
-            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validator->errors()], 422);
+            throw new \Illuminate\Validation\ValidationException($validator);
+            //Todo: Se ha ajustado esta Linea para poder reseolver el error 422
+            // return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validator->errors()], 422);
         }
     }
 
@@ -366,12 +370,12 @@ class CompetencesLearningsResultsController extends BaseController
                 foreach ($broader_relations_skill_pillar as $broader_relations) {
 
                     //verificamos que existan los datos necesarios
-                    if (isset($broader_relations[1]) && isset($skill[1])) {
+                    if (isset($broader_relations[1]) && isset($skill[1])) {                       
 
                         //localizamos el dato
                         if ($broader_relations[1] == $skill[1]) {
 
-                            //comprobamos que $skill tiene hijos con el broarder
+                            //comprobamos que $skill tiene hijos con el broarder                         
                             $has_children = $this->hasChildren($broader_relations_skill_pillar, $skill[1]);
 
                             //En este caso estas skills que tienen hijos, se han de considerar como competencias para almacenarlas así.
@@ -411,7 +415,7 @@ class CompetencesLearningsResultsController extends BaseController
 
                                 $result = $this->buildHierarchySkills($broader_relations[3], $skill);
 
-                                $hierarchySkills = array_merge($hierarchySkills, $result);
+                                $hierarchySkills = array_merge($hierarchySkills, $result);                             
                             }
                         }
                     }
@@ -508,33 +512,36 @@ class CompetencesLearningsResultsController extends BaseController
         return $hierarchy;
     }
 
-    function isUuid($string)
-    {
-        return preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $string) === 1;
-    }
+    // Todo: esta funcion no es llamada desde ningun método
+    // function isUuid($string)
+    // {
+    //     return preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $string) === 1;
+    // }
 
-    private function search_competence($value, $competences, $field)
-    {
-        $values = array_column($competences, $field);
-        $index = array_search($value, $values);
+    // Todo: esta funcion no es llamada desde ningun método
+    // private function search_competence($value, $competences, $field)
+    // {
+    //     $values = array_column($competences, $field);
+    //     $index = array_search($value, $values);
 
-        if ($index) return $competences[$index];
-        else return false;
-    }
+    //     if ($index) return $competences[$index];
+    //     else return false;
+    // }
 
-    private function extractuidUrl($url)
-    {
-        // Parse the URL into its components
-        $components = parse_url($url);
+    // Todo: esta funcion no es llamada desde ningun método
+    // private function extractuidUrl($url)
+    // {
+    //     // Parse the URL into its components
+    //     $components = parse_url($url);
 
-        // Split the path into segments
-        $segments = explode('/', $components['path']);
+    //     // Split the path into segments
+    //     $segments = explode('/', $components['path']);
 
-        // The uid is the last segment
-        $uid = end($segments);
+    //     // The uid is the last segment
+    //     $uid = end($segments);
 
-        return $uid;
-    }
+    //     return $uid;
+    // }
 
 
     private function csvFileToObject($file, $filter = [])
@@ -625,8 +632,10 @@ class CompetencesLearningsResultsController extends BaseController
 
         $has_children = false;
 
-        foreach ($broader_relations as $broader_relations_2) {
+        foreach ($broader_relations as $broader_relations_2) {            
+           
             if (!isset($broader_relations_2[3])) {
+                
                 continue;
             }
             if ($broader_relations_2[3] == $skill) {
@@ -638,72 +647,75 @@ class CompetencesLearningsResultsController extends BaseController
         return $has_children;
     }
 
+    //Todo: Esta funcion esta en desuso
+    // function getSkillsWithChildren($broader_relations)
+    // {
+    //     $resultados = [];
 
-    function getSkillsWithChildren($broader_relations)
-    {
-        $resultados = [];
+    //     foreach ($broader_relations as $subarray) {
+    //         if (isset($subarray[3]) && !in_array($subarray[3], $resultados)) {
+    //             $resultados[] = $subarray[3];
+    //         }
+    //     }
 
-        foreach ($broader_relations as $subarray) {
-            if (isset($subarray[3]) && !in_array($subarray[3], $resultados)) {
-                $resultados[] = $subarray[3];
-            }
-        }
+    //     return $resultados;
+    // }
 
-        return $resultados;
-    }
+    //Todo: Este metodo esta en desuso
+    // function getSkillsWithoutChildren($broader_relations)
+    // {
+    //     $posicion1 = [];
+    //     $posicion3 = [];
 
-    function getSkillsWithoutChildren($broader_relations)
-    {
-        $posicion1 = [];
-        $posicion3 = [];
+    //     // Recorre el array y llena los arrays de posición 1 y posición 3
+    //     foreach ($broader_relations as $subarray) {
+    //         if (isset($subarray[1])) {
+    //             $posicion1[] = $subarray[1];
+    //         }
+    //         if (isset($subarray[3])) {
+    //             $posicion3[] = $subarray[3];
+    //         }
+    //     }
 
-        // Recorre el array y llena los arrays de posición 1 y posición 3
-        foreach ($broader_relations as $subarray) {
-            if (isset($subarray[1])) {
-                $posicion1[] = $subarray[1];
-            }
-            if (isset($subarray[3])) {
-                $posicion3[] = $subarray[3];
-            }
-        }
+    //     // Filtra los valores de posición 1 que no están en posición 3
+    //     $resultado = array_filter($posicion1, function ($valor) use ($posicion3) {
+    //         return !in_array($valor, $posicion3);
+    //     });
 
-        // Filtra los valores de posición 1 que no están en posición 3
-        $resultado = array_filter($posicion1, function ($valor) use ($posicion3) {
-            return !in_array($valor, $posicion3);
-        });
+    //     // Elimina duplicados
+    //     $resultado = array_unique($resultado);
 
-        // Elimina duplicados
-        $resultado = array_unique($resultado);
+    //     return $resultado;
+    // }
 
-        return $resultado;
-    }
+    //Todo: Este metodo esta en desuso
+    // function searchSkillFathers($broader_relations, $skill_uri)
+    // {
+    //     $fathers = [];
+    //     foreach ($broader_relations as $relation) {
+    //         if (!isset($relation[3])) {
+    //             continue;
+    //         }
+    //         if ($relation[1] == $skill_uri) $fathers[] = $relation[3];
+    //     }
 
-    function searchSkillFathers($broader_relations, $skill_uri)
-    {
-        $fathers = [];
-        foreach ($broader_relations as $relation) {
-            if (!isset($relation[3])) {
-                continue;
-            }
-            if ($relation[1] == $skill_uri) $fathers[] = $relation[3];
-        }
+    //     return $fathers;
+    // }
 
-        return $fathers;
-    }
+    //Todo: Este metodo esta en desuso
+    // function searchInHierarchy($hierarchy, $uri)
+    // {
+    //     $hierarchy_found = false;
+    //     $i = 0;
+    //     foreach ($hierarchy as $h) {
+    //         if ($h["origin_code"] == $uri) $hierarchy_found = $h;
+    //     }
 
-    function searchInHierarchy($hierarchy, $uri)
-    {
-        $hierarchy_found = false;
-        $i = 0;
-        foreach ($hierarchy as $h) {
-            if ($h["origin_code"] == $uri) $hierarchy_found = $h;
-        }
-
-        if ($i > 1) {
-            throw new Exception("más de un padre");
-        }
-        return $hierarchy_found;
-    }
+    //     if ($i > 1) {
+    //         throw new Exception("más de un padre");
+    //     }
+    //     return $hierarchy_found;
+    // }
 
     public function exportCSV()
     {
