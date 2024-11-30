@@ -204,7 +204,6 @@ class ManagementCoursesControllerTest extends TestCase
         $generalUpdate = GeneralOptionsModel::where('option_name', 'certidigital_url')->first();
         $generalUpdate->option_value = "web";
         $generalUpdate->save();
-
         // $managementUser->assignRole('MANAGEMENT');
         // $this->actingAs($managementUser);
 
@@ -213,14 +212,14 @@ class ManagementCoursesControllerTest extends TestCase
             'operation_by_calls' => false, // O false, según lo que necesites para la prueba
             'necessary_approval_editions' => true,
             'some_option_array' => [], // Asegúrate de que esto sea un array'
-            'certidigital_url'              => 'https://certidigital-k8s.atica.um.es',
-            'certidigital_client_id'        => 'certidigi-admin',
-            'certidigital_client_secret'    => 'aKli757XUHqVIDC9cu8iwIH4U64qvM7T',
-            'certidigital_username'         => 'eadmon.umu@gmail.com',
-            'certidigital_password'         => 'wEVZ3rDar10',
-            'certidigital_url_token'        => 'https://certidigital-k8s.atica.um.es/realms/certidigi/protocol/openid-connect/token',
-            'certidigital_center_id'        => 105,
-            'certidigital_organization_oid' => 29,
+            'certidigital_url'              => env('CERTIDIGITAL_URL'),
+            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
+            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
+            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
+            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
+            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
+            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
+            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
         ];
 
         app()->instance('general_options', $generalOptionsMock);
@@ -380,14 +379,14 @@ class ManagementCoursesControllerTest extends TestCase
             'operation_by_calls' => false, // O false, según lo que necesites para la prueba
             'necessary_approval_editions' => true,
             'some_option_array' => [], // Asegúrate de que esto sea un array'
-            'certidigital_url'              => 'https://certidigital-k8s.atica.um.es',
-            'certidigital_client_id'        => 'certidigi-admin',
-            'certidigital_client_secret'    => 'aKli757XUHqVIDC9cu8iwIH4U64qvM7T',
-            'certidigital_username'         => 'eadmon.umu@gmail.com',
-            'certidigital_password'         => 'wEVZ3rDar10',
-            'certidigital_url_token'        => 'https://certidigital-k8s.atica.um.es/realms/certidigi/protocol/openid-connect/token',
-            'certidigital_center_id'        => 105,
-            'certidigital_organization_oid' => 29,
+            'certidigital_url'              => env('CERTIDIGITAL_URL'),
+            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
+            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
+            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
+            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
+            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
+            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
+            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
         ];
         // Asignar el mock a app('general_options')  
         GeneralOptionsModel::factory()->create(
@@ -587,14 +586,14 @@ class ManagementCoursesControllerTest extends TestCase
             'operation_by_calls' => false, // O false, según lo que necesites para la prueba
             'necessary_approval_editions' => true,
             'some_option_array' => [], // Asegúrate de que esto sea un array'
-            'certidigital_url'              => 'https://certidigital-k8s.atica.um.es',
-            'certidigital_client_id'        => 'certidigi-admin',
-            'certidigital_client_secret'    => 'aKli757XUHqVIDC9cu8iwIH4U64qvM7T',
-            'certidigital_username'         => 'eadmon.umu@gmail.com',
-            'certidigital_password'         => 'wEVZ3rDar10',
-            'certidigital_url_token'        => 'https://certidigital-k8s.atica.um.es/realms/certidigi/protocol/openid-connect/token',
-            'certidigital_center_id'        => 105,
-            'certidigital_organization_oid' => 29,
+           'certidigital_url'              => env('CERTIDIGITAL_URL'),
+            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
+            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
+            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
+            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
+            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
+            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
+            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
         ];
         // Asignar el mock a app('general_options')  
         GeneralOptionsModel::factory()->create(
@@ -703,14 +702,14 @@ class ManagementCoursesControllerTest extends TestCase
             'operation_by_calls' => false, // O false, según lo que necesites para la prueba
             'necessary_approval_editions' => true,
             'some_option_array' => [], // Asegúrate de que esto sea un array'
-            'certidigital_url'              => 'https://certidigital-k8s.atica.um.es',
-            'certidigital_client_id'        => 'certidigi-admin',
-            'certidigital_client_secret'    => 'aKli757XUHqVIDC9cu8iwIH4U64qvM7T',
-            'certidigital_username'         => 'eadmon.umu@gmail.com',
-            'certidigital_password'         => 'wEVZ3rDar10',
-            'certidigital_url_token'        => 'https://certidigital-k8s.atica.um.es/realms/certidigi/protocol/openid-connect/token',
-            'certidigital_center_id'        => 105,
-            'certidigital_organization_oid' => 29,
+            'certidigital_url'              => env('CERTIDIGITAL_URL'),
+            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
+            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
+            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
+            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
+            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
+            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
+            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
         ];
         // Asignar el mock a app('general_options')  
         GeneralOptionsModel::factory()->create(
@@ -833,14 +832,14 @@ class ManagementCoursesControllerTest extends TestCase
             'operation_by_calls' => false, // O false, según lo que necesites para la prueba
             'necessary_approval_editions' => true,
             'some_option_array' => [], // Asegúrate de que esto sea un array',
-            'certidigital_url'              => 'https://certidigital-k8s.atica.um.es',
-            'certidigital_client_id'        => 'certidigi-admin',
-            'certidigital_client_secret'    => 'aKli757XUHqVIDC9cu8iwIH4U64qvM7T',
-            'certidigital_username'         => 'eadmon.umu@gmail.com',
-            'certidigital_password'         => 'wEVZ3rDar10',
-            'certidigital_url_token'        => 'https://certidigital-k8s.atica.um.es/realms/certidigi/protocol/openid-connect/token',
-            'certidigital_center_id'        => 105,
-            'certidigital_organization_oid' => 29,
+           'certidigital_url'              => env('CERTIDIGITAL_URL'),
+            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
+            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
+            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
+            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
+            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
+            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
+            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
         ];
 
         // Asignar el mock a app('general_options')
@@ -999,14 +998,14 @@ class ManagementCoursesControllerTest extends TestCase
             'operation_by_calls' => false, // O false, según lo que necesites para la prueba
             'necessary_approval_editions' => true,
             'some_option_array' => [], // Asegúrate de que esto sea un array',
-            'certidigital_url'              => 'https://certidigital-k8s.atica.um.es',
-            'certidigital_client_id'        => 'certidigi-admin',
-            'certidigital_client_secret'    => 'aKli757XUHqVIDC9cu8iwIH4U64qvM7T',
-            'certidigital_username'         => 'eadmon.umu@gmail.com',
-            'certidigital_password'         => 'wEVZ3rDar10',
-            'certidigital_url_token'        => 'https://certidigital-k8s.atica.um.es/realms/certidigi/protocol/openid-connect/token',
-            'certidigital_center_id'        => 105,
-            'certidigital_organization_oid' => 29,
+            'certidigital_url'              => env('CERTIDIGITAL_URL'),
+            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
+            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
+            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
+            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
+            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
+            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
+            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
         ];
 
         // Asignar el mock a app('general_options')
@@ -1173,14 +1172,14 @@ class ManagementCoursesControllerTest extends TestCase
             'operation_by_calls' => false,
             'necessary_approval_editions' => true,
             'some_option_array' => [],
-            'certidigital_url'              => 'https://certidigital-k8s.atica.um.es',
-            'certidigital_client_id'        => 'certidigi-admin',
-            'certidigital_client_secret'    => 'aKli757XUHqVIDC9cu8iwIH4U64qvM7T',
-            'certidigital_username'         => 'eadmon.umu@gmail.com',
-            'certidigital_password'         => 'wEVZ3rDar10',
-            'certidigital_url_token'        => 'https://certidigital-k8s.atica.um.es/realms/certidigi/protocol/openid-connect/token',
-            'certidigital_center_id'        => 105,
-            'certidigital_organization_oid' => 29,
+           'certidigital_url'              => env('CERTIDIGITAL_URL'),
+            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
+            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
+            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
+            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
+            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
+            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
+            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
         ];
         App::instance('general_options', $generalOptionsMock);
 
@@ -1258,14 +1257,14 @@ class ManagementCoursesControllerTest extends TestCase
             'operation_by_calls' => false,
             'necessary_approval_editions' => true,
             'some_option_array' => [],
-            'certidigital_url'              => 'https://certidigital-k8s.atica.um.es',
-            'certidigital_client_id'        => 'certidigi-admin',
-            'certidigital_client_secret'    => 'aKli757XUHqVIDC9cu8iwIH4U64qvM7T',
-            'certidigital_username'         => 'eadmon.umu@gmail.com',
-            'certidigital_password'         => 'wEVZ3rDar10',
-            'certidigital_url_token'        => 'https://certidigital-k8s.atica.um.es/realms/certidigi/protocol/openid-connect/token',
-            'certidigital_center_id'        => 105,
-            'certidigital_organization_oid' => 29,
+            'certidigital_url'              => env('CERTIDIGITAL_URL'),
+            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
+            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
+            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
+            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
+            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
+            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
+            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
         ];
         App::instance('general_options', $generalOptionsMock);
 
@@ -1375,14 +1374,14 @@ class ManagementCoursesControllerTest extends TestCase
             'operation_by_calls' => false,
             'necessary_approval_editions' => true,
             'some_option_array' => [],
-            'certidigital_url'              => 'https://certidigital-k8s.atica.um.es',
-            'certidigital_client_id'        => 'certidigi-admin',
-            'certidigital_client_secret'    => 'aKli757XUHqVIDC9cu8iwIH4U64qvM7T',
-            'certidigital_username'         => 'eadmon.umu@gmail.com',
-            'certidigital_password'         => 'wEVZ3rDar10',
-            'certidigital_url_token'        => 'https://certidigital-k8s.atica.um.es/realms/certidigi/protocol/openid-connect/token',
-            'certidigital_center_id'        => 105,
-            'certidigital_organization_oid' => 29,
+            'certidigital_url'              => env('CERTIDIGITAL_URL'),
+            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
+            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
+            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
+            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
+            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
+            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
+            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
         ];
         App::instance('general_options', $generalOptionsMock);
 
@@ -1605,14 +1604,14 @@ class ManagementCoursesControllerTest extends TestCase
             'operation_by_calls'            => false,
             'necessary_approval_editions'   => true,
             'some_option_array'             => [],
-            'certidigital_url'              => 'https://certidigital-k8s.atica.um.es',
-            'certidigital_client_id'        => 'certidigi-admin',
-            'certidigital_client_secret'    => 'aKli757XUHqVIDC9cu8iwIH4U64qvM7T',
-            'certidigital_username'         => 'eadmon.umu@gmail.com',
-            'certidigital_password'         => 'wEVZ3rDar10',
-            'certidigital_url_token'        => 'https://certidigital-k8s.atica.um.es/realms/certidigi/protocol/openid-connect/token',
-            'certidigital_center_id'        => 105,
-            'certidigital_organization_oid' => 29,
+            'certidigital_url'              => env('CERTIDIGITAL_URL'),
+            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
+            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
+            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
+            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
+            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
+            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
+            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
         ];
         App::instance('general_options', $generalOptionsMock);
 
@@ -1697,14 +1696,14 @@ class ManagementCoursesControllerTest extends TestCase
             'operation_by_calls'            => false,
             'necessary_approval_editions'   => true,
             'some_option_array'             => [],
-            'certidigital_url'              => 'https://certidigital-k8s.atica.um.es',
-            'certidigital_client_id'        => 'certidigi-admin',
-            'certidigital_client_secret'    => 'aKli757XUHqVIDC9cu8iwIH4U64qvM7T',
-            'certidigital_username'         => 'eadmon.umu@gmail.com',
-            'certidigital_password'         => 'wEVZ3rDar10',
-            'certidigital_url_token'        => 'https://certidigital-k8s.atica.um.es/realms/certidigi/protocol/openid-connect/token',
-            'certidigital_center_id'        => 105,
-            'certidigital_organization_oid' => 29,
+            'certidigital_url'              => env('CERTIDIGITAL_URL'),
+            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
+            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
+            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
+            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
+            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
+            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
+            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
         ];
         App::instance('general_options', $generalOptionsMock);
 

@@ -50,9 +50,9 @@ class EducationalResourcesPerUsersController extends BaseController
             }
         }
 
-        $data = $query->paginate($size);
+        $data = $query->paginate($size);     
 
-        if (!$data) {
+        if (!$data || $data->isEmpty()) { // Se modificó esta linea para cubir prueba unitarias
             return response()->json(['message' => 'No hay usuarios en base de datos'], 406);
         }
 

@@ -23,7 +23,7 @@
                 <div class="flex gap-1">
 
                     <button id="emit-credentials-btn" type="button" class="btn-icon" title="Emitir credenciales"
-                        data-course-uid="">{{ e_heroicon('arrow-path-rounded-square', 'outline') }}</button>
+                        data-course-uid="">{{ e_heroicon('academic-cap', 'outline') }}</button>
 
                     <button id="send-credentials-btn" type="button" class="btn-icon" title="Enviar credenciales"
                         data-course-uid="">{{ e_heroicon('paper-airplane', 'outline') }}</button>

@@ -52,7 +52,7 @@ class UsersModel extends Authenticatable
             'courses_teachers',
             'user_uid',
             'course_uid'
-        )->withPivot('credential')->select(['title']);
+        )->withPivot('credential', 'emissions_block_uuid', 'emissions_block_id', 'credential_sent', 'credential_sealed')->select(['title']);
     }
 
     public function courseStudentDocuments()

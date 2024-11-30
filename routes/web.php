@@ -340,6 +340,10 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/credentials/teachers', [TeachersCredentialsController::class, 'index'])->name('credentials-teachers');
         Route::get('/credentials/teachers/get_teachers', [TeachersCredentialsController::class, 'getTeachers'])->name('credentials-get-teachers');
         Route::get('/credentials/teachers/get_courses_teacher/{teacher_uid}', [TeachersCredentialsController::class, 'getCoursesTeacher'])->name('credentials-get-courses-teacher');
+
+        Route::post('/credentials/teachers/emit_credentials', [TeachersCredentialsController::class, 'emitCredentials'])->name('emit-credentials-teacher');
+        Route::post('/credentials/teachers/seal_credentials', [TeachersCredentialsController::class, 'sealCredentials'])->name('seal-credentials-teacher');
+        Route::post('/credentials/teachers/send_credentials', [TeachersCredentialsController::class, 'sendCredentials'])->name('send-credentials-teacher');
     });
 
     Route::middleware(['role:ADMINISTRATOR,MANAGEMENT'])->group(function () {

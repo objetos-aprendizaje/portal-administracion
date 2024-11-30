@@ -14,7 +14,7 @@ use App\Models\EducationalResourcesModel;
 use App\Models\NotificationsPerUsersModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-class LearningObjectEducationalResourceUsersTest extends TestCase
+class EducationalResourcesPerUsersControllerTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -25,7 +25,7 @@ class LearningObjectEducationalResourceUsersTest extends TestCase
         $this->withoutMiddleware();
         // Asegúrate de que la tabla 'qvkei_settings' existe
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
-    }
+    } // Configuración inicial si es necesario
 
     /**
      * @test  Verifica que el método index carga la vista correcta con los datos necesarios.
@@ -67,12 +67,11 @@ class LearningObjectEducationalResourceUsersTest extends TestCase
         $response->assertViewIs('learning_objects.educational_resources_per_users.index');
 
         // Verificar que la vista tiene los datos correctos para 'notifications_per_users'
-         $response->assertViewHas('notifications_per_users', function ($viewData) use ($notification1, $user) {
+        $response->assertViewHas('notifications_per_users', function ($viewData) use ($notification1, $user) {
             return !empty($viewData) &&
                 $viewData[0]['uid'] === $notification1->uid
                 && $viewData[0]['user_uid'] === $user->uid
                 && $viewData[0]['general_notification_uid'] === $notification1->general_notification_uid;
-
         });
 
         // Verificar que otros datos están presentes en la vista
@@ -86,6 +85,7 @@ class LearningObjectEducationalResourceUsersTest extends TestCase
         // Verificar que la vista tiene los datos correctos para 'notifications_per_users'
 
     }
+
     /**
      * @test  Verifica que la ruta devuelve usuarios sin filtros ni ordenamiento.
      */
@@ -144,7 +144,6 @@ class LearningObjectEducationalResourceUsersTest extends TestCase
         $this->assertGreaterThan(0, count($data), "No se devolvieron usuarios");
         $nonEmptyNames = array_filter(array_column($data, 'first_name'));
         $this->assertCount(count($data), $nonEmptyNames);
-
     }
 
     /**
@@ -199,13 +198,9 @@ class LearningObjectEducationalResourceUsersTest extends TestCase
 
         $response = $this->getJson('/learning_objects/educational_resources_per_users/get_list_users');
 
-        $response->assertStatus(200)
-            ->assertJsonCount(0, 'data')
-            ->assertJsonStructure([
-                'data',
-                'links',
-
-            ]);
+        $response->assertStatus(406)
+        ->assertJson(['message' => 'No hay usuarios en base de datos']);
+           
     }
 
     /**
@@ -217,10 +212,10 @@ class LearningObjectEducationalResourceUsersTest extends TestCase
         $user = UsersModel::factory()->create();
 
         $resource = EducationalResourcesModel::factory()
-        ->withStatus()
-        ->withEducationalResourceType()
-        ->withCreatorUser()
-        ->create(['title' => 'Matemáticas']);
+            ->withStatus()
+            ->withEducationalResourceType()
+            ->withCreatorUser()
+            ->create(['title' => 'Matemáticas']);
 
         // Generar un UID manualmente para la tabla intermedia
         $user->educationalResources()->attach($resource->uid, [
@@ -245,14 +240,14 @@ class LearningObjectEducationalResourceUsersTest extends TestCase
 
         // Crear recursos educativos de prueba
         $resource1 = EducationalResourcesModel::factory()
-        ->withStatus()
-        ->withEducationalResourceType()
-        ->withCreatorUser()
-        ->create(['title' => 'Matemáticas']);
-        $resource2 = EducationalResourcesModel::factory() ->withStatus()
-        ->withEducationalResourceType()
-        ->withCreatorUser()
-        ->create(['title' => 'Historia']);
+            ->withStatus()
+            ->withEducationalResourceType()
+            ->withCreatorUser()
+            ->create(['title' => 'Matemáticas']);
+        $resource2 = EducationalResourcesModel::factory()->withStatus()
+            ->withEducationalResourceType()
+            ->withCreatorUser()
+            ->create(['title' => 'Historia']);
 
         // Asociar los recursos educativos al usuario mediante la tabla intermedia
         $user->educationalResources()->attach($resource1->uid, [
@@ -282,10 +277,10 @@ class LearningObjectEducationalResourceUsersTest extends TestCase
 
         // Crear recursos educativos de prueba
         $resource1 = EducationalResourcesModel::factory()
-        ->withStatus()
-        ->withEducationalResourceType()
-        ->withCreatorUser()
-        ->create(['title' => 'Historia'])->first();
+            ->withStatus()
+            ->withEducationalResourceType()
+            ->withCreatorUser()
+            ->create(['title' => 'Historia'])->first();
 
         // Asociar los recursos educativos al usuario mediante la tabla intermedia
         $user->educationalResources()->attach($resource1->uid, [
@@ -299,9 +294,9 @@ class LearningObjectEducationalResourceUsersTest extends TestCase
             ['field' => 'title', 'dir' => 'asc']
         ];
 
-        
+
         $sortParams = [
-            'sort' => [                
+            'sort' => [
                 ['field' => 'title', 'dir' => 'asc']
             ],
             'size' => 10
@@ -312,7 +307,7 @@ class LearningObjectEducationalResourceUsersTest extends TestCase
 
 
         // Hacer la solicitud GET pasando el parámetro de ordenamiento como un array
-        $response = $this->getJson("/learning_objects/educational_resources_per_users/get_notifications/{$user->uid}?".$queryString);
+        $response = $this->getJson("/learning_objects/educational_resources_per_users/get_notifications/{$user->uid}?" . $queryString);
 
         // Verificar la respuesta
         $response->assertStatus(200)
