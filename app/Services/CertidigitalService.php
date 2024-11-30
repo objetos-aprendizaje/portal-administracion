@@ -10,6 +10,7 @@ use App\Models\CertidigitalLearningOutcomesModel;
 use App\Models\CourseGlobalCalificationsModel;
 use App\Models\CoursesModel;
 use App\Models\CoursesStudentsModel;
+use App\Models\CoursesTeachersModel;
 use App\Models\EducationalProgramsModel;
 use App\Models\EducationalProgramsStudentsModel;
 use Exception;
@@ -225,7 +226,7 @@ class CertidigitalService
             "recipients" => $recipients
         ];
 
-        $this->emitCredentialsEducationalProgram($educationalProgram, $finalStructure, $educationalProgram->certidigitalCredential);
+        $this->emitCredentialsEducationalProgram($educationalProgram, $finalStructure);
     }
 
     public function emissionCredentialsCourse($courseUid, $studentsUids = null)
@@ -353,6 +354,51 @@ class CertidigitalService
         $this->emitCredentialsCourse($course, $finalStructure);
     }
 
+    public function emissionCredentialsTeacherCourse($courseUid, $teacherUids)
+    {
+        $course = CoursesModel::where("uid", $courseUid)->with([
+            "certidigitalTeacherCredential.activities",
+            "blocks",
+            "teachers" => function ($query) use ($teacherUids) {
+                $query->whereIn("user_uid", $teacherUids);
+            }
+        ])->first();
+
+        $recipients = [];
+
+        foreach ($course->teachers as $teacher) {
+            $basicDataTeacher = $this->getBasicDataEmissionCredential($teacher, $course->certidigitalTeacherCredential->uid);
+            $recipients[] = [
+                "entities" => [
+                    [
+                        "fields" => $basicDataTeacher
+                    ]
+                ]
+            ];
+        }
+
+        $data = [
+            "recipients" => $recipients
+        ];
+
+        $emissions = $this->emitCredentialsRequest($course->certidigitalTeacherCredential->id, $data);
+
+        foreach ($emissions as $emission) {
+            // Buscar el docente
+            $teacher = $course->teachers->filter(function ($teacher) use ($emission) {
+                return $teacher->email === $emission['address'];
+            })->first();
+
+            // Actualizar el docente con la emisión
+            CoursesTeachersModel::where('user_uid', $teacher->uid)
+                ->where('course_uid', $course->uid)
+                ->update([
+                    'emissions_block_id' => $emission['emissionsBlockId'],
+                    'emissions_block_uuid' => $emission['uuid'],
+                ]);
+        }
+    }
+
     public function sendCourseCredentials($coursesUids, $studentUid = [])
     {
         $courses = CoursesModel::whereIn('uid', $coursesUids)->with([
@@ -451,6 +497,51 @@ class CertidigitalService
                 $student->educational_program_student_info->save();
             }
         }
+    }
+
+    public function sendCourseCredentialsTeachers($courseUid, $teacherUids)
+    {
+        $course = $this->getCourseWithTeachers($courseUid, $teacherUids);
+
+        $emissionsBlockUuids = [];
+        foreach ($course->teachers as $teacher) {
+            $emissionsBlockUuids[] = $teacher->pivot->emissions_block_uuid;
+        }
+
+        $this->sendEmissionsRequest($emissionsBlockUuids);
+
+        foreach ($course->teachers as $teacher) {
+            $teacher->pivot->credential_sent = true;
+            $teacher->pivot->save();
+        }
+    }
+
+    public function sealCourseCredentialsTeachers($courseUid, $teacherUids)
+    {
+        $course = $this->getCourseWithTeachers($courseUid, $teacherUids);
+
+        $emissionsBlockUuids = [];
+        foreach ($course->teachers as $teacher) {
+            $emissionsBlockUuids[] = $teacher->pivot->emissions_block_uuid;
+        }
+
+        $this->sealEmissionsRequest($emissionsBlockUuids);
+
+        foreach ($course->teachers as $teacher) {
+            $teacher->pivot->credential_sealed = true;
+            $teacher->pivot->save();
+        }
+    }
+
+    private function getCourseWithTeachers($courseUid, $teacherUids)
+    {
+        $course = CoursesModel::where("uid", $courseUid)->with([
+            "teachers" => function ($query) use ($teacherUids) {
+                $query->where("user_uid", $teacherUids);
+            }
+        ])->first();
+
+        return $course;
     }
 
     private function sendEmissionsRequest($emissionsBlockUuids)
@@ -648,9 +739,9 @@ class CertidigitalService
         $this->sendRequest($endpoint, $data, false);
     }
 
-    private function emitCredentialsEducationalProgram($educationalProgram, $data, $certidigitalCredential)
+    private function emitCredentialsEducationalProgram($educationalProgram, $data)
     {
-        $emissions = $this->emitCredentialsRequest($educationalProgram, $data);
+        $emissions = $this->emitCredentialsRequest($educationalProgram->certidigitalCredential->id, $data);
 
         foreach ($emissions as $emission) {
             // Buscar el estudiante
@@ -670,7 +761,7 @@ class CertidigitalService
 
     private function emitCredentialsCourse($course, $data)
     {
-        $emissions = $this->emitCredentialsRequest($course, $data);
+        $emissions = $this->emitCredentialsRequest($course->certidigitalCredential->id, $data);
         foreach ($emissions as $emission) {
             // Buscar el estudiante
             $student = $course->students->filter(function ($student) use ($emission) {
@@ -687,13 +778,12 @@ class CertidigitalService
         }
     }
 
-    private function emitCredentialsRequest($course, $data)
+    private function emitCredentialsRequest($credentialId, $data)
     {
         $generalOptions = app('general_options');
 
         // Emisión del bloque
-        $credentialUid = $course->certidigitalCredential->id;
-        $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/credentials/{$credentialUid}/issuecredentials?issuingCenterId={$generalOptions['certidigital_center_id']}&locale=es";
+        $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/credentials/{$credentialId}/issuecredentials?issuingCenterId={$generalOptions['certidigital_center_id']}&locale=es";
         $response = $this->sendRequest($endpoint, $data, false);
 
         $emissions = $response->json();
@@ -1094,7 +1184,7 @@ class CertidigitalService
         if ($token) $httpRequest = Http::withToken($token);
         else $httpRequest = Http::asForm();
 
-        if (env('APP_ENV') == 'local') $httpRequest->withoutVerifying();
+        if ( env('APP_ENV') == 'local' || env('APP_ENV') == 'testing' )  $httpRequest->withoutVerifying();
 
         $response = $httpRequest->$method($url, $data);
 

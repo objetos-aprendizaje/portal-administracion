@@ -83,6 +83,11 @@ class StudentsCredentialsController extends BaseController
             throw new OperationFailedException('No se pueden emitir credenciales porque alguno de los cursos ya tiene credenciales emitidas');
         }
 
+        $coursesWithoutCredential = CoursesModel::whereIn('uid', $coursesUids)->where("certidigital_credential_uid", null)->exists();
+        if ($coursesWithoutCredential) {
+            throw new OperationFailedException('No se pueden emitir credenciales porque alguno de los cursos no tiene credenciales asociadas');
+        }
+
         foreach ($coursesUids as $courseUid) {
             $this->certidigitalService->emissionCredentialsCourse($courseUid, [$userUid]);
         }
@@ -112,11 +117,11 @@ class StudentsCredentialsController extends BaseController
             throw new OperationFailedException('No se pueden enviar credenciales porque alguno de los cursos o programas formativos no las tiene emitidas');
         }
 
-        if(count($coursesUids)) {
+        if (count($coursesUids)) {
             $this->certidigitalService->sendCourseCredentials($coursesUids, $userUid);
         }
 
-        if(count($educationalProgramsUids)) {
+        if (count($educationalProgramsUids)) {
             $this->certidigitalService->sendCredentialsEducationalPrograms($educationalProgramsUids, $userUid);
         }
 
@@ -144,8 +149,8 @@ class StudentsCredentialsController extends BaseController
             throw new OperationFailedException('No se pueden sellar credenciales porque alguno de los objetos de aprendizaje no las tiene emitidas');
         }
 
-        if(count($coursesUids)) $this->certidigitalService->sealCoursesCredentials($coursesUids, $userUid);
-        if(count($educationalProgramsUids)) $this->certidigitalService->sealEducationalProgramsCredentials($educationalProgramsUids, $userUid);
+        if (count($coursesUids)) $this->certidigitalService->sealCoursesCredentials($coursesUids, $userUid);
+        if (count($educationalProgramsUids)) $this->certidigitalService->sealEducationalProgramsCredentials($educationalProgramsUids, $userUid);
 
         return response()->json(['message' => 'Credenciales selladas correctamente'], 200);
     }

@@ -89,7 +89,7 @@ class CoursesModel extends Model
             'courses_teachers',
             'course_uid',
             'user_uid'
-        )->withPivot('type');
+        )->withPivot('type', 'emissions_block_uuid', 'emissions_block_id', 'credential_sent');
     }
 
     public function students()

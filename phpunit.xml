@@ -29,7 +29,7 @@
     </php>
 
     <!-- Coverage configurations -->
-    <coverage>
+    <coverage >
         <report>
             <clover outputFile="tests/reports/coverage.xml"/>
             <html outputDirectory="tests/reports/coverage-html"/>
