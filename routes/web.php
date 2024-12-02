@@ -283,7 +283,10 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::post('/learning_objects/courses/create_edition', [ManagementCoursesController::class, 'editionCourse']);
         Route::post('/learning_objects/courses/regenerate_embeddings', [ManagementCoursesController::class, 'regenerateEmbeddings']);
 
-        Route::post('/learning_objects/courses/send_credentials', [ManagementCoursesController::class, 'sendCredentials']);
+        Route::post('/learning_objects/courses/emit_credentials', [ManagementCoursesController::class, 'emitCredentials']);
+        Route::post('/learning_objects/courses/emit_all_credentials', [ManagementCoursesController::class, 'emitAllCredentials']);
+        Route::post('/learning_objects/courses/send_credentials', [ManagementCoursesController::class, 'sendCredential']);
+        Route::post('/learning_objects/courses/seal_credentials', [ManagementCoursesController::class, 'sealCredential']);
 
         Route::get('/learning_objects/educational_resources', [EducationalResourcesController::class, 'index'])->name('learning-objects-educational-resources');
 
@@ -325,6 +328,11 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::post('/learning_objects/educational_program/edition_or_duplicate_educational_program', [EducationalProgramsController::class, 'editionOrDuplicateEducationalProgram']);
         Route::post('/learning_objects/educational_program/download_document_student', [EducationalProgramsController::class, 'downloadDocumentStudent']);
         Route::delete('/learning_objects/educational_program/delete_inscriptions_educational_program', [EducationalProgramsController::class, 'deleteInscriptionsEducationalProgram']);
+
+        Route::post('/learning_objects/educational_programs/emit_all_credentials', [EducationalProgramsController::class, 'emitAllCredentials']);
+        Route::post('/learning_objects/educational_programs/emit_credentials', [EducationalProgramsController::class, 'emitCredentials']);
+        Route::post('/learning_objects/educational_programs/send_credentials', [EducationalProgramsController::class, 'sendCredentials']);
+        Route::post('/learning_objects/educational_programs/seal_credentials', [EducationalProgramsController::class, 'sealCredentials']);
 
         Route::post('/learning_objects/educational_program/new_edition_educational_program', [EducationalProgramsController::class, 'newEditionEducationalProgram']);
 

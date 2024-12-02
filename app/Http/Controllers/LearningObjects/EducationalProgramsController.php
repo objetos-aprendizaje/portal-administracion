@@ -124,11 +124,83 @@ class EducationalProgramsController extends BaseController
         return response()->json($data, 200);
     }
 
+    public function emitAllCredentials(Request $request)
+    {
+        $educationalProgramUid = $request->input('educational_program_uid');
+
+        $educationalProgram = EducationalProgramsModel::where('uid', $educationalProgramUid)->with(["educationalProgramType", "students"])->first();
+
+        // Comprobación de si el usuario tiene permiso para emitir credenciales para este curso
+        $this->checkPermissionsEmitCredentials($educationalProgram->educationalProgramType);
+
+        $studentsUids = $educationalProgram->students->pluck('uid')->toArray();
+
+        $this->certidigitalService->emissionsCredentialEducationalProgram($educationalProgramUid, $studentsUids);
+
+        return response()->json(['message' => 'Credenciales emitidas correctamente'], 200);
+    }
+
+    public function emitCredentials(Request $request)
+    {
+        $educationalProgramUid = $request->input('educational_program_uid');
+        $studentsUids = $request->input('students_uids');
+
+        $educationalProgram = EducationalProgramsModel::where('uid', $educationalProgramUid)->with("educationalProgramType")->first();
+
+        // Comprobación de si el usuario tiene permiso para emitir credenciales para este curso
+        $this->checkPermissionsEmitCredentials($educationalProgram->educationalProgramType);
+
+        // Comprobación de si alguno de los alumnos ya tiene las credenciales emitidas
+        $this->checkCredentialsStudentsEmissionsInEducationalProgram($educationalProgramUid, $studentsUids);
+
+        $this->certidigitalService->emissionsCredentialEducationalProgram($educationalProgramUid, $studentsUids);
+
+        return response()->json(['message' => 'Credenciales emitidas correctamente'], 200);
+    }
+
     public function sendCredentials(Request $request)
     {
         $educationalProgramUid = $request->input('educational_program_uid');
-        $this->certidigitalService->emissionsCredentialEducationalProgram($educationalProgramUid);
+        $studentsUids = $request->input('students_uids');
+
+        $this->certidigitalService->sendCredentialsEducationalPrograms([$educationalProgramUid], $studentsUids);
+
         return response()->json(['message' => 'Se han enviado las credenciales correctamente'], 200);
+    }
+
+    public function sealCredentials(Request $request)
+    {
+        $educationalProgramUid = $request->input('educational_program_uid');
+        $studentsUids = $request->input('students_uids');
+
+        $this->certidigitalService->sealEducationalProgramsCredentials([$educationalProgramUid], $studentsUids);
+
+        return response()->json(['message' => 'Credenciales selladas correctamente'], 200);
+    }
+
+    private function checkPermissionsEmitCredentials($educationalProgramType)
+    {
+        $userRoles = auth()->user()->roles()->get()->pluck('code')->toArray();
+
+        if ($educationalProgramType->managers_can_emit_credentials && in_array('MANAGEMENT', $userRoles)) {
+            return;
+        } else if ($educationalProgramType->teachers_can_emit_credentials && in_array('TEACHER', $userRoles)) {
+            return;
+        }
+
+        throw new OperationFailedException('No tienes permisos para emitir credenciales en este curso', 422);
+    }
+
+    private function checkCredentialsStudentsEmissionsInEducationalProgram($educationalProgramUid, $studentsUids)
+    {
+        $educationalProgramsStudentsWithEmissions = EducationalProgramsStudentsModel::where('educational_program_uid', $educationalProgramUid)
+            ->whereIn('user_uid', $studentsUids)
+            ->where('emissions_block_uuid', "!=", null)
+            ->exists();
+
+        if ($educationalProgramsStudentsWithEmissions) {
+            throw new OperationFailedException('No se pueden emitir credenciales porque alguno de los alumnos ya tiene credenciales emitidas', 422);
+        }
     }
 
     // En función de la acción y del estado actual del curso, se establece el nuevo estado

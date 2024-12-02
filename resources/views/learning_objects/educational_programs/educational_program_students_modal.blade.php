@@ -32,6 +32,16 @@
 
                     <button id="enroll-students-csv-btn" type="button" class="btn-icon"
                         data-educational-program-uid="">{{ e_heroicon('arrow-up-tray', 'outline') }}</button>
+
+                    <button id="emit-credentials-students-btn" type="button" class="btn-icon"
+                        title="Emitir credenciales"
+                        data-course-uid="">{{ e_heroicon('academic-cap', 'outline') }}</button>
+
+                    <button id="send-credentials-btn" type="button" class="btn-icon" title="Enviar credenciales"
+                        data-course-uid="">{{ e_heroicon('paper-airplane', 'outline') }}</button>
+
+                    <button id="seal-credentials-btn" type="button" class="btn-icon" title="Sellar credenciales"
+                        data-course-uid="">{{ e_heroicon('check-badge', 'outline') }}</button>
                 </div>
             </div>
 

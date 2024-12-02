@@ -23,8 +23,8 @@
                     <button id="reject-students-btn" type="button" class="btn-icon" title="Rechazar"
                         data-course-uid="">{{ e_heroicon('x-mark', 'outline') }}</button>
 
-                    <button id="delete-students-btn" type="button" class="btn-icon"
-                        data-educational-program-uid="">{{ e_heroicon('trash', 'outline') }}</button>
+                    <button id="delete-students-btn" type="button" class="btn-icon" data-educational-program-uid=""
+                        title="Eliminar">{{ e_heroicon('trash', 'outline') }}</button>
 
                     <button id="enroll-students-btn" type="button" class="btn-icon" title="Añadir estudiante"
                         data-course-uid="">{{ e_heroicon('plus', 'outline') }}</button>
@@ -32,9 +32,15 @@
                     <button id="enroll-students-csv-btn" type="button" class="btn-icon" title="Importar estudiantes"
                         data-course-uid="">{{ e_heroicon('arrow-up-tray', 'outline') }}</button>
 
-                    <button id="send-credentials-students-btn" type="button" class="btn-icon"
-                        title="Enviar credenciales"
+                    <button id="emit-credentials-students-btn" type="button" class="btn-icon"
+                        title="Emitir credenciales"
                         data-course-uid="">{{ e_heroicon('academic-cap', 'outline') }}</button>
+
+                    <button id="send-credentials-btn" type="button" class="btn-icon" title="Enviar credenciales"
+                        data-course-uid="">{{ e_heroicon('paper-airplane', 'outline') }}</button>
+
+                    <button id="seal-credentials-btn" type="button" class="btn-icon" title="Sellar credenciales"
+                        data-course-uid="">{{ e_heroicon('check-badge', 'outline') }}</button>
                 </div>
             </div>
 

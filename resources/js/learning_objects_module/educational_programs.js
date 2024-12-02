@@ -212,6 +212,73 @@ function initHandlers() {
     document
         .getElementById("payment-terms-list")
         .addEventListener("click", removePaymentTerm);
+
+    document
+        .getElementById("emit-credentials-students-btn")
+        .addEventListener("click", function () {
+            showModalConfirmation(
+                "Emisión de credenciales",
+                "¿Estás seguro de que quieres emitir las credenciales a los estudiantes seleccionados?"
+            ).then((result) => {
+                if (!result) return;
+                actionCredentials("emit");
+            });
+        });
+
+    document
+        .getElementById("send-credentials-btn")
+        .addEventListener("click", function () {
+            showModalConfirmation(
+                "Envío de credenciales",
+                "¿Estás seguro de que quieres emitir las credenciales a los estudiantes seleccionados?"
+            ).then((result) => {
+                if (!result) return;
+                actionCredentials("send");
+            });
+        });
+
+    document
+        .getElementById("seal-credentials-btn")
+        .addEventListener("click", function () {
+            showModalConfirmation(
+                "Sellado de credenciales",
+                "¿Estás seguro de que quieres sellar las credenciales a los estudiantes seleccionados?"
+            ).then((result) => {
+                if (!result) return;
+                actionCredentials("seal");
+            });
+        });
+}
+
+function actionCredentials(action) {
+    let url = "";
+    if (action == "emit")
+        url = "/learning_objects/educational_programs/emit_credentials";
+    else if (action == "send")
+        url = "/learning_objects/educational_programs/send_credentials";
+    else if (action == "seal")
+        url = "/learning_objects/educational_programs/seal_credentials";
+    else return;
+
+    const studentsUids = selectedEducationalProgramStudents.map(
+        (student) => student.uid
+    );
+
+    const params = {
+        url,
+        method: "POST",
+        loader: true,
+        body: {
+            educational_program_uid: selectedEducationalProgramUid,
+            students_uids: studentsUids,
+        },
+        stringify: true,
+        toast: true,
+    };
+
+    apiFetch(params).then(() => {
+        loadEducationalProgramsStudentsModal(selectedEducationalProgramUid);
+    });
 }
 
 /**
@@ -390,6 +457,24 @@ function initializeEducationalProgramsTable() {
                             );
                         },
                     },
+                    {
+                        icon: "academic-cap",
+                        type: "outline",
+                        tooltip:
+                            "Emitir todas las credenciales del programa formativo",
+                        action: (educational_program) => {
+                            showModalConfirmation(
+                                "Emisión de todas las credenciales",
+                                "¿Estás seguro de que quieres emitir las credenciales a los estudiantes del programa seleccionado?"
+                            ).then((result) => {
+                                if (result) {
+                                    emitAllCredentialsEducationalProgram(
+                                        educational_program.uid
+                                    );
+                                }
+                            });
+                        },
+                    },
                 ];
 
                 setTimeout(() => {
@@ -445,14 +530,19 @@ function initializeEducationalProgramsTable() {
                 },
             },
             {
-                label: `${heroicon("document-arrow-up")} Envío de credenciales`,
+                label: `${heroicon(
+                    "document-arrow-up"
+                )} Emisión de todas las credenciales`,
                 action: function (e, column) {
                     showModalConfirmation(
-                        "Envío de credenciales",
-                        "¿Estás seguro de que quieres enviar las credenciales a los estudiantes del programa seleccionado?"
+                        "Emisión de todas las credenciales",
+                        "¿Estás seguro de que quieres emitir las credenciales a los estudiantes del programa seleccionado?"
                     ).then((result) => {
                         const educationalProgramClicked = column.getData();
-                        if (result) sendCredentialsEducationalProgram(educationalProgramClicked.uid);
+                        if (result)
+                            emitAllCredentialsEducationalProgram(
+                                educationalProgramClicked.uid
+                            );
                     });
                 },
             },
@@ -484,9 +574,9 @@ function initializeEducationalProgramsTable() {
     );
 }
 
-function sendCredentialsEducationalProgram(educationalProgramUid) {
+function emitAllCredentialsEducationalProgram(educationalProgramUid) {
     const params = {
-        url: `/learning_objects/educational_programs/send_credentials`,
+        url: `/learning_objects/educational_programs/emit_all_credentials`,
         method: "POST",
         stringify: true,
         body: {
@@ -1344,6 +1434,42 @@ function initializeEducationalProgramStudentsTable(
         { title: "Nombre", field: "first_name", widthGrow: "2" },
         { title: "Apellidos", field: "last_name", widthGrow: "3" },
         { title: "NIF", field: "nif", widthGrow: "2" },
+        {
+            title: "Estado de la credencial",
+            field: "emissions_block_uuid",
+            formatter: function (cell, formatterParams, onRendered) {
+                const credential = cell.getRow().getData()
+                    .educational_program_student_info.emissions_block_uuid;
+                return credential ? "Emitida" : "No emitida";
+            },
+            cellClick: function (e, cell) {},
+            widthGrow: 3,
+            resizable: false,
+        },
+        {
+            title: "Credencial enviada",
+            field: "credential_sent",
+            formatter: function (cell, formatterParams, onRendered) {
+                const credentialSent = cell.getRow().getData()
+                    .educational_program_student_info.credential_sent;
+                return credentialSent ? "Sí" : "No";
+            },
+            cellClick: function (e, cell) {},
+            widthGrow: 3,
+            resizable: false,
+        },
+        {
+            title: "Credencial sellada",
+            field: "credential_sealed",
+            formatter: function (cell, formatterParams, onRendered) {
+                const credentialSealed = cell.getRow().getData()
+                    .educational_program_student_info.credential_sealed;
+                return credentialSealed ? "Sí" : "No";
+            },
+            cellClick: function (e, cell) {},
+            widthGrow: 3,
+            resizable: false,
+        },
     ];
 
     // Si el programa formativo requiere validación de matrículas, se añaden las columnas de aprobación y documentos
