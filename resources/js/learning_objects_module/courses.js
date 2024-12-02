@@ -512,15 +512,15 @@ const columnsCoursesTable = [
                     {
                         icon: "document-arrow-up",
                         type: "outline",
-                        tooltip: "Envío de credenciales",
+                        tooltip: "Emisión de todas las credenciales",
                         action: (course) => {
                             showModalConfirmation(
-                                "Envío de credenciales",
-                                "¿Deseas enviar las credenciales a todos los usuarios que hayan finalizado?",
-                                "sendCredentials",
+                                "Emisión de todas las credenciales",
+                                "¿Deseas emitir todas las credenciales a todos los estudiantes que hayan finalizado?",
+                                "emitAllCredentials",
                                 [{ key: "course_uid", value: course.uid }]
                             ).then((result) => {
-                                if (result) sendCredentialsCourse(course.uid);
+                                if (result) emitAllCredentialsCourse(course.uid);
                             });
                         },
                     },
@@ -1088,12 +1088,39 @@ function initHandlers() {
 
     // TODO
     document
-        .getElementById("send-credentials-students-btn")
+        .getElementById("emit-credentials-students-btn")
+        .addEventListener("click", function () {
+            showModalConfirmation(
+                "Emisión de credenciales",
+                "¿Estás seguro de que quieres emitir las credenciales a los estudiantes seleccionados?"
+            ).then((result) => {
+                if (!result) return;
+                actionCredentials("emit");
+            });
+        });
+
+    document
+        .getElementById("send-credentials-btn")
         .addEventListener("click", function () {
             showModalConfirmation(
                 "Envío de credenciales",
-                "¿Estás seguro de que quieres enviar las credenciales a los estudiantes seleccionados?"
-            ).then((result) => {});
+                "¿Estás seguro de que quieres emitir las credenciales a los estudiantes seleccionados?"
+            ).then((result) => {
+                if (!result) return;
+                actionCredentials("send");
+            });
+        });
+
+    document
+        .getElementById("seal-credentials-btn")
+        .addEventListener("click", function () {
+            showModalConfirmation(
+                "Sellado de credenciales",
+                "¿Estás seguro de que quieres sellar las credenciales a los estudiantes seleccionados?"
+            ).then((result) => {
+                if (!result) return;
+                actionCredentials("seal");
+            });
         });
 
     let typingTimer; // Almacena el temporizador de espera
@@ -1118,6 +1145,34 @@ function initHandlers() {
             }, 10000);
         });
     }
+}
+
+function actionCredentials(action) {
+    let url = "";
+    if (action == "emit") url = "/learning_objects/courses/emit_credentials";
+    else if (action == "send")
+        url = "/learning_objects/courses/send_credentials";
+    else if (action == "seal")
+        url = "/learning_objects/courses/seal_credentials";
+    else return;
+
+    const studentsUids = selectedCourseStudents.map((student) => student.uid);
+
+    const params = {
+        url,
+        method: "POST",
+        loader: true,
+        body: {
+            course_uid: selectedCourseUid,
+            students_uids: studentsUids,
+        },
+        stringify: true,
+        toast: true,
+    };
+
+    apiFetch(params).then(() => {
+        loadCourseStudentsModal(selectedCourseUid);
+    });
 }
 
 /**
@@ -2078,14 +2133,14 @@ function initializeCoursesTable() {
             },
         },
         {
-            label: `${heroicon("document-arrow-up")} Envío de credenciales`,
+            label: `${heroicon("document-arrow-up")} Emisión de credenciales`,
             action: function (e, column) {
                 showModalConfirmation(
-                    "Envío de credenciales",
-                    "¿Estás seguro de que quieres enviar las credenciales a los estudiantes del curso seleccionado?"
+                    "Emisión de todas las credenciales",
+                    "¿Estás seguro de que quieres emitir todas las credenciales a los estudiantes del curso seleccionado?"
                 ).then((result) => {
                     const courseClicked = column.getData();
-                    if (result) sendCredentialsCourse(courseClicked.uid);
+                    if (result) emitAllCredentialsCourse(courseClicked.uid);
                 });
             },
             disabled: function (column) {
@@ -2129,9 +2184,9 @@ function initializeCoursesTable() {
     controlsSearch(coursesTable, endPointTable, "courses-table");
 }
 
-function sendCredentialsCourse(courseUid) {
+function emitAllCredentialsCourse(courseUid) {
     const params = {
-        url: `/learning_objects/courses/send_credentials`,
+        url: `/learning_objects/courses/emit_all_credentials`,
         method: "POST",
         stringify: true,
         body: {
@@ -3290,6 +3345,43 @@ function initializeCourseStudentsTable(
         { title: "Nombre", field: "first_name", widthGrow: "2" },
         { title: "Apellidos", field: "last_name", widthGrow: "3" },
         { title: "NIF", field: "nif", widthGrow: "2" },
+        {
+            title: "Estado de la credencial",
+            field: "emissions_block_uuid",
+            formatter: function (cell, formatterParams, onRendered) {
+                const credential = cell.getRow().getData()
+                    .course_student_info.emissions_block_uuid;
+                return credential ? "Emitida" : "No emitida";
+            },
+            cellClick: function (e, cell) {},
+            widthGrow: 3,
+            resizable: false,
+        },
+        {
+            title: "Credencial enviada",
+            field: "credential_sent",
+            formatter: function (cell, formatterParams, onRendered) {
+                console.log(cell.getRow().getData().course_student_info);
+                const credentialSent = cell.getRow().getData()
+                    .course_student_info.credential_sent;
+                return credentialSent ? "Sí" : "No";
+            },
+            cellClick: function (e, cell) {},
+            widthGrow: 3,
+            resizable: false,
+        },
+        {
+            title: "Credencial sellada",
+            field: "credential_sealed",
+            formatter: function (cell, formatterParams, onRendered) {
+                const credentialSealed = cell.getRow().getData()
+                    .course_student_info.credential_sealed;
+                return credentialSealed ? "Sí" : "No";
+            },
+            cellClick: function (e, cell) {},
+            widthGrow: 3,
+            resizable: false,
+        },
     ];
 
     // Se añaden las columnas de aceptación y documentos presentados si el curso tiene validación de inscripciones

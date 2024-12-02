@@ -215,6 +215,85 @@ class ManagementCoursesController extends BaseController
         return response()->json(['message' => 'Se han actualizado los estados de los cursos correctamente'], 200);
     }
 
+    public function emitAllCredentials(Request $request)
+    {
+        $courseUid = $request->input('course_uid');
+
+        $course = CoursesModel::where('uid', $courseUid)->with(["educational_program_type", "students"])->first();
+
+        // Comprobación de si el usuario tiene permiso para emitir credenciales para este curso
+        $this->checkPermissionsEmitCredentials($course->educational_program_type);
+
+        $studentsUids = $course->students->pluck('uid')->toArray();
+        $this->certidigitalService->emissionCredentialsCourse($courseUid, $studentsUids);
+
+        return response()->json(['message' => 'Credenciales emitidas correctamente'], 200);
+    }
+
+    public function emitCredentials(Request $request)
+    {
+
+        $courseUid = $request->input('course_uid');
+        $studentsUids = $request->input('students_uids');
+
+        $course = CoursesModel::where('uid', $courseUid)->with("educational_program_type")->first();
+
+        // Comprobación de si el usuario tiene permiso para emitir credenciales para este curso
+        $this->checkPermissionsEmitCredentials($course->educational_program_type);
+
+        // Comprobación de si alguno de los alumnos ya tiene las credenciales emitidas
+        $this->checkCredentialsStudentsEmissionsInCourse($courseUid, $studentsUids);
+
+        $this->certidigitalService->emissionCredentialsCourse($courseUid, $studentsUids);
+
+        return response()->json(['message' => 'Credenciales emitidas correctamente'], 200);
+    }
+
+    public function sendCredential(Request $request)
+    {
+        $courseUid = $request->input('course_uid');
+        $studentsUids = $request->input('students_uids');
+
+        $this->certidigitalService->sendCourseCredentials([$courseUid], $studentsUids);
+
+        return response()->json(['message' => 'Credenciales enviadas correctamente'], 200);
+    }
+
+    public function sealCredential(Request $request)
+    {
+        $courseUid = $request->input('course_uid');
+        $studentsUids = $request->input('students_uids');
+
+        $this->certidigitalService->sealCoursesCredentials([$courseUid], $studentsUids);
+
+        return response()->json(['message' => 'Credenciales selladas correctamente'], 200);
+    }
+
+    private function checkPermissionsEmitCredentials($educationalProgramType)
+    {
+        $userRoles = auth()->user()->roles()->get()->pluck('code')->toArray();
+
+        if ($educationalProgramType->managers_can_emit_credentials && in_array('MANAGEMENT', $userRoles)) {
+            return;
+        } else if ($educationalProgramType->teachers_can_emit_credentials && in_array('TEACHER', $userRoles)) {
+            return;
+        }
+
+        throw new OperationFailedException('No tienes permisos para emitir credenciales en este curso', 422);
+    }
+
+    private function checkCredentialsStudentsEmissionsInCourse($courseUid, $studentsUids)
+    {
+        $coursesStudentsWithEmissions = CoursesStudentsModel::where('course_uid', $courseUid)
+            ->whereIn('user_uid', $studentsUids)
+            ->where('emissions_block_uuid', "!=", null)
+            ->exists();
+
+        if ($coursesStudentsWithEmissions) {
+            throw new OperationFailedException('No se pueden emitir credenciales porque alguno de los alumnos ya tiene credenciales emitidas', 422);
+        }
+    }
+
     public function regenerateEmbeddings(Request $request)
     {
         $coursesUids = $request->input('courses_uids');

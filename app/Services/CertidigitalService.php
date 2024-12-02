@@ -29,7 +29,7 @@ class CertidigitalService
             'certidigitalCredential'
         ])->first();
 
-        $credential = $this->createUpdateCredential($educationalProgram->courses, $educationalProgram->name, $educationalProgram->description,  $educationalProgram->certidigitalCredential);
+        $credential = $this->createUpdateCoursesCredentials($educationalProgram->courses, $educationalProgram->name, $educationalProgram->description,  $educationalProgram->certidigitalCredential);
 
         if ($credential) {
             $educationalProgram->certidigital_credential_uid = $credential;
@@ -92,7 +92,7 @@ class CertidigitalService
             "certidigitalCredential",
         ])->first();
 
-        $credential = $this->createUpdateCredential([$course], $course->title, $course->description, $course->certidigitalCredential);
+        $credential = $this->createUpdateCoursesCredentials([$course], $course->title, $course->description, $course->certidigitalCredential);
 
         if ($credential) {
             $course->certidigital_credential_uid = $credential;
@@ -565,7 +565,7 @@ class CertidigitalService
         $this->sendRequest($endpoint, $data, false);
     }
 
-    private function createUpdateCredential($courses, $titleCredential = "", $descriptionCredential = "", $certidigitalCredential = null)
+    private function createUpdateCoursesCredentials($courses, $titleCredential = "", $descriptionCredential = "", $certidigitalCredential = null)
     {
         $achievementsCourses = [];
 

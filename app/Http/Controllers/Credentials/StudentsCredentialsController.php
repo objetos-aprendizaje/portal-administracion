@@ -7,6 +7,7 @@ use App\Models\CoursesModel;
 use App\Models\CoursesStudentsModel;
 use App\Models\EducationalProgramsModel;
 use App\Models\EducationalProgramsStudentsModel;
+use App\Models\EducationalProgramTypesModel;
 use App\Models\UsersModel;
 use App\Services\CertidigitalService;
 use Illuminate\Routing\Controller as BaseController;
@@ -73,6 +74,27 @@ class StudentsCredentialsController extends BaseController
     {
         $coursesUids = $request->get('courses');
         $userUid = $request->get('user_uid');
+
+        // Tipos de programa asociados a los cursos
+        $educationalProgramTypesCourses = EducationalProgramTypesModel::whereIn('uid', function ($query) use ($coursesUids) {
+            $query->select('educational_program_type_uid')
+                ->from('courses')
+                ->whereIn('uid', $coursesUids);
+        })->get();
+
+        // Rol del usuario
+        $userRoles = auth()->user()->roles()->get()->pluck('code')->toArray();
+
+        // Comprobación de si el usuario tiene el rol correcto para emitir en base a los tipos de programa
+        foreach ($educationalProgramTypesCourses as $educationalProgramTypeCourse) {
+            if ($educationalProgramTypeCourse->managers_can_emit_credentials && in_array('MANAGEMENT', $userRoles)) {
+                continue;
+            } else if ($educationalProgramTypeCourse->teachers_can_emit_credentials && in_array('TEACHER', $userRoles)) {
+                continue;
+            }
+
+            throw new OperationFailedException('No tienes permisos para emitir credenciales en alguno de los cursos');
+        }
 
         $coursesStudentWithEmissions = CoursesStudentsModel::where('user_uid', $userUid)
             ->whereIn('course_uid', $coursesUids)

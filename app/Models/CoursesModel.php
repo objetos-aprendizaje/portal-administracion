@@ -99,7 +99,7 @@ class CoursesModel extends Model
             'courses_students',
             'course_uid',
             'user_uid'
-        )->withPivot(['acceptance_status', 'status', 'emissions_block_uuid', 'credential_sealed', 'uid'])->as('course_student_info');
+        )->withPivot(['acceptance_status', 'status', 'emissions_block_uuid', 'credential_sealed', 'credential_sent', 'uid'])->as('course_student_info');
     }
 
     public function courseDocuments()
