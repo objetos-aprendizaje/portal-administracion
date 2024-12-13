@@ -141,7 +141,7 @@
 
                 <div class="field mt-2">
                     <div class="label-container label-center">
-                        <label for="center_uid">Centro <span class="text-danger">*</span></label>
+                        <label for="center_uid">Centro</label>
                     </div>
 
                     <div class="content-container mt-1">

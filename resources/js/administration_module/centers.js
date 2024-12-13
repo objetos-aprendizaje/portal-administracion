@@ -107,7 +107,7 @@ function initializeCentersTable() {
             title: "",
             field: "actions",
             formatter: function (cell, formatterParams, onRendered) {
-                return `<button type="button" class='btn action-btn'>${heroicon(
+                return `<button type="button" class='btn action-btn' title='Editar'>${heroicon(
                     "pencil-square",
                     "outline"
                 )}</button>`;
@@ -195,7 +195,7 @@ function submitCenterForm() {
 
     apiFetch(params)
         .then(() => {
-            centersTable.replaceData(endPointTable);
+            centersTable.setData(endPointTable);
             hideModal("center-modal");
         })
         .catch((data) => {
@@ -218,7 +218,7 @@ async function deleteCenters() {
     };
 
     apiFetch(params).then(() => {
-        centersTable.replaceData(endPointTable);
+        centersTable.setData(endPointTable);
         hideModal("center-modal");
     });
 }
@@ -231,7 +231,7 @@ async function deleteCenters() {
 function controlReloadTable() {
     const reloadTableBtn = document.getElementById("btn-reload-table");
     reloadTableBtn.addEventListener("click", function () {
-        centersTable.replaceData(endPointTable);
+        centersTable.setData(endPointTable);
     });
 }
 

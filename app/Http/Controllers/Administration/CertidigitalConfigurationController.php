@@ -69,6 +69,9 @@ class CertidigitalConfigurationController extends BaseController {
             'certidigital_client_secret.required' => 'El secreto del cliente es obligatorio',
             'certidigital_username.required' => 'El nombre de usuario es obligatorio',
             'certidigital_password.required' => 'La contraseña es obligatoria',
+            'certidigital_url_token.required' => 'La URL del token es obligatoria',
+            'certidigital_center_id.required' => 'El ID del centro es obligatorio',
+            'certidigital_organization_oid.required' => 'El ID de la organización es obligatorio',
         ];
 
         $rules = [
@@ -77,6 +80,9 @@ class CertidigitalConfigurationController extends BaseController {
             'certidigital_client_secret' => 'required',
             'certidigital_username' => 'required',
             'certidigital_password' => 'required',
+            'certidigital_url_token' => 'required',
+            'certidigital_center_id' => 'required',
+            'certidigital_organization_oid' => 'required',
         ];
 
         $validator = Validator::make($request->all(), $rules, $messages);

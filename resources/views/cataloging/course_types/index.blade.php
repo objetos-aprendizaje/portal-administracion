@@ -9,8 +9,8 @@
             @include('partials.table-search', ['table' => 'course-types-table'])
 
             <div>
-                <button id="add-course-type-btn" type="button" class="btn btn-icon mb-4">{{e_heroicon('plus', 'outline')}}</button>
-                <button id="delete-course-type-btn" type="button" class="btn btn-icon mb-4">{{e_heroicon('trash', 'outline')}}</button>
+                <button id="add-course-type-btn" type="button" class="btn btn-icon mb-4" title="Añadir tipo de curso">{{e_heroicon('plus', 'outline')}}</button>
+                <button id="delete-course-type-btn" type="button" class="btn btn-icon mb-4" title="Eliminar tipo de curso">{{e_heroicon('trash', 'outline')}}</button>
             </div>
 
         </div>

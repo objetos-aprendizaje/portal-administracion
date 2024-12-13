@@ -70,6 +70,10 @@ function initHandlers() {
     document
         .getElementById("regenerate-embeddings-btn")
         .addEventListener("click", regenerateEmbeddings);
+
+    document
+        .getElementById("footer-texts-form")
+        .addEventListener("submit", submitFooterTextsForm);
 }
 
 function saveScripts() {
@@ -209,6 +213,10 @@ async function submitGeneralConfigurationForm() {
         "learning_objects_appraisals",
         document.getElementById("learning_objects_appraisals").checked ? 1 : 0
     );
+    formData.append(
+        "registration_active",
+        document.getElementById("registration_active").checked ? 1 : 0
+    );
 
     const params = {
         url: "/administration/save_general_options",
@@ -320,13 +328,31 @@ function submitOpenaiForm() {
         toast: true,
     };
 
-    apiFetch(params);
+    resetFormErrors("openai-form");
+
+    apiFetch(params).catch((data) => {
+        showFormErrors(data.errors, "openai-form");
+    });
 }
 
 function regenerateEmbeddings() {
     const params = {
         url: "/administration/regenerate_embeddings",
         method: "POST",
+        loader: true,
+        toast: true,
+    };
+
+    apiFetch(params);
+}
+
+function submitFooterTextsForm() {
+    const formData = new FormData(this);
+
+    const params = {
+        url: "/administration/save_footer_texts",
+        method: "POST",
+        body: formData,
         loader: true,
         toast: true,
     };

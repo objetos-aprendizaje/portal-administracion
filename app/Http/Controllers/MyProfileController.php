@@ -67,11 +67,15 @@ class MyProfileController extends BaseController
         $user = Auth::user();
 
         $messages = [
+            'first_name.required' => 'El campo Nombre es obligatorio',
+            'last_name.required' => 'El campo Apellidos es obligatorio',
             'nif.required' => 'El campo NIF es obligatorio',
             'nif.max' => 'El campo NIF no puede tener más de 9 caracteres',
         ];
 
         $validator = Validator::make($request->all(), [
+            'first_name' => 'required',
+            'last_name' => 'required',
             'nif' => ['required', 'max:9', new NifNie],
             'photo_path' => 'max:6144'
         ], $messages);
@@ -116,6 +120,14 @@ class MyProfileController extends BaseController
         });
 
         return response()->json(['message' => 'Tu perfil se ha actualizado correctamente'], 200);
+    }
+
+    public function deletePhoto() {
+        $user = Auth::user();
+        $user->photo_path = null;
+        $user->save();
+
+        return response()->json(['message' => 'La foto de perfil se ha eliminado correctamente'], 200);
     }
 
     private function syncGeneralNotificationTypes(Request $request)

@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Logs\LogsController;
 use App\Jobs\SendEmailJob;
+use App\Models\UsersAccessesModel;
 use App\Rules\NifNie;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Carbon;
@@ -91,6 +92,13 @@ class ListUsersController extends BaseController
         $filters = $request->get('filters');
 
         $query = UsersModel::query()->with('roles');
+
+        $query->addSelect([
+            'last_access' => UsersAccessesModel::select('date')
+                ->whereColumn('user_uid', 'users.uid')
+                ->orderBy('date', 'desc')
+                ->limit(1)
+        ]);
 
         if ($search) {
             $query->where(function ($query) use ($search) {
@@ -207,7 +215,7 @@ class ListUsersController extends BaseController
         $rules = [
             'first_name' => 'required|string',
             'last_name' => 'required|string',
-            'nif' => ['required', new NifNie],
+            'nif' => ['nullable', 'unique:users,nif', new NifNie],
             'email' => 'required|email|unique:users,email',
             'curriculum' => 'nullable|string',
             'roles' => ['required', function ($attribute, $value, $fail) {
@@ -223,10 +231,9 @@ class ListUsersController extends BaseController
 
         if ($user_uid) {
             $rules['email'] = 'required|email|unique:users,email,' . $user_uid . ',uid';
-            $rules['nif'] = 'required|unique:users,nif,' . $user_uid . ',uid';
+            $rules['nif'] = 'unique:users,nif,' . $user_uid . ',uid';
         } else {
             $rules['email'] = 'required|email|unique:users,email';
-            $rules['nif'] = 'required|unique:users,nif';
         }
 
         $validator = Validator::make($request->all(), $rules, $messages);
@@ -363,7 +370,19 @@ class ListUsersController extends BaseController
         $users_uids = $request->input('usersUids');
 
         DB::transaction(function () use ($users_uids) {
-            UsersModel::whereIn('uid', $users_uids)->delete();
+            foreach($users_uids as $user_uid) {
+                UsersModel::where('uid', $user_uid)->update([
+                    'first_name' => 'deleted',
+                    'last_name' => 'deleted',
+                    'email' => 'emaildeleted-' . generate_uuid() . '@deleted.com',
+                    'nif' => null,
+                    'photo_path' => null,
+                    'password' => null,
+                    'department_uid' => null,
+                    'deleted_at' => now()
+                ]);
+            }
+
             LogsController::createLog("Eliminación de usuarios", 'Usuarios', auth()->user()->uid);
         });
 

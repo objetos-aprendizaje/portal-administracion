@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class UsersModel extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
     protected $table = 'users';
     protected $primaryKey = 'uid';
 
@@ -20,7 +21,7 @@ class UsersModel extends Authenticatable
 
     public $incrementing = false;
 
-    protected $fillable = ['uid','first_name', 'last_name', 'nif', 'email', 'user_rol_uid', 'curriculum', 'department_uid'];
+    protected $fillable = ['uid','first_name', 'last_name', 'nif', 'email', 'user_rol_uid', 'curriculum', 'department_uid', 'identity_verified'];
 
     public function rol()
     {
@@ -52,7 +53,7 @@ class UsersModel extends Authenticatable
             'courses_teachers',
             'user_uid',
             'course_uid'
-        )->withPivot('credential', 'emissions_block_uuid', 'emissions_block_id', 'credential_sent', 'credential_sealed')->select(['title']);
+        )->withPivot('credential', 'emissions_block_uuid', 'emissions_block_id', 'credential_sent', 'credential_sealed')->select(['title'])->as('courses_teachers');
     }
 
     public function courseStudentDocuments()

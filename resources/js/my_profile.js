@@ -18,6 +18,27 @@ function initHandlers() {
     document
         .getElementById("user-profile-form")
         .addEventListener("submit", submitUserProfileForm);
+
+    document
+        .getElementById("delete-photo")
+        .addEventListener("click", deletePhoto);
+}
+
+function deletePhoto() {
+    const params = {
+        method: "DELETE",
+        toast: true,
+        loader: true,
+        url: "/my_profile/delete_photo",
+    };
+
+    apiFetch(params).then(() => {
+        document.getElementById("photo_path_preview").src =
+            "/data/images/default_images/no_image_attached.svg";
+        document.getElementById("image-name").textContent =
+            "Ningún archivo seleccionado";
+        document.getElementById("photo_path").value = "";
+    });
 }
 
 function submitUserProfileForm() {
@@ -33,32 +54,51 @@ function submitUserProfileForm() {
     );
 
     // Recoger los uid de los checkboxes marcados con clase notification-type
-    const generalNotificationTypes = document.querySelectorAll(".general-notification-type:not(:checked)");
-    const generalNotificationTypesCheckedValues = Array.from(generalNotificationTypes).map(
-        (checkbox) => checkbox.value
+    const generalNotificationTypes = document.querySelectorAll(
+        ".general-notification-type:not(:checked)"
+    );
+    const generalNotificationTypesCheckedValues = Array.from(
+        generalNotificationTypes
+    ).map((checkbox) => checkbox.value);
+
+    formData.append(
+        "general_notification_types_disabled",
+        JSON.stringify(generalNotificationTypesCheckedValues)
     );
 
-    formData.append('general_notification_types_disabled', JSON.stringify(generalNotificationTypesCheckedValues));
-
-    const emailNotificationTypes = document.querySelectorAll(".email-notification-type:not(:checked)");
-    const emailNotificationTypesCheckedValues = Array.from(emailNotificationTypes).map(
-        (checkbox) => checkbox.value
+    const emailNotificationTypes = document.querySelectorAll(
+        ".email-notification-type:not(:checked)"
     );
-    formData.append('email_notification_types_disabled', JSON.stringify(emailNotificationTypesCheckedValues));
-
-    const automaticEmailNotificationTypes = document.querySelectorAll(".automatic-email-notification-type:not(:checked)");
-    const automaticEmailNotificationTypesCheckedValues = Array.from(automaticEmailNotificationTypes).map(
-        (checkbox) => checkbox.value
+    const emailNotificationTypesCheckedValues = Array.from(
+        emailNotificationTypes
+    ).map((checkbox) => checkbox.value);
+    formData.append(
+        "email_notification_types_disabled",
+        JSON.stringify(emailNotificationTypesCheckedValues)
     );
-    formData.append('automatic_email_notification_types_disabled', JSON.stringify(automaticEmailNotificationTypesCheckedValues));
+
+    const automaticEmailNotificationTypes = document.querySelectorAll(
+        ".automatic-email-notification-type:not(:checked)"
+    );
+    const automaticEmailNotificationTypesCheckedValues = Array.from(
+        automaticEmailNotificationTypes
+    ).map((checkbox) => checkbox.value);
+    formData.append(
+        "automatic_email_notification_types_disabled",
+        JSON.stringify(automaticEmailNotificationTypesCheckedValues)
+    );
 
     // Recoger los uid de los checkboxes marcados con clase notification-type
-    const automaticGeneralNotificationTypes = document.querySelectorAll(".automatic-general-notification-type:not(:checked)");
-    const automaticGeneralNotificationTypesCheckedValues = Array.from(automaticGeneralNotificationTypes).map(
-        (checkbox) => checkbox.value
+    const automaticGeneralNotificationTypes = document.querySelectorAll(
+        ".automatic-general-notification-type:not(:checked)"
     );
-    formData.append('automatic_general_notification_types_disabled', JSON.stringify(automaticGeneralNotificationTypesCheckedValues));
-
+    const automaticGeneralNotificationTypesCheckedValues = Array.from(
+        automaticGeneralNotificationTypes
+    ).map((checkbox) => checkbox.value);
+    formData.append(
+        "automatic_general_notification_types_disabled",
+        JSON.stringify(automaticGeneralNotificationTypesCheckedValues)
+    );
 
     const params = {
         method: "POST",

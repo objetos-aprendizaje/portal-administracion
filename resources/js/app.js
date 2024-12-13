@@ -1081,3 +1081,11 @@ function setPseudoElementTop(element, uid) {
     style.appendChild(document.createTextNode(css));
     document.head.appendChild(style);
 }
+
+export function setConfig(name, data) {
+    localStorage.setItem(name, JSON.stringify(data));
+}
+
+export function getConfig(name) {
+    return JSON.parse(localStorage.getItem(name));
+}

@@ -296,5 +296,5 @@ async function deleteFooterPages() {
 }
 
 function reloadTable() {
-    footerPagesTable.replaceData(endPointTable);
+    footerPagesTable.setData(endPointTable);
 }

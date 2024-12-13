@@ -40,6 +40,8 @@ import {
     changeColorColoris,
     updateInputFile,
     debounce,
+    setConfig,
+    getConfig,
 } from "../app.js";
 import { heroicon } from "../heroicons.js";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
@@ -126,7 +128,6 @@ const columnsCoursesTable = [
         headerSort: false,
         width: 60,
     },
-    { title: "Título", field: "title", resizable: true, widthGrow: 3 },
     {
         title: "Identificador",
         field: "identifier",
@@ -134,6 +135,7 @@ const columnsCoursesTable = [
         resizable: true,
         widthGrow: 2,
     },
+    { title: "Título", field: "title", resizable: true, widthGrow: 3 },
     {
         title: "Estado",
         field: "status_name",
@@ -444,26 +446,32 @@ const columnsCoursesTable = [
         visible: false,
     },
     {
-        title: "¿Tiene embeddings?",
-        field: "embeddings_status",
+        title: "Credencial de alumno",
+        field: "certidigital_credential_uid",
         formatter: function (cell, formatterParams, onRendered) {
             const data = cell.getValue();
-            if (data == 0) {
-                return "No";
-            } else {
-                return "Si";
-            }
+            return data ? "Si" : "No";
         },
         widthGrow: 2,
         visible: false,
     },
     {
-        title: `<span class='cursor-pointer columns-selector'>${heroicon(
+        title: "Credencial de docente",
+        field: "certidigital_teacher_credential_uid",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            return data ? "Si" : "No";
+        },
+        widthGrow: 2,
+        visible: false,
+    },
+    {
+        title: `<span class='cursor-pointer columns-selector' title='Seleccionar columnas'>${heroicon(
             "view-columns"
         )}</span>`,
         field: "actions",
         formatter: function (cell, formatterParams, onRendered) {
-            return `<button type="button" class='btn action-btn'>${heroicon(
+            return `<button type="button" class='btn action-btn' title='Editar'>${heroicon(
                 "pencil-square",
                 "outline"
             )}</button>`;
@@ -487,7 +495,7 @@ const columnsCoursesTable = [
         field: "actions",
         formatter: function (cell, formatterParams, onRendered) {
             return `
-                <button type="button" class='btn action-btn'>${heroicon(
+                <button type="button" class='btn action-btn' title='Más opciones'>${heroicon(
                     "ellipsis-horizontal",
                     "outline"
                 )}</button>
@@ -520,7 +528,8 @@ const columnsCoursesTable = [
                                 "emitAllCredentials",
                                 [{ key: "course_uid", value: course.uid }]
                             ).then((result) => {
-                                if (result) emitAllCredentialsCourse(course.uid);
+                                if (result)
+                                    emitAllCredentialsCourse(course.uid);
                             });
                         },
                     },
@@ -564,6 +573,38 @@ const columnsCoursesTable = [
                                 if (result) duplicateCourse(course.uid);
                             });
                         },
+                    },
+                    {
+                        icon: "document-arrow-up",
+                        type: "outline",
+                        tooltip: "Regenerar credencial de estudiante",
+                        action: (course) => {
+                            showModalConfirmation(
+                                "Regenerar credencial de estudiante",
+                                "¿Estás seguro de que deseas regenerar las credenciales de estudiantes?",
+                                "regenerateCredentialsStudents",
+                                [{ key: "course_uid", value: course.uid }]
+                            ).then((result) => {
+                                if (result)
+                                    emitAllCredentialsCourse(course.uid);
+                            });
+                        },
+                    },
+                    {
+                        icon: "document-arrow-up",
+                        type: "outline",
+                        tooltip: "Regenerar credencial de docente",
+                        action: (course) => {
+                            showModalConfirmation(
+                                "Regenerar credenciales de docentes",
+                                "¿Estás seguro de que deseas regenerar las credenciales de docentes?",
+                                "regenerateCredentialsTeachers",
+                                [{ key: "course_uid", value: course.uid }]
+                            ).then((result) => {
+                                if (result)
+                                    emitAllCredentialsCourse(course.uid);
+                            });
+                        },
                     }
                 );
             }
@@ -578,6 +619,23 @@ const columnsCoursesTable = [
         resizable: false,
     },
 ];
+
+if (window.enabledRecommendationModule) {
+    columnsCoursesTable.push({
+        title: "¿Tiene embeddings?",
+        field: "embeddings_status",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            if (data == 0) {
+                return "No";
+            } else {
+                return "Si";
+            }
+        },
+        widthGrow: 2,
+        visible: false,
+    });
+}
 class Trees {
     constructor(order, tree, selectedNodes = []) {
         this.order = order;
@@ -683,6 +741,7 @@ class Trees {
 document.addEventListener("DOMContentLoaded", async function () {
     initHandlers();
     updateInputFile();
+    loadColumnsCoursesTable();
     initializeCoursesTable();
     controlsHandlerModalCourse();
     initializeTomSelect();
@@ -704,6 +763,48 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     await loadCompetencesLearningResults();
 });
+
+
+// Carga las preferencias de visualización de columnas de la tabla de cursos
+function loadColumnsCoursesTable() {
+    const columnsCoursesTablePreferences = getConfig(
+        "selected_columns_courses_table"
+    );
+
+    if (columnsCoursesTablePreferences) {
+        // Deseleccionar todas las columnas
+        const allSelectorsColumns = document.querySelectorAll(
+            `#columns-courses-modal input`
+        );
+
+        allSelectorsColumns.forEach((selector) => {
+            selector.checked = false;
+        });
+
+        // Se expcluyen las columnas select y actions de las preferencias puesto que esas no son parametrizables
+        const columnsCoursesTableFiltered = columnsCoursesTable.filter(
+            (column) => !["select", "actions"].includes(column.field)
+        );
+
+        // Se ponen todas las columnas a visible false inicialmente
+        columnsCoursesTableFiltered.forEach((column) => {
+            column.visible = false;
+        });
+
+        // Se ponen a true las que estén en las preferencias
+        columnsCoursesTablePreferences.forEach((column) => {
+            columnsCoursesTableFiltered.find(
+                (c) => c.field === column
+            ).visible = true;
+
+            // Actualizar en el selector de columnas
+            const selector = document.querySelector(
+                `#columns-courses-modal input[value="${column}"]`
+            );
+            if (selector) selector.checked = true;
+        });
+    }
+}
 
 async function loadCompetencesLearningResults() {
     if (competencesLearningResults.length) return;
@@ -2148,6 +2249,42 @@ function initializeCoursesTable() {
                 return dataColumn.belongs_to_educational_program;
             },
         },
+        {
+            label: `${heroicon(
+                "document-arrow-up"
+            )} Regenerar credencial de estudiante`,
+            action: function (e, column) {
+                showModalConfirmation(
+                    "Regenerar credenciales de estudiantes",
+                    "¿Estás seguro de que deseas regenerar las credenciales de estudiantes?"
+                ).then((result) => {
+                    const courseClicked = column.getData();
+                    if (result) regenerateCredentialStudents(courseClicked.uid);
+                });
+            },
+            disabled: function (column) {
+                const dataColumn = column.getData();
+                return dataColumn.belongs_to_educational_program;
+            },
+        },
+        {
+            label: `${heroicon(
+                "document-arrow-up"
+            )} Regenerar credencial de docentes`,
+            action: function (e, column) {
+                showModalConfirmation(
+                    "Regenerar credenciales de docentes",
+                    "¿Estás seguro de que deseas regenerar las credenciales de docentes?"
+                ).then((result) => {
+                    const courseClicked = column.getData();
+                    if (result) regenerateCredentialTeachers(courseClicked.uid);
+                });
+            },
+            disabled: function (column) {
+                const dataColumn = column.getData();
+                return dataColumn.belongs_to_educational_program;
+            },
+        },
     ];
 
     coursesTable = new Tabulator("#courses-table", {
@@ -2199,20 +2336,9 @@ function emitAllCredentialsCourse(courseUid) {
     apiFetch(params);
 }
 
-function handleRegenerateEmbeddings(courseUid) {
-    showModalConfirmation(
-        "Regeneración de embeddings",
-        "¿Estás seguro de que quieres regenerar los embeddings del curso seleccionado?"
-    ).then((result) => {
-        if (result) {
-            regenerateEmbeddings(courseUid);
-        }
-    });
-}
-
-function regenerateEmbeddings(courseUid) {
+function regenerateCredentialStudents(courseUid) {
     const params = {
-        url: `/learning_objects/courses/regenerate_embeddings`,
+        url: `/learning_objects/courses/regenerate_student_credentials`,
         method: "POST",
         stringify: true,
         body: {
@@ -2222,9 +2348,22 @@ function regenerateEmbeddings(courseUid) {
         loader: true,
     };
 
-    apiFetch(params).then(() => {
-        coursesTable.setData(endPointTable);
-    });
+    apiFetch(params);
+}
+
+function regenerateCredentialTeachers(courseUid) {
+    const params = {
+        url: `/learning_objects/courses/regenerate_teacher_credentials`,
+        method: "POST",
+        stringify: true,
+        body: {
+            course_uid: courseUid,
+        },
+        toast: true,
+        loader: true,
+    };
+
+    apiFetch(params);
 }
 
 function loadCalificationsCourse(courseUid) {
@@ -2580,8 +2719,9 @@ function duplicateCourse(courseUid) {
         loader: true,
     };
 
-    apiFetch(params).then(() => {
+    apiFetch(params).then((response) => {
         reloadTableCourses();
+        loadCourseModal(response.course_uid);
     });
 }
 
@@ -2595,13 +2735,14 @@ function newEditionCourse(courseUid) {
         loader: true,
     };
 
-    apiFetch(params).then(() => {
+    apiFetch(params).then((response) => {
         reloadTableCourses();
+        loadCourseModal(response.course_uid);
     });
 }
 
 function reloadTableCourses() {
-    coursesTable.replaceData(endPointTable);
+    coursesTable.setData(endPointTable);
     const searchInput = document.querySelector(".search-table");
     searchInput.value = "";
 }
@@ -3361,7 +3502,6 @@ function initializeCourseStudentsTable(
             title: "Credencial enviada",
             field: "credential_sent",
             formatter: function (cell, formatterParams, onRendered) {
-                console.log(cell.getRow().getData().course_student_info);
                 const credentialSent = cell.getRow().getData()
                     .course_student_info.credential_sent;
                 return credentialSent ? "Sí" : "No";
@@ -3565,7 +3705,7 @@ function deleteStudentsCourse() {
 
 function reloadStudentsTable() {
     const endpoint = `${endPointStudentTable}/${selectedCourseUid}`;
-    courseStudensTable.replaceData(endpoint);
+    courseStudensTable.setData(endpoint);
 }
 
 function getUidsStudentsInscriptions() {
@@ -4027,10 +4167,23 @@ function controlColumnsSecectorModal() {
             columnsCoursesTable.forEach((column) => {
                 if (column.field === this.value) {
                     column.visible = this.checked;
-                    coursesTable.showColumn(this.value);
-                    coursesTable.redraw();
+
+                    if (this.checked) coursesTable.showColumn(this.value);
+                    else coursesTable.hideColumn(this.value);
                 }
             });
+
+            coursesTable.redraw();
+
+            // Recoger todas las columnas marcadas y guardarlas en cookie
+            var checkboxes = document.querySelectorAll(
+                '.checkbox_columns_selector input[type="checkbox"]:checked'
+            );
+            var values = Array.from(checkboxes).map(
+                (checkbox) => checkbox.value
+            );
+
+            setConfig("selected_columns_courses_table", values);
         });
     });
 }

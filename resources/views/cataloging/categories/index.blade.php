@@ -8,17 +8,17 @@
 
             <div class="input-with-button control-search">
                 <input class="w-full" type="text" id="search-categories-input" placeholder="Buscar...">
-                <button type="button" id="search-categories-btn">
+                <button type="button" id="search-categories-btn" title="Buscar">
                     {{ e_heroicon('magnifying-glass', 'solid') }}
                 </button>
             </div>
 
             <div>
-                <button id="new-category-btn" type="button" class="btn btn-icon">
+                <button id="new-category-btn" type="button" class="btn btn-icon" title="Añadir categoría">
                     {{ e_heroicon('plus', 'outline') }}
                 </button>
 
-                <button id="btn-delete-categories" type="button" class="btn btn-icon">
+                <button id="btn-delete-categories" type="button" class="btn btn-icon" title="Eliminar categoría">
                     {{ e_heroicon('trash', 'outline') }}
                 </button>
             </div>

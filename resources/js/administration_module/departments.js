@@ -108,7 +108,7 @@ function initializeDepartmentsTable() {
             title: "",
             field: "actions",
             formatter: function (cell, formatterParams, onRendered) {
-                return `<button type="button" class='btn action-btn'>${heroicon(
+                return `<button type="button" class='btn action-btn' title='Editar'>${heroicon(
                     "pencil-square",
                     "outline"
                 )}</button>`;
@@ -196,7 +196,7 @@ function submitDepartmentForm() {
 
     apiFetch(params)
         .then(() => {
-            departmentsTable.replaceData(endPointTable);
+            departmentsTable.setData(endPointTable);
             hideModal("department-modal");
         })
         .catch((data) => {
@@ -219,7 +219,7 @@ async function deleteDepartments() {
     };
 
     apiFetch(params).then(() => {
-        departmentsTable.replaceData(endPointTable);
+        departmentsTable.setData(endPointTable);
         hideModal("department-modal");
     });
 }
@@ -233,7 +233,7 @@ async function deleteDepartments() {
 function controlReloadTable() {
     const reloadTableBtn = document.getElementById("btn-reload-table");
     reloadTableBtn.addEventListener("click", function () {
-        departmentsTable.replaceData(endPointTable);
+        departmentsTable.setData(endPointTable);
     });
 }
 

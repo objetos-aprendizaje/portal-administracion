@@ -10,8 +10,8 @@
 
 
             <div>
-                <button id="add-educational-program-type-btn" type="button" class="btn btn-icon mb-4">{{e_heroicon('plus', 'outline')}}</button>
-                <button id="delete-educational-program-type-btn" type="button" class="btn btn-icon mb-4">{{e_heroicon('trash', 'outline')}}</button>
+                <button id="add-educational-program-type-btn" type="button" class="btn btn-icon mb-4" title="Añadir tipo de programa formativo">{{e_heroicon('plus', 'outline')}}</button>
+                <button id="delete-educational-program-type-btn" type="button" class="btn btn-icon mb-4" title="Eliminar tipo de programa formativo">{{e_heroicon('trash', 'outline')}}</button>
             </div>
 
         </div>

@@ -31,7 +31,7 @@ function initHandlers() {
     document
         .getElementById("btn-reload-table")
         .addEventListener("click", function () {
-            redirectionQueriesTable.replaceData(endPointTable);
+            redirectionQueriesTable.setData(endPointTable);
         });
 
     document.addEventListener("click", function (event) {

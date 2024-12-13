@@ -109,7 +109,7 @@ function initializeTooltipTextsTable() {
             title: "",
             field: "actions",
             formatter: function (cell, formatterParams, onRendered) {
-                return `<button type="button" class='btn action-btn'>${heroicon(
+                return `<button type="button" class='btn action-btn' title='Editar'>${heroicon(
                     "pencil-square",
                     "outline"
                 )}</button>`;
@@ -235,7 +235,7 @@ async function deleteTooltipTexts() {
 function controlReloadTable() {
     const reloadTableBtn = document.getElementById("btn-reload-table");
     reloadTableBtn.addEventListener("click", function () {
-        tooltipTextsTable.replaceData(endPointTable);
+        tooltipTextsTable.setData(endPointTable);
     });
 }
 

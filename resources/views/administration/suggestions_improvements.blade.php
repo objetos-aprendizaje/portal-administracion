@@ -14,19 +14,19 @@
                     <input type="email" placeholder="Introduce un email" class="poa-input w-full h-full" id="email-input">
                 </div>
                 <div>
-                    <button type="button" id="add-email-btn" class="btn-icon">
+                    <button type="button" id="add-email-btn" class="btn-icon" title="Añadir email">
                         {{ e_heroicon('plus', 'outline') }}
                     </button>
                 </div>
             </div>
             <div class="flex gap-1">
                 <div>
-                    <button type="button" class="btn-icon" id="btn-delete-emails">
+                    <button type="button" class="btn-icon" id="btn-delete-emails" title="Eliminar emails seleccionados">
                         {{ e_heroicon('trash', 'outline') }}
                     </button>
                 </div>
                 <div>
-                    <button type="button" class="btn-icon" id="btn-update-table">
+                    <button type="button" class="btn-icon" id="btn-update-table" title="Actualizar">
                         {{ e_heroicon('arrow-path', 'outline') }}
                     </button>
                 </div>

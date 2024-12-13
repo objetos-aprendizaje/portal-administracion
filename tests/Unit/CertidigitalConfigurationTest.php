@@ -84,6 +84,9 @@ class CertidigitalConfigurationTest extends TestCase
         // Datos de prueba para el formulario
         $formData = [
             'certidigital_url' => 'https://example.com',
+            'certidigital_url_token' => 'https://example.com',
+            'certidigital_center_id' => '100',
+            'certidigital_organization_oid' => '100',
             'certidigital_client_id' => 'client_id',
             'certidigital_client_secret' => 'client_secret',
             'certidigital_username' => 'username',
@@ -118,7 +121,7 @@ class CertidigitalConfigurationTest extends TestCase
         $this->actingAs($user);
 
         $formData = [
-            'certidigital_url' => 'https://example.com',           
+            'certidigital_url' => 'https://example.com',
         ];
 
         // Hacer una solicitud POST a la ruta
@@ -128,7 +131,7 @@ class CertidigitalConfigurationTest extends TestCase
          $response->assertStatus(422);
 
          // Comprobar que la respuesta contiene el mensaje correcto
-        $response->assertJson(['message' => 'Algunos campos son incorrectos']);        
+        $response->assertJson(['message' => 'Algunos campos son incorrectos']);
 
     }
 }

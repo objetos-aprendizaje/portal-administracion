@@ -8,26 +8,34 @@ use Carbon\Carbon;
 use Tests\TestCase;
 use App\Models\CallsModel;
 use App\Models\UsersModel;
+use App\Models\BlocksModel;
 use Illuminate\Support\Str;
 use App\Models\CoursesModel;
 use App\Models\UserRolesModel;
 use App\Models\CategoriesModel;
 use App\Models\LmsSystemsModel;
+use App\Models\CoursesTagsModel;
 use App\Models\CourseTypesModel;
 use App\Models\TooltipTextsModel;
 use Illuminate\Http\UploadedFile;
 use App\Models\CourseStatusesModel;
 use App\Models\GeneralOptionsModel;
 use Illuminate\Support\Facades\Bus;
+use App\Models\LearningResultsModel;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use App\Services\CertidigitalService;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use App\Models\EducationalProgramsModel;
+use App\Models\CertidigitalAssesmentsModel;
+use App\Models\EducationalProgramTagsModel;
 use App\Exceptions\OperationFailedException;
+use App\Models\CertidigitalCredentialsModel;
 use App\Models\EducationalProgramTypesModel;
 use Illuminate\Support\Facades\Notification;
+use App\Models\CourseGlobalCalificationsModel;
+use App\Models\CourseLearningResultCalificationsModel;
 use App\Models\EducationalProgramStatusesModel;
 use App\Models\EducationalProgramsStudentsModel;
 use App\Models\EducationalProgramsDocumentsModel;
@@ -35,10 +43,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\EducationalProgramEmailContactsModel;
 use App\Models\EducationalProgramsPaymentTermsModel;
 use App\Models\EducationalProgramsStudentsDocumentsModel;
+use App\Models\CoursesBlocksLearningResultsCalificationsModel;
 
 class EducationalProgramsControllerTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected $certidigitalService;
 
     public function setUp(): void
     {
@@ -47,6 +58,7 @@ class EducationalProgramsControllerTest extends TestCase
         $this->withoutMiddleware();
         // Asegúrate de que la tabla 'qvkei_settings' existe
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
+        $this->certidigitalService = new CertidigitalService();
     } // Configuración inicial si es necesario
 
     /** @test Index Programa educativos */
@@ -384,6 +396,8 @@ class EducationalProgramsControllerTest extends TestCase
         $courses = CoursesModel::factory()->count(3)->withCourseStatus()->withCourseType()->create(
             [
                 'lms_system_uid' => $lms->uid,
+                'realization_start_date' => "2024-09-15", // Debe ser posterior a enrolling_finish_date
+                'realization_finish_date' => "2024-09-22", // Debe ser posterior a realization_start_date
             ]
         );
         // $course = CoursesModel::where('uid', $course->uid)->first();
@@ -412,8 +426,6 @@ class EducationalProgramsControllerTest extends TestCase
             //Asegúrate de pasar un JSON válido o un array vacío
         ];
 
-        // dd($data);
-
         // Realizar la solicitud POST
         $response = $this->postJson('/learning_objects/educational_programs/save_educational_program', $data);
 
@@ -424,9 +436,8 @@ class EducationalProgramsControllerTest extends TestCase
         // Verificar que el programa educativo se haya guardado en la base de datos
         $this->assertDatabaseHas('educational_programs', ['name' => 'Programa Educativo de Prueba']);
 
-        // die();
-        // CUANDO ES DRAFT
 
+        // CUANDO ES DRAFT
         // Datos de prueba
         $data = [
             'action' => 'draft',
@@ -457,11 +468,26 @@ class EducationalProgramsControllerTest extends TestCase
 
         // Cuando 'validate_student_registrations' = 0 y 'payment_mode' ='INSTALLMENT_PAYMENT',
 
+        // $cert =  CertidigitalCredentialsModel::factory()->create();
+
+        // $educationalProgram = EducationalProgramsModel::factory()->create(
+        //     [
+        //         'educational_program_type_uid'=> $programType->uid,
+        //         'certidigital_credential_uid' => $cert->uid
+        //     ]
+        // )->first();
+
+        // $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
+        //     [
+        //         'educational_program_uid'=> $educationalProgram->uid,
+        //         'certidigital_credential_uid' => $cert->uid
+        //     ]
+        // );
 
         // Datos de prueba
         $data = [
+            // 'educational_program_uid'=> $educationalProgram->uid,
             'action' => 'submit',
-            // 'courses' => [$course->uid],
             'name' => 'Programa Educativo de Prueba',
             'educational_program_type_uid' => $programType->uid,
             'inscription_start_date' => '2024-09-01',
@@ -500,7 +526,7 @@ class EducationalProgramsControllerTest extends TestCase
      * @test
      * Verifica que un nuevo programa educativo se crea correctamente.
      */
-    public function testCreatesANewEducationalProgramNotManagement()
+    public function testCreatesANewAndUpdateEducationalProgramNotManagement()
     {
         // Crear un usuario y asignarle un rol
         $user = UsersModel::factory()->create();
@@ -561,7 +587,7 @@ class EducationalProgramsControllerTest extends TestCase
         $this->assertDatabaseHas('educational_programs', ['name' => 'Programa Educativo de Prueba']);
 
 
-        //  Educational Program with educational_program_origin_uid        
+        //  Educational Program with educational_program_origin_uid
         $educationalProgramExist = EducationalProgramsModel::factory()->withEducationalProgramType()->create();
 
         $status = EducationalProgramStatusesModel::where('code', 'INTRODUCTION')->first();
@@ -591,7 +617,7 @@ class EducationalProgramsControllerTest extends TestCase
         //     $emails[]=[
         //         $educationalEmail->email,
         //     ];
-        // }    
+        // }
 
         // Datos de prueba
         $data = [
@@ -767,6 +793,361 @@ class EducationalProgramsControllerTest extends TestCase
         $response = $this->postJson('/learning_objects/educational_programs/save_educational_program', $data);
         // Verificar que la respuesta sea 200 (OK) y contenga el mensaje esperado
         $response->assertStatus(200);
+
+
+
+        // Esta seccion es para cubrir linea 652 para remover cursos del programa formativo al enviar request de coure
+
+        $status = EducationalProgramStatusesModel::where('code', 'INTRODUCTION')->first();
+
+        $educational_program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(
+            [
+                'educational_program_status_uid' => $status->uid,
+            ]
+        );
+
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
+            [
+                'educational_program_uid' => $educational_program->uid,
+                'belongs_to_educational_program' => 1,
+            ]
+        );
+
+        // Datos de prueba
+        $data = [
+            'action' => 'submit',
+            'courses' => [$course->uid],
+            'educational_program_uid' => $educational_program->uid,
+            'name' => 'Programa Educativo de Prueba',
+            'educational_program_type_uid' => $programType->uid,
+            'inscription_start_date' => '2024-09-01',
+            'inscription_finish_date' => '2024-09-10',  // Debe ser anterior a enrolling_start_date
+            'enrolling_start_date' => "2024-09-11",  // Debe ser posterior a inscription_finish_date
+            'enrolling_finish_date' => "2024-09-15", // Debe ser posterior a enrolling_start_date
+            'realization_start_date' => "2024-09-16", // Debe ser posterior a enrolling_finish_date
+            'realization_finish_date' => "2024-09-20", // Debe ser posterior a realization_start_date
+            'validate_student_registrations' => 1,
+            'evaluation_criteria' => 'Criterios de Evaluación',
+            'payment_mode' => 'SINGLE_PAYMENT',
+            'cost' => 100,
+            'title' => 'Title',
+            'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
+            'categories' => json_encode([generate_uuid(), generate_uuid()]),
+            'documents' => json_encode([]),
+            //Asegúrate de pasar un JSON válido o un array vacío
+        ];
+
+        // Realizar la solicitud POST
+        $response = $this->postJson('/learning_objects/educational_programs/save_educational_program', $data);
+        // Verificar que la respuesta sea 200 (OK) y contenga el mensaje esperado
+        $response->assertStatus(200);
+    }
+
+    public function testCreatesEducationalProgramWithFail400ForRealization()
+    {
+
+        // Crear un usuario y asignarle un rol
+        $user = UsersModel::factory()->create();
+        $role = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
+        $user->roles()->sync([
+            $role->uid => ['uid' => generate_uuid()]
+        ]);
+        Auth::login($user);
+
+        app()->instance('general_options', [
+            'necessary_approval_editions' => true,
+            'operation_by_calls' => false,
+            'certidigital_url'              => env('CERTIDIGITAL_URL'),
+            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
+            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
+            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
+            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
+            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
+            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
+            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
+        ]);
+
+
+        $status = EducationalProgramStatusesModel::where('code', 'INTRODUCTION')->first();
+
+        // Crear un Educational Program Type de prueba
+        $programType = EducationalProgramTypesModel::factory()->create();
+
+        $educational_program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(
+            [
+                'educational_program_status_uid' => $status->uid,
+            ]
+        );
+
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
+            [
+                'educational_program_uid' => $educational_program->uid,
+                'realization_start_date' => "2024-09-15", // Debe ser posterior a enrolling_finish_date
+                'realization_finish_date' => "2024-09-22", // Debe ser posterior a realization_start_date
+                'belongs_to_educational_program' => 1,
+            ]
+        );
+
+        // Datos de prueba
+        $data = [
+            'action' => 'submit',
+            'courses' => [$course->uid],
+            'educational_program_uid' => $educational_program->uid,
+            'name' => 'Programa Educativo de Prueba',
+            'educational_program_type_uid' => $programType->uid,
+            'inscription_start_date' => '2024-09-01',
+            'inscription_finish_date' => '2024-09-10',  // Debe ser anterior a enrolling_start_date
+            'enrolling_start_date' => "2024-09-11",  // Debe ser posterior a inscription_finish_date
+            'enrolling_finish_date' => "2024-09-15", // Debe ser posterior a enrolling_start_date
+            'realization_start_date' => "2024-09-16", // Debe ser posterior a enrolling_finish_date
+            'realization_finish_date' => "2024-09-20", // Debe ser posterior a realization_start_date
+            'validate_student_registrations' => 1,
+            'evaluation_criteria' => 'Criterios de Evaluación',
+            'payment_mode' => 'SINGLE_PAYMENT',
+            'cost' => 100,
+            'title' => 'Title',
+            'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
+            'categories' => json_encode([generate_uuid(), generate_uuid()]),
+            'documents' => json_encode([]),
+            //Asegúrate de pasar un JSON válido o un array vacío
+        ];
+
+        // Realizar la solicitud POST
+        $response = $this->postJson('/learning_objects/educational_programs/save_educational_program', $data);
+        // Verificar que la respuesta sea 200 (OK) y contenga el mensaje esperado
+        $response->assertStatus(400);
+        $response->assertJson(['message' => 'Algunos cursos no están entre las fechas de realización del programa formativo']);
+    }
+
+    public function testCreatesEducationalProgramWithFail400NotBelongingEducationalProgram()
+    {
+
+        // Crear un usuario y asignarle un rol
+        $user = UsersModel::factory()->create();
+        $role = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
+        $user->roles()->sync([
+            $role->uid => ['uid' => generate_uuid()]
+        ]);
+        Auth::login($user);
+
+        app()->instance('general_options', [
+            'necessary_approval_editions' => true,
+            'operation_by_calls' => false,
+            'certidigital_url'              => env('CERTIDIGITAL_URL'),
+            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
+            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
+            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
+            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
+            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
+            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
+            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
+        ]);
+
+
+        $status = EducationalProgramStatusesModel::where('code', 'INTRODUCTION')->first();
+
+        // Crear un Educational Program Type de prueba
+        $programType = EducationalProgramTypesModel::factory()->create();
+
+        $educational_program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(
+            [
+                'educational_program_status_uid' => $status->uid,
+            ]
+        );
+
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
+            [
+                'educational_program_uid' => $educational_program->uid,
+                'belongs_to_educational_program' => 0,
+            ]
+        );
+
+        // Datos de prueba
+        $data = [
+            'action' => 'submit',
+            'courses' => [$course->uid],
+            'educational_program_uid' => $educational_program->uid,
+            'name' => 'Programa Educativo de Prueba',
+            'educational_program_type_uid' => $programType->uid,
+            'inscription_start_date' => '2024-09-01',
+            'inscription_finish_date' => '2024-09-10',  // Debe ser anterior a enrolling_start_date
+            'enrolling_start_date' => "2024-09-11",  // Debe ser posterior a inscription_finish_date
+            'enrolling_finish_date' => "2024-09-15", // Debe ser posterior a enrolling_start_date
+            'realization_start_date' => "2024-09-16", // Debe ser posterior a enrolling_finish_date
+            'realization_finish_date' => "2024-09-20", // Debe ser posterior a realization_start_date
+            'validate_student_registrations' => 1,
+            'evaluation_criteria' => 'Criterios de Evaluación',
+            'payment_mode' => 'SINGLE_PAYMENT',
+            'cost' => 100,
+            'title' => 'Title',
+            'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
+            'categories' => json_encode([generate_uuid(), generate_uuid()]),
+            'documents' => json_encode([]),
+            //Asegúrate de pasar un JSON válido o un array vacío
+        ];
+
+        // Realizar la solicitud POST
+        $response = $this->postJson('/learning_objects/educational_programs/save_educational_program', $data);
+        // Verificar que la respuesta sea 200 (OK) y contenga el mensaje esperado
+        $response->assertStatus(400);
+        $response->assertJson(['message' => 'Algún curso no pertenece a un programa formativo']);
+    }
+
+    public function testCreatesEducationalProgramWithFail400BelongingOtherEducationalPrograms()
+    {
+
+        // Crear un usuario y asignarle un rol
+        $user = UsersModel::factory()->create();
+        $role = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
+        $user->roles()->sync([
+            $role->uid => ['uid' => generate_uuid()]
+        ]);
+        Auth::login($user);
+
+        app()->instance('general_options', [
+            'necessary_approval_editions' => true,
+            'operation_by_calls' => false,
+            'certidigital_url'              => env('CERTIDIGITAL_URL'),
+            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
+            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
+            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
+            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
+            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
+            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
+            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
+        ]);
+
+
+        $status = EducationalProgramStatusesModel::where('code', 'INTRODUCTION')->first();
+
+        // Crear un Educational Program Type de prueba
+        $programType = EducationalProgramTypesModel::factory()->create();
+
+        $other_educational_program = EducationalProgramsModel::factory()->withEducationalProgramType()->create();
+
+
+        $educational_program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(
+            [
+                'educational_program_status_uid' => $status->uid,
+            ]
+        );
+
+        $status = CourseStatusesModel::where('code', 'ADDED_EDUCATIONAL_PROGRAM')->first();
+
+        $course = CoursesModel::factory()->withCourseType()->create(
+            [
+                'educational_program_uid' =>  $other_educational_program->uid,
+                'belongs_to_educational_program' => 1,
+                'course_status_uid' =>  $status->uid
+            ]
+        );
+
+        // Datos de prueba
+        $data = [
+            'action' => 'submit',
+            'courses' => [$course->uid],
+            'educational_program_uid' => $educational_program->uid,
+            'name' => 'Programa Educativo de Prueba',
+            'educational_program_type_uid' => $programType->uid,
+            'inscription_start_date' => '2024-09-01',
+            'inscription_finish_date' => '2024-09-10',  // Debe ser anterior a enrolling_start_date
+            'enrolling_start_date' => "2024-09-11",  // Debe ser posterior a inscription_finish_date
+            'enrolling_finish_date' => "2024-09-15", // Debe ser posterior a enrolling_start_date
+            'realization_start_date' => "2024-09-16", // Debe ser posterior a enrolling_finish_date
+            'realization_finish_date' => "2024-09-20", // Debe ser posterior a realization_start_date
+            'validate_student_registrations' => 1,
+            'evaluation_criteria' => 'Criterios de Evaluación',
+            'payment_mode' => 'SINGLE_PAYMENT',
+            'cost' => 100,
+            'title' => 'Title',
+            'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
+            'categories' => json_encode([generate_uuid(), generate_uuid()]),
+            'documents' => json_encode([]),
+            //Asegúrate de pasar un JSON válido o un array vacío
+        ];
+
+        // Realizar la solicitud POST
+        $response = $this->postJson('/learning_objects/educational_programs/save_educational_program', $data);
+        // Verificar que la respuesta sea 200 (OK) y contenga el mensaje esperado
+        $response->assertStatus(400);
+        $response->assertJson(['message' => 'Algunos cursos pertenecen a otro programa formativo']);
+    }
+
+    public function testCreatesEducationalProgramWithFail400NotHavingStatusReadyAddEducational()
+    {
+
+        // Crear un usuario y asignarle un rol
+        $user = UsersModel::factory()->create();
+        $role = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
+        $user->roles()->sync([
+            $role->uid => ['uid' => generate_uuid()]
+        ]);
+        Auth::login($user);
+
+        app()->instance('general_options', [
+            'necessary_approval_editions' => true,
+            'operation_by_calls' => false,
+            'certidigital_url'              => env('CERTIDIGITAL_URL'),
+            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
+            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
+            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
+            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
+            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
+            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
+            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
+        ]);
+
+
+        $status = EducationalProgramStatusesModel::where('code', 'INTRODUCTION')->first();
+
+        // Crear un Educational Program Type de prueba
+        $programType = EducationalProgramTypesModel::factory()->create();
+
+
+        $educational_program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(
+            [
+                'educational_program_status_uid' => $status->uid,
+            ]
+        );
+
+        $status = CourseStatusesModel::where('code', 'ADDED_EDUCATIONAL_PROGRAM')->first();
+
+        $course = CoursesModel::factory()->withCourseType()->create(
+            [
+                'belongs_to_educational_program' => 1,
+                'course_status_uid' =>  $status->uid
+            ]
+        );
+
+        // Datos de prueba
+        $data = [
+            'action' => 'submit',
+            'courses' => [$course->uid],
+            'educational_program_uid' => $educational_program->uid,
+            'name' => 'Programa Educativo de Prueba',
+            'educational_program_type_uid' => $programType->uid,
+            'inscription_start_date' => '2024-09-01',
+            'inscription_finish_date' => '2024-09-10',  // Debe ser anterior a enrolling_start_date
+            'enrolling_start_date' => "2024-09-11",  // Debe ser posterior a inscription_finish_date
+            'enrolling_finish_date' => "2024-09-15", // Debe ser posterior a enrolling_start_date
+            'realization_start_date' => "2024-09-16", // Debe ser posterior a enrolling_finish_date
+            'realization_finish_date' => "2024-09-20", // Debe ser posterior a realization_start_date
+            'validate_student_registrations' => 1,
+            'evaluation_criteria' => 'Criterios de Evaluación',
+            'payment_mode' => 'SINGLE_PAYMENT',
+            'cost' => 100,
+            'title' => 'Title',
+            'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
+            'categories' => json_encode([generate_uuid(), generate_uuid()]),
+            'documents' => json_encode([]),
+            //Asegúrate de pasar un JSON válido o un array vacío
+        ];
+
+        // Realizar la solicitud POST
+        $response = $this->postJson('/learning_objects/educational_programs/save_educational_program', $data);
+        // Verificar que la respuesta sea 200 (OK) y contenga el mensaje esperado
+        $response->assertStatus(400);
+        $response->assertJson(['message' => 'Algunos cursos no tienen el estado correcto para ser añadidos a un programa formativo']);
     }
 
 
@@ -857,7 +1238,7 @@ class EducationalProgramsControllerTest extends TestCase
     }
     /**
      * @test
-     * Verifica que un programa educativo existente tenga error 400 
+     * Verifica que un programa educativo existente tenga error 400
      */
 
     public function testUpdatesAnExistingEducationalProgramWithError400()
@@ -938,7 +1319,7 @@ class EducationalProgramsControllerTest extends TestCase
 
         app()->instance('general_options', [
             'necessary_approval_editions' => true,
-            'operation_by_calls' => false,
+            'operation_by_calls' => true,
         ]);
 
         // Datos de prueba con errores (por ejemplo, sin nombre)
@@ -946,6 +1327,8 @@ class EducationalProgramsControllerTest extends TestCase
             'educational_program_type_uid' => generate_uuid(),
             'inscription_start_date' => '2024-09-01 10:00:00',
             'inscription_finish_date' => '2024-08-30 09:00:00',
+            // 'featured_slider_image_path' => null,
+
         ];
 
         // Realizar la solicitud POST
@@ -954,6 +1337,8 @@ class EducationalProgramsControllerTest extends TestCase
         // Verificar que la respuesta sea 400 (Bad Request) y contenga el mensaje de error esperado
         $response->assertStatus(400);
         $response->assertJson(['message' => 'Algunos campos son incorrectos']);
+
+        // $response->assertJsonValidationErrors(['featured_slider_image_path']);
 
         // Verificar que el programa educativo no se haya guardado en la base de datos
         $this->assertDatabaseMissing('educational_programs', ['name' => null]);
@@ -1084,8 +1469,24 @@ class EducationalProgramsControllerTest extends TestCase
 
             // Verificar que el trabajo de notificación fue despachado
             // Bus::assertDispatched(SendChangeStatusEducationalProgramNotification::class);
+
+            // Esta seccion se agrego para cubir linea 999 if ($changeEducationalProgramStatus['status'] == 'ACCEPTED_PUBLICATION')
+
+            $response = $this->post('/learning_objects/educational_programs/change_statuses_educational_programs', [
+                'changesEducationalProgramsStatuses' => [
+                    ['uid' => $uidProgram, 'status' => 'ACCEPTED_PUBLICATION']
+                ]
+            ]);
+
+            // Verificar la respuesta
+            $this->assertEquals(200, $response->status());
+
+            // Asegúrate de que 'message' sea parte de la respuesta.
+            $this->assertEquals('Se han actualizado los estados de los programas formativos correctamente', $response->getData()->message);
         }
     }
+
+
 
     /** @test Cambiar estatus de Programa educativo sin autorización*/
     public function testChangeStatusesEducationalProgramsUnauthorized()
@@ -1220,6 +1621,8 @@ class EducationalProgramsControllerTest extends TestCase
         $response->assertStatus(200);
         $this->assertEquals('Alice', $response->json('data.0.first_name'));
         $this->assertEquals('Bob', $response->json('data.1.first_name'));
+
+        $response = $this->getJson('/learning_objects/educational_programs/get_educational_program_students/' . $uidProgram . '?sort[0][field]=acceptance_status&sort[0][dir]=asc&size=10');
     }
 
     /** @test Obtiene Programas educativos */
@@ -1278,6 +1681,72 @@ class EducationalProgramsControllerTest extends TestCase
                 'user_uid' => $userId,
             ]);
         }
+    }
+
+    /** @test Obtiene Estudiantes inscritos existentes*/
+    public function testEnrollStudentsExist()
+    {
+
+        $user = UsersModel::factory()->create();
+        $this->actingAs($user);
+
+        // Crear usuarios para inscribir
+        $user1 = UsersModel::factory()->create();
+        // $userIds = $users->pluck('uid')->toArray();
+
+
+        // Crear un programa educativo
+        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generate_uuid()]);
+
+        $program->students()->attach($user1->uid, [
+            'uid' => generate_uuid(),
+            'acceptance_status' => 'PENDING'
+        ]);
+
+        // EducationalProgramsStudentsModel
+
+        // Simular la petición
+        $response = $this->postJson('/learning_objects/educational_program/enroll_students', [
+            'EducationalProgramUid' => $program->uid,
+            'usersToEnroll' => [$user1->uid]
+        ]);
+
+        // Verificar la respuesta
+        $response->assertStatus(200);
+        $response->assertJson([
+            'message' => 'Alumnos añadidos al programa formativo. Los ya registrados no se han añadido.',
+        ]);
+
+        // // Verificar que los usuarios fueron inscritos correctamente
+        // foreach ($userIds as $userId) {
+        //     $this->assertDatabaseHas('educational_programs_students', [
+        //         'educational_program_uid' => $program->uid,
+        //         'user_uid' => $userId,
+        //     ]);
+        // }
+    }
+
+    /** @test Obtiene Estudiantes inscritos con error  */
+    public function testEnrollStudentsWithFail()
+    {
+
+        $user = UsersModel::factory()->create();
+        $this->actingAs($user);
+
+        // Crear un programa educativo
+        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generate_uuid()])->latest()->first();
+
+
+        // Simular la petición
+        $response = $this->postJson('/learning_objects/educational_program/enroll_students', [
+            'EducationalProgramUid' => $program->uid,
+        ]);
+
+        // Verificar la respuesta
+        $response->assertStatus(406);
+        $response->assertJson([
+            'message' => 'No se han seleccionado alumnos',
+        ]);
     }
 
     /** @test Cambia el estado de las inscripciones y genera notificaciones automáticas. */
@@ -1488,12 +1957,11 @@ class EducationalProgramsControllerTest extends TestCase
         ])->latest()->first();
         UsersModel::factory()->create([
             'uid' => generate_uuid(),
-            'first_name' => 'Jane',
-            'last_name' => 'Smith',
-            'nif' => '79987901L',
-            'email' => 'jane@example.com',
+            'first_name' => 'Janios',
+            'last_name' => 'Sanders',
+            'nif' => '54260325J',
+            'email' => 'janios@example.com',
         ]);
-
         // Simula un archivo CSV
         Storage::fake('local');
         $csvContent = "first_name,last_name,nif,email\n" .
@@ -1514,6 +1982,87 @@ class EducationalProgramsControllerTest extends TestCase
         // Verifica que el mensaje de respuesta sea el esperado
         $response->assertJson(['message' => 'Alumnos añadidos al programa formativo. Los ya registrados no se han añadido.']);
     }
+
+    /** @test Estudiantes inscritos por CSV */
+    public function testEnrollStudentsCsvWithFailNit()
+    {
+        // Crea un usuario autenticado para la prueba
+        $this->actingAs(UsersModel::factory()->create());
+        // Crea un programa educativo
+        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generate_uuid()])->latest()->first();
+
+        $programUid = $program->uid;
+
+        // Crea dos usuarios y obtén sus datos
+        UsersModel::factory()->create([
+            'uid' => generate_uuid(),
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+            'nif' => '28632229N',
+            'email' => 'john@example.com',
+        ])->latest()->first();
+
+        // Simula un archivo CSV
+        Storage::fake('local');
+        $csvContent = "first_name,last_name,nif,email\n" .
+            "John,Doe,28632229N,john@example.com\n" .
+            "Jane,Smith,7998790,jane@example.com";
+        $csvFile = UploadedFile::fake()->createWithContent('students.csv', $csvContent);
+
+        // Datos de solicitud
+        $requestData = [
+            'educational_program_uid' => $programUid,
+            'attachment' => $csvFile,
+        ];
+        // Realiza la solicitud POST a la ruta
+        $response = $this->postJson('/learning_objects/educational_program/enroll_students_csv', $requestData);
+
+        // Verifica que la respuesta sea exitosa
+        $response->assertStatus(406);
+        // Verifica que el mensaje de respuesta sea el esperado
+        $response->assertJson(['message' => "El NIF/NIE de la línea 2 no es válido"]);
+    }
+
+    /** @test Estudiantes inscritos por CSV */
+    public function testEnrollStudentsCsvWithFailEmail()
+    {
+        // Crea un usuario autenticado para la prueba
+        $this->actingAs(UsersModel::factory()->create());
+        // Crea un programa educativo
+        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generate_uuid()])->latest()->first();
+
+        $programUid = $program->uid;
+
+        // Crea dos usuarios y obtén sus datos
+        UsersModel::factory()->create([
+            'uid' => generate_uuid(),
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+            'nif' => '28632229N',
+            'email' => 'john@example.com',
+        ])->latest()->first();
+
+        // Simula un archivo CSV
+        Storage::fake('local');
+        $csvContent = "first_name,last_name,nif,email\n" .
+            "John,Doe,28632229N,john@example.com\n" .
+            "Jane,Smith,79987901L,janeexample.com";
+        $csvFile = UploadedFile::fake()->createWithContent('students.csv', $csvContent);
+
+        // Datos de solicitud
+        $requestData = [
+            'educational_program_uid' => $programUid,
+            'attachment' => $csvFile,
+        ];
+        // Realiza la solicitud POST a la ruta
+        $response = $this->postJson('/learning_objects/educational_program/enroll_students_csv', $requestData);
+
+        // Verifica que la respuesta sea exitosa
+        $response->assertStatus(406);
+        // Verifica que el mensaje de respuesta sea el esperado
+        $response->assertJson(['message' => "El correo de la línea 2 no es válido"]);
+    }
+
 
     /** @test Edición Programa educacional */
     public function testEditionEducationalProgram()
@@ -1558,8 +2107,15 @@ class EducationalProgramsControllerTest extends TestCase
     /** @test Duplica Programa educacional */
     public function testDuplicationNewEducationalProgram()
     {
-        // Crea un usuario autenticado para la prueba
-        $this->actingAs(UsersModel::factory()->create());
+        // Simulando autenticación del usuario
+        $user = UsersModel::factory()->create();
+        // $user->roles()->attach(UserRolesModel::factory()->create(['code' => 'ADMIN']));
+        $roles = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
+
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        $this->actingAs($user);
+
 
         $status = EducationalProgramStatusesModel::create([
             'uid' => generate_uuid(),
@@ -1575,8 +2131,58 @@ class EducationalProgramsControllerTest extends TestCase
             'name' => 'Programa Original',
             'educational_program_status_uid' => $status->uid,
             'educational_program_type_uid' => $programType1->uid,
-
+            'payment_mode' => 'INSTALLMENT_PAYMENT',
         ]);
+
+        EducationalProgramsPaymentTermsModel::factory()->count(3)->create(
+            [
+                'educational_program_uid' => $educationalProgram->uid,
+            ]
+        );
+
+        EducationalProgramTagsModel::factory()->count(2)->create(
+            [
+                'educational_program_uid' => $educationalProgram->uid,
+            ]
+        );
+        EducationalProgramsDocumentsModel::factory()->count(2)->create(
+            [
+                'educational_program_uid' => $educationalProgram->uid,
+            ]
+        );
+
+        $categories = CategoriesModel::factory()->count(2)->create();
+
+        foreach ($categories as $category) {
+
+            $educationalProgram->categories()->attach($category->uid, [
+                'uid' => generate_uuid(),
+            ]);
+        }
+
+
+        $courses = CoursesModel::factory()->count(3)->withCourseStatus()->withCourseType()->create(
+            [
+                'educational_program_uid' => $educationalProgram->uid,
+            ]
+        );
+
+        $category = CategoriesModel::factory()->create();
+
+
+        foreach ($courses as $course) {
+
+            $course->teachers()->attach($user->uid, ['uid' => generate_uuid()]);
+
+            $course->categories()->attach($category->uid, ['uid' => generate_uuid()]);
+
+            CoursesTagsModel::factory()->create(
+                [
+                    'course_uid' =>  $course->uid,
+                ]
+            );
+        }
+
 
         // Realizar la solicitud POST para duplicación
         $response = $this->postJson('/learning_objects/educational_program/edition_or_duplicate_educational_program', [
@@ -1715,7 +2321,7 @@ class EducationalProgramsControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertDownload('document.pdf');
     }
-    
+
     protected function tearDown(): void
     {
         parent::tearDown();
@@ -1798,5 +2404,352 @@ class EducationalProgramsControllerTest extends TestCase
         // Asegurarse de que los programas han sido eliminados
         $this->assertDatabaseMissing('educational_programs', ['uid' => $program1->uid]);
         $this->assertDatabaseMissing('educational_programs', ['uid' => $program2->uid]);
+    }
+
+    public function testEmitAllCredentialsRolManagement()
+    {
+
+        $user = UsersModel::factory()->create();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        $this->actingAs($user);
+
+        $generalOptionsMock = [
+            'operation_by_calls' => false, // O false, según lo que necesites para la prueba
+            'necessary_approval_editions' => true,
+            'some_option_array' => [], // Asegúrate de que esto sea un array'
+            'certidigital_url'              => env('CERTIDIGITAL_URL'),
+            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
+            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
+            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
+            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
+            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
+            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
+            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
+        ];
+
+        app()->instance('general_options', $generalOptionsMock);
+
+        $educational = EducationalProgramsModel::factory()->withEducationalProgramType()->create();
+
+        // Crear los cursos con bloques
+        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
+            [
+                'educational_program_uid' => $educational->uid
+            ]
+        )->first();
+
+        $educational->students()->attach($user->uid, [
+            'uid' => generate_uuid(),
+            'acceptance_status' => 'PENDING',
+        ]);
+
+        $block = BlocksModel::factory()->create([
+            'course_uid' => $course->uid
+        ]);
+
+        // Vincularle un resultado de aprendizaje
+        $learning = LearningResultsModel::factory()->withCompetence()->create();
+
+        $block->learningResults()->attach($learning->uid, [
+            'uid' => generate_uuid(),
+        ]);
+
+        // Generar credencial para el curso
+        $this->certidigitalService->createUpdateEducationalProgramCredential($educational->uid);
+
+        // Calificación global
+        CourseGlobalCalificationsModel::factory()->create(
+            [
+                'user_uid' => $user->uid,
+                'course_uid' => $course->uid,
+                'calification_info' => 'test'
+            ]
+        );
+
+        // Calificación de resultado en el curso
+        CourseLearningResultCalificationsModel::factory()->create([
+            'user_uid' => $user->uid,
+            'course_uid' => $course->uid,
+            'learning_result_uid' => $learning->uid,
+            'calification_info' => 'test resultado'
+        ]);
+
+        // Calificación de resultado en el bloque
+        CoursesBlocksLearningResultsCalificationsModel::factory()->create([
+            "user_uid" => $user->uid,
+            "course_block_uid" => $block->uid,
+            "learning_result_uid" => $learning->uid,
+            "calification_info" => "test bloque resultado"
+        ]);
+
+        $data = [
+            'educational_program_uid' => $educational->uid
+        ];
+
+        $response = $this->postJson('/learning_objects/educational_programs/emit_all_credentials', $data);
+
+        $response->assertStatus(200);
+
+        $response->assertJson(['message' => 'Credenciales emitidas correctamente']);
+    }
+
+
+    public function testEmitAllCredentialsEducationalProgramWithFail()
+    {
+
+        $user = UsersModel::factory()->create();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        $this->actingAs($user);
+
+        $educational = EducationalProgramsModel::factory()->withEducationalProgramType()->create();
+
+        $data = [
+            'educational_program_uid' => $educational->uid
+        ];
+
+        $response = $this->postJson('/learning_objects/educational_programs/emit_all_credentials', $data);
+
+        $response->assertStatus(422);
+
+        $response->assertJson(['message' => 'No tienes permisos para emitir credenciales en este curso']);
+    }
+
+    //Todo: está faltando solucionar error de credenciales en CertidigitalService
+
+    public function testEmitCredentialsEducationalPrograms()
+    {
+
+        $user = UsersModel::factory()->create();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'TEACHER'], ['uid' => generate_uuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        $this->actingAs($user);
+
+        $generalOptionsMock = [
+            'operation_by_calls' => false, // O false, según lo que necesites para la prueba
+            'necessary_approval_editions' => true,
+            'some_option_array' => [], // Asegúrate de que esto sea un array'
+            'certidigital_url'              => env('CERTIDIGITAL_URL'),
+            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
+            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
+            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
+            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
+            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
+            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
+            'certidigital_organization_oid' => 29,
+        ];
+
+        app()->instance('general_options', $generalOptionsMock);
+
+        $certidigital = CertidigitalCredentialsModel::factory()->create();
+
+        $type = EducationalProgramTypesModel::factory()->create(
+            [
+                'managers_can_emit_credentials' => 0,
+                'teachers_can_emit_credentials' => 1,
+            ]
+        );
+
+        $educationalProgram =  EducationalProgramsModel::factory()->withEducationalProgramType()->create(
+            [
+                'certidigital_credential_uid' => $certidigital->uid,
+                'educational_program_type_uid' => $type->uid,
+            ]
+        );
+
+        $course  = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
+            [
+                'educational_program_uid' => $educationalProgram->uid
+
+            ]
+        )->first();
+
+        $block = BlocksModel::factory()->create([
+            'course_uid' => $course->uid
+        ]);
+
+        $learning = LearningResultsModel::factory()->withCompetence()->create();
+
+        $block->learningResults()->attach($learning->uid, [
+            'uid' => generate_uuid(),
+        ]);
+
+
+        CourseGlobalCalificationsModel::factory()->create(
+            [
+                'user_uid' => $user->uid,
+                'course_uid' => $course->uid
+            ]
+        );
+
+        CertidigitalAssesmentsModel::factory()->create(
+            [
+                'course_uid' => $course->uid,
+                'learning_result_uid' => $learning->uid,
+                'course_block_uid' => $block->uid
+            ]
+        );
+
+        CoursesBlocksLearningResultsCalificationsModel::factory()->create([
+            'user_uid' => $user->uid,
+            'course_block_uid' => $block->uid,
+            'learning_result_uid' => $learning->uid
+        ]);
+
+        // CourseLearningResultCalificationsModel::factory()->create([
+        //     'user_uid'=> $user->uid,
+        //     'course_uid'=> $course->uid,
+        //     'learning_result_uid'=>$learning->uid
+        // ]);
+
+        $educationalProgram->students()->attach($user->uid, [
+            'uid' => generate_uuid(),
+            'acceptance_status' => 'PENDING',
+        ]);
+
+        $data = [
+            'students_uids' => [$user->uid],
+            'educational_program_uid' => $educationalProgram->uid,
+        ];
+
+        $response = $this->postJson('/learning_objects/educational_programs/emit_credentials', $data);
+
+        $response->assertStatus(200);
+
+        $response->assertJson(['message' => 'Credenciales emitidas correctamente']);
+    }
+
+
+    public function testEmitCredentialsEducationalProgramsWithFail()
+    {
+
+        $user = UsersModel::factory()->create();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'TEACHER'], ['uid' => generate_uuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        $this->actingAs($user);
+
+        $certidigital = CertidigitalCredentialsModel::factory()->create();
+
+        $type = EducationalProgramTypesModel::factory()->create(
+            [
+                'managers_can_emit_credentials' => 0,
+                'teachers_can_emit_credentials' => 1,
+            ]
+        );
+
+        $educationalProgram =  EducationalProgramsModel::factory()->create(
+            [
+                'certidigital_credential_uid' => $certidigital->uid,
+                'educational_program_type_uid' => $type->uid,
+            ]
+        );
+
+        $educationalProgram->students()->attach($user->uid, [
+            'uid' => generate_uuid(),
+            'acceptance_status' => 'PENDING',
+            'emissions_block_uuid' => generate_uuid(),
+        ]);
+
+        $data = [
+            'students_uids' => [$user->uid],
+            'educational_program_uid' => $educationalProgram->uid,
+        ];
+
+        $response = $this->postJson('/learning_objects/educational_programs/emit_credentials', $data);
+
+        $response->assertStatus(422);
+
+        $response->assertJson(['message' => 'No se pueden emitir credenciales porque alguno de los alumnos ya tiene credenciales emitidas']);
+    }
+
+    public function testSendCredentialsEducationalPrograms()
+    {
+
+        $user = UsersModel::factory()->create();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        $this->actingAs($user);
+
+        $generalOptionsMock = [
+            'operation_by_calls' => false, // O false, según lo que necesites para la prueba
+            'necessary_approval_editions' => true,
+            'some_option_array' => [], // Asegúrate de que esto sea un array'
+            'certidigital_url'              => env('CERTIDIGITAL_URL'),
+            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
+            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
+            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
+            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
+            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
+            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
+            'certidigital_organization_oid' => 29,
+
+        ];
+
+        app()->instance('general_options', $generalOptionsMock);
+
+        $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create();
+
+        $data = [
+            'students_uids' => $user->uid,
+            'educational_program_uid' => $educationalProgram->uid,
+        ];
+
+        $response = $this->postJson('/learning_objects/educational_programs/send_credentials', $data);
+
+        $response->assertStatus(200);
+
+        $response->assertJson(['message' => 'Se han enviado las credenciales correctamente']);
+    }
+
+    public function testSealCredentialsEducationalPrograms()
+    {
+
+        $user = UsersModel::factory()->create();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+
+        // Autenticar al usuario
+        $this->actingAs($user);
+
+        $generalOptionsMock = [
+            'operation_by_calls' => false, // O false, según lo que necesites para la prueba
+            'necessary_approval_editions' => true,
+            'some_option_array' => [], // Asegúrate de que esto sea un array'
+            'certidigital_url'              => env('CERTIDIGITAL_URL'),
+            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
+            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
+            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
+            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
+            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
+            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
+            'certidigital_organization_oid' => 29,
+
+        ];
+
+        app()->instance('general_options', $generalOptionsMock);
+
+        $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create();
+
+        $data = [
+            'students_uids' => $user->uid,
+            'educational_program_uid' => $educationalProgram->uid,
+        ];
+
+        $response = $this->postJson('/learning_objects/educational_programs/seal_credentials', $data);
+
+        $response->assertStatus(200);
+
+        $response->assertJson(['message' => 'Credenciales selladas correctamente']);
     }
 }

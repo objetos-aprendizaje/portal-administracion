@@ -108,7 +108,7 @@ function initializeLicensesTable() {
             title: "",
             field: "actions",
             formatter: function (cell, formatterParams, onRendered) {
-                return `<button type="button" class='btn action-btn'>${heroicon(
+                return `<button type="button" class='btn action-btn' title='Editar'>${heroicon(
                     "pencil-square",
                     "outline"
                 )}</button>`;
@@ -196,7 +196,7 @@ function submitLicenseForm() {
 
     apiFetch(params)
         .then(() => {
-            licensesTable.replaceData(endPointTable);
+            licensesTable.setData(endPointTable);
             hideModal("license-modal");
         })
         .catch((data) => {
@@ -219,7 +219,7 @@ async function deleteLicenses() {
     };
 
     apiFetch(params).then(() => {
-        licensesTable.replaceData(endPointTable);
+        licensesTable.setData(endPointTable);
         hideModal("licence-modal");
     });
 }
@@ -233,7 +233,7 @@ async function deleteLicenses() {
 function controlReloadTable() {
     const reloadTableBtn = document.getElementById("btn-reload-table");
     reloadTableBtn.addEventListener("click", function () {
-        licensesTable.replaceData(endPointTable);
+        licensesTable.setData(endPointTable);
     });
 }
 

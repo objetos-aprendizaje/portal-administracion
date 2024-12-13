@@ -13,8 +13,8 @@
             @include('partials.table-search', ['table' => 'notification-general-table'])
 
             <div>
-                <button id="add-notification-general-btn" type="button" class="btn btn-icon mb-4">{{e_heroicon('plus', 'outline')}}</button>
-                <button id="delete-notification-general-btn" type="button" class="btn btn-icon mb-4">{{e_heroicon('trash', 'outline')}}</button>
+                <button id="add-notification-general-btn" type="button" class="btn btn-icon mb-4" title="Añadir notificación general">{{e_heroicon('plus', 'outline')}}</button>
+                <button id="delete-notification-general-btn" type="button" class="btn btn-icon mb-4" title="Eliminar notificación general">{{e_heroicon('trash', 'outline')}}</button>
             </div>
 
         </div>

@@ -144,10 +144,16 @@
                                                 src="data/images/login_icons/rediris.png" /></a>
                                     </button>
                                 @endif
+
+                                @if (env('URL_LOGIN_CERT'))
+                                    <button type="button"
+                                        class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
+                                        <a href='{{ env('URL_LOGIN_CERT') }}?origin="portal_admin"'><img class="w-[32px] h-[32px]"
+                                                src="data/images/login_icons/certificate_icon.svg" /></a>
+                                    </button>
+                                @endif
                             @endif
-
                         </div>
-
                     </form>
 
                     @if ($cert_login != '')
@@ -295,6 +301,15 @@
                 @endif
             @endif
 
+            @if (env('URL_LOGIN_CERT'))
+                <button type="button"
+                    class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
+                    <a href='{{ env('URL_LOGIN_CERT') }}?origin="portal_admin"'>
+                        <img alt="login" class="w-[32px] h-[32px]"
+                            src="data/images/login_icons/certificate_icon.svg" />
+                    </a>
+                </button>
+            @endif
         </div>
 
     </section>

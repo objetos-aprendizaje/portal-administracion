@@ -94,7 +94,8 @@ class ManagementCoursesController extends BaseController
         $rolesUser = Auth::user()['roles']->pluck("code")->toArray();
         $variables_js = [
             "frontUrl" => env('FRONT_URL'),
-            "rolesUser" => $rolesUser
+            "rolesUser" => $rolesUser,
+            "enabledRecommendationModule" => app('general_options')['enabled_recommendation_module'],
         ];
 
         return view(
@@ -269,6 +270,22 @@ class ManagementCoursesController extends BaseController
         return response()->json(['message' => 'Credenciales selladas correctamente'], 200);
     }
 
+    public function regenerateStudentCredentials(Request $request) {
+        $courseUid = $request->input('course_uid');
+
+        $this->certidigitalService->createUpdateCourseCredential($courseUid);
+
+        return response()->json(['message' => 'Credencial de estudiante regenerada correctamente'], 200);
+    }
+
+    public function regenerateTeacherCredentials(Request $request) {
+        $courseUid = $request->input('course_uid');
+
+        $this->certidigitalService->createUpdateCourseTeacherCredential($courseUid);
+
+        return response()->json(['message' => 'Credencial de docente regenerada correctamente'], 200);
+    }
+
     private function checkPermissionsEmitCredentials($educationalProgramType)
     {
         $userRoles = auth()->user()->roles()->get()->pluck('code')->toArray();
@@ -369,7 +386,15 @@ class ManagementCoursesController extends BaseController
 
         if (isset($sort) && !empty($sort)) {
             foreach ($sort as $order) {
-                $query->orderBy($order['field'], $order['dir']);
+                if ($order['field'] == 'certidigital_credential_uid') {
+                    $query->orderByRaw('CASE WHEN courses.certidigital_credential_uid IS NULL THEN 0 ELSE 1 END, courses.certidigital_credential_uid ' . $order['dir']);
+                }
+                else if ($order['field'] == 'certidigital_teacher_credential_uid') {
+                    $query->orderByRaw('CASE WHEN courses.certidigital_teacher_credential_uid IS NULL THEN 0 ELSE 1 END, courses.certidigital_teacher_credential_uid ' . $order['dir']);
+                }
+                else {
+                    $query->orderBy($order['field'], $order['dir']);
+                }
             }
         }
 
@@ -589,7 +614,11 @@ class ManagementCoursesController extends BaseController
 
         if ($course_uid) {
             $isNew = false;
-            $course_bd = CoursesModel::where('uid', $course_uid)->with(["educational_program", "embeddings"])->first();
+            $course_bd = CoursesModel::where('uid', $course_uid)->with([
+                "educational_program",
+                "embeddings",
+                'blocks.learningResults',
+            ])->first();
             $this->checkStatusCourse($course_bd);
 
             // Si el curso está ya añadido a un programa educativo, validamos las fechas de realización
@@ -628,6 +657,9 @@ class ManagementCoursesController extends BaseController
         }
 
         DB::transaction(function () use ($request, $course_bd, $belongsEducationalProgram, $isNew, $newCourseStatus) {
+            // Copia del curso antes de cambios
+            $courseBdCopy = clone $course_bd;
+
             $isManagement = Auth::user()->hasAnyRole(['MANAGEMENT']);
 
             // Antes de actualizar el título y descripción del curso, se comprueba si hay cambios y se generan embeddings
@@ -676,22 +708,35 @@ class ManagementCoursesController extends BaseController
                 $this->sendNotificationCourseAcceptedPublicationToKafka($course_bd, $lmsSystem->identifier);
             }
 
-            // Credencial para los docentes
-            $this->certidigitalService->createUpdateCourseTeacherCredential($course_bd->uid);
+            // Se comprueba si ha habido cambios en el curso relativos a certidigital para actualizar o no la credencial
+            $changesCourse = $this->detectChangesCredential($courseBdCopy, $course_bd);
 
-            /*
-                Si el curso no pertenece a un programa formativo, se crea la credencial.
-                Si va a pertenecer a un programa formativo, ya lo tiene vinculado y éste tiene credencial, se actualiza la credencial del
-                programa educativo
-            */
-            if (!$course_bd->belongs_to_educational_program) {
-                $this->certidigitalService->createUpdateCourseCredential($course_bd->uid);
-            } else if ($course_bd->belongs_to_educational_program && $course_bd->educational_program && $course_bd->educational_program->certidigitalCredential) {
-                $this->certidigitalService->createUpdateEducationalProgramCredential($course_bd->educational_program->uid);
+            if (!$course_bd->certidigitalCredential || $changesCourse) {
+                // Credencial para los docentes
+                $this->certidigitalService->createUpdateCourseTeacherCredential($course_bd->uid);
+
+                /*
+                    Si el curso no pertenece a un programa formativo, se crea la credencial.
+                    Si va a pertenecer a un programa formativo, ya lo tiene vinculado y éste tiene credencial, se actualiza la credencial del
+                    programa educativo
+                */
+                if (!$course_bd->belongs_to_educational_program) {
+                    $this->certidigitalService->createUpdateCourseCredential($course_bd->uid);
+                } else if ($course_bd->belongs_to_educational_program && $course_bd->educational_program && $course_bd->educational_program->certidigitalCredential) {
+                    $this->certidigitalService->createUpdateEducationalProgramCredential($course_bd->educational_program->uid);
+                }
             }
         }, 5);
 
         return response()->json(['message' => ($isNew) ? 'Se ha añadido el curso correctamente' : 'Se ha actualizado el curso correctamente'], 200);
+    }
+
+    private function detectChangesCredential($courseBeforeChanges, $courseAfterChanges)
+    {
+        $courseBeforeChanges->load('blocks.learningResults');
+        if ($courseBeforeChanges->title != $courseAfterChanges->title) return true;
+        else if (json_encode($courseAfterChanges->blocks) != json_encode($courseBeforeChanges->blocks)) return true;
+        else return false;
     }
 
     /**
@@ -990,7 +1035,6 @@ class ManagementCoursesController extends BaseController
                 },
             ],
             'featured_slider_color_font' => 'required_if:featured_big_carrousel,1',
-            'center_uid' => 'required|string',
             'evaluation_criteria' => 'required_if:validate_student_registrations,1',
             'teacher_no_coordinators' => [
                 function ($attribute, $value, $fail) use ($request) {
@@ -1134,7 +1178,6 @@ class ManagementCoursesController extends BaseController
             'lms_url.url' => 'Introduce una URL válida para el LMS.',
             'lms_system_uid.required_if' => 'Debes seleccionar un LMS si no especificas una URL',
             'call_uid.required' => 'Selecciona la convocatoria del curso.',
-            'center_uid' => 'Debes especificar un centro',
             'featured_big_carrousel_title.required_if' => 'Debes especificar un título',
             'featured_big_carrousel_description.required_if' => 'Debes especificar una descripción',
             'featured_slider_color_font.required_if' => 'Debes especificar un color para la fuente',
@@ -1789,7 +1832,7 @@ class ManagementCoursesController extends BaseController
             $this->copyAuxiliarTablesCourse($courseBd, $newCourse);
         });
 
-        return response()->json(['message' => 'Curso duplicado correctamente'], 200);
+        return response()->json(['message' => 'Curso duplicado correctamente', 'course_uid' => $newCourse->uid], 200);
     }
 
     public function editionCourse(Request $request)
@@ -1812,7 +1855,7 @@ class ManagementCoursesController extends BaseController
             $this->copyAuxiliarTablesCourse($courseBd, $newCourse);
         });
 
-        return response()->json(['message' => 'Edición creada correctamente'], 200);
+        return response()->json(['message' => 'Edición creada correctamente', 'course_uid' => $newCourse->uid], 200);
     }
 
     private function duplicateStructure($courseBd, $newCourse)

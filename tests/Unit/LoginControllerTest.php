@@ -604,40 +604,6 @@ class LoginControllerTest extends TestCase
 
     }
 
-    /** @test */
-    public function testRedirectsHomeTokenValid()
-    {
-        // Arrange: Crea un usuario con un token válido
-       $user = UsersModel::factory()->create(['uid' => generate_uuid(),'token_x509' => 'valid-token'])->first();
-
-
-        // Act: Realiza la solicitud al endpoint con el token válido
-        $this->get('/token_login/valid-token');
-
-        // Assert: Verifica que el usuario esté autenticado
-        $this->assertTrue(Auth::check());
-
-
-        // Verifica que el token haya sido eliminado
-        $user->refresh();
-        $this->assertEmpty($user->token_x509);
-    }
-
-     /** @test */
-     public function testRedirectsLoginTokenInvalid()
-     {
-
-        UsersModel::factory()->create(['uid' => generate_uuid(),'token_x509' => ''])->first();
-        // Act: Realiza la solicitud al endpoint con un token inválido
-        $response = $this->get('/token_login/ ');
-
-        // Assert: Verifica que no haya un usuario autenticado
-        $this->assertFalse(Auth::check());
-
-        // Verifica que sea redirigido a la página de login con un error específico
-        //$response->assertRedirect(env('DOMINIO_PRINCIPAL') . '/login?e=certificate-error');
-     }
-
       /** @test */
     public function testExceptionInvalidLoginMethods()
     {

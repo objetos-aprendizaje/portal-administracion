@@ -39,7 +39,7 @@ function initHandlers() {
     document
         .getElementById("btn-reload-table")
         .addEventListener("click", function () {
-            callsTable.replaceData(endPointTable);
+            callsTable.setData(endPointTable);
         });
 
     document.getElementById("new-call-btn").addEventListener("click", newCall);
@@ -143,7 +143,7 @@ function initializeCallsTable() {
             title: "",
             field: "actions",
             formatter: function (cell, formatterParams, onRendered) {
-                return `<button type="button" class='btn action-btn'>${heroicon(
+                return `<button type="button" class='btn action-btn' title='Editar'>${heroicon(
                     "pencil-square",
                     "outline"
                 )}</button>`;

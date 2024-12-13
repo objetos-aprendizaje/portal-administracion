@@ -112,6 +112,7 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::post('/administration/save_scripts', [GeneralAdministrationController::class, 'saveScripts']);
         Route::post('/administration/save_rrss', [GeneralAdministrationController::class, 'saveRrss']);
         Route::post('/administration/save_carrousel', [GeneralAdministrationController::class, 'saveCarrousel']);
+        Route::post('/administration/save_footer_texts', [GeneralAdministrationController::class, 'saveFooterTexts']);
 
         Route::post('/administration/add_font', [GeneralAdministrationController::class, 'addFont']);
         Route::delete('/administration/delete_font', [GeneralAdministrationController::class, 'deleteFont']);
@@ -288,6 +289,9 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::post('/learning_objects/courses/send_credentials', [ManagementCoursesController::class, 'sendCredential']);
         Route::post('/learning_objects/courses/seal_credentials', [ManagementCoursesController::class, 'sealCredential']);
 
+        Route::post('/learning_objects/courses/regenerate_student_credentials', [ManagementCoursesController::class, 'regenerateStudentCredentials']);
+        Route::post('/learning_objects/courses/regenerate_teacher_credentials', [ManagementCoursesController::class, 'regenerateTeacherCredentials']);
+
         Route::get('/learning_objects/educational_resources', [EducationalResourcesController::class, 'index'])->name('learning-objects-educational-resources');
 
         Route::get('/learning_objects/educational_resources_per_users', [EducationalResourcesPerUsersController::class, 'index'])->name('learning-objects-educational-resources-per-users');
@@ -459,6 +463,7 @@ Route::middleware(['combined.auth'])->group(function () {
 
     Route::get('/my_profile', [MyProfileController::class, 'index'])->name('my-profile');
     Route::post('/my_profile/update', [MyProfileController::class, 'updateUser']);
+    Route::delete('/my_profile/delete_photo', [MyProfileController::class, 'deletePhoto']);
 });
 
 Route::middleware('guest')->group(function () {

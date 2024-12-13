@@ -8,13 +8,13 @@
             @include('partials.table-search', ['table' => 'redirection-queries-table'])
 
             <div>
-                <button type="button" class="btn-icon" id="new-redirection-query-btn">
+                <button type="button" class="btn-icon" id="new-redirection-query-btn" title="Añadir redirección de consulta">
                     {{ e_heroicon('plus', 'outline') }}
                 </button>
-                <button type="button" class="btn-icon" id="btn-delete-redirection-queries">
+                <button type="button" class="btn-icon" id="btn-delete-redirection-queries" title="Eliminar redirección de consulta">
                     {{ e_heroicon('trash', 'outline') }}
                 </button>
-                <button type="button" class="btn-icon" id="btn-reload-table">
+                <button type="button" class="btn-icon" id="btn-reload-table" title="Actualizar">
                     {{ e_heroicon('arrow-path', 'outline') }}
                 </button>
             </div>

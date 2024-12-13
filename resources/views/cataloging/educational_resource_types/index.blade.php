@@ -10,8 +10,8 @@
 
 
             <div>
-                <button id="add-educational-resource-type-btn" type="button" class="btn btn-icon mb-4">{{e_heroicon('plus', 'outline')}}</button>
-                <button id="delete-educational-resource-type-btn" type="button" class="btn btn-icon mb-4">{{e_heroicon('trash', 'outline')}}</button>
+                <button id="add-educational-resource-type-btn" type="button" class="btn btn-icon mb-4" title="Añadir tipo de recurso educativo">{{e_heroicon('plus', 'outline')}}</button>
+                <button id="delete-educational-resource-type-btn" type="button" class="btn btn-icon mb-4" title="Eliminar tipos de recursos educativos">{{e_heroicon('trash', 'outline')}}</button>
             </div>
 
         </div>
