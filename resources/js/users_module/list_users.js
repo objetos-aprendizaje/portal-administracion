@@ -76,7 +76,7 @@ function initHandlers() {
                 }
             });
         } else {
-            showToast("Debe seleccionar al menos una convocatoria", "error");
+            showToast("Debe seleccionar al menos un usuario", "error");
         }
     });
 
@@ -227,6 +227,15 @@ async function initializeUsersTable() {
                 headerSort: false,
             },
             {
+                title: "Último acceso",
+                field: "last_access",
+                formatter: function (cell, formatterParams, onRendered) {
+                    const lastAccess = cell.getRow().getData().last_access;
+                    if(lastAccess) return formatDateTime(lastAccess);
+                },
+                headerSort: true,
+            },
+            {
                 title: "Fecha creación",
                 field: "created_at",
                 formatter: function (cell, formatterParams, onRendered) {
@@ -240,7 +249,7 @@ async function initializeUsersTable() {
                 title: "",
                 field: "actions",
                 formatter: function (cell, formatterParams, onRendered) {
-                    return `<button type="button" class='btn action-btn'>${heroicon(
+                    return `<button type="button" class='btn action-btn' title='Editar'>${heroicon(
                         "pencil-square",
                         "outline"
                     )}</button>`;

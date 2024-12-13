@@ -8,12 +8,14 @@ use App\Models\CentersModel;
 use App\Models\CompetenceFrameworksModel;
 use App\Models\CompetencesModel;
 use App\Models\CourseDocumentsModel;
+use App\Models\CourseGlobalCalificationsModel;
 use App\Models\CoursesAccesesModel;
 use App\Models\CoursesModel;
 use App\Models\CoursesStudentsDocumentsModel;
 use App\Models\CoursesStudentsModel;
 use App\Models\CourseTypesModel;
 use App\Models\EducationalProgramEmailContactsModel;
+use App\Models\EducationalProgramsAssessmentsModel;
 use App\Models\EducationalProgramsModel;
 use App\Models\EducationalProgramsPaymentTermsModel;
 use App\Models\EducationalProgramsStudentsModel;
@@ -36,6 +38,8 @@ class CleanUpSeeder extends Seeder
     public function run(): void
     {
         CoursesAccesesModel::query()->delete();
+        CourseGlobalCalificationsModel::query()->delete();
+        EducationalProgramsAssessmentsModel::query()->delete();
         CoursesModel::query()->delete();
         EducationalProgramsModel::query()->delete();
         CallsModel::query()->delete();

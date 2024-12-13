@@ -39,6 +39,16 @@ use App\Http\Controllers\LearningObjects\EducationalProgramsController;
 
 class LearningObjectProgramsEducationalTest extends TestCase
 {
+
+
+    public function setUp(): void
+    {
+
+        parent::setUp();
+        $this->withoutMiddleware();
+        // Asegúrate de que la tabla 'qvkei_settings' existe
+        $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
+    } // Configuración inicial si es necesario
     
 
     /** @test redirección Programa educativos */

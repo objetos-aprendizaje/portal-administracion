@@ -47,11 +47,11 @@ class LearningObjetsControllerTest extends TestCase
 
         // Se actualiza el modelo GeneralOptionsModel
         $general = GeneralOptionsModel::where('option_name', 'openai_key')->first();
-        $general->option_value = "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";
+        $general->option_value = env('OPENAI_KEY');
         $general->save();
 
-        $generalOptionsMock = [           
-            'openai_key'=> $general->option_value,       
+        $generalOptionsMock = [
+            'openai_key' => $general->option_value,
         ];
         // Asignar el mock a app('general_options')
         App::instance('general_options', $generalOptionsMock);
@@ -67,5 +67,36 @@ class LearningObjetsControllerTest extends TestCase
         $response->assertStatus(200);
 
         // $response->assertJson(['tag1', 'tag2', 'tag3']);
+    }
+
+    public function testGenerateMetadataSuccessfully()
+    {
+
+        $user = UsersModel::factory()->create()->latest()->first();
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        // Autenticar al usuario
+        Auth::login($user);
+
+        // Se actualiza el modelo GeneralOptionsModel
+        $general = GeneralOptionsModel::where('option_name', 'openai_key')->first();
+        $general->option_value = env('OPENAI_KEY ');  "sk-proj-uMcGGl7yYOy124A2CIpaT3BlbkFJjFjCzAbGwoLYT5ThevzM";
+        $general->save();
+
+        $generalOptionsMock = [
+            'openai_key' => $general->option_value,
+        ];
+        // Asignar el mock a app('general_options')
+        App::instance('general_options', $generalOptionsMock);
+
+        // Datos simulados del request
+        $text = "This is a test description for metadata.";
+        $data = ['text' => $text];
+
+        // Realizar la solicitud POST
+        $response = $this->postJson('/learning_objects/generate_metadata', $data);
+
+        // Verificar respuesta
+        $response->assertStatus(200);
     }
 }

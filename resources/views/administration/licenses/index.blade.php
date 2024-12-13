@@ -9,17 +9,17 @@
 
             <div class="flex gap-1">
                 <div>
-                    <button type="button" id="new-license-btn" class="btn-icon">
+                    <button type="button" id="new-license-btn" class="btn-icon" title="Añadir licencia">
                         {{ e_heroicon('plus', 'outline') }}
                     </button>
                 </div>
                 <div>
-                    <button type="button" class="btn-icon" id="btn-delete-license">
+                    <button type="button" class="btn-icon" id="btn-delete-license" title="Eliminar licencia">
                         {{ e_heroicon('trash', 'outline') }}
                     </button>
                 </div>
                 <div>
-                    <button type="button" class="btn-icon" id="btn-reload-table">
+                    <button type="button" class="btn-icon" id="btn-reload-table" title="Actualizar">
                         {{ e_heroicon('arrow-path', 'outline') }}
                     </button>
                 </div>

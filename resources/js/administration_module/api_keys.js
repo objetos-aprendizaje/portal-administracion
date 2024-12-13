@@ -115,7 +115,7 @@ function initializeApiKeysTable() {
             title: "",
             field: "actions",
             formatter: function (cell, formatterParams, onRendered) {
-                return `<button type="button" class='btn action-btn'>${heroicon(
+                return `<button type="button" class='btn action-btn' title='Editar'>${heroicon(
                     "pencil-square",
                     "outline"
                 )}</button>`;
@@ -221,5 +221,5 @@ function submitNewApiKey() {
 }
 
 function reloadTable() {
-    apiKeyTable.replaceData(endPointTable);
+    apiKeyTable.setData(endPointTable);
 }

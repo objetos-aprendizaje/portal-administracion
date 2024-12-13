@@ -8,13 +8,13 @@
             @include('partials.table-search', ['table' => 'api-keys-table'])
 
             <div>
-                <button type="button" class="btn-icon" id="new-api-key-btn">
+                <button type="button" class="btn-icon" id="new-api-key-btn" title="Añadir clave API">
                     {{ e_heroicon('plus', 'outline') }}
                 </button>
-                <button type="button" class="btn-icon" id="delete-api-keys-btn">
+                <button type="button" class="btn-icon" id="delete-api-keys-btn" title="Eliminar clave API">
                     {{ e_heroicon('trash', 'outline') }}
                 </button>
-                <button type="button" class="btn-icon" id="btn-reload-table">
+                <button type="button" class="btn-icon" id="btn-reload-table" title="Actualizar">
                     {{ e_heroicon('arrow-path', 'outline') }}
                 </button>
             </div>

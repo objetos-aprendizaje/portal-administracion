@@ -23,7 +23,11 @@
                             <div class="select-file-container">
                                 <input accept="image/*" type="file" id="photo_path" name="photo_path" class="hidden" />
 
-                                <label for="photo_path" class="btn btn-rectangular w-[110px]">
+                                <button type="button" class="btn btn-rectangular min-w-[110px]" id="delete-photo">
+                                    Eliminar {{ e_heroicon('x-mark', 'outline') }}
+                                </button>
+
+                                <label for="photo_path" class="btn btn-rectangular min-w-[110px]">
                                     Subir {{ e_heroicon('arrow-up-tray', 'outline') }}
                                 </label>
 
@@ -36,7 +40,7 @@
                 </div>
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="first_name">Nombre</label>
+                        <label for="first_name">Nombre <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input maxlength="100" value="{{ $user->first_name }}" placeholder="Manuel" class="poa-input"
@@ -46,7 +50,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="last_name">Apellidos</label>
+                        <label for="last_name">Apellidos <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input maxlength="255" value="{{ $user->last_name }}" placeholder="Pérez Gutiérrez" type="text"
@@ -56,7 +60,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="nif">NIF</label>
+                        <label for="nif">NIF <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input maxlength="255" value="{{ $user->nif }}" placeholder="12345678X" type="text"

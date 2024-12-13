@@ -165,7 +165,7 @@ function initializeLegalTextsPagesTable() {
             title: "",
             field: "actions",
             formatter: function (cell, formatterParams, onRendered) {
-                return `<button type="button" class='btn action-btn'>${heroicon(
+                return `<button type="button" class='btn action-btn' title='Editar'>${heroicon(
                     "pencil-square",
                     "outline"
                 )}</button>`;
@@ -288,7 +288,7 @@ async function deleteHeaderPages() {
 }
 
 function reloadTable() {
-    headerPagesTable.replaceData(endPointTable);
+    headerPagesTable.setData(endPointTable);
 }
 function getAllParentPages(uid = null){
 

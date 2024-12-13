@@ -27,6 +27,7 @@ use App\Models\AutomaticNotificationTypesModel;
 use App\Models\CompetenceFrameworksLevelsModel;
 use App\Models\EducationalResourceStatusesModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\EducationalResourcesEmbeddingsModel;
 use App\Models\EducationalResourcesEmailContactsModel;
 
 class EducationalResourcesControllerTest extends TestCase
@@ -573,6 +574,8 @@ class EducationalResourcesControllerTest extends TestCase
             ->withCreatorUser()
             ->create([
                 'license_type_uid' => $licenseTypes->uid,
+                'title' => 'Recurso existente',
+                'description' => 'Descripción existente',
             ])->first();
 
         EducationalResourcesTagsModel::factory()->count(2)->create(
@@ -586,6 +589,12 @@ class EducationalResourcesControllerTest extends TestCase
                 'educational_resource_uid' => $resource->uid
             ]
         );
+
+        EducationalResourcesEmbeddingsModel::factory()->create(
+            [
+                'educational_resource_uid'=> $resource->uid
+            ]
+        );        
 
 
         // Configura el mock de general_options con la clave correcta
@@ -616,8 +625,8 @@ class EducationalResourcesControllerTest extends TestCase
         // Prepara los datos para actualizar el recurso
         $data = [
             'educational_resource_uid' => $resource->uid,
-            'title' => 'Recurso Actualizado',
-            'description' => 'Descripción actualizada',
+            'title' => 'Recurso existente',
+            'description' => 'Descripción existente',
             'educational_resource_type_uid' => $educationalResourceTypes->uid,
             'license_type_uid' => $licenseTypes->uid,
             'resource_way' => 'URL',
@@ -652,7 +661,7 @@ class EducationalResourcesControllerTest extends TestCase
         // Verifica que el recurso haya sido actualizado en la base de datos
         $this->assertDatabaseHas('educational_resources', [
             'uid' => $resource->uid,
-            'title' => 'Recurso Actualizado',
+            'title' => 'Recurso existente',
             'license_type_uid' => $licenseTypes->uid,
             'resource_url' => 'https://example.com/resource',
         ]);

@@ -88,7 +88,7 @@ class AppServiceProvider extends ServiceProvider
         $newUser->uid = generate_uuid();
         $newUser->first_name = $dataLogin["email"];
         $newUser->email = $dataLogin["email"];
-        $newUser->logged_x509 = 1;
+        $newUser->identity_verified = true;
 
         if (isset($dataLogin["nif"])) $newUser->nif = $dataLogin["nif"];
 

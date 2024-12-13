@@ -594,6 +594,10 @@ button.element-disabled {
     @apply h-[36px] px-4 py-1  border rounded;
 }
 
+#tree-competences-learning-results .infinite-tree-scroll {
+    @apply max-h-full
+}
+
 /******************************* NOTIFICATIONS ***************/
 .notifications {
     .bell svg {
@@ -840,7 +844,15 @@ button.element-disabled {
         @apply w-[18px] h-[18px] text-white
     }
 
-    @apply absolute z-50 w-auto bg-primary p-[12px] gap-[10px] rounded-full after:content-[''] after:absolute after:border-solid after:border-transparent after:border-t-primary after:border-l-[10px] after:border-r-[10px] after:border-t-[10px] after:-bottom-[10px] after:left-1/2 after:-translate-x-1/2
+    @apply absolute z-50 w-auto bg-primary p-[12px] gap-[10px] rounded-full after:content-[''] after:absolute after:border-solid after:border-transparent after:border-t-primary after:border-l-[10px] after:border-r-[10px] after:border-t-[10px] after:-bottom-[10px];
+}
+
+.options-div.small {
+    @apply after:left-1/2 after:-translate-x-1/2;
+}
+
+.options-div.big {
+    @apply after:right-[40px] after:translate-x-[50%];
 }
 
 

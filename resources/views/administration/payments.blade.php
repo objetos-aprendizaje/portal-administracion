@@ -22,6 +22,16 @@
                 <div class="hidden" id="payment_redsys">
                     <div class="field">
                         <div class="label-container label-center">
+                            <label for="redsys_url">URL</label>
+                        </div>
+                        <div class="content-container little">
+                            <input value="{{ $general_options['redsys_url'] }}" placeholder="https://sis.redsys.es/sis/realizarPago"
+                                class="poa-input" type="text" id="redsys_url" name="redsys_url" />
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="label-container label-center">
                             <label for="redsys_commerce_code">Código de comercio</label>
                         </div>
                         <div class="content-container little">

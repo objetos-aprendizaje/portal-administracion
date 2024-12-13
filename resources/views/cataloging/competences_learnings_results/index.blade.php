@@ -17,18 +17,18 @@
             </div>
 
             <div>
-                <button type="button" class="btn-icon" id="btn-export-import">
+                <button type="button" class="btn-icon" id="btn-export-import" title="Importar/Exportar">
                     {{ e_heroicon('arrows-up-down', 'outline') }}
                 </button>
-                <button id="import-csv-btn" type="button" class="btn btn-icon">
+                <button id="import-csv-btn" type="button" class="btn btn-icon" title="Importar marco ESCO">
                     {{ e_heroicon('folder-plus', 'outline') }}
                 </button>
 
-                <button id="new-competence-framework-btn" type="button" class="btn btn-icon">
+                <button id="new-competence-framework-btn" type="button" class="btn btn-icon" title="Añadir marco de competencias">
                     {{ e_heroicon('plus', 'outline') }}
                 </button>
 
-                <button id="btn-delete-competences" type="button" class="btn btn-icon">
+                <button id="btn-delete-competences" type="button" class="btn btn-icon" title="Eliminar elementos seleccionados">
                     {{ e_heroicon('trash', 'outline') }}
                 </button>
             </div>

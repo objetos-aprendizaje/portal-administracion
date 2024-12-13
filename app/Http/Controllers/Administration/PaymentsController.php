@@ -42,6 +42,7 @@ class PaymentsController extends BaseController {
         }
 
         $updateData = [
+            'redsys_url' => $request->input('redsys_url'),
             'payment_gateway' => $request->input('payment_gateway'),
             'redsys_commerce_code' => $request->input('redsys_commerce_code'),
             'redsys_terminal' => $request->input('redsys_terminal'),

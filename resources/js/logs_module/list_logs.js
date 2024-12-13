@@ -40,7 +40,7 @@ function initHandlers() {
     document
         .getElementById("btn-reload-table")
         .addEventListener("click", function () {
-            logsTable.replaceData(endPointTable);
+            logsTable.setData(endPointTable);
         });
 
     document
@@ -290,6 +290,6 @@ function resetFilters() {
 function controlReloadTable() {
     const reloadTableBtn = document.getElementById("btn-reload-table");
     reloadTableBtn.addEventListener("click", function () {
-        logsTable.replaceData(endPointTable);
+        logsTable.setData(endPointTable);
     });
 }

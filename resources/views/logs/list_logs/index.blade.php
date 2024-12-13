@@ -11,7 +11,7 @@
             @include('partials.table-search', ['table' => 'logs-table'])
 
             <div>
-                <button type="button" class="btn btn-icon" id="btn-reload-table">
+                <button type="button" class="btn btn-icon" id="btn-reload-table" title="Actualizar">
                     {{ e_heroicon('arrow-path', 'outline') }}
                 </button>
             </div>

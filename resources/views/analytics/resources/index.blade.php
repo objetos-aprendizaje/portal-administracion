@@ -5,7 +5,7 @@
         <div class="title-filter flex items-center mb-[26px]">
             <span>Visitas a recursos educativos</span>
             <button id="filter-educational-resources-btn"
-                class="btn-filter">{{ e_heroicon('adjustments-horizontal', 'outline') }}</button>
+                class="btn-filter" title="Filtrar">{{ e_heroicon('adjustments-horizontal', 'outline') }}</button>
         </div>
 
         <div class="table-control-header">

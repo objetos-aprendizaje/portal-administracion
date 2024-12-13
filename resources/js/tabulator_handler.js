@@ -96,7 +96,7 @@ export function controlsPagination(table, tableId) {
     containerElement
         .querySelector(".btn-first-page")
         .addEventListener("click", function () {
-            if (table.getPageMax() > 1){
+            if (table.getPageMax() > 1) {
                 table.setPage(1);
             }
         });
@@ -105,14 +105,18 @@ export function controlsPagination(table, tableId) {
     containerElement
         .querySelector(".btn-previous-page")
         .addEventListener("click", function () {
-            if (table.getPage() > 1 && table.getPageMax() > 1) table.previousPage();
+            if (table.getPage() > 1 && table.getPageMax() > 1)
+                table.previousPage();
         });
 
     // Ir a la página siguiente
     containerElement
         .querySelector(".btn-next-page")
         .addEventListener("click", function () {
-            if (table.getPage() < table.getPageMax() && table.getPageMax() > 1) {
+            if (
+                table.getPage() < table.getPageMax() &&
+                table.getPageMax() > 1
+            ) {
                 table.nextPage();
             }
         });
@@ -121,7 +125,7 @@ export function controlsPagination(table, tableId) {
     containerElement
         .querySelector(".btn-last-page")
         .addEventListener("click", function () {
-            if (table.getPageMax() > 1){
+            if (table.getPageMax() > 1) {
                 table.setPage(table.getPageMax());
             }
         });
@@ -364,7 +368,16 @@ export function moreOptionsBtn(cell, buttonArray) {
     menu.style.top = `${
         buttonRect.top + window.scrollY - menu.offsetHeight - 5
     }px`;
-    const left = buttonRect.left - menu.offsetWidth / 2 + buttonRect.width / 2;
+    let left = 0;
+
+    if(buttonArray.length > 5) {
+        left = buttonRect.right + 20 - menu.offsetWidth;
+        menu.classList.add("big");
+    } else {
+        left = buttonRect.left - menu.offsetWidth / 2 + buttonRect.width / 2;
+        menu.classList.add("small");
+    }
+
     menu.style.left = `${left}px`;
 }
 

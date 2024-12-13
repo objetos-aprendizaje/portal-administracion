@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Logs\LogsController;
-
+use App\Models\CoursesModel;
 
 class CertificationTypesController extends BaseController
 {
@@ -158,6 +158,12 @@ class CertificationTypesController extends BaseController
     {
 
         $uids = $request->input('uids');
+
+        // Comprobación si está vinculado a algún curso
+        $existsInCourses = CoursesModel::whereIn('certification_type_uid', $uids)->exists();
+        if ($existsInCourses) {
+            return response()->json(['message' => 'No se pueden eliminar los tipos de certificación porque alguno está vinculado a cursos'], 406);
+        }
 
         $certificationTypes = CertificationTypesModel::whereIn('uid', $uids)->get();
         DB::transaction(function () use ($certificationTypes) {

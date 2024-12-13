@@ -54,27 +54,8 @@ document.addEventListener("DOMContentLoaded", function () {
     );
     tomSelectRolesFilter = getMultipleTomSelectInstance("#roles-filter");
 
-    tomSelectUsers = getLiveSearchTomSelectInstance(
-        "#users",
-        "/users/list_users/search_users/",
-        function (entry) {
-            return {
-                value: entry.uid,
-                text: `${entry.first_name} ${entry.last_name}`,
-            };
-        }
-    );
-
-    tomSelectUsersFilter = getLiveSearchTomSelectInstance(
-        "#users-filter",
-        "/users/list_users/search_users/",
-        function (entry) {
-            return {
-                value: entry.uid,
-                text: `${entry.first_name} ${entry.last_name}`,
-            };
-        }
-    );
+    instanceTomSelectUsers();
+    instanceTomSelectUsersFilter();
 
     apiFetch({
         url: "/users/list_users/get_user_roles",
@@ -91,10 +72,37 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     });
-
-
-
 });
+
+function instanceTomSelectUsers() {
+    if(tomSelectUsers) tomSelectUsers.destroy();
+
+    tomSelectUsers = getLiveSearchTomSelectInstance(
+        "#users",
+        "/users/list_users/search_users/",
+        function (entry) {
+            return {
+                value: entry.uid,
+                text: `${entry.first_name} ${entry.last_name}`,
+            };
+        }
+    );
+}
+
+function instanceTomSelectUsersFilter() {
+    if(tomSelectUsersFilter) tomSelectUsersFilter.destroy();
+
+    tomSelectUsersFilter = getLiveSearchTomSelectInstance(
+        "#users-filter",
+        "/users/list_users/search_users/",
+        function (entry) {
+            return {
+                value: entry.uid,
+                text: `${entry.first_name} ${entry.last_name}`,
+            };
+        }
+    );
+}
 
 function initHandlers() {
     document
@@ -205,7 +213,7 @@ function resetFilters() {
     initializeGeneralNotificationsTable()
 
     tomSelectRolesFilter.clear();
-    tomSelectUsersFilter.clear();
+    instanceTomSelectUsersFilter();
     tomSelectNotificationTypesFilter.clear();
     document.getElementById("type-filter").value = "";
     document.getElementById("start_date_filter").value = "";
@@ -357,7 +365,7 @@ function controlDeleteFilters(deleteBtn) {
             tomSelectRolesFilter.clear();
         }
         if (removedFilter.filterKey === "users-filter"){
-            tomSelectUsersFilter.clear();
+            instanceTomSelectUsersFilter();
         }
     });
 
@@ -456,7 +464,6 @@ function initializeListUserViewsGeneralNotificationsTable(uid) {
         { title: "Nombre", field: "first_name", widthGrow: 3 },
         { title: "Apellidos", field: "last_name", widthGrow: 4 },
         { title: "Email", field: "email", widthGrow: 3 },
-        { title: "Tipo", field: "notification_type", widthGrow: 3 },
         {
             title: "Fecha",
             field: "view_date",
@@ -583,7 +590,7 @@ function initializeGeneralNotificationsTable() {
             field: "actions",
             formatter: function (cell, formatterParams, onRendered) {
                 return `
-                    <button type="button" class='btn action-btn'>${heroicon(
+                    <button type="button" class='btn action-btn' title='Editar'>${heroicon(
                         "pencil-square",
                         "outline"
                     )}</button>
@@ -604,7 +611,7 @@ function initializeGeneralNotificationsTable() {
             field: "actions",
             formatter: function (cell, formatterParams, onRendered) {
                 return `
-                    <button type="button" class='btn action-btn'>${heroicon(
+                    <button type="button" class='btn action-btn' title='Ver'>${heroicon(
                         "eye",
                         "outline"
                     )}</button>
@@ -758,6 +765,9 @@ function resetModal() {
     tomSelectRoles.clear();
     tomSelectUsers.clear();
     document.getElementById("notification_general_uid").value = "";
+    document.getElementById("destination-roles").classList.add("no-visible");
+    document.getElementById("destination-users").classList.add("no-visible");
+    instanceTomSelectUsers();
 
     resetFormErrors("notification-general-form");
 }

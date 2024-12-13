@@ -11,17 +11,17 @@
 
             <div class="flex gap-1">
                 <div>
-                    <button type="button" class="btn-icon" id="new-footer-page-btn">
+                    <button type="button" class="btn-icon" id="new-footer-page-btn" title="Añadir página de footer">
                         {{ e_heroicon('plus', 'outline') }}
                     </button>
                 </div>
                 <div>
-                    <button type="button" class="btn-icon" id="delete-footer-pages-btn">
+                    <button type="button" class="btn-icon" id="delete-footer-pages-btn" title="Eliminar página de footer">
                         {{ e_heroicon('trash', 'outline') }}
                     </button>
                 </div>
                 <div>
-                    <button type="button" class="btn-icon" id="btn-reload-table">
+                    <button type="button" class="btn-icon" id="btn-reload-table" title="Actualizar">
                         {{ e_heroicon('arrow-path', 'outline') }}
                     </button>
                 </div>

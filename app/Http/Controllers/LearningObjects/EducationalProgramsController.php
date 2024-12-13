@@ -298,6 +298,9 @@ class EducationalProgramsController extends BaseController
 
         DB::transaction(function () use ($request, &$isNew, $educational_program, $newStatus) {
 
+            // Copia para detectar cambios en el programa formativo
+            $educationalProgramCopy = clone $educational_program;
+
             $isManagement = auth()->user()->hasAnyRole(["MANAGEMENT"]);
 
             if ($educational_program->educational_program_origin_uid && !$isManagement) {
@@ -345,12 +348,21 @@ class EducationalProgramsController extends BaseController
                 $this->sendNotificationCoursesAcceptedPublicationToKafka($courses);
             }
 
-            $this->certidigitalService->createUpdateEducationalProgramCredential($educational_program->uid);
+            $changesEducationalProgram = $this->detectChangesCredential($educational_program, $educationalProgramCopy);
+            if($changesEducationalProgram || !$educational_program->certidigitalCredential) {
+                $this->certidigitalService->createUpdateEducationalProgramCredential($educational_program->uid);
+            }
 
             $this->logAction($isNew, $educational_program->name);
         });
 
         return response()->json(['message' => $isNew ? 'Programa formativo añadido correctamente' : 'Programa formativo actualizado correctamente']);
+    }
+
+    private function detectChangesCredential($educationalProgramAfterChanges, $educationalProgramBeforeChanges)
+    {
+        if ($educationalProgramAfterChanges->name != $educationalProgramBeforeChanges->name) return true;
+        return false;
     }
 
     public function sendNotificationCoursesAcceptedPublicationToKafka($courses)
@@ -1290,8 +1302,8 @@ class EducationalProgramsController extends BaseController
         $introduction_status = EducationalProgramStatusesModel::where('code', 'INTRODUCTION')->first();
         $new_educational_program->educational_program_status_uid = $introduction_status->uid;
 
-        DB::transaction(function () use ($new_educational_program, $educational_program_bd, $educational_program_uid, $action) {
-            $new_educational_program_uid = generate_uuid();
+        $new_educational_program_uid = generate_uuid();
+        DB::transaction(function () use ($new_educational_program, $educational_program_bd, $educational_program_uid, $action, $new_educational_program_uid) {
             $new_educational_program->uid = $new_educational_program_uid;
             $new_educational_program->identifier = $this->generateIdentificerEducationalProgram();
             $new_educational_program->save();
@@ -1319,7 +1331,7 @@ class EducationalProgramsController extends BaseController
             LogsController::createLog($logMessage, 'Programas formativos', auth()->user()->uid);
         }, 5);
 
-        return response()->json(['message' => $action == 'edition' ? 'Edición creada correctamente' : 'Programa duplicado correctamente'], 200);
+        return response()->json(['message' => $action == 'edition' ? 'Edición creada correctamente' : 'Programa duplicado correctamente', 'educational_program_uid' => $new_educational_program_uid], 200);
     }
 
     public function deleteInscriptionsEducationalProgram(Request $request)

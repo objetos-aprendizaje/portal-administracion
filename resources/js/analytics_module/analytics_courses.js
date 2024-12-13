@@ -151,7 +151,7 @@ function drawTable() {
             field: "actions",
             formatter: function (cell, formatterParams, onRendered) {
                 return `
-                    <button type="button" class='btn action-btn'>${heroicon(
+                    <button type="button" class='btn action-btn' title='Ver'>${heroicon(
                         "eye",
                         "outline"
                     )}</button>

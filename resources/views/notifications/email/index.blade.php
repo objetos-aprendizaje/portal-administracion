@@ -15,9 +15,9 @@
 
             <div>
                 <button id="add-notification-email-btn" type="button"
-                    class="btn btn-icon mb-4">{{ e_heroicon('plus', 'outline') }}</button>
+                    class="btn btn-icon mb-4" title="Añadir notificación por email">{{ e_heroicon('plus', 'outline') }}</button>
                 <button id="delete-notification-email-btn" type="button"
-                    class="btn btn-icon mb-4">{{ e_heroicon('trash', 'outline') }}</button>
+                    class="btn btn-icon mb-4" title="Eliminar notificación por email">{{ e_heroicon('trash', 'outline') }}</button>
             </div>
 
         </div>

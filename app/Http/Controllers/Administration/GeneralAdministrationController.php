@@ -70,7 +70,7 @@ class GeneralAdministrationController extends BaseController
 
         // if(!$updateData['smtp_password']) {
         //     unset($updateData['smtp_password']);
-        // }  
+        // }
 
         DB::transaction(function () use ($updateData) {
             foreach ($updateData as $key => $value) {
@@ -172,6 +172,7 @@ class GeneralAdministrationController extends BaseController
             $updateData = [
                 'learning_objects_appraisals' => $request->input('learning_objects_appraisals'),
                 'operation_by_calls' => $request->input('operation_by_calls'),
+                'registration_active' => $request->input('registration_active'),
             ];
 
             foreach ($updateData as $key => $value) {
@@ -297,6 +298,20 @@ class GeneralAdministrationController extends BaseController
         $openAiKey = $request->input('openai_key');
         $enabledRecommendationModule = $request->input('enabled_recommendation_module');
 
+        $rules = [
+            'openai_key' => 'required_if:enabled_recommendation_module,=,1',
+        ];
+
+        $messages = [
+            'openai_key.required_if' => 'La clave de OpenAI es obligatoria',
+        ];
+
+        $validator = Validator::make($request->all(), $rules, $messages);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validator->errors()], 422);
+        }
+
         GeneralOptionsModel::where('option_name', 'openai_key')->update(['option_value' => $openAiKey]);
         GeneralOptionsModel::where('option_name', 'enabled_recommendation_module')->update(['option_value' => $enabledRecommendationModule]);
 
@@ -320,5 +335,19 @@ class GeneralAdministrationController extends BaseController
 
         return response()->json(['message' => 'Embeddings regenerados correctamente']);
 
+    }
+
+    public function saveFooterTexts(Request $request) {
+
+        $footerText1 = $request->input('footer_text_1');
+        $footerText2 = $request->input('footer_text_2');
+
+        DB::transaction(function () use ($footerText1, $footerText2) {
+            GeneralOptionsModel::where('option_name', 'footer_text_1')->update(['option_value' => $footerText1]);
+            GeneralOptionsModel::where('option_name', 'footer_text_2')->update(['option_value' => $footerText2]);
+            LogsController::createLog('Actualización textos del footer', 'Configuración general', auth()->user()->uid);
+        });
+
+        return response()->json(['message' => 'Textos del footer guardados correctamente']);
     }
 }

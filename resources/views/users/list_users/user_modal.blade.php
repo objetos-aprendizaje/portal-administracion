@@ -40,7 +40,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="nif">NIF <span class="text-danger">*</span></label>
+                        <label for="nif">NIF</label>
                     </div>
                     <div class="content-container">
                         <input maxlength="255" placeholder="12345678X" type="text" id="nif" name="nif"

@@ -272,19 +272,22 @@
                     </div>
                 </div>
 
-                <div>
-                    <div class="label-container label-center">
-                        <label for="filter_embeddings">Embeddings</label>
-                    </div>
+                @if ($general_options['enabled_recommendation_module'])
+                    <div>
+                        <div class="label-container label-center">
+                            <label for="filter_embeddings">Embeddings</label>
+                        </div>
 
-                    <div class="content-container mt-1">
-                        <select id="filter_embeddings" name="filter_embeddings" class="poa-select w-full">
-                            <option value="" selected></option>
-                            <option value="1">Sí</option>
-                            <option value="0">No</option>
-                        </select>
+                        <div class="content-container mt-1">
+                            <select id="filter_embeddings" name="filter_embeddings" class="poa-select w-full">
+                                <option value="" selected></option>
+                                <option value="1">Sí</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
+                @endif
+
             </div>
 
             <div class="flex justify-center mt-8">

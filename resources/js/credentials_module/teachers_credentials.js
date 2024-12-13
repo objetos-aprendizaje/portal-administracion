@@ -8,6 +8,7 @@ import {
 import { heroicon } from "../heroicons.js";
 import { hideModal, showModal } from "../modal_handler.js";
 import { apiFetch } from "../app.js";
+import { showToast } from "../toast.js";
 
 let teachersTable;
 let coursesTeacherTable;
@@ -106,9 +107,9 @@ function loadListCoursesTeacherTable(teacherUid) {
         { title: "Título", field: "title", widthGrow: 5 },
         {
             title: "Estado de la credencial",
-            field: "pivot.emissions_block_uuid",
+            field: "courses_teachers.emissions_block_uuid",
             formatter: function (cell, formatterParams, onRendered) {
-                const credential = cell.getRow().getData().pivot.emissions_block_uuid;
+                const credential = cell.getRow().getData().courses_teachers.emissions_block_uuid;
                 return credential ? "Emitida" : "No emitida";
             },
             cellClick: function (e, cell) {},
@@ -117,9 +118,9 @@ function loadListCoursesTeacherTable(teacherUid) {
         },
         {
             title: "Credencial enviada",
-            field: "pivot.credential_sent",
+            field: "courses_teachers.credential_sent",
             formatter: function (cell, formatterParams, onRendered) {
-                const credentialSent = cell.getRow().getData().pivot.credential_sent;
+                const credentialSent = cell.getRow().getData().courses_teachers.credential_sent;
                 return credentialSent ? "Sí" : "No";
             },
             cellClick: function (e, cell) {},
@@ -128,11 +129,11 @@ function loadListCoursesTeacherTable(teacherUid) {
         },
         {
             title: "Credencial sellada",
-            field: "pivot.credential_sealed",
+            field: "courses_teachers.credential_sealed",
             formatter: function (cell, formatterParams, onRendered) {
                 const credentialSealed = cell
                     .getRow()
-                    .getData().pivot.credential_sealed;
+                    .getData().courses_teachers.credential_sealed;
                 return credentialSealed ? "Sí" : "No";
             },
             cellClick: function (e, cell) {},
@@ -183,7 +184,7 @@ function initHandlers() {
     buttons.forEach((button) => {
         document.getElementById(button.id).addEventListener("click", () => {
             if (!selectedCourses.length) {
-                showToast("No has seleccionado ningún curso", "error");
+                showToast("No has seleccionado ningún objeto de aprendizaje", "error");
                 return;
             }
 

@@ -207,7 +207,6 @@
                         <li><a class="{{ isset($submenuselected) && $submenuselected == 'credentials-teachers' ? 'submenu-selected' : '' }}"
                                 href="{{ route('credentials-teachers') }}">Emisión de credenciales a docentes</a>
                         </li>
-                        <li class="disabled"><a href="javascript:void(0)">Calificaciones</a></li>
                     </ul>
                 </div>
             </div>

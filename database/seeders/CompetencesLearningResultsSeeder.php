@@ -68,7 +68,7 @@ class CompetencesLearningResultsSeeder extends Seeder
 
             // Generamos un número de subcompetencias aleatorias para cada competencia
             $subCompetences = rand(1, 5);
-            $this->createSubCompetences($competenceUid, $subCompetences);
+            $this->createSubCompetences($competenceUid, $subCompetences, $competenceFrameworkUid);
         }
     }
 
@@ -78,13 +78,14 @@ class CompetencesLearningResultsSeeder extends Seeder
      * @param string $parentUid
      * @param int $count
      */
-    private function createSubCompetences(string $parentUid, int $count): void
+    private function createSubCompetences(string $parentUid, int $count, $competenceFrameworkUid): void
     {
         for ($j = 0; $j < $count; $j++) {
             $subcompetenceUid = generate_uuid();
             CompetencesModel::factory()->create([
                 'uid' => $subcompetenceUid,
                 'parent_competence_uid' => $parentUid,
+                'competence_framework_uid' => $competenceFrameworkUid,
             ]);
 
             // Resultados de aprendizaje

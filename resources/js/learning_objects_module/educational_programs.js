@@ -977,7 +977,7 @@ function resetModal() {
 }
 
 function reloadTable() {
-    educationalProgramsTable.replaceData(endPointTable);
+    educationalProgramsTable.setData(endPointTable);
 }
 
 function addDocument() {
@@ -1347,7 +1347,7 @@ function submitChangeStatusesEducationalPrograms() {
 }
 
 function reloadTableCourses() {
-    educationalProgramsTable.replaceData(endPointTable);
+    educationalProgramsTable.setData(endPointTable);
 }
 
 /**
@@ -1613,7 +1613,7 @@ function enrollStudentsToEducationalProgram() {
 
 function reloadStudentsTable() {
     const endpoint = `${endPointStudentTable}/${selectedEducationalProgramUid}`;
-    educationalProgramStudentsTable.replaceData(endpoint);
+    educationalProgramStudentsTable.setData(endpoint);
 }
 
 function changeStatusStudentsEducationalProgram(status) {
@@ -1727,15 +1727,17 @@ function editionOrDuplicationEducationalProgram(educationalProgramUid, action) {
         },
         toast: true,
         stringify: true,
+        loader: true
     };
 
-    apiFetch(params).then(() => {
+    apiFetch(params).then((response) => {
         reloadTableEducationalPrograms();
+        loadEducationalProgramModal(response.educational_program_uid);
     });
 }
 
 function reloadTableEducationalPrograms() {
-    educationalProgramsTable.replaceData(endPointTable);
+    educationalProgramsTable.setData(endPointTable);
 }
 
 function downloadDocument(uidDocument) {

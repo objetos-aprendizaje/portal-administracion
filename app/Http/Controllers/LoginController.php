@@ -75,15 +75,16 @@ class LoginController extends BaseController
         }
     }
 
-    public function loginCertificate() {
+    public function loginCertificate()
+    {
         $data = $_GET['data'];
         $dataParsed = json_decode($data);
         $expiration = $_GET['expiration'];
         $hash = $_GET['hash'];
 
-        $hashCheck = md5($data.$expiration.env('KEY_CHECK_CERTIFICATE_ACCESS'));
+        $hashCheck = md5($data . $expiration . env('KEY_CHECK_CERTIFICATE_ACCESS'));
 
-        if($expiration < time() || $hash != $hashCheck) return redirect('/login');
+        if ($expiration < time() || $hash != $hashCheck) return redirect('/login');
 
         $user = UsersModel::with('roles')
             ->whereRaw('LOWER(nif) = ?', [strtolower($dataParsed->nif)])
@@ -92,12 +93,16 @@ class LoginController extends BaseController
             })
             ->first();
 
-        if ($user && $user->verified) {
-            Auth::login($user);
-            return redirect('/');
-        } else {
-            return redirect("/login?e=certificate-error");
+
+        if (!$user || !$user->verified) return redirect('/login?e=certificate-error');
+
+        if (!$user->identity_verified) {
+            $user->identity_verified = true;
+            $user->save();
         }
+
+        Auth::login($user);
+        return redirect('/');
     }
 
     public function handleSocialCallback($loginMethod)
@@ -129,26 +134,6 @@ class LoginController extends BaseController
         $url_logout = env('APP_URL') . "/login";
 
         return redirect($url_logout);
-    }
-    public function tokenLogin($token)
-    {
-
-        $user = UsersModel::where('token_x509', $token)->first();
-
-        if ($user) {
-            $url_logout = env('DOMINIO_PRINCIPAL') . "/login";
-            Auth::login($user);
-            $this->deleteTokenLogin($user);
-            return redirect(env('DOMINIO_PRINCIPAL'));
-        } else {
-            $this->deleteTokenLogin($user);
-            return redirect(env('DOMINIO_PRINCIPAL') . "/login?e=certificate-error");
-        }
-    }
-    private function deleteTokenLogin($user)
-    {
-        $user->token_x509 = "";
-        $user->save();
     }
 
     private function loginUser($email)

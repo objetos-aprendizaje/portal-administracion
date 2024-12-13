@@ -249,6 +249,17 @@
                 </label>
             </div>
 
+            <div class="checkbox mb-2">
+                <label for="registration_active" class="inline-flex relative items-center cursor-pointer">
+                    <input {{ $general_options['registration_active'] ? 'checked' : '' }} type="checkbox"
+                        id="registration_active" name="registration_active" class="sr-only peer">
+                    <div
+                        class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
+                    </div>
+                    <div class="checkbox-name">Activar registro en el portal web</div>
+                </label>
+            </div>
+
             <button type="submit" class="btn btn-primary mt-4">Guardar
                 {{ e_heroicon('paper-airplane', 'outline') }}</button>
 
@@ -366,7 +377,7 @@
                         <label for="smtp_password">Contraseña</label>
                     </div>
                     <div class="content-container little">
-                        <input value="{{ $general_options['smtp_password'] }}" class="poa-input" type="text"
+                        <input value="{{ $general_options['smtp_password'] }}" class="poa-input" type="password"
                             id="smtp_password" name="smtp_password" />
                     </div>
                 </div>
@@ -1298,9 +1309,13 @@
                     </div>
                     <div class="content-container mt-1">
                         <div class="checkbox">
-                            <label for="enabled_recommendation_module" class="inline-flex relative items-center cursor-pointer">
-                                <input {{ $general_options['enabled_recommendation_module'] ? 'checked' : '' }} type="checkbox" id="enabled_recommendation_module" name="enabled_recommendation_module" class="sr-only peer">
-                                <div class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
+                            <label for="enabled_recommendation_module"
+                                class="inline-flex relative items-center cursor-pointer">
+                                <input {{ $general_options['enabled_recommendation_module'] ? 'checked' : '' }}
+                                    type="checkbox" id="enabled_recommendation_module"
+                                    name="enabled_recommendation_module" class="sr-only peer">
+                                <div
+                                    class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
                                 </div>
                             </label>
                         </div>
@@ -1328,5 +1343,44 @@
             </div>
         </form>
 
+    </div>
+
+    <div class="poa-container mb-8">
+        <h2>Definición de textos de footer</h2>
+
+        <p class="mt-2 mb-4">
+            Configura los textos descriptivos del footer
+        </p>
+
+        <div class="poa-form">
+            <form id="footer-texts-form">
+                @csrf
+
+                <div class="field">
+                    <div class="label-container">
+                        <label for="footer_text_1">Texto 1</label>
+                    </div>
+                    <div class="content-container little">
+                        <textarea class="poa-input" type="text" id="footer_text_1"
+                            name="footer_text_1">{{ $general_options['footer_text_1'] }}</textarea>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="label-container">
+                        <label for="footer_text_2">Texto 2</label>
+                    </div>
+                    <div class="content-container little">
+                        <textarea class="poa-input" type="text" id="footer_text_2"
+                            name="footer_text_2">{{ $general_options['footer_text_2'] }}</textarea>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button type="submit" class="btn btn-primary">Guardar
+                        {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                </div>
+            </form>
+        </div>
     </div>
 @endsection

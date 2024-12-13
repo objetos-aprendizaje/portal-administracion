@@ -762,6 +762,7 @@ class CertidigitalService
     private function emitCredentialsCourse($course, $data)
     {
         $emissions = $this->emitCredentialsRequest($course->certidigitalCredential->id, $data);
+        // dd($course->students->email, $emissions );
         foreach ($emissions as $emission) {
             // Buscar el estudiante
             $student = $course->students->filter(function ($student) use ($emission) {
@@ -1184,7 +1185,7 @@ class CertidigitalService
         if ($token) $httpRequest = Http::withToken($token);
         else $httpRequest = Http::asForm();
 
-        if ( env('APP_ENV') == 'local' || env('APP_ENV') == 'testing' )  $httpRequest->withoutVerifying();
+        $httpRequest->withoutVerifying();
 
         $response = $httpRequest->$method($url, $data);
 

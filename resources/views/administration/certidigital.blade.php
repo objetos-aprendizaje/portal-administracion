@@ -9,7 +9,7 @@
             <div class="poa-form">
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="certidigital_url_token">URL Token</label>
+                        <label for="certidigital_url_token">URL Token <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['certidigital_url_token'] }}"
@@ -20,7 +20,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="certidigital_url">URL</label>
+                        <label for="certidigital_url">URL <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['certidigital_url'] }}"
@@ -31,7 +31,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="certidigital_client_id">ID Cliente</label>
+                        <label for="certidigital_client_id">ID Cliente <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['certidigital_client_id'] }}" placeholder="certidigi-admin"
@@ -41,7 +41,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="certidigital_client_secret">Clave secreta de cliente</label>
+                        <label for="certidigital_client_secret">Clave secreta de cliente <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['certidigital_client_secret'] }}"
@@ -52,7 +52,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="certidigital_center_id">ID Centro</label>
+                        <label for="certidigital_center_id">ID Centro <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['certidigital_center_id'] }}" placeholder="10" class="poa-input"
@@ -62,7 +62,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="certidigital_username">Usuario</label>
+                        <label for="certidigital_username">Usuario <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['certidigital_username'] }}" class="poa-input" placeholder=""
@@ -72,7 +72,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="certidigital_password">Clave</label>
+                        <label for="certidigital_password">Clave <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['certidigital_password'] }}" placeholder="" type="text"
@@ -82,7 +82,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="certidigital_organization_oid">ID de organización</label>
+                        <label for="certidigital_organization_oid">ID de organización <span class="text-danger">*</span></label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['certidigital_organization_oid'] }}" placeholder="" type="text"
