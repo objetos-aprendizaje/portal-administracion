@@ -249,7 +249,7 @@ class EducationalResourcesController extends BaseController
 
         if (!$resourceBd->embeddings || $title != $resourceBd->title || $description != $resourceBd->description) {
             $embeddings = $this->embeddingsService->getEmbedding($title . ' ' . $description);
-            return $embeddings ?: $resourceBd->embeddings->embeddings;
+            return $embeddings ?: $resourceBd->embeddings->embeddings ?? null;
         }
 
         return $resourceBd->embeddings->embeddings;

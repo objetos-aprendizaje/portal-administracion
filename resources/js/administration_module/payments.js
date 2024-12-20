@@ -24,6 +24,8 @@ function initHandlers() {
 function submitFormPayments() {
     const formData = new FormData(this);
 
+    formData.append("payment_gateway", document.getElementById("payment_gateway").checked ? "1" : "0");
+
     const params = {
         url: "/administration/payments/save_payments_form",
         method: "POST",

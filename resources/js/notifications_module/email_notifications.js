@@ -165,7 +165,7 @@ function controlSaveHandlerFilters() {
     showFilters();
     hideModal("filter-notification-email-modal");
 
-    initializeEmailNotificationsTable()
+    initializeEmailNotificationsTable();
 }
 
 /**
@@ -207,17 +207,28 @@ function collectFilters() {
             "send_date"
         );
 
-    const stateEmailNotification = document.querySelector('#state_email_notification');
-    if (stateEmailNotification.value.length)
+    const stateEmailNotification = document.querySelector(
+        "#state_email_notification"
+    );
+    if (stateEmailNotification.value.length) {
+        let statusNotificationLabel = "";
+        if (stateEmailNotification.value == "PENDING") {
+            statusNotificationLabel = "Pendiente";
+        } else if (stateEmailNotification.value == "SENT") {
+            statusNotificationLabel = "Enviado";
+        } else if (stateEmailNotification.value == "FAILED") {
+            statusNotificationLabel = "Error";
+        }
+
         addFilter(
             "Estado de la notificación",
             stateEmailNotification.value,
-            stateEmailNotification.value == "1" ? "Enviado" : "No enviado",
+            statusNotificationLabel,
             "state_email_notification",
-            "sent"
+            "status"
         );
-
-        // Collect values from TomSelects
+    }
+    // Collect values from TomSelects
     if (tomSelectNotificationTypesFilter) {
         const notificationTypes = tomSelectNotificationTypesFilter.getValue();
 
@@ -240,9 +251,7 @@ function collectFilters() {
         const rolesFilter = tomSelectRolesFilter.getValue();
 
         const selectedRolesFilterLabel =
-            getOptionsSelectedTomSelectInstance(
-                tomSelectRolesFilter
-            );
+            getOptionsSelectedTomSelectInstance(tomSelectRolesFilter);
 
         if (rolesFilter.length)
             addFilter(
@@ -258,9 +267,7 @@ function collectFilters() {
         const usersFilter = tomSelectUsersFilter.getValue();
 
         const selectedUsersFilterLabel =
-            getOptionsSelectedTomSelectInstance(
-                tomSelectUsersFilter
-            );
+            getOptionsSelectedTomSelectInstance(tomSelectUsersFilter);
 
         if (usersFilter.length)
             addFilter(
@@ -271,7 +278,6 @@ function collectFilters() {
                 "users"
             );
     }
-
 
     return selectedFilters;
 }
@@ -301,11 +307,12 @@ function showFilters() {
         // Establece el HTML del nuevo div
         newDiv.innerHTML = `
             <div>${filter.name}: ${filter.option}</div>
-            <button data-filter-key="${filter.filterKey
+            <button data-filter-key="${
+                filter.filterKey
             }" class="delete-filter-btn">${heroicon(
-                "x-mark",
-                "outline"
-            )}</button>
+            "x-mark",
+            "outline"
+        )}</button>
         `;
 
         // Agrega el nuevo div al div existente
@@ -328,7 +335,7 @@ function showFilters() {
 function resetFilters() {
     filters = [];
     showFilters();
-    initializeEmailNotificationsTable()
+    initializeEmailNotificationsTable();
 
     flatpickrNotificationDate.clear();
     tomSelectNotificationTypesFilter.clear();
@@ -338,25 +345,25 @@ function resetFilters() {
     document.getElementById("type-filter").value = "";
     document.getElementById("state_email_notification").value = "";
 
-    document.querySelector("#destination-roles-filter").classList.add("no-visible");
-    document.querySelector("#destination-users-filter").classList.add("no-visible");
-
+    document
+        .querySelector("#destination-roles-filter")
+        .classList.add("no-visible");
+    document
+        .querySelector("#destination-users-filter")
+        .classList.add("no-visible");
 }
 
 function controlDeleteFilters(deleteBtn) {
-
     const filterKey = deleteBtn.getAttribute("data-filter-key");
 
-    let removedFilter = filters.filter((filter) => filter.filterKey !== filterKey);
 
-
-    if (filterKey == "date_email_notifications"){
+    if (filterKey == "date_email_notifications") {
         flatpickrNotificationDate.clear();
-    }else if (filterKey == "notification_types"){
+    } else if (filterKey == "notification_types") {
         tomSelectNotificationTypesFilter.clear();
-    }else if (filterKey == "roles-filter"){
+    } else if (filterKey == "roles-filter") {
         tomSelectRolesFilter.clear();
-    }else if (filterKey == "users-filter"){
+    } else if (filterKey == "users-filter") {
         tomSelectUsersFilter.clear();
     } else {
         document.getElementById(filterKey).value = "";
@@ -364,8 +371,7 @@ function controlDeleteFilters(deleteBtn) {
 
     filters = filters.filter((filter) => filter.filterKey !== filterKey);
     document.getElementById(filterKey).value = "";
-    document.getElementById('type-filter').value = "";
-
+    document.getElementById("type-filter").value = "";
 
     showFilters();
     initializeEmailNotificationsTable();
@@ -420,6 +426,7 @@ async function loadEmailNotificationModal(uid) {
     const params = {
         url: `/notifications/email/get_email_notification/${uid}`,
         method: "GET",
+        loader: true,
     };
 
     apiFetch(params).then((data) => {
@@ -453,11 +460,12 @@ function fillFormEmailNotificationModal(email_notification) {
     document.getElementById("body").value = email_notification.body;
     document.getElementById("notification_email_uid").value =
         email_notification.uid;
-    document.getElementById("send_date").value = email_notification.send_date;
+    document.getElementById("send_date").value =
+        email_notification.send_date.substring(0, 16);
     document.getElementById("notification_type_uid").value =
         email_notification.notification_type_uid;
 
-    if (email_notification.sent) switchBtnsModal("view");
+    if (email_notification.status == 'SENT') switchBtnsModal("view");
     else switchBtnsModal("add");
 }
 
@@ -506,7 +514,8 @@ async function deleteEmailNotifications() {
             uids: selectedEmailNotifications.map((type) => type.uid),
         },
         stringify: true,
-        toast: true
+        toast: true,
+        loader: true,
     };
 
     apiFetch(params).then(() => {
@@ -564,13 +573,24 @@ function initializeEmailNotificationsTable() {
         },
         {
             title: "Estado",
-            field: "sent",
+            field: "status",
             formatter: function (cell, formatterParams, onRendered) {
-                const sent = cell.getRow().getData().sent;
-                const status = sent ? "Enviado" : "No enviado";
-                const color = sent ? "#EBF3F4" : "#F4EBF0";
+                const status = cell.getRow().getData().status;
+                let statusLabel = "";
+                let color = "";
+                if (status == "PENDING") {
+                    statusLabel = "Pendiente";
+                    color = "#F4EBF0";
+                } else if (status == "SENT") {
+                    statusLabel = "Enviado";
+                    color = "#EBF3F4";
+                } else if (status == "FAILED") {
+                    statusLabel = "Error";
+                    color = "#FCE8E6";
+                }
+
                 return `
-                    <div class="label-status" style="background-color: ${color}">${status}</div>
+                    <div class="label-status" style="background-color: ${color}">${statusLabel}</div>
                 `;
             },
             widthGrow: 3,
@@ -598,9 +618,9 @@ function initializeEmailNotificationsTable() {
             formatter: function (cell, formatterParams, onRendered) {
                 return `
                     <button type="button" class='btn action-btn'>${heroicon(
-                    "pencil-square",
-                    "outline"
-                )}</button>
+                        "pencil-square",
+                        "outline"
+                    )}</button>
                 `;
             },
             cellClick: function (e, cell) {
@@ -678,8 +698,12 @@ function controlTypeDestination() {
     });
 
     const selectorFilter = document.getElementById("type-filter");
-    const destinationRolesFilter = document.getElementById("destination-roles-filter");
-    const destinationUsersFilter = document.getElementById("destination-users-filter");
+    const destinationRolesFilter = document.getElementById(
+        "destination-roles-filter"
+    );
+    const destinationUsersFilter = document.getElementById(
+        "destination-users-filter"
+    );
 
     selectorFilter.addEventListener("change", function () {
         const selectedValueFilter = this.value;
@@ -707,8 +731,12 @@ function switchSelectorDestination(type) {
         destinationUsers.classList.remove("no-visible");
     }
 
-    const destinationRolesFilter = document.getElementById("destination-roles-filter");
-    const destinationUsersFilter = document.getElementById("destination-users-filter");
+    const destinationRolesFilter = document.getElementById(
+        "destination-roles-filter"
+    );
+    const destinationUsersFilter = document.getElementById(
+        "destination-users-filter"
+    );
     destinationRolesFilter.classList.add("no-visible");
     destinationUsersFilter.classList.add("no-visible");
 
@@ -731,7 +759,7 @@ function submitFormEmailNotificationModal() {
         url: "/notifications/email/save_email_notification",
         method: "POST",
         body: formData,
-        loader: true
+        loader: true,
     };
 
     apiFetch(params)

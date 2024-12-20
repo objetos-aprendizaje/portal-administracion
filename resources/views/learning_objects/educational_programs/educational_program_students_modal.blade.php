@@ -18,19 +18,19 @@
                 @include('partials.table-search', ['table' => 'educational-program-students-table'])
 
                 <div class="flex gap-1">
-                    <button id="approve-students-btn" type="button" class="btn-icon"
+                    <button id="approve-students-btn" type="button" class="btn-icon" title="Aprobar estudiantes"
                         data-educational-program-uid="">{{ e_heroicon('check', 'outline') }}</button>
 
-                    <button id="reject-students-btn" type="button" class="btn-icon"
+                    <button id="reject-students-btn" type="button" class="btn-icon" title="Rechazar estudiantes"
                         data-educational-program-uid="">{{ e_heroicon('x-mark', 'outline') }}</button>
 
-                    <button id="delete-students-btn" type="button" class="btn-icon"
+                    <button id="delete-students-btn" type="button" class="btn-icon" title="Eliminar estudiantes"
                         data-educational-program-uid="">{{ e_heroicon('trash', 'outline') }}</button>
 
-                    <button id="enroll-students-btn" type="button" class="btn-icon"
+                    <button id="enroll-students-btn" type="button" class="btn-icon" title="Asignar estudiantes"
                         data-educational-program-uid="">{{ e_heroicon('plus', 'outline') }}</button>
 
-                    <button id="enroll-students-csv-btn" type="button" class="btn-icon"
+                    <button id="enroll-students-csv-btn" type="button" class="btn-icon" title="Asignar estudiantes desde CSV"
                         data-educational-program-uid="">{{ e_heroicon('arrow-up-tray', 'outline') }}</button>
 
                     <button id="emit-credentials-students-btn" type="button" class="btn-icon"

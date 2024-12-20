@@ -597,6 +597,19 @@ button.element-disabled {
 #tree-competences-learning-results .infinite-tree-scroll {
     @apply max-h-full
 }
+/******************************* ACCORDION ***************/
+.accordion {
+    .accordion-element {
+        .accordion-header {
+            @apply w-full text-left px-4 py-2 flex justify-between items-center focus:outline-none hover:bg-gray-50;
+        }
+
+        @apply border-b;
+    }
+
+    @apply w-full shadow-md rounded-md;
+}
+
 
 /******************************* NOTIFICATIONS ***************/
 .notifications {
@@ -768,6 +781,10 @@ button.element-disabled {
 
     li span {
         @apply text-black
+    }
+
+    li.menu-selected span {
+        @apply text-primary font-bold;
     }
 
     .sub-menu {

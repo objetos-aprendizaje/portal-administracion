@@ -42,6 +42,7 @@ import {
     debounce,
     setConfig,
     getConfig,
+    instanceAccordion
 } from "../app.js";
 import { heroicon } from "../heroicons.js";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
@@ -740,6 +741,7 @@ class Trees {
 
 document.addEventListener("DOMContentLoaded", async function () {
     initHandlers();
+    instanceAccordion("accordion-container");
     updateInputFile();
     loadColumnsCoursesTable();
     initializeCoursesTable();
@@ -4285,6 +4287,15 @@ function setVisibilityCourseFieldsBasedOnProgramMembership(isPartOfProgram) {
         document.getElementById("featured_small_carrousel").checked = false;
         document.getElementById("featured_small_carrousel").value = 0;
     }
+
+    const elements = [
+        "element-accordion-inscription-enrollment",
+        "element-accordion-configuration-portal-web"
+    ];
+
+    elements.forEach(elementId => {
+        document.getElementById(elementId).classList.toggle("hidden", isPartOfProgram);
+    });
 }
 
 function showArea(area, show) {
