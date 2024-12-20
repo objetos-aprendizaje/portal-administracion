@@ -65,19 +65,21 @@ class PaymentsController extends BaseController {
 
     private function validatePaymentForm($request) {
         $messages = [
-            'redsys_commerce_code.required' => 'El código de comercio es obligatorio',
-            'redsys_terminal.required' => 'El terminal es obligatorio',
-            'redsys_currency.required' => 'La moneda es obligatoria',
-            'redsys_transaction_type.required' => 'El tipo de transacción es obligatorio',
-            'redsys_encryption_key.required' => 'La clave de encriptación es obligatoria',
+            'redsys_url.required_if' => 'La URL es obligatoria',
+            'redsys_commerce_code.required_if' => 'El código de comercio es obligatorio',
+            'redsys_terminal.required_if' => 'El terminal es obligatorio',
+            'redsys_currency.required_if' => 'La moneda es obligatoria',
+            'redsys_transaction_type.required_if' => 'El tipo de transacción es obligatorio',
+            'redsys_encryption_key.required_if' => 'La clave de encriptación es obligatoria',
         ];
 
         $rules = [
-            'redsys_commerce_code' => 'required',
-            'redsys_terminal' => 'required',
-            'redsys_currency' => 'required',
-            'redsys_transaction_type' => 'required',
-            'redsys_encryption_key' => 'required',
+            'redsys_url' => 'required_if:payment_gateway,1,redsys',
+            'redsys_commerce_code' => 'required_if:payment_gateway,1,redsys',
+            'redsys_terminal' => 'required_if:payment_gateway,1,redsys',
+            'redsys_currency' => 'required_if:payment_gateway,1,redsys',
+            'redsys_transaction_type' => 'required_if:payment_gateway,1,redsys',
+            'redsys_encryption_key' => 'required_if:payment_gateway,1,redsys',
         ];
 
         $validator = Validator::make($request->all(), $rules, $messages);

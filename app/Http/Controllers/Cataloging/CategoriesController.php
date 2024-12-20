@@ -39,9 +39,15 @@ class CategoriesController extends BaseController
             ]);
         }
 
-        $categories_anidated = CategoriesModel::whereNull('parent_category_uid')->with('subcategories')->get()->toArray();
+        $categories_anidated = CategoriesModel::whereNull('parent_category_uid')->with([
+            'subcategories' => function ($query) {
+                $query->withCount('courses');
+            },
+        ])
+            ->withCount('courses')
+            ->get()->toArray();
 
-        $categories = CategoriesModel::get()->toArray();
+            $categories = CategoriesModel::get()->toArray();
 
         return view(
             'cataloging.categories.index',
@@ -197,11 +203,13 @@ class CategoriesController extends BaseController
                     ->orWhere('description', 'ILIKE', '%' . $search . '%');
             });
         } else {
-            $query->whereNull('parent_category_uid')->with('subcategories');
+            $query->whereNull('parent_category_uid')->with(['subcategories' => function ($query) {
+                $query->withCount('courses');
+            }]);
         }
 
         // Ahora ejecutamos la consulta y obtenemos los resultados
-        $categories = $query->get()->toArray();
+        $categories = $query->withCount('courses')->get()->toArray();
 
         // Asumiendo que 'renderCategories' es una función que ya tienes para generar el HTML
         $html = renderCategories($categories);

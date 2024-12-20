@@ -109,18 +109,12 @@
 
         @if (Auth::user()->hasAnyRole(['ADMINISTRATOR']))
             <div class="container-menu">
-                <li class="{{ $current_module === 'users' ? 'menu-element-selected' : '' }}">
-                    {{ e_heroicon('user-group', 'outline') }}
-                    <span>Usuarios</span>
-                    {{ e_heroicon('chevron-down', 'outline', 'close-sub-menu') }}
-                    {{ e_heroicon('chevron-up', 'outline', 'open-sub-menu hidden') }}
-                </li>
-                <div class="sub-menu hidden-opacity transition-all">
-                    <ul>
-                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'list-users' ? 'submenu-selected' : '' }}"
-                                href="{{ route('list-users') }}">Listado de usuarios</a></li>
-                    </ul>
-                </div>
+                <a href="{{ route('list-users') }}">
+                    <li class="{{ $current_module === 'users' ? 'menu-element-selected' : '' }}">
+                        {{ e_heroicon('user-group', 'outline') }}
+                        <span>Usuarios</span>
+                    </li>
+                </a>
             </div>
         @endif
 
@@ -176,18 +170,12 @@
 
         @if (Auth::user()->hasAnyRole(['ADMINISTRATOR', 'MANAGEMENT']))
             <div class="container-menu">
-                <li class="{{ $current_module === 'logs' ? 'menu-element-selected' : '' }}">
-                    {{ e_heroicon('document-text', 'outline') }}
-                    <span>Logs</span>
-                    {{ e_heroicon('chevron-down', 'outline', 'close-sub-menu') }}
-                    {{ e_heroicon('chevron-up', 'outline', 'open-sub-menu hidden') }}
-                </li>
-                <div class="sub-menu hidden-opacity transition-all">
-                    <ul>
-                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'list-logs' ? 'submenu-selected' : '' }}"
-                                href="{{ route('list-logs') }}">Listado de logs</a></li>
-                    </ul>
-                </div>
+                <a href="{{ route('list-logs') }}">
+                    <li class="{{ $current_module === 'logs' ? 'menu-element-selected' : '' }}">
+                        {{ e_heroicon('document-text', 'outline') }}
+                        <span>Logs</span>
+                    </li>
+                </a>
             </div>
         @endif
 
@@ -241,18 +229,12 @@
         @endif
 
         <div class="container-menu">
-            <li class="{{ $current_module === 'my_profile' ? 'menu-element-selected' : '' }}">
-                {{ e_heroicon('user', 'outline') }}
-                <span>Mi perfil</span>
-                {{ e_heroicon('chevron-down', 'outline', 'close-sub-menu') }}
-                {{ e_heroicon('chevron-up', 'outline', 'open-sub-menu hidden') }}
-            </li>
-            <div class="sub-menu hidden-opacity transition-all">
-                <ul>
-                    <li><a class="{{ isset($submenuselected) && $submenuselected == 'my_profile' ? 'submenu-selected' : '' }}"
-                            href="{{ route('my-profile') }}">Mi perfil</a></li>
-                </ul>
-            </div>
+            <a href="{{ route('my-profile') }}">
+                <li class="{{ $current_module === 'my_profile' ? 'menu-element-selected' : '' }}">
+                    {{ e_heroicon('user', 'outline') }}
+                    <span>Mi perfil</span>
+                </li>
+            </a>
         </div>
 
         <li id="collapse-expand-menu-btn" class="hidden-collapse-expand-menu-btn">

@@ -62,8 +62,9 @@
                         <select id="state_email_notification" class="poa-select w-full" name="state_email_notification"
                             placeholder="Selecciona un estado">
                             <option value="" selected>No especificado</option>
-                            <option value="1">Enviado</option>
-                            <option value="0">No enviado</option>
+                            <option value="FAILED">Fallida</option>
+                            <option value="PENDING">Pendiente</option>
+                            <option value="SENT">Enviada</option>
                         </select>
                     </div>
                 </div>

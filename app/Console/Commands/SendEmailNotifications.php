@@ -57,9 +57,6 @@ class SendEmailNotifications extends Command
         } else if ($notification->type == 'USERS') {
             $this->processUsersNotification($notification);
         }
-
-        $notification->sent = true;
-        $notification->save();
     }
 
     private function processAllUsersNotification($notification, $all_users)
@@ -127,14 +124,12 @@ class SendEmailNotifications extends Command
             } catch (\Exception $e) {
                 Log::error('Error enviando email a ' . $user['email'] . ' ' . $e->getMessage());
             }
-
-            $notification->sent = true;
         }
     }
 
     private function getEmailNotifications()
     {
-        $email_notifications = EmailNotificationsModel::where('sent', 0)->with(["emailNotificationType", "users"])->get();
+        $email_notifications = EmailNotificationsModel::where('status', 'PENDING')->with(["emailNotificationType", "users"])->get();
 
         return $email_notifications;
     }

@@ -20,9 +20,6 @@ class EmailNotificationsService
         } else if ($notification->type == 'USERS') {
             $this->processUsersNotification($notification);
         }
-
-        $notification->sent = true;
-        $notification->save();
     }
 
     public function processAllUsersNotification($notification, $all_users)
@@ -38,7 +35,7 @@ class EmailNotificationsService
                         "body" => $notification['body'],
                     ];
 
-                    dispatch(new SendEmailJob($user['email'], $notification['subject'], $parameters, 'emails.notification'));
+                    dispatch(new SendEmailJob($user['email'], $notification['subject'], $parameters, 'emails.notification', $notification->uid));
                 } catch (\Exception $e) {
                     Log::error('Error enviando email a ' . $user['email'] . ' ' . $e->getMessage());
                 }
@@ -67,7 +64,7 @@ class EmailNotificationsService
                         $parameters = [
                             "body" => $notification['body'],
                         ];
-                        dispatch(new SendEmailJob($user['email'], $notification['subject'], $parameters, 'emails.notification'));
+                        dispatch(new SendEmailJob($user['email'], $notification['subject'], $parameters, 'emails.notification', $notification->uid));
                     } catch (\Exception $e) {
                         Log::error('Error enviando email a ' . $user['email'] . ' ' . $e->getMessage());
                     }
@@ -86,7 +83,7 @@ class EmailNotificationsService
                     "body" => $notification['body'],
                 ];
 
-                dispatch(new SendEmailJob($user['email'], $notification['subject'], $parameters, 'emails.notification'));
+                dispatch(new SendEmailJob($user['email'], $notification['subject'], $parameters, 'emails.notification', $notification->uid));
             } catch (\Exception $e) {
                 Log::error('Error enviando email a ' . $user['email'] . ' ' . $e->getMessage());
             }

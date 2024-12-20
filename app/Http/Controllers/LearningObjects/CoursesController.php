@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Management;
+namespace App\Http\Controllers\LearningObjects;
 
 use App\Exceptions\OperationFailedException;
 use App\Http\Controllers\Logs\LogsController;
@@ -52,7 +52,7 @@ use App\Services\KafkaService;
 use App\Services\EmbeddingsService;
 use DateTime;
 
-class ManagementCoursesController extends BaseController
+class CoursesController extends BaseController
 {
     use AuthorizesRequests, ValidatesRequests;
 

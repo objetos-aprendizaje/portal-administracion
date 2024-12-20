@@ -14,7 +14,7 @@ class EmailNotificationsModel extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'uid', 'subject', 'body', 'type', 'send_date', 'sent', 'notification_type_uid', 'schedule_notification'
+        'uid', 'subject', 'body', 'type', 'send_date', 'status', 'notification_type_uid', 'schedule_notification'
     ];
 
     protected $casts = [

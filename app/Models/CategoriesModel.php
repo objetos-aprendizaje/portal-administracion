@@ -30,4 +30,11 @@ class CategoriesModel extends Model
     {
         return $this->belongsToMany(CoursesModel::class, 'course_categories', 'category_uid', 'course_uid');
     }
+
+    public function coursesCount()
+    {
+        return $this->courses()
+            ->selectRaw('category_uid, COUNT(*) as count')
+            ->groupBy('category_uid');
+    }
 }

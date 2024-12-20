@@ -6,8 +6,6 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use App\Models\EmailNotificationsModel;
-use App\Models\DestinationsEmailNotificationsRolesModel;
-use App\Models\DestinationsEmailNotificationsUsersModel;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use App\Models\NotificationsTypesModel;
@@ -149,7 +147,7 @@ class EmailNotificationsController extends BaseController
 
         if ($notification_email_uid) {
             $notification_email = EmailNotificationsModel::where('uid', $notification_email_uid)->with(['roles', 'users'])->first();
-            if ($notification_email->sent) {
+            if ($notification_email->status == "SENT") {
                 throw new \Exception('La notificación ya ha sido enviada y no puede ser modificada.');
             }
             $isNew = false;
@@ -172,7 +170,9 @@ class EmailNotificationsController extends BaseController
             $notification_email->send_date = now();
         }
 
-        DB::transaction(function () use ($request, $notification_email, $isNew, $sendDate) {
+        if($notification_email->status == 'FAILED') $notification_email->status = 'PENDING';
+
+        DB::transaction(function () use ($request, $notification_email, $sendDate) {
 
             $notification_email->save();
 
@@ -232,7 +232,7 @@ class EmailNotificationsController extends BaseController
 
         // Filtrar las notificaciones que ya han sido enviadas
         $notifications = EmailNotificationsModel::whereIn('uid', $uids)->get();
-        $uids = $notifications->where('sent', false)->pluck('uid');
+        $uids = $notifications->where('status', 'PENDING')->pluck('uid');
 
         EmailNotificationsModel::destroy($uids);
 
@@ -243,8 +243,8 @@ class EmailNotificationsController extends BaseController
     private function applyFilters($filters, &$query)
     {
         foreach ($filters as $filter) {
-            if ($filter['database_field'] == "sent") {
-                $query->where("sent", $filter['value']);
+            if ($filter['database_field'] == "status") {
+                $query->where("status", $filter['value']);
             } elseif ($filter['database_field'] == "notification_types") {
                 $query->whereIn('email_notifications.notification_type_uid', $filter['value']);
             } elseif ($filter['database_field'] == 'send_date') {

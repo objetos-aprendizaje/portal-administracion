@@ -55,7 +55,7 @@ const publish = async (pluginConfig, context) => {
 
     logger.log("Committing changes...");
     execSync(`git add ${chartPath}`, { cwd: repoDir, stdio: 'inherit' });
-    execSync(`git commit -m "chore(release): update admin.image.tag to ${newTag}"`, {
+    execSync(`git commit -m "chore(release): update ${projectValuesTag} image tag to ${newTag}"`, {
       cwd: repoDir,
       stdio: 'inherit',
     });

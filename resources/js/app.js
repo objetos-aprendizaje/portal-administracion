@@ -1015,8 +1015,12 @@ function getAllLabelsOfPage() {
     const labels = document.querySelectorAll("label");
     labels.forEach((label, index) => {
         if (label.htmlFor != "") {
-            const formId = label.closest('form')?.id || '';
-            let findElement = findByInputId(tooltiptexts, label.htmlFor, formId);
+            const formId = label.closest("form")?.id || "";
+            let findElement = findByInputId(
+                tooltiptexts,
+                label.htmlFor,
+                formId
+            );
             if (findElement) {
                 const div_tooltp_i = tag(
                     "div",
@@ -1045,7 +1049,9 @@ function getAllLabelsOfPage() {
 }
 
 function findByInputId(array, inputId, formId) {
-    const item = array.find((item) => item.input_id === inputId && item.form_id === formId);
+    const item = array.find(
+        (item) => item.input_id === inputId && item.form_id === formId
+    );
     return item ? { uid: item.uid, description: item.description } : null;
 }
 
@@ -1088,4 +1094,17 @@ export function setConfig(name, data) {
 
 export function getConfig(name) {
     return JSON.parse(localStorage.getItem(name));
+}
+
+export function instanceAccordion(accordionId) {
+    const accordionContainer = document.getElementById(accordionId);
+    accordionContainer.addEventListener("click", (event) => {
+        if (event.target.closest(".accordion-header")) {
+            const header = event.target.closest(".accordion-header");
+            const content = header.nextElementSibling;
+            const icon = header.querySelector(".accordion-icon");
+            content.classList.toggle("hidden");
+            icon.textContent = content.classList.contains("hidden") ? "+" : "−";
+        }
+    });
 }

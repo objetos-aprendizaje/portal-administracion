@@ -187,7 +187,7 @@ function renderCategories($categories, $level = 1)
             $html .= "<div class='anidation-div' style='margin-left:{$level}em;'>";
             $html .= "<div class='flex'>";
             $html .= "<input type='checkbox' class='element-checkbox' id='{$category['uid']}'> ";
-            $html .= "<label for='{$category['uid']}' class='element-label'>{$category['name']} </label> <button class='edit-btn' title='Editar categoría' data-uid='{$category['uid']}'>{$icon_edit}</button>";
+            $html .= "<label for='{$category['uid']}' class='element-label'>{$category['name']} <small>({$category['courses_count']} cursos)</small> </label> <button class='edit-btn' title='Editar categoría' data-uid='{$category['uid']}'>{$icon_edit}</button>";
             $html .= "</div>";
             if ($category['description']) {
                 $html .= " <p>{$category['description']}</p>";
@@ -202,7 +202,7 @@ function renderCategories($categories, $level = 1)
             $html .= "<div class='anidation-div' style='margin-left:{$level}em;'>";
             $html .= "<div class='flex'>";
             $html .= "<input type='checkbox' class='element-checkbox' id='{$category['uid']}'> ";
-            $html .= "<label for='{$category['uid']}' class='element-label'>{$category['name']} </label> <button class='edit-btn' title='Editar categoría' data-uid='{$category['uid']}'>{$icon_edit}</button>";
+            $html .= "<label for='{$category['uid']}' class='element-label'>{$category['name']} <small>({$category['courses_count']} cursos)</small> </label> <button class='edit-btn' title='Editar categoría' data-uid='{$category['uid']}'>{$icon_edit}</button>";
             $html .= "</div>";
             if ($category['description']) {
                 $html .= " <p>{$category['description']}</p>";

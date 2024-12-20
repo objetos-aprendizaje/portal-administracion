@@ -16,7 +16,7 @@ use App\Http\Controllers\Administration\LmsSystemsController;
 use App\Http\Controllers\Administration\LoginSystemsController;
 use App\Http\Controllers\Administration\PaymentsController;
 use App\Http\Controllers\Administration\LicensesController;
-use App\Http\Controllers\Management\ManagementCoursesController;
+use App\Http\Controllers\LearningObjects\CoursesController;
 use App\Http\Controllers\Management\ManagementGeneralConfigurationController;
 use App\Http\Controllers\Management\CallsController;
 use App\Http\Controllers\Cataloging\CategoriesController;
@@ -266,31 +266,31 @@ Route::middleware(['combined.auth'])->group(function () {
     });
 
     Route::middleware(['role:ADMINISTRATOR,MANAGEMENT'])->group(function () {
-        Route::post('/learning_objects/courses/change_statuses_courses', [ManagementCoursesController::class, 'changeStatusesCourses']);
+        Route::post('/learning_objects/courses/change_statuses_courses', [CoursesController::class, 'changeStatusesCourses']);
     });
 
     Route::middleware(['role:ADMINISTRATOR,MANAGEMENT,TEACHER'])->group(function () {
-        Route::post('/learning_objects/courses/save_course', [ManagementCoursesController::class, 'saveCourse']);
-        Route::post('/learning_objects/courses/calculate_median_enrollings_categories', [ManagementCoursesController::class, 'calculateMedianEnrollingsCategories']);
-        Route::post('/learning_objects/courses/filter_courses', [ManagementCoursesController::class, 'filterCourses']);
-        Route::get('/learning_objects/courses/get_course/{course_uid}', [ManagementCoursesController::class, 'getCourse']);
-        Route::get('/learning_objects/courses/get_course_students/{course_uid}', [ManagementCoursesController::class, 'getCourseStudents']);
-        Route::post('/learning_objects/courses/get_califications/{course_uid}', [ManagementCoursesController::class, 'getCourseCalifications']);
-        Route::post('/learning_objects/courses/save_calification/{course_uid}', [ManagementCoursesController::class, 'saveCalification']);
-        Route::post('/learning_objects/courses/approve_inscriptions_course', [ManagementCoursesController::class, 'approveInscriptionsCourse']);
-        Route::post('/learning_objects/courses/reject_inscriptions_course', [ManagementCoursesController::class, 'rejectInscriptionsCourse']);
-        Route::post('/learning_objects/courses/delete_inscriptions_course', [ManagementCoursesController::class, 'deleteInscriptionsCourse']);
-        Route::post('/learning_objects/courses/duplicate_course/{course_uid}', [ManagementCoursesController::class, 'duplicateCourse']);
-        Route::post('/learning_objects/courses/create_edition', [ManagementCoursesController::class, 'editionCourse']);
-        Route::post('/learning_objects/courses/regenerate_embeddings', [ManagementCoursesController::class, 'regenerateEmbeddings']);
+        Route::post('/learning_objects/courses/save_course', [CoursesController::class, 'saveCourse']);
+        Route::post('/learning_objects/courses/calculate_median_enrollings_categories', [CoursesController::class, 'calculateMedianEnrollingsCategories']);
+        Route::post('/learning_objects/courses/filter_courses', [CoursesController::class, 'filterCourses']);
+        Route::get('/learning_objects/courses/get_course/{course_uid}', [CoursesController::class, 'getCourse']);
+        Route::get('/learning_objects/courses/get_course_students/{course_uid}', [CoursesController::class, 'getCourseStudents']);
+        Route::post('/learning_objects/courses/get_califications/{course_uid}', [CoursesController::class, 'getCourseCalifications']);
+        Route::post('/learning_objects/courses/save_calification/{course_uid}', [CoursesController::class, 'saveCalification']);
+        Route::post('/learning_objects/courses/approve_inscriptions_course', [CoursesController::class, 'approveInscriptionsCourse']);
+        Route::post('/learning_objects/courses/reject_inscriptions_course', [CoursesController::class, 'rejectInscriptionsCourse']);
+        Route::post('/learning_objects/courses/delete_inscriptions_course', [CoursesController::class, 'deleteInscriptionsCourse']);
+        Route::post('/learning_objects/courses/duplicate_course/{course_uid}', [CoursesController::class, 'duplicateCourse']);
+        Route::post('/learning_objects/courses/create_edition', [CoursesController::class, 'editionCourse']);
+        Route::post('/learning_objects/courses/regenerate_embeddings', [CoursesController::class, 'regenerateEmbeddings']);
 
-        Route::post('/learning_objects/courses/emit_credentials', [ManagementCoursesController::class, 'emitCredentials']);
-        Route::post('/learning_objects/courses/emit_all_credentials', [ManagementCoursesController::class, 'emitAllCredentials']);
-        Route::post('/learning_objects/courses/send_credentials', [ManagementCoursesController::class, 'sendCredential']);
-        Route::post('/learning_objects/courses/seal_credentials', [ManagementCoursesController::class, 'sealCredential']);
+        Route::post('/learning_objects/courses/emit_credentials', [CoursesController::class, 'emitCredentials']);
+        Route::post('/learning_objects/courses/emit_all_credentials', [CoursesController::class, 'emitAllCredentials']);
+        Route::post('/learning_objects/courses/send_credentials', [CoursesController::class, 'sendCredential']);
+        Route::post('/learning_objects/courses/seal_credentials', [CoursesController::class, 'sealCredential']);
 
-        Route::post('/learning_objects/courses/regenerate_student_credentials', [ManagementCoursesController::class, 'regenerateStudentCredentials']);
-        Route::post('/learning_objects/courses/regenerate_teacher_credentials', [ManagementCoursesController::class, 'regenerateTeacherCredentials']);
+        Route::post('/learning_objects/courses/regenerate_student_credentials', [CoursesController::class, 'regenerateStudentCredentials']);
+        Route::post('/learning_objects/courses/regenerate_teacher_credentials', [CoursesController::class, 'regenerateTeacherCredentials']);
 
         Route::get('/learning_objects/educational_resources', [EducationalResourcesController::class, 'index'])->name('learning-objects-educational-resources');
 
@@ -302,14 +302,14 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::post('/learning_objects/generate_metadata', [LearningObjetsController::class, 'generateMetadata']);
 
         Route::get('/learning_objects/educational_programs', [EducationalProgramsController::class, 'index'])->name('learning-objects-educational-programs');
-        Route::get('/learning_objects/courses', [ManagementCoursesController::class, 'index'])->name('courses');
-        Route::post('/learning_objects/courses/get_courses', [ManagementCoursesController::class, 'getCourses']);
-        Route::get('/learning_objects/courses/get_all_competences', [ManagementCoursesController::class, 'getAllCompetences']);
-        Route::get('/learning_objects/educational_programs/get_educational_program_type', [ManagementCoursesController::class, 'getAllCompetences']);
-        Route::post('/learning_objects/courses/enroll_students', [ManagementCoursesController::class, 'enrollStudents']);
-        Route::post('/learning_objects/courses/enroll_students_csv', [ManagementCoursesController::class, 'enrollStudentsCsv']);
+        Route::get('/learning_objects/courses', [CoursesController::class, 'index'])->name('courses');
+        Route::post('/learning_objects/courses/get_courses', [CoursesController::class, 'getCourses']);
+        Route::get('/learning_objects/courses/get_all_competences', [CoursesController::class, 'getAllCompetences']);
+        Route::get('/learning_objects/educational_programs/get_educational_program_type', [CoursesController::class, 'getAllCompetences']);
+        Route::post('/learning_objects/courses/enroll_students', [CoursesController::class, 'enrollStudents']);
+        Route::post('/learning_objects/courses/enroll_students_csv', [CoursesController::class, 'enrollStudentsCsv']);
 
-        Route::post('/learning_objects/courses/download_document_student', [ManagementCoursesController::class, 'downloadDocumentStudent']);
+        Route::post('/learning_objects/courses/download_document_student', [CoursesController::class, 'downloadDocumentStudent']);
 
 
 
