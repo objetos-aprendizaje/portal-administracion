@@ -38,7 +38,7 @@ class ChangeStatusToFinishedEducationalProgramCommandTest extends TestCase
             $educationalProgram->students()->attach($student, [
                 'status' => 'ENROLLED',
                 'acceptance_status' => 'ACCEPTED',
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
             ]);
         }
 
@@ -85,8 +85,5 @@ class ChangeStatusToFinishedEducationalProgramCommandTest extends TestCase
 
         // Verificar que no se haya enviado ninguna notificación
         Queue::assertNotPushed(SendEmailJob::class);
-        // $this->assertDatabaseMissing('general_notifications_automatic', [
-        //     'entity_uid' => $educationalProgram->uid,
-        // ]);
     }
 }

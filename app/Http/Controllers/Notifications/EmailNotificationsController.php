@@ -25,7 +25,7 @@ class EmailNotificationsController extends BaseController
 
     public function index()
     {
-        $notification_types = NotificationsTypesModel::get();
+        $notificationTypes = NotificationsTypesModel::get();
 
         return view(
             'notifications.email.index',
@@ -38,7 +38,7 @@ class EmailNotificationsController extends BaseController
                 "tabulator" => true,
                 "tomselect" => true,
                 "flatpickr" => true,
-                "notification_types" => $notification_types,
+                "notification_types" => $notificationTypes,
                 "submenuselected" => "notifications-email",
             ]
         );
@@ -72,27 +72,29 @@ class EmailNotificationsController extends BaseController
             }
         }
 
-        if ($filters) $this->applyFilters($filters, $query);
+        if ($filters) {
+            $this->applyFilters($filters, $query);
+        }
 
         $data = $query->paginate($size);
 
         return response()->json($data, 200);
     }
 
-    public function getEmailNotification($notification_general_uid)
+    public function getEmailNotification($notificationGeneralUid)
     {
         //Se comenta ya que  la misma ruta comprueba si tiene parametros o no.
-        // if (!$notification_general_uid) {
+        // if (!$notificationGeneralUid) {
         //     return response()->json(['message' => env('ERROR_MESSAGE')], 400);
         // }
 
-        $email_notification = EmailNotificationsModel::where('uid', $notification_general_uid)->with('roles')->with('users')->with('emailNotificationType')->first();
+        $emailNotification = EmailNotificationsModel::where('uid', $notificationGeneralUid)->with('roles')->with('users')->with('emailNotificationType')->first();
 
-        if (!$email_notification) {
+        if (!$emailNotification) {
             return response()->json(['message' => 'La notificación general no existe'], 406);
         }
 
-        return response()->json($email_notification, 200);
+        return response()->json($emailNotification, 200);
     }
 
     private function validateEmailNotification($request)
@@ -109,7 +111,7 @@ class EmailNotificationsController extends BaseController
             'send_date.after_or_equal' => 'La fecha de envío no puede ser anterior a la fecha actual',
         ];
 
-        $validator_rules = [
+        $validatorRules = [
             'subject' => [
                 'required', 'max:255',
             ],
@@ -119,7 +121,7 @@ class EmailNotificationsController extends BaseController
             'send_date' => 'nullable|date|after_or_equal:now',
         ];
 
-        $validator = Validator::make($request->all(), $validator_rules, $messages);
+        $validator = Validator::make($request->all(), $validatorRules, $messages);
 
         // Si el tipo es de roles, se añade valicación para comprobar si se ha seleccionado algún rol
         $validator->sometimes('roles', 'required|array|min:1', function ($input) {
@@ -143,38 +145,40 @@ class EmailNotificationsController extends BaseController
             return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validatorErrors], 400);
         }
 
-        $notification_email_uid = $request->get('notification_email_uid');
+        $notificationEmailUid = $request->get('notification_email_uid');
 
-        if ($notification_email_uid) {
-            $notification_email = EmailNotificationsModel::where('uid', $notification_email_uid)->with(['roles', 'users'])->first();
-            if ($notification_email->status == "SENT") {
+        if ($notificationEmailUid) {
+            $notificationEmail = EmailNotificationsModel::where('uid', $notificationEmailUid)->with(['roles', 'users'])->first();
+            if ($notificationEmail->status == "SENT") {
                 throw new \Exception('La notificación ya ha sido enviada y no puede ser modificada.');
             }
             $isNew = false;
         } else {
-            $notification_email_uid = generate_uuid();
-            $notification_email = new EmailNotificationsModel();
-            $notification_email->uid = $notification_email_uid;
+            $notificationEmailUid = generateUuid();
+            $notificationEmail = new EmailNotificationsModel();
+            $notificationEmail->uid = $notificationEmailUid;
             $isNew = true;
         }
 
-        $notification_email->fill($request->only([
+        $notificationEmail->fill($request->only([
             'subject', 'body', 'type', 'end_date', 'send_date', 'notification_type_uid'
         ]));
 
         $sendDate = $request->get('send_date');
 
         if($sendDate){
-            $notification_email->send_date = $sendDate;
+            $notificationEmail->send_date = $sendDate;
         } else {
-            $notification_email->send_date = now();
+            $notificationEmail->send_date = now();
         }
 
-        if($notification_email->status == 'FAILED') $notification_email->status = 'PENDING';
+        if($notificationEmail->status == 'FAILED') {
+            $notificationEmail->status = 'PENDING';
+        }
 
-        DB::transaction(function () use ($request, $notification_email, $sendDate) {
+        DB::transaction(function () use ($request, $notificationEmail, $sendDate) {
 
-            $notification_email->save();
+            $notificationEmail->save();
 
             /**
              * Si la notificación está dirigida a grupos de usuarios basados en roles,
@@ -188,15 +192,15 @@ class EmailNotificationsController extends BaseController
 
             if ($type === 'ROLES') {
                 $roles = $request->get('roles');
-                $this->handleRoles($roles, $notification_email);
+                $this->handleRoles($roles, $notificationEmail);
             } elseif ($type === 'USERS') {
                 $users = $request->get('users');
-                $this->handleUsers($users, $notification_email);
+                $this->handleUsers($users, $notificationEmail);
             }
 
             // Si no hay fecha de envío, se envía la notificación inmediatamente
             if(!$sendDate) {
-                $this->emailNotificationsService->processNotification($notification_email);
+                $this->emailNotificationsService->processNotification($notificationEmail);
             }
         }, 5);
 
@@ -205,25 +209,25 @@ class EmailNotificationsController extends BaseController
         ], 200);
     }
 
-    private function handleRoles($roles, $notification_email)
+    private function handleRoles($roles, $notificationEmail)
     {
         $rolesData = [];
         foreach ($roles as $role) {
-            $rolesData[$role] = ['email_notification_uid' => $notification_email->uid, 'uid' => generate_uuid()];
+            $rolesData[$role] = ['email_notification_uid' => $notificationEmail->uid, 'uid' => generateUuid()];
         }
-        $notification_email->roles()->sync($rolesData);
-        $notification_email->users()->detach();
+        $notificationEmail->roles()->sync($rolesData);
+        $notificationEmail->users()->detach();
     }
 
-    private function handleUsers($users, $notification_email)
+    private function handleUsers($users, $notificationEmail)
     {
         $usersData = [];
         foreach ($users as $user) {
 
-            $usersData[$user] = ['email_notification_uid' => $notification_email->uid, 'uid' => generate_uuid()];
+            $usersData[$user] = ['email_notification_uid' => $notificationEmail->uid, 'uid' => generateUuid()];
         }
-        $notification_email->users()->sync($usersData);
-        $notification_email->roles()->detach();
+        $notificationEmail->users()->sync($usersData);
+        $notificationEmail->roles()->detach();
     }
 
     public function deleteEmailNotifications(Request $request)
@@ -257,11 +261,11 @@ class EmailNotificationsController extends BaseController
                     $query->whereDate('send_date', '<=', $filter['value'])
                         ->whereDate('send_date', '>=', $filter['value']);
                 }
-            }else if ($filter['database_field'] == "roles") {
+            }elseif ($filter['database_field'] == "roles") {
                 $query->whereHas('roles', function ($query) use ($filter) {
                     $query->whereIn('user_roles.uid', $filter['value']);
                 });
-            } else if ($filter['database_field'] == "users") {
+            } elseif ($filter['database_field'] == "users") {
                 $query->whereHas('users', function ($query) use ($filter) {
                     $query->whereIn('users.uid', $filter['value']);
                 });
@@ -271,8 +275,8 @@ class EmailNotificationsController extends BaseController
     public function getEmailNotificationTypes()
     {
 
-        $email_notification_types = NotificationsTypesModel::get();
+        $emailNotificationTypes = NotificationsTypesModel::get();
 
-        return response()->json($email_notification_types, 200);
+        return response()->json($emailNotificationTypes, 200);
     }
 }

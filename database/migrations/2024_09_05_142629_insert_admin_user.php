@@ -10,7 +10,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        $userUid = generate_uuid();
+        $userUid = generateUuid();
 
         DB::table('users')->insert([
             'uid' => $userUid,
@@ -28,7 +28,7 @@ return new class extends Migration
         $adminRole = DB::table('user_roles')->where('code', 'ADMINISTRATOR')->first();
 
         DB::table('user_role_relationships')->insert([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'user_uid' => $userUid,
             'user_role_uid' => $adminRole->uid,
         ]);

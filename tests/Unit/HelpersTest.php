@@ -141,7 +141,7 @@ class HelpersTest extends TestCase
         $currentTimestamp = time();
 
         // Llamar a la función con el archivo simulado
-        $result = add_timestamp_name_file($file);
+        $result = addTimestampNameFile($file);
 
         // Verificar que el resultado tenga el formato esperado
         $this->assertMatchesRegularExpression('/^document-' . $currentTimestamp . '\.pdf$/', $result);

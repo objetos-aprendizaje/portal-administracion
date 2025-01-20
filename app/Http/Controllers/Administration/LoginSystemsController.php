@@ -20,19 +20,19 @@ class LoginSystemsController extends BaseController
     {
 
         $cas = Saml2TenantsModel::where('key', 'cas')->first();
-        $cas_active = GeneralOptionsModel::where('option_name', 'cas_active')->where('option_value', 1)->first();
+        $casActive = GeneralOptionsModel::where('option_name', 'cas_active')->where('option_value', 1)->first();
         $rediris = Saml2TenantsModel::where('key', 'rediris')->first();
-        $rediris_active = GeneralOptionsModel::where('option_name', 'rediris_active')->where('option_value', 1)->first();
+        $redirisActive = GeneralOptionsModel::where('option_name', 'rediris_active')->where('option_value', 1)->first();
 
         $loginSaml = Saml2TenantsModel::whereIn('key', ['cas', 'rediris'])->get()->keyBy('key');
 
-        if ($cas_active) {
+        if ($casActive) {
             $urlCasMetadata = url('saml2/' . $loginSaml['cas']->uuid . '/metadata');
         } else {
             $urlCasMetadata = false;
         }
 
-        if ($rediris_active) {
+        if ($redirisActive) {
             $urlRedirisMetadata = url('saml2/' . $loginSaml['rediris']->uuid . '/metadata');
         } else {
             $urlRedirisMetadata = false;
@@ -48,8 +48,8 @@ class LoginSystemsController extends BaseController
                 ],
                 'cas' => $cas,
                 'rediris' => $rediris,
-                'cas_active' => $cas_active,
-                'rediris_active' => $rediris_active,
+                'cas_active' => $casActive,
+                'rediris_active' => $redirisActive,
                 'urlCasMetadata' => $urlCasMetadata,
                 'urlRedirisMetadata' => $urlRedirisMetadata,
                 "submenuselected" => "login-systems",
@@ -218,7 +218,7 @@ class LoginSystemsController extends BaseController
         if (!$cas) {
             $cas = new Saml2TenantsModel();
             $cas->key = 'cas';
-            $cas->uuid = generate_uuid();
+            $cas->uuid = generateUuid();
             $cas->name_id_format = 'persistent';
             $cas->metadata = '[]';
         }
@@ -277,7 +277,7 @@ class LoginSystemsController extends BaseController
 
         if (!$rediris) {
             $rediris = new Saml2TenantsModel();
-            $rediris->uuid = generate_uuid();
+            $rediris->uuid = generateUuid();
             $rediris->key = 'rediris';
             $rediris->metadata = '[]';
             $rediris->name_id_format = 'persistent';

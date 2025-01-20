@@ -38,8 +38,8 @@ class ApiKeyControllerTest extends TestCase
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]);// Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -138,9 +138,9 @@ class ApiKeyControllerTest extends TestCase
         $this->actingAs($admin);
 
         // Datos de la solicitud
-        $apikey = ApiKeysModel::factory()->create()->first();       
+        $apikey = ApiKeysModel::factory()->create()->first();
 
-        $data = [           
+        $data = [
             'api_key' => $apikey->api_key,
         ];
 
@@ -151,7 +151,7 @@ class ApiKeyControllerTest extends TestCase
         $response->assertStatus(422)
                 ->assertJson(['message' => 'Hay campos incorrectos']);
 
-      
+
 
     }
 

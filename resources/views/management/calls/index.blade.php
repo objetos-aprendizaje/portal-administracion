@@ -11,17 +11,17 @@
             <div class="flex gap-1">
                 <div>
                     <button type="button" id="new-call-btn" class="btn-icon" id="btn-edit-call" title="Crear convocatoria">
-                        {{ e_heroicon('plus', 'outline') }}
+                        {{ eHeroicon('plus', 'outline') }}
                     </button>
                 </div>
                 <div>
                     <button type="button" class="btn-icon" id="btn-edit-call" title="Eliminar convocatorias">
-                        {{ e_heroicon('trash', 'outline') }}
+                        {{ eHeroicon('trash', 'outline') }}
                     </button>
                 </div>
                 <div>
                     <button type="button" class="btn-icon" id="btn-reload-table" title="Actualizar">
-                        {{ e_heroicon('arrow-path', 'outline') }}
+                        {{ eHeroicon('arrow-path', 'outline') }}
                     </button>
                 </div>
             </div>

@@ -33,7 +33,7 @@ class ManagementPermissionsTest extends TestCase
         // Asignar un rol específico al usuario (por ejemplo, el rol 'ADMINISTRATOR')
         $role = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
         // Simular la carga de datos que haría el GeneralOptionsMiddleware
         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
@@ -47,7 +47,7 @@ class ManagementPermissionsTest extends TestCase
 
         // Simular la carga de datos que haría el middleware
         View::share('roles', $user->roles->toArray());
-        
+
         // Realiza una solicitud GET a la ruta definida
         $response = $this->get(route('management-permissions'));
 

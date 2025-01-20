@@ -17,7 +17,7 @@ class CoursesStudentsDocumentsModelFactory extends Factory
      */
     public function definition(): array {
         return [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'document_path' => $this->faker->url(),
             'created_at' => now(),
             'updated_at' => now(),

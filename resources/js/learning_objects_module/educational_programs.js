@@ -286,7 +286,7 @@ function actionCredentials(action) {
  * en función de si el curso tiene validación de estudiantes.
  */
 function controlValidationStudents() {
-    var checkbox = document.getElementById("validate_student_registrations");
+    const checkbox = document.getElementById("validate_student_registrations");
 
     const documentsContainer = document.getElementById("documents-container");
     const criteriaArea = document.getElementById("criteria-area");
@@ -1036,9 +1036,9 @@ function getDocuments() {
 
     courseDocuments.forEach((courseDocument) => {
         const uid = courseDocument.dataset.documentUid;
-        const document_name =
+        const documentName =
             courseDocument.querySelector(".document-name").value;
-        documentsData.push({ uid, document_name });
+        documentsData.push({ uid, documentName });
     });
 
     return documentsData;
@@ -1279,7 +1279,7 @@ function bulkChangeStatuses() {
     );
     bulkSelect.addEventListener("change", function () {
         selectors.forEach((select) => {
-            var opcionExist = select.querySelector(
+            const opcionExist = select.querySelector(
                 'option[value="' + bulkSelect.value + '"]'
             );
             if (opcionExist) {

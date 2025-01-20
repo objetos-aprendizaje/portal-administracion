@@ -6,15 +6,15 @@
 
         <div class="title-filter flex items-center mb-[26px]">
             <span>Listado de notificaciones generales</span>
-            <button id="filter-general-notification-btn" class="btn-filter">{{ e_heroicon('adjustments-horizontal', 'outline') }}</button>
+            <button id="filter-general-notification-btn" class="btn-filter">{{ eHeroicon('adjustments-horizontal', 'outline') }}</button>
         </div>
 
         <div class="table-control-header">
             @include('partials.table-search', ['table' => 'notification-general-table'])
 
             <div>
-                <button id="add-notification-general-btn" type="button" class="btn btn-icon mb-4" title="Añadir notificación general">{{e_heroicon('plus', 'outline')}}</button>
-                <button id="delete-notification-general-btn" type="button" class="btn btn-icon mb-4" title="Eliminar notificación general">{{e_heroicon('trash', 'outline')}}</button>
+                <button id="add-notification-general-btn" type="button" class="btn btn-icon mb-4" title="Añadir notificación general">{{eHeroicon('plus', 'outline')}}</button>
+                <button id="delete-notification-general-btn" type="button" class="btn btn-icon mb-4" title="Eliminar notificación general">{{eHeroicon('trash', 'outline')}}</button>
             </div>
 
         </div>

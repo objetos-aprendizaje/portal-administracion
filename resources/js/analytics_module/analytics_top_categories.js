@@ -144,7 +144,7 @@ function controlSaveHandlerFilters() {
  */
 function showFilters() {
     // Eliminamos todos los filtros
-    var currentFilters = document.querySelectorAll(".filter");
+    const currentFilters = document.querySelectorAll(".filter");
 
     // Recorre cada elemento y lo elimina
     currentFilters.forEach(function (filter) {
@@ -153,7 +153,7 @@ function showFilters() {
 
     filters.forEach((filter) => {
         // Crea un nuevo div
-        var newDiv = document.createElement("div");
+        const newDiv = document.createElement("div");
 
         // Agrega la clase 'filter' al div
         newDiv.classList.add("filter");

@@ -14,15 +14,12 @@ use App\Models\ElementsModel;
 use App\Models\SubblocksModel;
 use App\Models\UserRolesModel;
 use Illuminate\Support\Carbon;
-use PhpParser\Node\Stmt\Block;
 use App\Models\CategoriesModel;
 use App\Models\LmsSystemsModel;
 use App\Models\CompetencesModel;
 use App\Models\CoursesTagsModel;
 use App\Models\CourseTypesModel;
-use App\Models\TooltipTextsModel;
 use Illuminate\Http\UploadedFile;
-use App\Models\CoursesAccesesModel;
 use App\Models\CourseStatusesModel;
 use App\Models\GeneralOptionsModel;
 use App\Services\EmbeddingsService;
@@ -36,12 +33,10 @@ use App\Services\CertidigitalService;
 use Illuminate\Support\Facades\Queue;
 use App\Models\CoursesEmbeddingsModel;
 use Illuminate\Support\Facades\Schema;
-use App\Models\CertificationTypesModel;
 use Illuminate\Support\Facades\Request;
 use App\Models\CoursesPaymentTermsModel;
 use App\Models\EducationalProgramsModel;
 use App\Models\CompetenceFrameworksModel;
-use App\Models\CertidigitalAssesmentsModel;
 use App\Exceptions\OperationFailedException;
 use App\Models\CertidigitalCredentialsModel;
 use App\Models\EducationalProgramTypesModel;
@@ -50,8 +45,9 @@ use App\Models\EducationalProgramStatusesModel;
 use App\Jobs\SendChangeStatusCourseNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\CourseLearningResultCalificationsModel;
+use App\Http\Controllers\LearningObjects\CoursesController;
 use App\Models\CoursesBlocksLearningResultsCalificationsModel;
-use App\Http\Controllers\Management\ManagementCoursesController;
+
 
 
 class ManagementCoursesControllerTest extends TestCase
@@ -66,134 +62,24 @@ class ManagementCoursesControllerTest extends TestCase
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
     }
 
-    public function testIndexReturnsViewCoursesCorrectly()
-    {
-
-        // Crear mocks de los servicios
-        $embeddingsServiceMock = $this->createMock(EmbeddingsService::class);
-        $certidigitalServiceMock = $this->createMock(CertidigitalService::class);
-
-        // Instanciar el controlador con los mocks
-        $controller = new ManagementCoursesController($embeddingsServiceMock, $certidigitalServiceMock);
-
-        // Simulando datos para los modelos
-        $courses = CoursesModel::factory()
-            ->withCourseStatus()
-            ->withCourseType()
-            ->count(3)->create();
-        $calls = CallsModel::factory()->count(2)->create();
-        $coursesStatuses = CourseStatusesModel::factory()->count(2)->create();
-        $educationalProgramsTypes = EducationalProgramTypesModel::factory()->count(2)->create();
-        $coursesTypes = CourseTypesModel::factory()->count(2)->create();
-        $centers = CentersModel::factory()->count(2)->create();
-        // Simulando categorías anidadas
-        $parentCategory = CategoriesModel::factory()->create();
-        $childCategory = CategoriesModel::factory()->create(['parent_category_uid' => $parentCategory->uid]);
-
-        $lmsSystems = LmsSystemsModel::factory()->count(2)->create();
-        $certificationTypes = CertificationTypesModel::factory()->count(2)->create(
-            [
-                'category_uid' => $parentCategory->uid,
-            ]
-        );
-
-        $teachers = UsersModel::factory()
-            // ->hasAttached(UserRolesModel::factory()->create(['code' => 'TEACHER']))
-            ->count(2)->create();
-
-        foreach ($teachers as $teacher) {
-            $roles = UserRolesModel::firstOrCreate(['code' => 'TEACHER'], ['uid' => generate_uuid()]); // Crea roles de prueba
-            $teacher->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
-        }
-
-        $students = UsersModel::factory()
-            // ->hasAttached(UserRolesModel::factory()->create(['code' => 'STUDENT']))
-            ->count(3)->create();
-
-        foreach ($students as $student) {
-            $roles = UserRolesModel::firstOrCreate(['code' => 'STUDENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-            $student->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
-        }
-
-        // Simulando autenticación del usuario
-        $user = UsersModel::factory()->create();
-        // $user->roles()->attach(UserRolesModel::factory()->create(['code' => 'ADMIN']));
-        $roles = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
-
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
-
-        $this->actingAs($user);
-
-        // Simulando la respuesta del método y del controlador para la llave API de OpenAI
-        // config(['general_options.openai_key' => 'fake_openai_key']);
-        // Datos simulados de `general_options`
-        $generalOptionsMock = [
-            'openai_key' => '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',
-            'operation_by_calls' => true, // Agrega el valor específico que se utiliza en la vista
-            'enabled_recommendation_module' => 1
-        ];
-
-        // Inyecta `general_options` en la aplicación y lo comparte en las vistas
-        app()->instance('general_options', $generalOptionsMock);
-
-
-        View::share('general_options', $generalOptionsMock);
-
-        View::share('general_options', $generalOptionsMock);
-
-        View::share('roles', $roles);
-
-        // Simula datos de TooltipTextsModel
-        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
-        View::share('tooltip_texts', $tooltip_texts);
-
-        // Simula notificaciones no leídas
-        $unread_notifications = $user->notifications->where('read_at', null);
-        View::share('unread_notifications', $unread_notifications);
-
-        // Enviando la solicitud GET
-        $response = $this->get(route('courses'));
-
-        // Asegurando que se carga correctamente con un código 200
-        $response->assertStatus(200);
-
-        // Comprobando que los datos se pasen a la vista
-        $response->assertViewIs('learning_objects.courses.index')
-            ->assertViewHasAll([
-                'courses',
-                'calls',
-                'courses_statuses',
-                'educationals_programs_types',
-                'courses_types',
-                'teachers',
-                'students',
-                'categories',
-                'lmsSystems',
-                'centers',
-                'certificationTypes',
-                'educational_programs',
-                'variables_js'
-            ]);
-    }
-
     /**
      * @test
      * Prueba la creación y actualización de un curso.
      */
     public function testSaveCourseCreationAndUpdate()
     {
-        // Crear un usuario con permisos de gestión      
+        // Crear un usuario con permisos de gestión
 
         $user = UsersModel::factory()->create();
 
         $role = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         Auth::login($user);
 
-        // Asignar el mock a app('general_options')  
+        // Asignar el mock a app('general_options')
         GeneralOptionsModel::factory()->create(
             [
                 'option_name' => 'openai_key',
@@ -204,8 +90,6 @@ class ManagementCoursesControllerTest extends TestCase
         $generalUpdate = GeneralOptionsModel::where('option_name', 'certidigital_url')->first();
         $generalUpdate->option_value = "web";
         $generalUpdate->save();
-        // $managementUser->assignRole('MANAGEMENT');
-        // $this->actingAs($managementUser);
 
         // Crear un mock para general_options
         $generalOptionsMock = [
@@ -224,7 +108,8 @@ class ManagementCoursesControllerTest extends TestCase
 
         app()->instance('general_options', $generalOptionsMock);
 
-        $educational_program_type = EducationalProgramTypesModel::factory()->create()->first();
+        EducationalProgramTypesModel::factory()->create()->first();
+
         $center = CentersModel::factory()->create()->first();
 
         $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
@@ -232,7 +117,6 @@ class ManagementCoursesControllerTest extends TestCase
                 'title' => 'Curso 1',
                 'description' => 'Descripción del curso de prueba',
                 'validate_student_registrations' => 0,
-                'educational_program_type_uid' => $educational_program_type->uid,
                 'payment_mode' => 'SINGLE_PAYMENT',
             ]
         )->first();
@@ -273,7 +157,7 @@ class ManagementCoursesControllerTest extends TestCase
             'inscription_finish_date' => "2024-05-10",
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
             'categories' => json_encode([
-                generate_uuid()
+                generateUuid()
             ]),
             'structure' => json_encode([]),
             'contact_emails' => json_encode(['email1@email.com', 'email2@email.com']),
@@ -281,7 +165,6 @@ class ManagementCoursesControllerTest extends TestCase
             'payment_mode' => $course->payment_mode,
             'belongs_to_educational_program' => false,
             'featured_big_carrousel_image_path' => $image,
-            // 'image_input_file'=>$image
         ];
 
 
@@ -305,10 +188,10 @@ class ManagementCoursesControllerTest extends TestCase
                 'title' => 'Curso Existente',
                 'description' => 'Descripción del curso existente',
             ]);
-        
-            CoursesEmbeddingsModel::factory()->create([
-                'course_uid' => $existingCourse->uid,
-            ]);
+
+        CoursesEmbeddingsModel::factory()->create([
+            'course_uid' => $existingCourse->uid,
+        ]);
 
         $teachersNoCoordinators = UsersModel::factory()->create();
         $teachersCoordinators = UsersModel::factory()->create();
@@ -337,7 +220,7 @@ class ManagementCoursesControllerTest extends TestCase
 
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
             'categories' => json_encode([
-                generate_uuid()
+                generateUuid()
             ]),
             'structure' => json_encode([]),
             'contact_emails' => json_encode(['email1@email.com', 'email2@email.com']),
@@ -367,13 +250,13 @@ class ManagementCoursesControllerTest extends TestCase
      */
     public function testSaveCourseUpdateState()
     {
-        // Crear un usuario con permisos de gestión      
+        // Crear un usuario con permisos de gestión
 
         $user = UsersModel::factory()->create();
 
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         Auth::login($user);
@@ -392,7 +275,7 @@ class ManagementCoursesControllerTest extends TestCase
             'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
             'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
         ];
-        // Asignar el mock a app('general_options')  
+        // Asignar el mock a app('general_options')
         GeneralOptionsModel::factory()->create(
             [
                 'option_name' => 'openai_key',
@@ -424,7 +307,7 @@ class ManagementCoursesControllerTest extends TestCase
             ->withCourseStatus()->withCourseType()->create([
                 'title' => 'Curso Existente',
                 'course_status_uid' => $status->uid,
-                'educational_program_type_uid' => $educational_program_type->uid,
+                // 'educational_program_type_uid' => $educational_program_type->uid,
                 'educational_program_uid' => $educational_program->uid,
                 'description' => 'Descripción del curso existente',
             ])->first();
@@ -445,7 +328,7 @@ class ManagementCoursesControllerTest extends TestCase
 
         $learning = LearningResultsModel::factory()->withCompetence()->count(2)->create()->first();
 
-        // Datos de prueba para la actualización de un curso       
+        // Datos de prueba para la actualización de un curso
         $updateCourseData = [
             'course_uid' => $existingCourse->uid,
             'title' => 'Curso Actualizado',
@@ -475,7 +358,7 @@ class ManagementCoursesControllerTest extends TestCase
             'structure' => json_encode(
                 [
                     [
-                        'uid'             => generate_uuid(),
+                        'uid'             => generateUuid(),
                         'type'            => 'EVALUATION',
                         'name'            => 'name1',
                         'description'     => 'description1',
@@ -554,7 +437,7 @@ class ManagementCoursesControllerTest extends TestCase
 
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
             'categories' => json_encode([
-                generate_uuid()
+                generateUuid()
             ]),
             'structure' => json_encode([]),
             'contact_emails' => json_encode(['email1@email.com', 'email2@email.com']),
@@ -574,13 +457,13 @@ class ManagementCoursesControllerTest extends TestCase
      */
     public function testSaveCourseEducationalProgram422()
     {
-        // Crear un usuario con permisos de gestión      
+        // Crear un usuario con permisos de gestión
 
         $user = UsersModel::factory()->create();
 
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         Auth::login($user);
@@ -599,7 +482,7 @@ class ManagementCoursesControllerTest extends TestCase
             'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
             'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
         ];
-        // Asignar el mock a app('general_options')  
+        // Asignar el mock a app('general_options')
         GeneralOptionsModel::factory()->create(
             [
                 'option_name' => 'openai_key',
@@ -626,7 +509,7 @@ class ManagementCoursesControllerTest extends TestCase
             ->withCourseType()->create([
                 'title' => 'Curso Existente',
                 'course_status_uid' => $status->uid,
-                'educational_program_type_uid' => $educational_program_type->uid,
+                // 'educational_program_type_uid' => $educational_program_type->uid,
                 'educational_program_uid' => $educational_program->uid,
                 'description' => 'Descripción del curso existente',
             ])->first();
@@ -643,7 +526,7 @@ class ManagementCoursesControllerTest extends TestCase
         // Reemplazar el servicio real por el mock en el contenedor de servicios de Laravel
         $this->app->instance(EmbeddingsService::class, $mockEmbeddingsService);
 
-        // Datos de prueba para la actualización de un curso       
+        // Datos de prueba para la actualización de un curso
         $updateCourseData = [
             'course_uid' => $existingCourse->uid,
             'title' => 'Curso Actualizado',
@@ -669,7 +552,7 @@ class ManagementCoursesControllerTest extends TestCase
 
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
             'categories' => json_encode([
-                generate_uuid()
+                generateUuid()
             ]),
             'structure' => json_encode([]),
             'contact_emails' => json_encode(['email1@email.com', 'email2@email.com']),
@@ -686,17 +569,16 @@ class ManagementCoursesControllerTest extends TestCase
 
     /**
      * @test
-     * Prueba de actualización de un curso con error 422 en validacion ValidateCourseFields 
+     * Prueba de actualización de un curso con error 422 en validacion ValidateCourseFields
      */
     public function testSaveCourseValidateCourseFields422()
     {
-        // Crear un usuario con permisos de gestión      
-
+        // Crear un usuario con permisos de gestión
         $user = UsersModel::factory()->create();
 
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         Auth::login($user);
@@ -715,7 +597,7 @@ class ManagementCoursesControllerTest extends TestCase
             'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
             'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
         ];
-        // Asignar el mock a app('general_options')  
+        // Asignar el mock a app('general_options')
         GeneralOptionsModel::factory()->create(
             [
                 'option_name' => 'openai_key',
@@ -725,32 +607,9 @@ class ManagementCoursesControllerTest extends TestCase
 
         app()->instance('general_options', $generalOptionsMock);
 
-        $educational_program_type = EducationalProgramTypesModel::factory()->create()->first();
+        EducationalProgramTypesModel::factory()->create()->first();
+
         $center = CentersModel::factory()->create()->first();
-
-        // $status = CourseStatusesModel::where('code', 'ADDED_EDUCATIONAL_PROGRAM')->first();
-
-        // $educational_program = EducationalProgramsModel::factory()->create(
-        //     [
-        //         'educational_program_type_uid' => $educational_program_type->uid,
-
-        //     ]
-        // )->first();
-
-        // // Crear un curso existente para la prueba de actualización
-        // $existingCourse = CoursesModel::factory()
-        //     ->withCourseType()->withCourseStatus()->create([
-        //         'title' => 'Curso Existente',
-        //         'course_status_uid' => $status->uid,
-        //         'educational_program_type_uid' => $educational_program_type->uid,
-        //         'educational_program_uid' => $educational_program->uid,
-        //         'description' => 'Descripción del curso existente',
-        //     ])->first();
-
-
-        // CoursesEmbeddingsModel::factory()->create([
-        //     'course_uid' => $existingCourse->uid,
-        // ]);
 
         $type = CourseTypesModel::factory()->create()->first();
 
@@ -761,15 +620,13 @@ class ManagementCoursesControllerTest extends TestCase
         // Reemplazar el servicio real por el mock en el contenedor de servicios de Laravel
         $this->app->instance(EmbeddingsService::class, $mockEmbeddingsService);
 
-        // Datos de prueba para la actualización de un curso       
+        // Datos de prueba para la actualización de un curso
         $updateCourseData = [
-            // 'course_uid' => $existingCourse->uid,
             'title' => 'Nuevo curso',
             'description' => 'Descripción del curso',
             'action' => 'submit',
             'belongs_to_educational_program' => false,
             'course_type_uid' => $type->uid,
-            // 'educational_program_type_uid' => $existingCourse->educational_program_type_uid,
             'inscription_start_date' => Carbon::now()->format('Y-m-d\TH:i'),
             'inscription_finish_date' => Carbon::now()->addDays(15)->format('Y-m-d\TH:i'),
             'enrolling_start_date' => Carbon::now()->addDays(20)->format('Y-m-d\TH:i'),
@@ -791,7 +648,7 @@ class ManagementCoursesControllerTest extends TestCase
             // Validación de imagen destacada
             'featured_big_carrousel_image_path' => null, // Cambiar a una ruta válida si es necesario
             // Validación de criterios de evaluación
-            'evaluation_criteria' => json_encode(['Criterio 1', 'Criterio 2']), // 
+            'evaluation_criteria' => json_encode(['Criterio 1', 'Criterio 2']), //
 
             // Nuevos campos para validar profesores
             'teacher_coordinators' => json_encode(['profesor1@example.com', 'profesor2@example.com']), // Lista de profesores que son coordinadores
@@ -799,7 +656,7 @@ class ManagementCoursesControllerTest extends TestCase
 
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
             'categories' => json_encode([
-                generate_uuid()
+                generateUuid()
             ]),
             'structure' => json_encode([]),
             'contact_emails' => json_encode(['email1@email.com', 'email2@email.com']),
@@ -820,16 +677,16 @@ class ManagementCoursesControllerTest extends TestCase
 
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         Auth::login($user);
 
-        // $course_type =  CourseTypesModel::factory()->create()->first();
-        $educational_program_type = EducationalProgramTypesModel::factory()->create()->first();
-        $center = CentersModel::factory()->create()->first();
+        EducationalProgramTypesModel::factory()->create()->first();
 
-        $status = CourseStatusesModel::where('code', 'INTRODUCTION')->first();
+        $center = CentersModel::factory()->create()->first();
+        CourseStatusesModel::where('code', 'INTRODUCTION')->first();
+
 
         // Crear un mock para general_options
         $generalOptionsMock = [
@@ -852,10 +709,8 @@ class ManagementCoursesControllerTest extends TestCase
         $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
             [
                 'validate_student_registrations' => 0,
-                'educational_program_type_uid' => $educational_program_type->uid,
                 'description' => 'Porro et distinctio ab inventore sit',
                 'featured_big_carrousel_description' => 'Harum facilis consequatur aut nesciunt ut esse aliquid'
-                // 'course_status_uid' => $status->uid,
             ]
         )->first();
 
@@ -872,18 +727,11 @@ class ManagementCoursesControllerTest extends TestCase
         $this->app->instance(EmbeddingsService::class, $mockEmbeddingsService);
 
         // Convertir los tags a un JSON string
-        $tags = json_encode([]); // '["tag1","tag2"]'
-
-        // Asegúrate de que el JSON string sea válido
-        // if (json_last_error() !== JSON_ERROR_NONE) {
-        //     throw new Exception('Error en la conversión JSON');
-        // }
-
         $coursePayment = CoursesPaymentTermsModel::factory()->create([
             'course_uid' => $course->uid,
         ]);
 
-        $ct = CoursesTagsModel::factory()->count(3)->create([
+        CoursesTagsModel::factory()->count(3)->create([
             'course_uid' => $course->uid,
         ]);
 
@@ -898,7 +746,6 @@ class ManagementCoursesControllerTest extends TestCase
             'title' => $course->title,
             'description' => 'Porro et distinctio ab inventore sit',
             'course_type_uid' => $course->course_type_uid,
-            // 'course_status_uid' => $course->course_status_uid,
             'educational_program_type_uid' => $course->educational_program_type_uid,
             'realization_start_date' => "2024-06-10",
             'realization_finish_date' => "2024-08-20",
@@ -910,7 +757,7 @@ class ManagementCoursesControllerTest extends TestCase
             'inscription_finish_date' => "2024-05-10",
             'structure' => json_encode([
                 [
-                    'uid'             => generate_uuid(),
+                    'uid'             => generateUuid(),
                     'type'            => 'EVALUATION',
                     'name'            => 'name1',
                     'description'     => 'description1',
@@ -918,19 +765,19 @@ class ManagementCoursesControllerTest extends TestCase
                     'learningResults' => [$learning->uid],
                     'subBlocks' => [
                         [
-                            'uid'         => generate_uuid(),
+                            'uid'         => generateUuid(),
                             'name'        => 'subname1',
                             'description' => 'subdescription1',
                             'order'       => 1,
                             'elements'    => [
                                 [
-                                    'uid' => generate_uuid(),
+                                    'uid' => generateUuid(),
                                     'name'            => 'name1',
                                     'description'     => 'description1',
                                     'order'           => 1,
                                     'subElements' => [
                                         [
-                                            'uid' => generate_uuid(),
+                                            'uid' => generateUuid(),
                                             'name'            => 'name1',
                                             'description'     => 'description1',
                                             'order'           => 1,
@@ -944,7 +791,7 @@ class ManagementCoursesControllerTest extends TestCase
 
             ]),
             'categories' => json_encode([
-                generate_uuid()
+                generateUuid()
             ]),
             'tags' => json_encode([
                 'tag1',
@@ -962,8 +809,6 @@ class ManagementCoursesControllerTest extends TestCase
             ]),
 
             'contact_emails' => json_encode(['email1@email.com', 'email2@email.com']),
-
-            // 'tags' => $tags,
         ];
 
         $response = $this->postJson('/learning_objects/courses/save_course', $datos_course);
@@ -974,8 +819,6 @@ class ManagementCoursesControllerTest extends TestCase
 
         $this->assertDatabaseHas('courses',  [
             'creator_user_uid' => $user->uid,
-            // 'course_status_uid' => $status->uid,
-            // otros datos que quieras verificar
         ]);
     }
 
@@ -986,16 +829,16 @@ class ManagementCoursesControllerTest extends TestCase
 
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         Auth::login($user);
 
-        // $course_type =  CourseTypesModel::factory()->create()->first();
-        $educational_program_type = EducationalProgramTypesModel::factory()->create()->first();
-        $center = CentersModel::factory()->create()->first();
+        EducationalProgramTypesModel::factory()->create()->first();
 
-        $status = CourseStatusesModel::where('code', 'INTRODUCTION')->first();
+        $center = CentersModel::factory()->create()->first();
+        CourseStatusesModel::where('code', 'INTRODUCTION')->first();
+
 
         // Crear un mock para general_options
         $generalOptionsMock = [
@@ -1018,10 +861,9 @@ class ManagementCoursesControllerTest extends TestCase
         $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
             [
                 'validate_student_registrations' => 0,
-                'educational_program_type_uid' => $educational_program_type->uid,
+                // 'educational_program_type_uid' => $educational_program_type->uid,
                 'description' => 'Porro et distinctio ab inventore sit',
                 'featured_big_carrousel_description' => 'Harum facilis consequatur aut nesciunt ut esse aliquid'
-                // 'course_status_uid' => $status->uid,
             ]
         )->first();
 
@@ -1040,12 +882,12 @@ class ManagementCoursesControllerTest extends TestCase
         $coursePayment = CoursesPaymentTermsModel::factory()->create([
             'course_uid' => $course->uid,
         ]);
-        $ct = CoursesTagsModel::factory()->count(3)->create([
+
+        CoursesTagsModel::factory()->count(3)->create([
             'course_uid' => $course->uid,
         ]);
 
-        $learning = LearningResultsModel::factory()->withCompetence()->count(2)->create()->first();
-
+        LearningResultsModel::factory()->withCompetence()->count(2)->create()->first();
 
         // Validar error cuando  $previousFinishDate && $startDate < $previousFinishDate
         $datos_course = [
@@ -1066,7 +908,7 @@ class ManagementCoursesControllerTest extends TestCase
             'inscription_finish_date' => "2024-05-10",
             'structure' => json_encode([]),
             'categories' => json_encode([
-                generate_uuid()
+                generateUuid()
             ]),
             'tags' => json_encode([
                 'tag1',
@@ -1115,7 +957,7 @@ class ManagementCoursesControllerTest extends TestCase
             'inscription_finish_date' => "2024-05-10",
             'structure' => json_encode([]),
             'categories' => json_encode([
-                generate_uuid()
+                generateUuid()
             ]),
             'tags' => json_encode([
                 'tag1',
@@ -1145,7 +987,7 @@ class ManagementCoursesControllerTest extends TestCase
 
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         Auth::login($user);
@@ -1153,11 +995,11 @@ class ManagementCoursesControllerTest extends TestCase
         $educational_program_type = EducationalProgramTypesModel::factory()->create()->first();
         $center = CentersModel::factory()->create()->first();
 
-        $uidCourse = generate_uuid();
+        $uidCourse = generateUuid();
         $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
             'validate_student_registrations' => 0,
             'uid' => $uidCourse,
-            'educational_program_type_uid' => $educational_program_type->uid,
+            // 'educational_program_type_uid' => $educational_program_type->uid,
             'payment_mode' => 'INSTALLMENT_PAYMENT',
         ]);
 
@@ -1199,8 +1041,6 @@ class ManagementCoursesControllerTest extends TestCase
             'payment_mode' => 'INSTALLMENT_PAYMENT',
             'realization_start_date' => Carbon::now()->format('Y-m-d\TH:i'),
             'realization_finish_date' => Carbon::now()->addMonth()->format('Y-m-d\TH:i'),
-            // 'realization_start_date' => Carbon::now(),
-            // 'realization_finish_date' => Carbon::now()->addMonth(),
             'ects_workload' => 1,
             'center_uid' => $center->uid,
             'structure' => json_encode([]),
@@ -1218,7 +1058,7 @@ class ManagementCoursesControllerTest extends TestCase
             // otros datos que quieras verificar
         ]);
 
-        
+
         //:::::::::::::  Esta sección es para cubir linea 690  :::::::::::::::::::::::: ///
 
         $cert = CertidigitalCredentialsModel::factory()->create()->first();
@@ -1226,14 +1066,14 @@ class ManagementCoursesControllerTest extends TestCase
         $educational = EducationalProgramsModel::factory()->create(
             [
                 'educational_program_type_uid' => $educational_program_type->uid,
-                'certidigital_credential_uid'=> $cert->uid
+                'certidigital_credential_uid' => $cert->uid
             ]
         )->first();
 
         $course1 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
             'validate_student_registrations' => 0,
-            'uid' => generate_uuid(),
-            'educational_program_type_uid' => $educational_program_type->uid,
+            'uid' => generateUuid(),
+            // 'educational_program_type_uid' => $educational_program_type->uid,
             'payment_mode' => 'INSTALLMENT_PAYMENT',
             'educational_program_uid' => $educational->uid
         ]);
@@ -1249,8 +1089,6 @@ class ManagementCoursesControllerTest extends TestCase
             'payment_mode' => 'INSTALLMENT_PAYMENT',
             'realization_start_date' => Carbon::now()->format('Y-m-d\TH:i'),
             'realization_finish_date' => Carbon::now()->addMonth()->format('Y-m-d\TH:i'),
-            // 'realization_start_date' => Carbon::now(),
-            // 'realization_finish_date' => Carbon::now()->addMonth(),
             'ects_workload' => 1,
             'center_uid' => $center->uid,
             'structure' => json_encode([]),
@@ -1266,7 +1104,6 @@ class ManagementCoursesControllerTest extends TestCase
             'uid' => $course1->uid,
             // otros datos que quieras verificar
         ]);
-
     }
 
     public function testSaveCourseWithBelongsEducationalProgram()
@@ -1275,24 +1112,24 @@ class ManagementCoursesControllerTest extends TestCase
 
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         Auth::login($user);
 
-        $educational_program_type = EducationalProgramTypesModel::factory()->create()->first();
+        EducationalProgramTypesModel::factory()->create()->first();
+
         $center = CentersModel::factory()->create()->first();
 
         $course_status = CourseStatusesModel::where('code', 'INTRODUCTION')->first();
 
-        $uidCourse = generate_uuid();
+        $uidCourse = generateUuid();
 
 
         $course = CoursesModel::factory()->withCourseType()->create([
             'uid' => $uidCourse,
             'validate_student_registrations' => 0,
             'course_status_uid' => $course_status->uid,
-            'educational_program_type_uid' => $educational_program_type->uid,
             'payment_mode' => 'INSTALLMENT_PAYMENT',
         ]);
 
@@ -1334,8 +1171,6 @@ class ManagementCoursesControllerTest extends TestCase
             'payment_mode' => 'INSTALLMENT_PAYMENT',
             'realization_start_date' => Carbon::now()->format('Y-m-d\TH:i'),
             'realization_finish_date' => Carbon::now()->addMonth()->format('Y-m-d\TH:i'),
-            // 'realization_start_date' => Carbon::now(),
-            // 'realization_finish_date' => Carbon::now()->addMonth(),
             'ects_workload' => 1,
             'center_uid' => $center->uid,
             'structure' => json_encode([]),
@@ -1364,8 +1199,6 @@ class ManagementCoursesControllerTest extends TestCase
             'payment_mode' => 'INSTALLMENT_PAYMENT',
             'realization_start_date' => Carbon::now()->format('Y-m-d\TH:i'),
             'realization_finish_date' => Carbon::now()->addMonth()->format('Y-m-d\TH:i'),
-            // 'realization_start_date' => Carbon::now(),
-            // 'realization_finish_date' => Carbon::now()->addMonth(),
             'ects_workload' => 1,
             'center_uid' => $center->uid,
             'structure' => json_encode([]),
@@ -1386,12 +1219,13 @@ class ManagementCoursesControllerTest extends TestCase
 
         $role = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         Auth::login($user);
 
-        $educational_program_type = EducationalProgramTypesModel::factory()->create()->first();
+        EducationalProgramTypesModel::factory()->create()->first();
+
         $center = CentersModel::factory()->create()->first();
 
         $course_origin = CoursesModel::factory()->withCourseStatus()->withCourseType()->create();
@@ -1399,11 +1233,10 @@ class ManagementCoursesControllerTest extends TestCase
         $course_status = CourseStatusesModel::where('code', 'INTRODUCTION')->first();
 
 
-        $uidCourse = generate_uuid();
+        $uidCourse = generateUuid();
         $course = CoursesModel::factory()->withCourseType()->create([
             'validate_student_registrations' => 0,
             'uid'                            => $uidCourse,
-            'educational_program_type_uid'   => $educational_program_type->uid,
             'payment_mode'                   => 'INSTALLMENT_PAYMENT',
             'course_origin_uid'              => $course_origin->uid,
             'course_status_uid'              => $course_status->uid,
@@ -1493,7 +1326,6 @@ class ManagementCoursesControllerTest extends TestCase
 
         $course = CoursesModel::factory()->withCourseType()->create([
             'validate_student_registrations' => 0,
-            'educational_program_type_uid'   => $educational_program_type->uid,
             'course_status_uid'              => $course_status->uid,
         ]);
 
@@ -1537,7 +1369,7 @@ class ManagementCoursesControllerTest extends TestCase
 
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
             'categories' => json_encode([
-                generate_uuid()
+                generateUuid()
             ]),
             'structure' => json_encode([]),
 
@@ -1551,7 +1383,6 @@ class ManagementCoursesControllerTest extends TestCase
 
         $course = CoursesModel::factory()->withCourseType()->create([
             'validate_student_registrations' => 0,
-            'educational_program_type_uid'   => $educational_program_type->uid,
             'course_status_uid'              => $course_status->uid,
         ]);
 
@@ -1595,7 +1426,7 @@ class ManagementCoursesControllerTest extends TestCase
 
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
             'categories' => json_encode([
-                generate_uuid()
+                generateUuid()
             ]),
             'structure' => json_encode([]),
 
@@ -1612,12 +1443,13 @@ class ManagementCoursesControllerTest extends TestCase
 
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         Auth::login($user);
 
-        $educational_program_type = EducationalProgramTypesModel::factory()->create()->first();
+        EducationalProgramTypesModel::factory()->create()->first();
+
         $center = CentersModel::factory()->create()->first();
 
         $course_origin = CoursesModel::factory()->withCourseStatus()->withCourseType()->create();
@@ -1627,11 +1459,10 @@ class ManagementCoursesControllerTest extends TestCase
         $lms = LmsSystemsModel::factory()->create();
 
 
-        $uidCourse = generate_uuid();
+        $uidCourse = generateUuid();
         $course = CoursesModel::factory()->withCourseType()->create([
             'validate_student_registrations' => 0,
             'uid'                            => $uidCourse,
-            'educational_program_type_uid'   => $educational_program_type->uid,
             'payment_mode'                   => 'INSTALLMENT_PAYMENT',
             'course_origin_uid'              => $course_origin->uid,
             'course_status_uid'              => $course_status->uid,
@@ -1704,7 +1535,7 @@ class ManagementCoursesControllerTest extends TestCase
             ]),
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
             'categories' => json_encode([
-                generate_uuid()
+                generateUuid()
             ]),
             'structure' => json_encode([]),
 
@@ -1726,18 +1557,17 @@ class ManagementCoursesControllerTest extends TestCase
 
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         Auth::login($user);
 
         $center = CentersModel::factory()->create()->first();
+        EducationalProgramTypesModel::factory()->create()->first();
 
-        $educational_program_type = EducationalProgramTypesModel::factory()->create()->first();
 
         $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
             [
-                'educational_program_type_uid' => $educational_program_type->uid,
                 'validate_student_registrations' => 0,
             ]
         );
@@ -1811,12 +1641,12 @@ class ManagementCoursesControllerTest extends TestCase
             ]),
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
             'categories' => json_encode([
-                generate_uuid()
+                generateUuid()
             ]),
             'structure' => json_encode(
                 [
                     [
-                        'uid'             => generate_uuid(),
+                        'uid'             => generateUuid(),
                         'type'            => 'EVALUATION',
                         'name'            => 'name1',
                         'description'     => 'description1',
@@ -1886,7 +1716,7 @@ class ManagementCoursesControllerTest extends TestCase
             ]
         );
 
-        $coursePayment = CoursesPaymentTermsModel::factory()->create([
+        CoursesPaymentTermsModel::factory()->create([
             'course_uid' => $course->uid,
         ]);
 
@@ -1957,11 +1787,10 @@ class ManagementCoursesControllerTest extends TestCase
     public function testChangeStatusesCoursesSuccessfully()
     {
         // Simular los datos de entrada
-        $uid = generate_uuid();
 
         $userCreator = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $userCreator->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $userCreator->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($userCreator);
@@ -1981,7 +1810,6 @@ class ManagementCoursesControllerTest extends TestCase
         $changesCoursesStatuses = [
             [
                 'uid' => $course->uid,
-                // 'status' => 'ACCEPTED',
                 'status' => 'ACCEPTED_PUBLICATION',
                 'reason' => 'Test reason'
             ]
@@ -1998,11 +1826,11 @@ class ManagementCoursesControllerTest extends TestCase
         // Crear mocks del certificado
         $certidigitalServiceMock = $this->createMock(CertidigitalService::class);
 
-        // Create a mock for EmbeddingsService     
+        // Create a mock for EmbeddingsService
         $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
 
         // Instantiate ManagementCoursesController with the mocked services
-        $controller = new ManagementCoursesController($mockEmbeddingsService, $certidigitalServiceMock);
+        $controller = new CoursesController($mockEmbeddingsService, $certidigitalServiceMock);
         $response = $controller->changeStatusesCourses($request);
 
         // Verificar que la respuesta sea la esperada
@@ -2074,21 +1902,21 @@ class ManagementCoursesControllerTest extends TestCase
         // Asignar un rol específico al usuario (por ejemplo, el rol 'ADMINISTRATOR')
         $role = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         // Autenticar al usuario
         Auth::login($user);
 
         // Crear un curso válido
-        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
-            'uid' => generate_uuid(),
+        CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
+            'uid' => generateUuid(),
             'creator_user_uid' => $user->uid,
         ]);
 
         // Simular un cambio de estado para un curso que no existe
         $changesCoursesStatuses = [
-            ['uid' => generate_uuid(), 'status' => 'ACCEPTED_PUBLICATION', 'reason' => 'Approved for publication'],
+            ['uid' => generateUuid(), 'status' => 'ACCEPTED_PUBLICATION', 'reason' => 'Approved for publication'],
         ];
 
         // Crear mocks del certificado
@@ -2098,7 +1926,7 @@ class ManagementCoursesControllerTest extends TestCase
         $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
 
         // Instantiate ManagementCoursesController with the mocked service
-        $controller = new ManagementCoursesController($mockEmbeddingsService, $certidigitalServiceMock);
+        $controller = new CoursesController($mockEmbeddingsService, $certidigitalServiceMock);
 
         // Crear una instancia de la solicitud con los datos simulados
         $request = Request::create('/learning_objects/courses/change_statuses_courses', 'POST', [
@@ -2172,7 +2000,8 @@ class ManagementCoursesControllerTest extends TestCase
         ]);
 
         // Crear un estado "INTRODUCTION" para los cursos
-        $status = CourseStatusesModel::where('code', 'INTRODUCTION')->first();
+        CourseStatusesModel::where('code', 'INTRODUCTION')->first();
+
 
         // Hacer la solicitud POST a la ruta de duplicación
         $response = $this->postJson("/learning_objects/courses/duplicate_course/{$course->uid}", [
@@ -2191,69 +2020,7 @@ class ManagementCoursesControllerTest extends TestCase
         $this->assertDatabaseMissing('courses', [
             'title' => $course->title . " (copia)",
         ]);
-    }
-
-
-    public function testStatusCourseEdition()
-    {
-        // Crear un mock del modelo CourseStatusesModel
-        $mockStatus = Mockery::mock(CourseStatusesModel::class);
-        $mockStatus->shouldReceive('whereIn')
-            ->with('code', ['INTRODUCTION', 'ACCEPTED_PUBLICATION', 'PENDING_APPROVAL'])
-            ->andReturn(collect([
-                (object)['code' => 'INTRODUCTION'],
-                (object)['code' => 'ACCEPTED_PUBLICATION'],
-                (object)['code' => 'PENDING_APPROVAL'],
-            ]));
-
-        // Reemplazar el modelo en el contenedor de Laravel
-        $this->app->instance(CourseStatusesModel::class, $mockStatus);
-
-        // Crear un mock de la configuración general
-        app()->instance('general_options', ['necessary_approval_editions' => true]);
-
-        // Crear mocks de los certificado
-        $certidigitalServiceMock = $this->createMock(CertidigitalService::class);
-
-        // Create a mock for EmbeddingsService
-        $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
-
-        // Instantiate ManagementCoursesController with the mocked service
-        $controller = new ManagementCoursesController($mockEmbeddingsService, $certidigitalServiceMock);
-
-        // Use Reflection to access the private method applyFilters
-        $reflectionClass = new \ReflectionClass($controller);
-        $method = $reflectionClass->getMethod('statusCourseEdition');
-        $method->setAccessible(true);
-
-        $method2 = $reflectionClass->getMethod('statusCourseEdition');
-        //Todo: probar si funciona de esta forma o no. 
-        $method2->setAccessible(false);
-
-
-
-        // Caso 1: Acción "draft" sin estado actual
-        $course_bd = (object)['status' => null];
-        $result = $method->invokeArgs($controller, ['draft', $course_bd]);
-        $this->assertEquals('INTRODUCTION', $result->code);
-
-        // Caso 2: Acción "submit" con aprobación necesaria
-        $course_bd = (object)['status' => (object)['code' => 'INTRODUCTION']];
-        $result = $method->invokeArgs($controller, ['submit', $course_bd]);
-        $this->assertEquals('PENDING_APPROVAL', $result->code);
-
-        // Caso 3: Acción "submit" sin aprobación necesaria
-        app()->instance('general_options', ['necessary_approval_editions' => false]);
-        $result = $method->invokeArgs($controller, ['submit', $course_bd]);
-        $this->assertEquals('ACCEPTED_PUBLICATION', $result->code);
-
-        // Caso 4: Acción "update" sin aprobación necesaria
-
-        $course_bd = (object)['status' => (object)['code' => 'INTRODUCTION']];
-        $result = $method->invokeArgs($controller, ['update', $course_bd]);
-        // $this->assertEquals('null', $result->code);
-
-    }
+    }    
 
 
     // Cierra Mockery después de las pruebas
@@ -2266,10 +2033,10 @@ class ManagementCoursesControllerTest extends TestCase
     {
 
         // Crear tipos de programas educativos
-        $educational_programType1 = EducationalProgramTypesModel::factory()->create()->latest()->first();
+        EducationalProgramTypesModel::factory()->create()->latest()->first();
 
         $center1 = CentersModel::factory()->create([
-            'uid'  => generate_uuid(),
+            'uid'  => generateUuid(),
             'name' => 'Centro 1'
         ])->latest()->first();
 
@@ -2277,18 +2044,17 @@ class ManagementCoursesControllerTest extends TestCase
         $course_type1 = CourseTypesModel::factory()->create()->first();
 
         $teacher1 = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'TEACHER'], ['uid' => generate_uuid()]);
-        $teacher1->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'TEACHER'], ['uid' => generateUuid()]);
+        $teacher1->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Crear datos de prueba
         $course1 = CoursesModel::create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'center_uid' => $center1->uid,
             'title' => 'Curso 1',
             'description' => 'Description',
             'course_status_uid' => $coursestatuses1->uid,
-            'course_type_uid' => $course_type1->uid,
-            'educational_program_type_uid' => $educational_programType1->uid,
+            'course_type_uid' => $course_type1->uid,      
             'inscription_start_date' => Carbon::now()->format('Y-m-d\TH:i'),
             'inscription_finish_date' => Carbon::now()->addDays(29)->format('Y-m-d\TH:i'),
             'realization_start_date' => Carbon::now()->addDays(61)->format('Y-m-d\TH:i'),
@@ -2303,11 +2069,11 @@ class ManagementCoursesControllerTest extends TestCase
 
         $course1->update(['center_uid' => $center1->uid]);
 
-        $course1->teachers()->attach($teacher1, ['uid' => generate_uuid()]);
+        $course1->teachers()->attach($teacher1, ['uid' => generateUuid()]);
 
         $coordinator = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'TEACHER'], ['uid' => generate_uuid()]);
-        $coordinator->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'TEACHER'], ['uid' => generateUuid()]);
+        $coordinator->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Crear Coordinador de curso
         $existingCourseCoordinator = CoursesTeachersModel::where('course_uid', $course1->uid)
@@ -2317,12 +2083,12 @@ class ManagementCoursesControllerTest extends TestCase
         if (!$existingCourseCoordinator) {
             // Create a new course coordinator entry if it doesn't exist
             $coursecoordinator = CoursesTeachersModel::factory()->create([
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'course_uid' => $course1->uid,
                 'user_uid' => $coordinator->uid,
                 'type' => 'COORDINATOR'
             ])->first();
-            $course1->teachers()->attach($coursecoordinator->user_uid, ['uid' => generate_uuid()]);
+            $course1->teachers()->attach($coursecoordinator->user_uid, ['uid' => generateUuid()]);
         }
 
         // Crear No-Coordinador de curso
@@ -2333,17 +2099,17 @@ class ManagementCoursesControllerTest extends TestCase
         if (!$existingCourseNoCoordinator) {
             // Create a new course coordinator entry if it doesn't exist
             $coursenocoordinator = CoursesTeachersModel::factory()->create([
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'course_uid' => $course1->uid,
                 'user_uid' => $coordinator->uid,
                 'type' => 'COORDINATOR'
             ])->first();
-            $course1->teachers()->attach($coursenocoordinator->user_uid, ['uid' => generate_uuid()]);
+            $course1->teachers()->attach($coursenocoordinator->user_uid, ['uid' => generateUuid()]);
         }
 
 
         $category1 = CategoriesModel::factory()->create()->first();
-        $course1->categories()->attach($category1->uid, ['uid' => generate_uuid()]);
+        $course1->categories()->attach($category1->uid, ['uid' => generateUuid()]);
 
 
         $course1->update(['course_status_uid' => $coursestatuses1->uid]);
@@ -2360,20 +2126,20 @@ class ManagementCoursesControllerTest extends TestCase
         $course1->update(['course_type_uid' => $course_type1->uid]);
 
         // Crear un bloque y asociarlo con el curso
-        $block = BlocksModel::factory()->create(['uid' => generate_uuid(), 'course_uid' => $course1->uid]);
+        $block = BlocksModel::factory()->create(['uid' => generateUuid(), 'course_uid' => $course1->uid]);
 
         // Crear una competencia
         $competence = CompetencesModel::factory()->create()->latest()->first();
 
         // Asociar la competencia con el bloque
-        $block->competences()->attach($competence->uid, ['uid' => generate_uuid()]);
+        $block->competences()->attach($competence->uid, ['uid' => generateUuid()]);
 
         // Crear mocks de los servicios
         $embeddingsServiceMock = $this->createMock(EmbeddingsService::class);
         $certidigitalServiceMock = $this->createMock(CertidigitalService::class);
 
         // Instanciar el controlador con los mocks
-        $controller = new ManagementCoursesController($embeddingsServiceMock, $certidigitalServiceMock);
+        $controller = new CoursesController($embeddingsServiceMock, $certidigitalServiceMock);
 
         // Use Reflection to access the private method applyFilters
         $reflectionClass = new \ReflectionClass($controller);
@@ -2381,8 +2147,6 @@ class ManagementCoursesControllerTest extends TestCase
         $method->setAccessible(true);
 
         // Prepare any parameters needed for applyFilters
-        $parameters = ['exampleData']; // Adjust this based on what applyFilters expects
-
 
         $inscrip_date1 = Carbon::now()->format('Y-m-d\TH:i');
         $inscrip_date2 = Carbon::now()->addDays(30)->format('Y-m-d\TH:i');
@@ -2452,15 +2216,6 @@ class ManagementCoursesControllerTest extends TestCase
         $method->invokeArgs($controller, [$filterscall, &$query]);
         $this->assertNotEmpty($query->get());
 
-
-        // Caso 12: Filtrar por programas educativos
-        $filtersep = [['database_field' => 'educational_programs', 'value' => [$educational_program1->uid]]];
-        $query = CoursesModel::query();
-        $method->invokeArgs($controller, [$filtersep, &$query]);
-        $this->assertEmpty($query->get());
-
-
-
         // Caso 13: Filtrar por tipos de curso
         $filterstype = [['database_field' => 'course_types', 'value' => [$course_type1->uid]]];
         $query = CoursesModel::query();
@@ -2520,13 +2275,11 @@ class ManagementCoursesControllerTest extends TestCase
         $embeddings = [['database_field' => 'embeddings', 'value' => 1]];
         $query = CoursesModel::query();
         $method->invokeArgs($controller, [$embeddings, &$query]);
-        // $this->assertNotEmpty($query->get());
 
         // Caso 22: Filtrar por embeddings = 0
         $embeddings_0 = [['database_field' => 'embeddings', 'value' => 0]];
         $query = CoursesModel::query();
         $method->invokeArgs($controller, [$embeddings_0, &$query]);
-        // $this->assertNotEmpty($query->get());
 
         $center = [['database_field' => 'center', 'value' => 'prueba']];
         $query = CoursesModel::query();
@@ -2562,9 +2315,7 @@ class ManagementCoursesControllerTest extends TestCase
             ])
             ->first();
 
-        $course->students()->attach($student->uid, ['uid' => generate_uuid()]);
-
-        // dd($course->students);
+        $course->students()->attach($student->uid, ['uid' => generateUuid()]);
 
         $learningResult = LearningResultsModel::factory()->withCompetence()->create()->first();
 
@@ -2607,9 +2358,7 @@ class ManagementCoursesControllerTest extends TestCase
 
         // Verificar que las calificaciones y bloques de aprendizaje se obtienen correctamente
         $responseData = $response->json();
-        // $this->assertGreaterThan(0, count($responseData['coursesStudents']['data']));
         $this->assertGreaterThan(0, count($responseData['courseBlocks']));
-        // $this->assertGreaterThan(0, count($responseData['learningResults']));
     }
 
     /**
@@ -2642,7 +2391,7 @@ class ManagementCoursesControllerTest extends TestCase
             ->first();
 
         $educationalProgram->students()->attach($student->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'acceptance_status' => 'PENDING'
         ]);
 
@@ -2665,11 +2414,11 @@ class ManagementCoursesControllerTest extends TestCase
         )->first();
 
         $block->learningResults()->attach($learningResult->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
         ]);
 
         // Crear bloques y resultados de aprendizaje simulados
-        
+
         CoursesBlocksLearningResultsCalificationsModel::factory()->create(
             [
                 'user_uid' => $student->uid,
@@ -2708,9 +2457,7 @@ class ManagementCoursesControllerTest extends TestCase
 
         // Verificar que las calificaciones y bloques de aprendizaje se obtienen correctamente
         $responseData = $response->json();
-        // $this->assertGreaterThan(0, count($responseData['coursesStudents']['data']));
         $this->assertGreaterThan(0, count($responseData['courseBlocks']));
-        // $this->assertGreaterThan(0, count($responseData['learningResults']));
     }
 
 
@@ -2743,14 +2490,14 @@ class ManagementCoursesControllerTest extends TestCase
             $course->students()->attach(
                 $student->uid,
                 [
-                    'uid' => generate_uuid(),
+                    'uid' => generateUuid(),
                     'status' => 'ENROLLED',
                     'acceptance_status' => 'ACCEPTED',
                 ]
             );
 
             $course->categories()->attach($category->uid, [
-                'uid' => generate_uuid()
+                'uid' => generateUuid()
             ]);
         }
 
@@ -2773,9 +2520,9 @@ class ManagementCoursesControllerTest extends TestCase
         $this->assertGreaterThan(0, $responseData['median']);
     }
 
-    /** 
-     * @test 
-     * Simula la regeneración de embeddings para un curso específico 
+    /**
+     * @test
+     * Simula la regeneración de embeddings para un curso específico
      */
     public function testRegenerateEmbeddings()
     {
@@ -2797,10 +2544,6 @@ class ManagementCoursesControllerTest extends TestCase
         $mockEmbeddingsService->shouldReceive('getEmbedding')
             ->andReturn(array_fill(0, 1536, 0.1));
 
-        // Simular la llamada a generateEmbeddingForCourse para que use el mock de getEmbedding
-        //  $mockEmbeddingsService->shouldReceive('generateEmbeddingForCourse')
-        //      ->with($course)
-        //      ->andReturnTrue();
         // Simular la llamada a generateEmbeddingForCourse con cualquier instancia de CoursesModel
         $mockEmbeddingsService->shouldReceive('generateEmbeddingForCourse')
             ->with(Mockery::type(CoursesModel::class))
@@ -2824,8 +2567,8 @@ class ManagementCoursesControllerTest extends TestCase
     public function testAllCoursesForAdministrator()
     {
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]);
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generateUuid()]);
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -2848,8 +2591,8 @@ class ManagementCoursesControllerTest extends TestCase
     public function testCoursesForTeacher()
     {
         $teacher = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'TEACHER'], ['uid' => generate_uuid()]);
-        $teacher->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'TEACHER'], ['uid' => generateUuid()]);
+        $teacher->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($teacher);
@@ -2864,7 +2607,7 @@ class ManagementCoursesControllerTest extends TestCase
 
         // Suponiendo que el profesor está asignado a algunos cursos
         $course3 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(); // Curso creado por otro usuario
-        $course3->teachers_coordinate()->attach($teacher->uid, ['uid' => generate_uuid()]); // Asignar al profesor como coordinador
+        $course3->teachers_coordinate()->attach($teacher->uid, ['uid' => generateUuid()]); // Asignar al profesor como coordinador
 
         // Simular la solicitud
         $response = $this->postJson('/learning_objects/courses/get_courses');
@@ -2878,8 +2621,8 @@ class ManagementCoursesControllerTest extends TestCase
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]);
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -2905,8 +2648,8 @@ class ManagementCoursesControllerTest extends TestCase
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]);
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -2944,7 +2687,7 @@ class ManagementCoursesControllerTest extends TestCase
      */
     public function testGetCourseNotFound()
     {
-        $uuid = generate_uuid();
+        $uuid = generateUuid();
         $response = $this->get('/learning_objects/courses/get_course/' . $uuid);
 
         $response->assertStatus(406)
@@ -2989,7 +2732,7 @@ class ManagementCoursesControllerTest extends TestCase
             ]
         );
 
-        $element = ElementsModel::factory()->create(
+        ElementsModel::factory()->create(
             [
                 'subblock_uid' => $subBlock->uid,
                 'order'     => 1,
@@ -3005,32 +2748,6 @@ class ManagementCoursesControllerTest extends TestCase
                 'uid' => $course->uid,
             ]);
     }
-
-    /** @test Valida la carga ordenada de subniveles de bloques */
-    // public function testGetCourseLoadsOrderedSubLevels()
-    // {
-    //     // Crea un curso con relaciones complejas de bloques, subBlocks, elements y subElements
-    //     $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create();
-
-    //     // Agrega relaciones y estructura de subniveles
-    //     $block = $course->blocks()->create(['order' => 1]);
-    //     $subBlock = $block->subBlocks()->create(['order' => 1]);
-    //     $element = $subBlock->elements()->create(['order' => 1]);
-    //     $element->subElements()->create(['order' => 1]);
-
-    //     // Realiza la solicitud con el UID del curso
-    //     $response = $this->getJson("/learning_objects/courses/get_course/{$course->uid}");
-
-    //     // Verifica que la respuesta sea exitosa
-    //     $response->assertStatus(200);
-
-    //     // Comprueba que la estructura de datos esté presente y en el orden correcto
-    //     $response->assertJsonPath('blocks.0.order', 1);
-    //     $response->assertJsonPath('blocks.0.subBlocks.0.order', 1);
-    //     $response->assertJsonPath('blocks.0.subBlocks.0.elements.0.order', 1);
-    //     $response->assertJsonPath('blocks.0.subBlocks.0.elements.0.subElements.0.order', 1);
-    // }
-
 
     /**
      * @test Guarda las calificaciones correctamente.
@@ -3066,7 +2783,7 @@ class ManagementCoursesControllerTest extends TestCase
             ->withCompetence()
             ->create()->first();
 
-        $courseStudent = CoursesStudentsModel::factory()->create(
+        CoursesStudentsModel::factory()->create(
             [
                 'user_uid' => $user->uid,
                 'course_uid' => $course->uid
@@ -3135,546 +2852,5 @@ class ManagementCoursesControllerTest extends TestCase
                 "competence_framework_level_uid" => $learningResultCalification["levelUid"]
             ]);
         }
-    }
-
-
-    // public function testSendCredentials()
-    // {
-    //     // Mocking the certidigitalService
-    //     $mockCertidigitalService = Mockery::mock('App\Services\CertidigitalService');
-    //     $this->app->instance('App\Services\CertidigitalService', $mockCertidigitalService);
-
-    //     // Define what should happen when emissionCredentials is called
-    //     $mockCertidigitalService->shouldReceive('emissionCredentials')
-    //         ->once()
-    //         ->with('test-course-uid');
-
-    //     // Prepare a fake request with course_uid
-    //     $response = $this->postJson('/learning_objects/courses/send_credentials', [
-    //         'course_uid' => 'test-course-uid',
-    //     ]);
-
-    //     // Assert response status and structure
-    //     $response->assertStatus(200)
-    //              ->assertJson(['message' => 'Se han enviado las credenciales correctamente']);
-    // }
-
-
-    // featured_big_carrousel_image_path
-
-
-    /** @test Para el método sendCredentials cuando se envían credenciales correctamente. */
-    // public function testSendCredentialsSuccess()
-    // {
-    //     $user = UsersModel::factory()->create()->latest()->first();
-    //     $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);
-    //     $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
-
-    //     Auth::login($user);
-
-    //     $cert_creadential = CertidigitalCredentialsModel::factory()->create()->first();
-
-    //     $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
-    //         [
-    //             'certidigital_credential_uid'=> $cert_creadential->uid,                
-    //         ]
-    //     ); 
-
-    //     $course->students()->attach($user->uid,[
-    //         'uid'=>generate_uuid(),
-    //     ]);
-
-
-    //     $block = BlocksModel::factory()->create(
-    //         [
-    //             'course_uid'=>$course->uid
-    //         ]
-    //     ); 
-
-    //     $learningResult= LearningResultsModel::factory()->withCompetence()->create();
-
-    //     $block->learningResults()->attach($learningResult->uid,[
-    //         'uid' => generate_uuid()
-    //     ]);   
-
-
-    //     $cert_assements = CertidigitalAssesmentsModel::factory()->create(
-    //         [
-    //             'learning_result_uid'=> $learningResult->uid,
-    //             'course_uid'=> $course->uid,
-    //             // 'certidigital_credential_uid' => $cert_creadential->uid,
-    //             'course_block_uid' => $block->uid
-    //         ]
-    //     );
-
-    //     // Arrange: Mock de datos
-
-    //     $mockRequest = [
-    //         'course_uid' => [$course->uid],
-    //     ];
-
-    //     // Mock del modelo y servicio
-    //     $certidigitalServiceMock = $this->createMock(CertidigitalService::class);
-    //     $certidigitalServiceMock->expects($this->once())
-    //         ->method('emissionCredentials')
-    //         ->with($course->uid);
-
-    //     $this->app->instance(CertidigitalService::class, $certidigitalServiceMock);
-
-    //     // Act: Realizar la solicitud
-    //     $response = $this->postJson(route('send-credentials'), $mockRequest);
-
-    //     // Assert: Validar respuesta
-    //     $response->assertStatus(200)
-    //         ->assertJson(['message' => 'Se han enviado las credenciales correctamente']);
-    // }
-
-
-    public function testSendCredentialsManagementCourses()
-    {
-        // Simulando autenticación del usuario
-        $user = UsersModel::factory()->create();
-
-        $roles = UserRolesModel::where('code', 'MANAGEMENT')->first();
-
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
-
-        $this->actingAs($user);
-
-        // Crear un mock para general_options
-        $generalOptionsMock = [
-            'operation_by_calls' => false, // O false, según lo que necesites para la prueba
-            'necessary_approval_editions' => true,
-            'some_option_array' => [], // Asegúrate de que esto sea un array'
-            'certidigital_url'              => env('CERTIDIGITAL_URL'),
-            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
-            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
-            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
-            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
-            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
-            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
-            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
-        ];
-
-        app()->instance('general_options', $generalOptionsMock);
-
-        $cert_creadential = CertidigitalCredentialsModel::factory()->create()->first();
-
-        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
-            [
-                'certidigital_credential_uid'=> $cert_creadential->uid,      
-            ]
-        )->first();
-
-        $course->students()->attach($user->uid, [
-            'uid' => generate_uuid(),
-        ]);
-
-        $block = BlocksModel::factory()->create(
-            [
-                'course_uid' => $course->uid
-            ]
-        );
-
-        $learningResult = LearningResultsModel::factory()->withCompetence()->create();
-
-        $block->learningResults()->attach($learningResult->uid, [
-            'uid' => generate_uuid()
-        ]);
-
-
-        $cert_assements = CertidigitalAssesmentsModel::factory()->create(
-            [
-                'learning_result_uid' => $learningResult->uid,
-                'course_uid' => $course->uid,
-                // 'certidigital_credential_uid' => $cert_creadential->uid,
-                'course_block_uid' => $block->uid
-            ]
-        );
-
-        $data = [
-            'course_uid' => [$course->uid],
-            'students_uids' => $user->uid
-        ];
-
-        $response = $this->postJson('/learning_objects/courses/send_credentials',$data)
-        ->assertJson(['message' => 'Credenciales enviadas correctamente']);
-    }
-
-
-
-
-    public function testEmitAllCredentialsManagementCoursesManagement()
-    {
-
-        // Simulando autenticación del usuario
-        $user = UsersModel::factory()->create();
-
-        $roles = UserRolesModel::where('code', 'MANAGEMENT')->first();
-
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
-
-        $this->actingAs($user);
-
-        // Crear un mock para general_options
-        $generalOptionsMock = [
-            'operation_by_calls' => false, // O false, según lo que necesites para la prueba
-            'necessary_approval_editions' => true,
-            'some_option_array' => [], // Asegúrate de que esto sea un array'
-            'certidigital_url'              => env('CERTIDIGITAL_URL'),
-            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
-            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
-            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
-            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
-            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
-            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
-            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
-        ];
-
-        app()->instance('general_options', $generalOptionsMock);
-
-        $educationalType = EducationalProgramTypesModel::factory()->create()->first();
-
-        $cert = CertidigitalCredentialsModel::factory()->create()->first();
-
-
-        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
-            [
-                'educational_program_type_uid' => $educationalType->uid,
-                'certidigital_credential_uid' => $cert->uid
-            ]
-        )->first();
-
-
-        CertidigitalAssesmentsModel::factory()->create(
-            [
-                'course_uid' => $course->uid
-            ]
-        );
-
-        $course->students()->attach($user->uid, [
-            'uid' => generate_uuid(),
-        ]);
-
-        $response = $this->postJson(
-            '/learning_objects/courses/emit_all_credentials',
-            [
-                'course_uid' => $course->uid
-            ]
-        );
-
-        $response->assertStatus(200);
-        $response->assertJson([
-            'message' => 'Credenciales emitidas correctamente',
-        ]);
-    }
-
-    public function testEmitAllCredentialsManagementCoursesTeacher()
-    {
-
-        // Simulando autenticación del usuario
-        $user = UsersModel::factory()->create();
-
-        $roles = UserRolesModel::where('code', 'TEACHER')->first();
-
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
-
-        $this->actingAs($user);
-
-        // Crear un mock para general_options
-        $generalOptionsMock = [
-            'operation_by_calls' => false, // O false, según lo que necesites para la prueba
-            'necessary_approval_editions' => true,
-            'some_option_array' => [], // Asegúrate de que esto sea un array'
-            'certidigital_url'              => env('CERTIDIGITAL_URL'),
-            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
-            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
-            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
-            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
-            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
-            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
-            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
-        ];
-
-        app()->instance('general_options', $generalOptionsMock);
-
-        $educationalType = EducationalProgramTypesModel::factory()->create(
-            [
-                'managers_can_emit_credentials' => 0,
-                'teachers_can_emit_credentials' => 1,
-            ]
-        )->first();
-
-        $cert = CertidigitalCredentialsModel::factory()->create()->first();
-
-
-        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
-            [
-                'educational_program_type_uid' => $educationalType->uid,
-                'certidigital_credential_uid' => $cert->uid
-            ]
-        )->first();
-
-        CertidigitalAssesmentsModel::factory()->create(
-            [
-                'course_uid' => $course->uid
-            ]
-        );
-
-        $course->students()->attach($user->uid, [
-            'uid' => generate_uuid(),
-        ]);
-
-        $response = $this->postJson(
-            '/learning_objects/courses/emit_all_credentials',
-            [
-                'course_uid' => $course->uid
-            ]
-        );
-
-        $response->assertStatus(200);
-        $response->assertJson([
-            'message' => 'Credenciales emitidas correctamente',
-        ]);
-    }
-
-    public function testEmitAllCredentialsManagementCoursesWithFail()
-    {
-
-        // Simulando autenticación del usuario
-        $user = UsersModel::factory()->create();
-
-        $roles = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
-
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
-
-        $this->actingAs($user);
-
-
-        $educationalType = EducationalProgramTypesModel::factory()->create(
-            [
-                'managers_can_emit_credentials' => 0,
-                'teachers_can_emit_credentials' => 1,
-            ]
-        )->first();
-
-        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
-            [
-                'educational_program_type_uid' => $educationalType->uid,
-            ]
-        )->first();
-
-        $course->students()->attach($user->uid, [
-            'uid' => generate_uuid(),
-        ]);
-
-        $response = $this->postJson(
-            '/learning_objects/courses/emit_all_credentials',
-            [
-                'course_uid' => $course->uid
-            ]
-        );
-
-        $response->assertStatus(422);
-        $response->assertJson([
-            'message' => 'No tienes permisos para emitir credenciales en este curso',
-        ]);
-    }
-
-    public function testEmitCredentialsManagementCourses()
-    {
-
-        // Simulando autenticación del usuario
-        $user = UsersModel::factory()->create();
-
-        $roles = UserRolesModel::where('code', 'TEACHER')->first();
-
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
-
-        $this->actingAs($user);
-
-        // Crear un mock para general_options
-        $generalOptionsMock = [
-            'operation_by_calls' => false, // O false, según lo que necesites para la prueba
-            'necessary_approval_editions' => true,
-            'some_option_array' => [], // Asegúrate de que esto sea un array'
-            'certidigital_url'              => env('CERTIDIGITAL_URL'),
-            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
-            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
-            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
-            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
-            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
-            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
-            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
-        ];
-
-        app()->instance('general_options', $generalOptionsMock);
-
-        $educationalType = EducationalProgramTypesModel::factory()->create(
-            [
-                'managers_can_emit_credentials' => 0,
-                'teachers_can_emit_credentials' => 1,
-            ]
-        )->first();
-
-        $cert = CertidigitalCredentialsModel::factory()->create()->first();
-
-
-        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
-            [
-                'educational_program_type_uid' => $educationalType->uid,
-                'certidigital_credential_uid' => $cert->uid
-            ]
-        )->first();
-
-        CertidigitalAssesmentsModel::factory()->create(
-            [
-                'course_uid' => $course->uid
-            ]
-        );
-
-        $course->students()->attach($user->uid, [
-            'uid' => generate_uuid(),
-            // 'emissions_block_uuid' => $cert->uid
-        ]);
-
-        $data = [
-            'course_uid' => $course->uid,
-            'students_uids' => [$user->uid],
-        ];
-
-
-        $response = $this->postJson(
-            '/learning_objects/courses/emit_credentials',
-            $data
-        );
-
-        $response->assertStatus(200);
-        $response->assertJson([
-            'message' => 'Credenciales emitidas correctamente',
-        ]);
-    }
-
-    public function testEmitCredentialsManagementCoursesWithFail()
-    {
-
-        // Simulando autenticación del usuario
-        $user = UsersModel::factory()->create();
-
-        $roles = UserRolesModel::where('code', 'TEACHER')->first();
-
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
-
-        $this->actingAs($user);
-
-
-
-        $educationalType = EducationalProgramTypesModel::factory()->create(
-            [
-                'managers_can_emit_credentials' => 0,
-                'teachers_can_emit_credentials' => 1,
-            ]
-        )->first();
-
-        $cert = CertidigitalCredentialsModel::factory()->create()->first();
-
-
-        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
-            [
-                'educational_program_type_uid' => $educationalType->uid,
-                'certidigital_credential_uid' => $cert->uid
-            ]
-        )->first();
-
-        CertidigitalAssesmentsModel::factory()->create(
-            [
-                'course_uid' => $course->uid
-            ]
-        );
-
-        $course->students()->attach($user->uid, [
-            'uid' => generate_uuid(),
-            'emissions_block_uuid' => $cert->uid
-        ]);
-
-        $data = [
-            'course_uid' => $course->uid,
-            'students_uids' => [$user->uid],
-        ];
-
-
-        $response = $this->postJson(
-            '/learning_objects/courses/emit_credentials',
-            $data
-        );
-
-        $response->assertStatus(422);
-        $response->assertJson([
-            'message' => 'No se pueden emitir credenciales porque alguno de los alumnos ya tiene credenciales emitidas',
-        ]);
-    }
-
-    public function testSealCredentialsManagementCourses()
-    {
-
-        // Simulando autenticación del usuario
-        $user = UsersModel::factory()->create();
-
-        $roles = UserRolesModel::where('code', 'TEACHER')->first();
-
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
-
-        $this->actingAs($user);
-
-        // Crear un mock para general_options
-        $generalOptionsMock = [
-            'operation_by_calls' => false, // O false, según lo que necesites para la prueba
-            'necessary_approval_editions' => true,
-            'some_option_array' => [], // Asegúrate de que esto sea un array'
-            'certidigital_url'              => env('CERTIDIGITAL_URL'),
-            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
-            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
-            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
-            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
-            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
-            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
-            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
-        ];
-
-        app()->instance('general_options', $generalOptionsMock);      
-
-        $cert = CertidigitalCredentialsModel::factory()->create()->first();
-
-        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
-            [
-                'certidigital_credential_uid' => $cert->uid
-            ]
-        )->first();
-
-        CertidigitalAssesmentsModel::factory()->create(
-            [
-                'course_uid' => $course->uid
-            ]
-        );
-
-        $course->students()->attach($user->uid, [
-            'uid' => generate_uuid(),
-        ]);
-
-        $data = [
-            'course_uid' => $course->uid,
-            'students_uids' => [$user->uid],
-        ];
-
-
-        $response = $this->postJson(
-            '/learning_objects/courses/seal_credentials',
-            $data
-        );
-
-        $response->assertStatus(200);
-        $response->assertJson([
-            'message' => 'Credenciales selladas correctamente',
-        ]);
     }
 }

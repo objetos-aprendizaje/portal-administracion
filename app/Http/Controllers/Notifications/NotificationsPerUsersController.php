@@ -17,7 +17,7 @@ class NotificationsPerUsersController extends BaseController
     public function index()
     {
 
-        $notifications_per_users = NotificationsPerUsersModel::get()->toArray();
+        $notificationsPerUsers = NotificationsPerUsersModel::get()->toArray();
         return view(
             'notifications.notifications_per_users.index',
             [
@@ -26,7 +26,7 @@ class NotificationsPerUsersController extends BaseController
                 "resources" => [
                     "resources/js/notifications_module/notifications_per_users.js"
                 ],
-                "notifications_per_users" => $notifications_per_users,
+                "notifications_per_users" => $notificationsPerUsers,
                 "tabulator" => true,
                 "submenuselected" => "notifications-per-users",
             ]
@@ -60,14 +60,14 @@ class NotificationsPerUsersController extends BaseController
 
         return response()->json($data, 200);
     }
-    public function getNotificationsPerUser($user_uid, Request $request)
+    public function getNotificationsPerUser($userUid, Request $request)
     {
 
         $size = $request->get('size', 1);
         $search = $request->get('search');
         $sort = $request->get('sort');
 
-        $query = UsersModel::where('users.uid', $user_uid)
+        $query = UsersModel::where('users.uid', $userUid)
             ->with(['notifications']);
 
         $query = $query->first();

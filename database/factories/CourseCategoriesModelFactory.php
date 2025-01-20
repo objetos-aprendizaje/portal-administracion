@@ -14,7 +14,7 @@ class CourseCategoriesModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'created_at' => Carbon::now()->format('Y-m-d\TH:i'),
             'updated_at' => Carbon::now()->format('Y-m-d\TH:i'),
         ];

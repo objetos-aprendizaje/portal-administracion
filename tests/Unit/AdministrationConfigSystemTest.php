@@ -134,7 +134,7 @@ class AdministrationConfigSystemTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -173,7 +173,7 @@ class AdministrationConfigSystemTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -201,7 +201,7 @@ class AdministrationConfigSystemTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -232,8 +232,8 @@ class AdministrationConfigSystemTest extends TestCase
 
         // Crear un usuario de prueba y asignar roles
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]);// Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -307,8 +307,8 @@ class AdministrationConfigSystemTest extends TestCase
     {
         // Crear un usuario de prueba y asignar roles
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]);// Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -352,7 +352,7 @@ class AdministrationConfigSystemTest extends TestCase
 
         // Simular datos válidos
         $data = [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'payment_gateway' => 'gateway_test',
             'redsys_commerce_code' => '123456',
             'redsys_terminal' => '1',
@@ -373,9 +373,16 @@ class AdministrationConfigSystemTest extends TestCase
     /** @test */
     public function testReturnsErrorWhenValidationFails()
     {
+
+        $admin = UsersModel::factory()->create();
+        $this->actingAs($admin);
+
+        Auth::login($admin);
+
         // Simular datos inválidos
         $data = [
-            'payment_gateway' => 'gateway_test',
+            // 'payment_gateway' => 'gateway_test',
+           'payment_gateway'=> 1,
             // Falta redsys_commerce_code
             'redsys_terminal' => '1',
             'redsys_currency' => '',

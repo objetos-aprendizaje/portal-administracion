@@ -82,7 +82,7 @@ class EducationalResourcesSeeder extends Seeder
             $resourceWay =  $this->faker->randomElement(['URL', 'FILE', 'IMAGE', 'PDF', 'VIDEO', 'AUDIO']);
 
             $data = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'title' => $educationalResource['title'],
                 'description' => $educationalResource['description'],
                 'image_path' => $this->demoImages[array_rand($this->demoImages)],
@@ -95,13 +95,13 @@ class EducationalResourcesSeeder extends Seeder
 
             if (in_array($resourceWay, ["FILE", "IMAGE"])) {
                 $data['resource_path'] = $this->demoImages[array_rand($this->demoImages)];
-            } else if ($resourceWay == "URL") {
+            } elseif ($resourceWay == "URL") {
                 $data['resource_url'] = $this->faker->url();
-            } else if ($resourceWay == "PDF") {
+            } elseif ($resourceWay == "PDF") {
                 $data['resource_path'] = $this->demoPdfs[array_rand($this->demoPdfs)];
-            } else if ($resourceWay == "VIDEO") {
+            } elseif ($resourceWay == "VIDEO") {
                 $data['resource_path'] = $this->demoVideos[array_rand($this->demoVideos)];
-            } else if ($resourceWay == "AUDIO") {
+            } elseif ($resourceWay == "AUDIO") {
                 $data['resource_path'] = $this->demoAudios[array_rand($this->demoAudios)];
             }
 
@@ -117,12 +117,12 @@ class EducationalResourcesSeeder extends Seeder
         $csv = readCsv('database/seeders/dataset_learning_objects.csv');
 
         // Filtrar los recursos que se encuentran entre las posiciones start y end
-        $learningObjects = array_slice($csv, $start, $end);
-        return $learningObjects;
+        return array_slice($csv, $start, $end);
+    
     }
 
     private function addAccesses($uid){
-        foreach ($this->students as $index => $student) {
+        foreach ($this->students as  $student) {
             $accesses = rand(1, 100);
             for ($i = 0; $i < $accesses; $i++) {
                 EducationalResourcesAccesesModel::factory()->create([
@@ -134,7 +134,7 @@ class EducationalResourcesSeeder extends Seeder
         }
     }
     private function addVisits($uid){
-        foreach ($this->students as $index => $student) {
+        foreach ($this->students as $student) {
             $accesses = rand(1, 100);
             for ($i = 0; $i < $accesses; $i++) {
                 EducationalResourcesAccesesModel::factory()->create([

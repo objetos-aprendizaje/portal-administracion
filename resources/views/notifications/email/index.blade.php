@@ -5,7 +5,7 @@
 
         <div class="title-filter flex items-center mb-[26px]">
             <span>Listado de notificaciones por email</span>
-            <button id="filter-notification-email-btn" class="btn-filter">{{ e_heroicon('adjustments-horizontal', 'outline') }}</button>
+            <button id="filter-notification-email-btn" class="btn-filter">{{ eHeroicon('adjustments-horizontal', 'outline') }}</button>
         </div>
 
 
@@ -15,9 +15,9 @@
 
             <div>
                 <button id="add-notification-email-btn" type="button"
-                    class="btn btn-icon mb-4" title="Añadir notificación por email">{{ e_heroicon('plus', 'outline') }}</button>
+                    class="btn btn-icon mb-4" title="Añadir notificación por email">{{ eHeroicon('plus', 'outline') }}</button>
                 <button id="delete-notification-email-btn" type="button"
-                    class="btn btn-icon mb-4" title="Eliminar notificación por email">{{ e_heroicon('trash', 'outline') }}</button>
+                    class="btn btn-icon mb-4" title="Eliminar notificación por email">{{ eHeroicon('trash', 'outline') }}</button>
             </div>
 
         </div>

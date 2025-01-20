@@ -25,7 +25,9 @@ class CallsController extends BaseController
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            if (!$this->checkAccessCalls() || !$this->checkManagersAccessCalls()) abort(403);
+            if (!$this->checkAccessCalls() || !$this->checkManagersAccessCalls()) {
+                abort(403);
+            }
             return $next($request);
         })->except('index');
     }
@@ -55,7 +57,7 @@ class CallsController extends BaseController
             ]);
         }
 
-        $educational_program_types = EducationalProgramTypesModel::all()->toArray();
+        $educationalProgramTypes = EducationalProgramTypesModel::all()->toArray();
 
         return view(
             'management.calls.index',
@@ -65,7 +67,7 @@ class CallsController extends BaseController
                 "resources" => [
                     "resources/js/management_module/calls.js"
                 ],
-                "educational_program_types" => $educational_program_types,
+                "educational_program_types" => $educationalProgramTypes,
                 "tomselect" => true,
                 "tabulator" => true,
                 "submenuselected" => "management-calls",
@@ -77,12 +79,12 @@ class CallsController extends BaseController
     /**
      * Obtiene una convocatoria específica basada en su UID.
      *
-     * @param  string $call_uid El UID de la convocatoria.
+     * @param  string $callUid El UID de la convocatoria.
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getCall($call_uid)
+    public function getCall($callUid)
     {
-        $call = CallsModel::where('uid', $call_uid)->with('educationalProgramTypes')->first()->toArray();
+        $call = CallsModel::where('uid', $callUid)->with('educationalProgramTypes')->first()->toArray();
         return response()->json($call);
     }
 
@@ -115,9 +117,7 @@ class CallsController extends BaseController
 
         $validator = Validator::make($request->all(), $rules, $messages);
 
-        $errorsValidator = $validator->errors();
-
-        return $errorsValidator;
+        return $validator->errors();
     }
 
     /**
@@ -128,15 +128,15 @@ class CallsController extends BaseController
      */
     public function saveCall(Request $request)
     {
-        $call_uid = $request->input("call_uid");
+        $callUid = $request->input("call_uid");
 
-        if (!$call_uid) {
+        if (!$callUid) {
             $call = new CallsModel();
-            $call_uid = generate_uuid();
-            $call->uid = $call_uid;
+            $callUid = generateUuid();
+            $call->uid = $callUid;
             $isNew = true;
         } else {
-            $call = CallsModel::find($call_uid);
+            $call = CallsModel::find($callUid);
             $isNew = false;
         }
 
@@ -178,21 +178,21 @@ class CallsController extends BaseController
 
     private function handleEducationalProgramTypes($request, $call, $isNew)
     {
-        $educational_programs_types_associated = $request->input('program_types');
+        $educationalProgramsTypesAssociated = $request->input('program_types');
 
         if ($isNew) {
-            foreach ($educational_programs_types_associated as $program_type) {
+            foreach ($educationalProgramsTypesAssociated as $programType) {
                 CallsEducationalProgramTypesModel::create([
-                    "uid" => generate_uuid(),
+                    "uid" => generateUuid(),
                     "call_uid" => $call->uid,
-                    "educational_program_type_uid" => $program_type
+                    "educational_program_type_uid" => $programType
                 ]);
             }
         } else {
             $syncData = [];
-            if (!empty($educational_programs_types_associated)) {
-                foreach ($educational_programs_types_associated as $program_type) {
-                    $syncData[$program_type] = ['uid' => generate_uuid()];
+            if (!empty($educationalProgramsTypesAssociated)) {
+                foreach ($educationalProgramsTypesAssociated as $programType) {
+                    $syncData[$programType] = ['uid' => generateUuid()];
                 }
             }
             $call->educationalProgramTypes()->sync($syncData);
@@ -207,23 +207,23 @@ class CallsController extends BaseController
     /**
      * Elimina una convocatoria específica.
      *
-     * @param  string $call_uid El UID de la convocatoria.
+     * @param  string $callUid El UID de la convocatoria.
      * @return \Illuminate\Http\JsonResponse
      */
     public function deleteCalls(Request $request)
     {
-        $uids_calls = $request->input('uids');
+        $uidsCalls = $request->input('uids');
 
         // Comprobamos si hay convocatorias asociadas a los programas formativos
-        $exist_courses = CoursesModel::whereIn('call_uid', $uids_calls)->exists();
-        $exist_educational_programs = EducationalProgramsModel::whereIn('call_uid', $uids_calls)->exists();
+        $existCourses = CoursesModel::whereIn('call_uid', $uidsCalls)->exists();
+        $existEducationalPrograms = EducationalProgramsModel::whereIn('call_uid', $uidsCalls)->exists();
 
-        if ($exist_courses || $exist_educational_programs) {
+        if ($existCourses || $existEducationalPrograms) {
             return response()->json(['message' => 'No se pueden eliminar las convocatorias porque están asociadas a cursos o programas formativos.'], 422);
         }
 
-        DB::transaction(function () use ($uids_calls) {
-            CallsModel::destroy($uids_calls);
+        DB::transaction(function () use ($uidsCalls) {
+            CallsModel::destroy($uidsCalls);
             LogsController::createLog('Eliminar convocatoria', 'Convocatorias', auth()->user()->uid);
         });
 
@@ -262,9 +262,11 @@ class CallsController extends BaseController
     // Comprueba si las convocatorias están activadas a nivel general
     private function checkAccessCalls()
     {
-        $general_options = app('general_options');
+        $generalOptions = app('general_options');
 
-        if (!$general_options['operation_by_calls']) return false;
+        if (!$generalOptions['operation_by_calls']) {
+            return false;
+        }
 
         return true;
     }
@@ -274,12 +276,12 @@ class CallsController extends BaseController
     {
         $user = Auth::user();
 
-        $roles_user = $user->roles->pluck('code')->toArray();
+        $rolesUser = $user->roles->pluck('code')->toArray();
 
-        $general_options = app('general_options');
+        $generalOptions = app('general_options');
 
         // Aplicable si sólo tiene el rol de gestor
-        if (empty(array_diff($roles_user, ['MANAGEMENT'])) && !$general_options['managers_can_manage_calls']) {
+        if (empty(array_diff($rolesUser, ['MANAGEMENT'])) && !$generalOptions['managers_can_manage_calls']) {
             return false;
         }
 

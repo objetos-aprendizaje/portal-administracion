@@ -32,8 +32,8 @@ class CertidigitalConfigurationTest extends TestCase
     public function testIndexRouteReturnsViewCertidigitalConfiguration()
     {
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);

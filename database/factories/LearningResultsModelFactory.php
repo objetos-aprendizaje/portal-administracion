@@ -19,7 +19,7 @@ class LearningResultsModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => $this->faker->unique()->sentence(3),
             'description' => $this->faker->paragraph(2),
             'origin_code' => $this->faker->url(),
@@ -30,7 +30,7 @@ class LearningResultsModelFactory extends Factory
 
     public function withCompetence(): Factory
     {
-        return $this->state(function (array $attributes) {
+        return $this->state(function () {
             return [
                 'competence_uid' => CompetencesModel::factory()->create()->first(),
             ];

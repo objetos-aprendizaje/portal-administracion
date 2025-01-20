@@ -48,12 +48,12 @@ class EducationalProgramsController extends BaseController
     {
 
         $calls = CallsModel::all()->toArray();
-        $educational_program_types = EducationalProgramTypesModel::all()->toArray();
+        $educationalProgramTypes = EducationalProgramTypesModel::all()->toArray();
         $categories = CategoriesModel::with('parentCategory')->get();
 
         $rolesUser = Auth::user()['roles']->pluck("code")->toArray();
 
-        $variables_js = [
+        $variablesJs = [
             "frontUrl" => env('FRONT_URL'),
             "rolesUser" => $rolesUser
         ];
@@ -68,11 +68,11 @@ class EducationalProgramsController extends BaseController
                 ],
                 "tabulator" => true,
                 "calls" => $calls,
-                "educational_program_types" => $educational_program_types,
+                "educational_program_types" => $educationalProgramTypes,
                 "tomselect" => true,
                 "categories" => $categories,
                 "coloris" => true,
-                "variables_js" => $variables_js,
+                "variables_js" => $variablesJs,
                 "submenuselected" => "learning-objects-educational-programs",
             ]
         );
@@ -184,7 +184,7 @@ class EducationalProgramsController extends BaseController
 
         if ($educationalProgramType->managers_can_emit_credentials && in_array('MANAGEMENT', $userRoles)) {
             return;
-        } else if ($educationalProgramType->teachers_can_emit_credentials && in_array('TEACHER', $userRoles)) {
+        } elseif ($educationalProgramType->teachers_can_emit_credentials && in_array('TEACHER', $userRoles)) {
             return;
         }
 
@@ -228,9 +228,11 @@ class EducationalProgramsController extends BaseController
 
         if ($action === "submit" && (!$actualStatusEducationalProgram || $actualStatusEducationalProgram === "INTRODUCTION")) {
             return $statuses['ACCEPTED_PUBLICATION'];
-        } else if ($action === "draft" && (!$actualStatusEducationalProgram || $actualStatusEducationalProgram === "INTRODUCTION")) {
+        } elseif ($action === "draft" && (!$actualStatusEducationalProgram || $actualStatusEducationalProgram === "INTRODUCTION")) {
             return $statuses['INTRODUCTION'];
-        } else return null;
+        } else {
+            return null;
+        }
     }
 
     private function statusEducationalProgramUserTeacher($action, $actualStatusCourse)
@@ -246,14 +248,16 @@ class EducationalProgramsController extends BaseController
         if ($action === "submit") {
             if (!$actualStatusCourse || $actualStatusCourse === "INTRODUCTION") {
                 return $statuses['PENDING_APPROVAL'];
-            } else if ($actualStatusCourse === "UNDER_CORRECTION_APPROVAL") {
+            } elseif ($actualStatusCourse === "UNDER_CORRECTION_APPROVAL") {
                 return $statuses['PENDING_APPROVAL'];
-            } else if ($actualStatusCourse === "UNDER_CORRECTION_PUBLICATION") {
+            } elseif ($actualStatusCourse === "UNDER_CORRECTION_PUBLICATION") {
                 return $statuses['PENDING_PUBLICATION'];
             }
-        } else if ($action === "draft" && (!$actualStatusCourse || $actualStatusCourse === "INTRODUCTION")) {
+        } elseif ($action === "draft" && (!$actualStatusCourse || $actualStatusCourse === "INTRODUCTION")) {
             return $statuses['INTRODUCTION'];
-        } else return null;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -266,17 +270,17 @@ class EducationalProgramsController extends BaseController
     {
         adaptRequestDatesToUTC($request);
 
-        $educational_program_uid = $request->input("educational_program_uid");
+        $educationalProgramUid = $request->input("educational_program_uid");
 
-        if ($educational_program_uid) {
-            $educational_program = EducationalProgramsModel::find($educational_program_uid);
+        if ($educationalProgramUid) {
+            $educationalProgram = EducationalProgramsModel::find($educationalProgramUid);
             $isNew = false;
         } else {
-            $educational_program = new EducationalProgramsModel();
-            $educational_program_uid = generate_uuid();
-            $educational_program->uid = $educational_program_uid;
-            $educational_program->identifier = $this->generateIdentificerEducationalProgram();
-            $educational_program->creator_user_uid = auth()->user()->uid;
+            $educationalProgram = new EducationalProgramsModel();
+            $educationalProgramUid = generateUuid();
+            $educationalProgram->uid = $educationalProgramUid;
+            $educationalProgram->identifier = $this->generateIdentificerEducationalProgram();
+            $educationalProgram->creator_user_uid = auth()->user()->uid;
             $isNew = true;
         }
 
@@ -287,55 +291,55 @@ class EducationalProgramsController extends BaseController
         }
 
         if (!$isNew) {
-            $this->validateStatusProgram($educational_program);
+            $this->validateStatusProgram($educationalProgram);
         }
 
-        $this->validateCoursesAddedEducationalProgram($request, $educational_program);
+        $this->validateCoursesAddedEducationalProgram($request, $educationalProgram);
 
         $action = $request->input('action');
 
-        $newStatus = $this->getStatusEducationalProgram($action, $educational_program);
+        $newStatus = $this->getStatusEducationalProgram($action, $educationalProgram);
 
-        DB::transaction(function () use ($request, &$isNew, $educational_program, $newStatus) {
+        DB::transaction(function () use ($request, &$isNew, $educationalProgram, $newStatus) {
 
             // Copia para detectar cambios en el programa formativo
-            $educationalProgramCopy = clone $educational_program;
+            $educationalProgramCopy = clone $educationalProgram;
 
             $isManagement = auth()->user()->hasAnyRole(["MANAGEMENT"]);
 
-            if ($educational_program->educational_program_origin_uid && !$isManagement) {
-                $this->fillEducationalProgramEdition($request, $educational_program);
+            if ($educationalProgram->educational_program_origin_uid && !$isManagement) {
+                $this->fillEducationalProgramEdition($request, $educationalProgram);
             } else {
-                $this->fillEducationalProgram($request, $educational_program);
+                $this->fillEducationalProgram($request, $educationalProgram);
             }
 
-            $this->handleImageUpload($request, $educational_program);
+            $this->handleImageUpload($request, $educationalProgram);
 
             if ($newStatus) {
-                $educational_program->educational_program_status_uid = $newStatus->uid;
+                $educationalProgram->educational_program_status_uid = $newStatus->uid;
 
                 if ($newStatus->code === 'PENDING_APPROVAL') {
-                    dispatch(new SendEducationalProgramNotificationToManagements($educational_program->toArray()));
+                    dispatch(new SendEducationalProgramNotificationToManagements($educationalProgram->toArray()));
                 }
             }
 
-            $educational_program->save();
+            $educationalProgram->save();
 
-            $this->handleEmails($request, $educational_program);
+            $this->handleEmails($request, $educationalProgram);
 
             $validateStudentsRegistrations = $request->input("validate_student_registrations");
 
             if ($validateStudentsRegistrations) {
-                $this->syncDocuments($request, $educational_program);
+                $this->syncDocuments($request, $educationalProgram);
             } else {
-                $educational_program->deleteDocuments();
+                $educationalProgram->deleteDocuments();
             }
 
             $paymentMode = $request->input('payment_mode');
             if ($paymentMode == "INSTALLMENT_PAYMENT") {
-                $this->updatePaymentTerms($request, $educational_program);
-            } else if ($paymentMode == "SINGLE_PAYMENT") {
-                $educational_program->paymentTerms()->delete();
+                $this->updatePaymentTerms($request, $educationalProgram);
+            } elseif ($paymentMode == "SINGLE_PAYMENT") {
+                $educationalProgram->paymentTerms()->delete();
             }
 
             if ($newStatus && $newStatus->code === 'ACCEPTED_PUBLICATION') {
@@ -348,12 +352,12 @@ class EducationalProgramsController extends BaseController
                 $this->sendNotificationCoursesAcceptedPublicationToKafka($courses);
             }
 
-            $changesEducationalProgram = $this->detectChangesCredential($educational_program, $educationalProgramCopy);
-            if($changesEducationalProgram || !$educational_program->certidigitalCredential) {
-                $this->certidigitalService->createUpdateEducationalProgramCredential($educational_program->uid);
+            $changesEducationalProgram = $this->detectChangesCredential($educationalProgram, $educationalProgramCopy);
+            if($changesEducationalProgram || !$educationalProgram->certidigitalCredential) {
+                $this->certidigitalService->createUpdateEducationalProgramCredential($educationalProgram->uid);
             }
 
-            $this->logAction($isNew, $educational_program->name);
+            $this->logAction($isNew, $educationalProgram->name);
         });
 
         return response()->json(['message' => $isNew ? 'Programa formativo añadido correctamente' : 'Programa formativo actualizado correctamente']);
@@ -361,7 +365,9 @@ class EducationalProgramsController extends BaseController
 
     private function detectChangesCredential($educationalProgramAfterChanges, $educationalProgramBeforeChanges)
     {
-        if ($educationalProgramAfterChanges->name != $educationalProgramBeforeChanges->name) return true;
+        if ($educationalProgramAfterChanges->name != $educationalProgramBeforeChanges->name) {
+            return true;
+        }
         return false;
     }
 
@@ -412,7 +418,7 @@ class EducationalProgramsController extends BaseController
                 ]);
             } else {
                 $educationalProgramBd->paymentTerms()->create([
-                    'uid' => generate_uuid(),
+                    'uid' => generateUuid(),
                     'educational_program_uid' => $educationalProgramBd->uid,
                     'name' => $paymentTerm['name'],
                     'start_date' => $paymentTerm['start_date'],
@@ -428,72 +434,74 @@ class EducationalProgramsController extends BaseController
         }
     }
 
-    function handleEmails($request, $educational_program)
+    private function handleEmails($request, $educationalProgram)
     {
-        $contact_emails = $request->input('contact_emails');
-        $contact_emails = json_decode($contact_emails, true);
+        $contactEmails = $request->input('contact_emails');
+        $contactEmails = json_decode($contactEmails, true);
 
-        if (!empty($contact_emails)) {
-            $current_contact_emails = EducationalProgramEmailContactsModel::where('educational_program_uid', $educational_program->uid)->pluck('email')->toArray();
+        if (!empty($contactEmails)) {
+            $currentContactEmails = EducationalProgramEmailContactsModel::where('educational_program_uid', $educationalProgram->uid)->pluck('email')->toArray();
 
-            $contact_emails_to_add = array_diff($contact_emails, $current_contact_emails);
-            $contact_emails_to_delete = array_diff($current_contact_emails, $contact_emails);
+            $contactEmailsToAdd = array_diff($contactEmails, $currentContactEmails);
+            $contactEmailsToDelete = array_diff($currentContactEmails, $contactEmails);
 
-            EducationalProgramEmailContactsModel::where('educational_program_uid', $educational_program->uid)->whereIn('email', $contact_emails_to_delete)->delete();
+            EducationalProgramEmailContactsModel::where('educational_program_uid', $educationalProgram->uid)->whereIn('email', $contactEmailsToDelete)->delete();
 
             $insertData = [];
-            foreach ($contact_emails_to_add as $contact_email) {
+            foreach ($contactEmailsToAdd as $contactEmail) {
                 $insertData[] = [
-                    'uid' => generate_uuid(),
-                    'educational_program_uid' => $educational_program->uid,
-                    'email' => $contact_email
+                    'uid' => generateUuid(),
+                    'educational_program_uid' => $educationalProgram->uid,
+                    'email' => $contactEmail
                 ];
             }
 
             EducationalProgramEmailContactsModel::insert($insertData);
         } else {
-            EducationalProgramEmailContactsModel::where('educational_program_uid', $educational_program->uid)->delete();
+            EducationalProgramEmailContactsModel::where('educational_program_uid', $educationalProgram->uid)->delete();
         }
     }
 
-    private function validateStatusProgram($educational_program)
+    private function validateStatusProgram($educationalProgram)
     {
         $isUserManagement = auth()->user()->hasAnyRole(["MANAGEMENT"]);
 
-        if ($isUserManagement) return;
+        if ($isUserManagement) {
+            return;
+        }
 
-        if (!in_array($educational_program->status->code, ["INTRODUCTION", "UNDER_CORRECTION_PUBLICATION", "UNDER_CORRECTION_APPROVAL"])) {
+        if (!in_array($educationalProgram->status->code, ["INTRODUCTION", "UNDER_CORRECTION_PUBLICATION", "UNDER_CORRECTION_APPROVAL"])) {
             throw new OperationFailedException('No puedes editar un programa formativo en este estado', 400);
         }
     }
 
-    private function syncDocuments($request, $educational_program)
+    private function syncDocuments($request, $educationalProgram)
     {
         $documents = $request->input('documents');
         $documents = json_decode($documents, true);
-        $educational_program->updateDocuments($documents);
+        $educationalProgram->updateDocuments($documents);
     }
 
-    private function syncItemsTags($request, $educational_program)
+    private function syncItemsTags($request, $educationalProgram)
     {
-        $current_tags = EducationalProgramTagsModel::where('educational_program_uid', $educational_program->uid)->pluck('tag')->toArray();
+        $currentTags = EducationalProgramTagsModel::where('educational_program_uid', $educationalProgram->uid)->pluck('tag')->toArray();
 
         $tags = $request->input('tags');
         $tags = json_decode($tags, true);
 
         // Identificar qué items son nuevos y cuáles deben ser eliminados
-        $items_to_add = array_diff($tags, $current_tags);
-        $items_to_delete = array_diff($current_tags, $tags);
+        $itemsToAdd = array_diff($tags, $currentTags);
+        $itemsToDelete = array_diff($currentTags, $tags);
 
         // Eliminar los items que ya no son necesarios
-        EducationalProgramTagsModel::where('educational_program_uid', $educational_program->uid)->whereIn('tag', $items_to_delete)->delete();
+        EducationalProgramTagsModel::where('educational_program_uid', $educationalProgram->uid)->whereIn('tag', $itemsToDelete)->delete();
 
         // Preparar el array para la inserción masiva de nuevos items
         $insertData = [];
-        foreach ($items_to_add as $item) {
+        foreach ($itemsToAdd as $item) {
             $insertData[] = [
-                'uid' => generate_uuid(),
-                'educational_program_uid' => $educational_program->uid,
+                'uid' => generateUuid(),
+                'educational_program_uid' => $educationalProgram->uid,
                 'tag' => $item
             ];
         }
@@ -507,23 +515,23 @@ class EducationalProgramsController extends BaseController
         // Categorías
         $categories = $request->input('categories');
         $categories = json_decode($categories, true);
-        $categories_bd = CategoriesModel::whereIn('uid', $categories)->get()->pluck('uid');
+        $categoriesBd = CategoriesModel::whereIn('uid', $categories)->get()->pluck('uid');
 
         EducationalsProgramsCategoriesModel::where('educational_program_uid', $educationalProgram->uid)->delete();
-        $categories_to_sync = [];
+        $categoriesToSync = [];
 
-        foreach ($categories_bd as $category_uid) {
-            $categories_to_sync[] = [
-                'uid' => generate_uuid(),
+        foreach ($categoriesBd as $categoryUid) {
+            $categoriesToSync[] = [
+                'uid' => generateUuid(),
                 'educational_program_uid' => $educationalProgram->uid,
-                'category_uid' => $category_uid
+                'category_uid' => $categoryUid
             ];
         }
 
-        $educationalProgram->categories()->sync($categories_to_sync);
+        $educationalProgram->categories()->sync($categoriesToSync);
     }
 
-    private function handleImageUpload($request, $educational_program)
+    private function handleImageUpload($request, $educationalProgram)
     {
         if ($request->file('image_path')) {
             $file = $request->file('image_path');
@@ -531,15 +539,15 @@ class EducationalProgramsController extends BaseController
 
             $destinationPath = public_path($path);
 
-            $filename = add_timestamp_name_file($file);
+            $filename = addTimestampNameFile($file);
 
             $file->move($destinationPath, $filename);
 
-            $educational_program->image_path = $path . "/" . $filename;
+            $educationalProgram->image_path = $path . "/" . $filename;
         }
     }
 
-    private function fillEducationalProgramEdition($request, $educational_program)
+    private function fillEducationalProgramEdition($request, $educationalProgram)
     {
         $baseFields = [
             "min_required_students",
@@ -581,17 +589,17 @@ class EducationalProgramsController extends BaseController
             $fields = array_merge($fields, $conditionalFieldsDates, $conditionalFieldsGeneral);
         }
 
-        $educational_program->fill($request->only($fields));
+        $educationalProgram->fill($request->only($fields));
         // Establecer a null los campos que no están en la lista de campos a actualizar
         $allFields = array_merge($fields, $conditionalFieldsDates, $conditionalRestFields);
         foreach ($allFields as $field) {
             if (!in_array($field, $fields)) {
-                $educational_program->$field = null;
+                $educationalProgram->$field = null;
             }
         }
     }
 
-    private function fillEducationalProgram($request, $educational_program)
+    private function fillEducationalProgram($request, $educationalProgram)
     {
         $baseFields = [
             'name',
@@ -629,26 +637,26 @@ class EducationalProgramsController extends BaseController
             $fields = array_merge($fields, $conditionalFieldsEvaluationCriteria);
         }
 
-        $educational_program->fill($request->only($fields));
+        $educationalProgram->fill($request->only($fields));
 
         if ($request->hasFile('featured_slider_image_path')) {
-            $educational_program->featured_slider_image_path = saveFile($request->file('featured_slider_image_path'), 'images/carrousel-images', null, true);
+            $educationalProgram->featured_slider_image_path = saveFile($request->file('featured_slider_image_path'), 'images/carrousel-images', null, true);
         }
 
         // Ponemos a null los campos que no corresponden
         $allFields = array_merge($baseFields, $conditionalFieldsGeneral, $conditionalFieldsDates, $conditionalFieldsEvaluationCriteria);
         foreach (array_diff($allFields, $fields) as $field) {
-            $educational_program->$field = null;
+            $educationalProgram->$field = null;
         }
 
-        $educational_program->save();
+        $educationalProgram->save();
 
-        $this->handleCourses($request, $educational_program);
-        $this->syncItemsTags($request, $educational_program);
-        $this->syncCategories($request, $educational_program);
+        $this->handleCourses($request, $educationalProgram);
+        $this->syncItemsTags($request, $educationalProgram);
+        $this->syncCategories($request, $educationalProgram);
     }
 
-    private function handleCourses($request, $educational_program)
+    private function handleCourses($request, $educationalProgram)
     {
         $statusesCourses = CourseStatusesModel::whereIn('code', [
             'READY_ADD_EDUCATIONAL_PROGRAM',
@@ -660,7 +668,7 @@ class EducationalProgramsController extends BaseController
         $coursesUidsToAdd = $request->input('courses');
 
         // Cursos que se quitan del programa formativo
-        $coursesToRemoveEducationalProgram = $educational_program->courses->filter(function ($course) use ($coursesUidsToAdd) {
+        $coursesToRemoveEducationalProgram = $educationalProgram->courses->filter(function ($course) use ($coursesUidsToAdd) {
             return !in_array($course->uid, $coursesUidsToAdd);
         });
 
@@ -672,7 +680,7 @@ class EducationalProgramsController extends BaseController
         ]);
 
         CoursesModel::whereIn('uid', $coursesUidsToAdd)->update([
-            'educational_program_uid' => $educational_program->uid,
+            'educational_program_uid' => $educationalProgram->uid,
             'course_status_uid' => $statusesCourses["ADDED_EDUCATIONAL_PROGRAM"]->uid
         ]);
     }
@@ -759,7 +767,9 @@ class EducationalProgramsController extends BaseController
                 function ($attribute, $value, $fail) {
                     $value = json_decode($value, true);
                     $validation = $this->validatePaymentTerms($value);
-                    if ($validation !== true) $fail($validation);
+                    if ($validation !== true) {
+                        $fail($validation);
+                    }
                 },
             ];
         }
@@ -769,9 +779,7 @@ class EducationalProgramsController extends BaseController
         $this->addRulesDates($validateStudentsRegistrations, $rules);
         $validator = Validator::make($request->all(), $rules, $messages);
 
-        $errorsValidator = $validator->errors();
-
-        return $errorsValidator;
+        return $validator->errors();
     }
 
     // Validación del bloque de plazos de pago
@@ -779,15 +787,23 @@ class EducationalProgramsController extends BaseController
     {
         $fields = ['name', 'start_date', 'finish_date', 'cost'];
 
-        if (!count($paymentTerms)) return "Debes especificar al menos un plazo de pago";
+        if (!count($paymentTerms)) {
+            return "Debes especificar al menos un plazo de pago";
+        }
 
         foreach ($paymentTerms as $paymentTerm) {
-            if ($paymentTerm['cost'] <= 0) return "El coste de los plazos de pago no puede ser negativo";
-            else if (!$paymentTerm['name']) return "Debes especificar un nombre para el plazo de pago";
+            if ($paymentTerm['cost'] <= 0) {
+                return "El coste de los plazos de pago no puede ser negativo";
+            }
+            elseif (!$paymentTerm['name']) {
+                return "Debes especificar un nombre para el plazo de pago";
+            }
 
             // Comprobamos si le falta algún campo
             foreach ($fields as $field) {
-                if (!array_key_exists($field, $paymentTerm)) return false;
+                if (!array_key_exists($field, $paymentTerm)) {
+                    return false;
+                }
             }
         }
 
@@ -818,11 +834,13 @@ class EducationalProgramsController extends BaseController
      * Valida que los cursos añadidos a un programa formativo estén marcados que pertenecen
      * a un programa formativo y tienen el estado READY_ADD_EDUCATIONAL_PROGRAM
      */
-    private function validateCoursesAddedEducationalProgram($request, $educational_program)
+    private function validateCoursesAddedEducationalProgram($request, $educationalProgram)
     {
         $courses = $request->input('courses');
 
-        if (empty($courses)) return;
+        if (empty($courses)) {
+            return;
+        }
 
         $coursesBd = CoursesModel::whereIn('uid', $courses)->with('status')->get();
 
@@ -840,12 +858,12 @@ class EducationalProgramsController extends BaseController
 
         // Validamos las fechas de realización de los cursos.
         // Los cursos deben tener un período de realización que esté entre las fechas de realización del programa formativo
-        $realization_start_date = $request->input('realization_start_date');
-        $realization_finish_date = $request->input('realization_finish_date');
+        $realizationStartDate = $request->input('realization_start_date');
+        $realizationFinishDate = $request->input('realization_finish_date');
 
-        $coursesNotBetweenRealizationDate = $coursesBd->filter(function ($course) use ($realization_start_date, $realization_finish_date) {
+        $coursesNotBetweenRealizationDate = $coursesBd->filter(function ($course) use ($realizationStartDate, $realizationFinishDate) {
             if ($course->realization_start_date && $course->realization_finish_date) {
-                return $course->realization_start_date < $realization_start_date || $course->realization_finish_date > $realization_finish_date;
+                return $course->realization_start_date < $realizationStartDate || $course->realization_finish_date > $realizationFinishDate;
             }
         });
 
@@ -856,8 +874,8 @@ class EducationalProgramsController extends BaseController
             );
         }
 
-        $coursesBelongingOtherEducationalPrograms = $coursesBd->filter(function ($course) use ($educational_program) {
-            return $course->educational_program_uid && $course->educational_program_uid !== $educational_program->uid;
+        $coursesBelongingOtherEducationalPrograms = $coursesBd->filter(function ($course) use ($educationalProgram) {
+            return $course->educational_program_uid && $course->educational_program_uid !== $educationalProgram->uid;
         });
 
         if ($coursesBelongingOtherEducationalPrograms->count()) {
@@ -867,8 +885,8 @@ class EducationalProgramsController extends BaseController
             );
         }
 
-        $newCourses = $coursesBd->filter(function ($course) use ($educational_program) {
-            return $course->educational_program_uid !== $educational_program->uid;
+        $newCourses = $coursesBd->filter(function ($course) use ($educationalProgram) {
+            return $course->educational_program_uid !== $educationalProgram->uid;
         });
 
         $coursesNotHavingStatusReadyAddEducationalProgram = $newCourses->filter(function ($course) {
@@ -886,7 +904,7 @@ class EducationalProgramsController extends BaseController
     /**
      * Elimina una convocatoria específica.
      *
-     * @param  string $call_uid El UID de la convocatoria.
+     * @param  string $callUid El UID de la convocatoria.
      * @return \Illuminate\Http\JsonResponse
      */
     public function deleteEducationalPrograms(Request $request)
@@ -908,15 +926,11 @@ class EducationalProgramsController extends BaseController
      * Obtiene un programa formativo por uid
      */
 
-    public function getEducationalProgram($educational_program_uid)
+    public function getEducationalProgram($educationalProgramUid)
     {
-        // if (!$educational_program_uid) {
-        //     return response()->json(['message' => env('ERROR_MESSAGE')], 400);
-        // }
+        $educationalProgram = EducationalProgramsModel::where('uid', $educationalProgramUid)->with(['courses', 'status', 'tags', 'categories', 'EducationalProgramDocuments', 'contact_emails', 'paymentTerms'])->first();
 
-        $educational_program = EducationalProgramsModel::where('uid', $educational_program_uid)->with(['courses', 'status', 'tags', 'categories', 'EducationalProgramDocuments', 'contact_emails', 'paymentTerms'])->first();
-
-        if (!$educational_program) {
+        if (!$educationalProgram) {
             return response()->json(['message' => 'El programa formativo no existe'], 406);
         }
 
@@ -929,26 +943,26 @@ class EducationalProgramsController extends BaseController
             'enrolling_finish_date'
         ];
 
-        adaptDatesModel($educational_program, $dates, false);
+        adaptDatesModel($educationalProgram, $dates, false);
 
-        return response()->json($educational_program, 200);
+        return response()->json($educationalProgram, 200);
     }
 
     public function searchCoursesWithoutEducationalProgram($search)
     {
-        $courses_query = CoursesModel::with('status')->where('belongs_to_educational_program', true)
+        $coursesQuery = CoursesModel::with('status')->where('belongs_to_educational_program', true)
             ->whereHas('status', function ($query) {
                 $query->where('code', 'READY_ADD_EDUCATIONAL_PROGRAM');
             });
 
         if ($search) {
-            $courses_query->where(function ($query) use ($search) {
+            $coursesQuery->where(function ($query) use ($search) {
                 $query->where('title', 'ILIKE', "%{$search}%")
                     ->orWhere('description', 'ILIKE', "%{$search}%");
             });
         }
 
-        $courses = $courses_query->get();
+        $courses = $coursesQuery->get();
 
         return response()->json($courses, 200);
     }
@@ -970,10 +984,10 @@ class EducationalProgramsController extends BaseController
         }
 
         // Obtenemos los cursos de la base de datos
-        $educational_programs_bd = EducationalProgramsModel::whereIn('uid', array_column($changesEducationalProgramsStatuses, "uid"))->with(['status', 'creatorUser'])->get()->keyBy("uid");
+        $educationalProgramsBd = EducationalProgramsModel::whereIn('uid', array_column($changesEducationalProgramsStatuses, "uid"))->with(['status', 'creatorUser'])->get()->keyBy("uid");
 
         // Excluímos los estados a los que no se pueden cambiar manualmente.
-        $statuses_educational_programs = EducationalProgramStatusesModel::whereNotIn(
+        $statusesEducationalPrograms = EducationalProgramStatusesModel::whereNotIn(
             'code',
             [
                 'INSCRIPTION',
@@ -985,47 +999,47 @@ class EducationalProgramsController extends BaseController
             ->get()
             ->keyBy('code');
 
-        DB::transaction(function () use ($changesEducationalProgramsStatuses, $educational_programs_bd, $statuses_educational_programs) {
+        DB::transaction(function () use ($changesEducationalProgramsStatuses, $educationalProgramsBd, $statusesEducationalPrograms) {
             // Recorremos los cursos que nos vienen en el request y los comparamos con los de la base de datos
             foreach ($changesEducationalProgramsStatuses as $changeEducationalProgramStatus) {
-                $educational_program = $educational_programs_bd[$changeEducationalProgramStatus['uid']];
-                $this->updateStatusEducationalProgram($changeEducationalProgramStatus, $educational_program, $statuses_educational_programs);
+                $educationalProgram = $educationalProgramsBd[$changeEducationalProgramStatus['uid']];
+                $this->updateStatusEducationalProgram($changeEducationalProgramStatus, $educationalProgram, $statusesEducationalPrograms);
 
                 // Enviamos notificación al creador del programa
-                dispatch(new SendChangeStatusEducationalProgramNotification($educational_program->toArray()));
+                dispatch(new SendChangeStatusEducationalProgramNotification($educationalProgram->toArray()));
             }
         });
 
         return response()->json(['message' => 'Se han actualizado los estados de los programas formativos correctamente'], 200);
     }
 
-    private function updateStatusEducationalProgram($changeEducationalProgramStatus, $educational_program_bd, $statuses_educational_programs)
+    private function updateStatusEducationalProgram($changeEducationalProgramStatus, $educationalProgramBd, $statusesEducationalPrograms)
     {
-        $status_bd = $statuses_educational_programs[$changeEducationalProgramStatus['status']];
+        $statusBd = $statusesEducationalPrograms[$changeEducationalProgramStatus['status']];
 
-        $educational_program_bd->educational_program_status_uid = $status_bd->uid;
-        $educational_program_bd->status_reason = $changeEducationalProgramStatus['reason'] ?? null;
+        $educationalProgramBd->educational_program_status_uid = $statusBd->uid;
+        $educationalProgramBd->status_reason = $changeEducationalProgramStatus['reason'] ?? null;
 
-        $educational_program_bd->save();
+        $educationalProgramBd->save();
 
         if ($changeEducationalProgramStatus['status'] == 'ACCEPTED_PUBLICATION') {
-            $this->sendNotificationCoursesAcceptedPublicationToKafka($educational_program_bd->courses);
+            $this->sendNotificationCoursesAcceptedPublicationToKafka($educationalProgramBd->courses);
         }
     }
 
-    public function getEducationalProgramStudents(Request $request, $educational_program_uid)
+    public function getEducationalProgramStudents(Request $request, $educationalProgramUid)
     {
         $size = $request->get('size', 1);
         $search = $request->get('search');
         $sort = $request->get('sort');
 
-        $educational_program = EducationalProgramsModel::where('uid', $educational_program_uid)->first();
+        $educationalProgram = EducationalProgramsModel::where('uid', $educationalProgramUid)->first();
 
-        $query = $educational_program->students()->with(
+        $query = $educationalProgram->students()->with(
             [
-                'educationalProgramDocuments' => function ($query) use ($educational_program_uid) {
-                    $query->whereHas('educationalProgramDocument', function ($query) use ($educational_program_uid) {
-                        $query->where('educational_program_uid', $educational_program_uid);
+                'educationalProgramDocuments' => function ($query) use ($educationalProgramUid) {
+                    $query->whereHas('educationalProgramDocument', function ($query) use ($educationalProgramUid) {
+                        $query->where('educational_program_uid', $educationalProgramUid);
                     });
                 },
                 'educationalProgramDocuments.educationalProgramDocument'
@@ -1042,9 +1056,9 @@ class EducationalProgramsController extends BaseController
         if (isset($sort) && !empty($sort)) {
             foreach ($sort as $order) {
                 if ($order['field'] == 'acceptance_status') {
-                    $query->join('educational_programs_students', function ($join) use ($educational_program_uid) {
+                    $query->join('educational_programs_students', function ($join) use ($educationalProgramUid) {
                         $join->on('users.uid', '=', 'educational_programs_students.user_uid')
-                            ->where('educational_programs_students.educational_program_uid', '=', $educational_program_uid);
+                            ->where('educational_programs_students.educational_program_uid', '=', $educationalProgramUid);
                     })->orderBy('educational_programs_students.acceptance_status', $order['dir']);
                 } else {
                     $query->orderBy($order['field'], $order['dir']);
@@ -1081,7 +1095,7 @@ class EducationalProgramsController extends BaseController
             }
 
             $enroll = new EducationalProgramsStudentsModel();
-            $enroll->uid = generate_uuid();
+            $enroll->uid = generateUuid();
             $enroll->educational_program_uid = $request->get('EducationalProgramUid');
             $enroll->user_uid = $user;
             $enroll->acceptance_status = 'PENDING';
@@ -1095,7 +1109,7 @@ class EducationalProgramsController extends BaseController
 
         $message = "Alumnos añadidos al programa formativo";
 
-        if ($usersenrolled == true) {
+        if ($usersenrolled) {
             $message = "Alumnos añadidos al programa formativo. Los ya registrados no se han añadido.";
         }
 
@@ -1131,7 +1145,7 @@ class EducationalProgramsController extends BaseController
     private function saveGeneralNotificationAutomatic($educationalProgram, $status, $userUid)
     {
         $generalNotificationAutomatic = new GeneralNotificationsAutomaticModel();
-        $generalNotificationAutomaticUid = generate_uuid();
+        $generalNotificationAutomaticUid = generateUuid();
         $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
 
         if ($status == "ACCEPTED") {
@@ -1150,7 +1164,7 @@ class EducationalProgramsController extends BaseController
         $generalNotificationAutomatic->save();
 
         $generalNotificationAutomaticUser = new GeneralNotificationsAutomaticUsersModel();
-        $generalNotificationAutomaticUser->uid = generate_uuid();
+        $generalNotificationAutomaticUser->uid = generateUuid();
         $generalNotificationAutomaticUser->general_notifications_automatic_uid = $generalNotificationAutomaticUid;
         $generalNotificationAutomaticUser->user_uid = $userUid;
         $generalNotificationAutomaticUser->save();
@@ -1159,7 +1173,7 @@ class EducationalProgramsController extends BaseController
     private function saveEmailNotificationAutomatic($educationalProgram, $status, $userUid)
     {
         $emailNotificationAutomatic = new EmailNotificationsAutomaticModel();
-        $emailNotificationAutomatic->uid = generate_uuid();
+        $emailNotificationAutomatic->uid = generateUuid();
 
         $emailParameters = [
             'educational_program_title' => $educationalProgram->title,
@@ -1184,7 +1198,7 @@ class EducationalProgramsController extends BaseController
     {
 
         $file = $request->file('attachment');
-        $educational_program_uid = $request->get('educational_program_uid');
+        $educationalProgramUid = $request->get('educational_program_uid');
 
         $reader = Reader::createFromPath($file->path());
 
@@ -1195,10 +1209,10 @@ class EducationalProgramsController extends BaseController
                     ->first();
 
                 if ($existingUser) {
-                    $this->enrollUserCsv($existingUser->uid, $educational_program_uid);
+                    $this->enrollUserCsv($existingUser->uid, $educationalProgramUid);
                 } else {
                     $this->validateStudentCsv($row, $key);
-                    $this->singUpUser($row, $educational_program_uid);
+                    $this->singUpUser($row, $educationalProgramUid);
                 }
             }
         }
@@ -1230,19 +1244,19 @@ class EducationalProgramsController extends BaseController
         }
     }
 
-    public function enrollUserCsv($user_uid, $educational_program_uid)
+    public function enrollUserCsv($userUid, $educationalProgramUid)
     {
 
-        $existingEnrollment = EducationalProgramsStudentsModel::where('educational_program_uid', $educational_program_uid)
-            ->where('user_uid', $user_uid)
+        $existingEnrollment = EducationalProgramsStudentsModel::where('educational_program_uid', $educationalProgramUid)
+            ->where('user_uid', $userUid)
             ->first();
 
         if (!$existingEnrollment) {
 
             $enroll = new EducationalProgramsStudentsModel();
-            $enroll->uid = generate_uuid();
-            $enroll->educational_program_uid = $educational_program_uid;
-            $enroll->user_uid = $user_uid;
+            $enroll->uid = generateUuid();
+            $enroll->educational_program_uid = $educationalProgramUid;
+            $enroll->user_uid = $userUid;
             $enroll->acceptance_status = 'PENDING';
             $messageLog = "Alumno añadido a programa formativo";
 
@@ -1253,10 +1267,10 @@ class EducationalProgramsController extends BaseController
         }
     }
 
-    public function singUpUser($row, $educational_program_uid)
+    public function singUpUser($row, $educationalProgramUid)
     {
 
-        $newUserUid = generate_uuid();
+        $newUserUid = generateUuid();
 
         $newUser = new UsersModel();
         $newUser->uid = $newUserUid;
@@ -1273,65 +1287,73 @@ class EducationalProgramsController extends BaseController
             LogsController::createLog($messageLog, 'Programa formativo', auth()->user()->uid);
         });
 
-        $this->enrollUserCsv($newUserUid, $educational_program_uid);
+        $this->enrollUserCsv($newUserUid, $educationalProgramUid);
     }
 
     public function editionOrDuplicateEducationalProgram(Request $request)
     {
 
-        $educational_program_uid = $request->input("educationalProgramUid");
+        $educationalProgramUid = $request->input("educationalProgramUid");
         $action = $request->input('action');
 
-        if (!in_array($action, ["edition", "duplication"])) throw new OperationFailedException('Acción no permitida', 400);
-
-        $educational_program_bd = EducationalProgramsModel::where('uid', $educational_program_uid)->with(['tags', 'categories', 'EducationalProgramDocuments'])->first();
-
-        if (!$educational_program_bd) return response()->json(['message' => 'El programa formativo no existe'], 406);
-
-        $new_educational_program = $educational_program_bd->replicate();
-
-        $concatName = $action === "edition" ? "(nueva edición)" : "(copia)";
-        $new_educational_program->name = $new_educational_program->name . " " . $concatName;
-
-        if ($action == "edition") {
-            $new_educational_program->educational_program_origin_uid = $educational_program_uid;
-        } else {
-            $new_educational_program->educational_program_origin_uid = null;
+        if (!in_array($action, ["edition", "duplication"])) {
+            throw new OperationFailedException('Acción no permitida', 400);
         }
 
-        $introduction_status = EducationalProgramStatusesModel::where('code', 'INTRODUCTION')->first();
-        $new_educational_program->educational_program_status_uid = $introduction_status->uid;
+        $educationalProgramBd = EducationalProgramsModel::where('uid', $educationalProgramUid)->with(['tags', 'categories', 'EducationalProgramDocuments'])->first();
 
-        $new_educational_program_uid = generate_uuid();
-        DB::transaction(function () use ($new_educational_program, $educational_program_bd, $educational_program_uid, $action, $new_educational_program_uid) {
-            $new_educational_program->uid = $new_educational_program_uid;
-            $new_educational_program->identifier = $this->generateIdentificerEducationalProgram();
-            $new_educational_program->save();
+        if (!$educationalProgramBd) {
+            return response()->json(['message' => 'El programa formativo no existe'], 406);
+        }
 
-            $this->duplicateEducationalProgramDocuments($educational_program_bd, $new_educational_program_uid);
+        $newEducationalProgram = $educationalProgramBd->replicate();
 
-            $courses = CoursesModel::where('educational_program_uid', $educational_program_uid)->get();
+        $concatName = $action === "edition" ? "(nueva edición)" : "(copia)";
+        $newEducationalProgram->name = $newEducationalProgram->name . " " . $concatName;
+
+        if ($action == "edition") {
+            $newEducationalProgram->educational_program_origin_uid = $educationalProgramUid;
+        } else {
+            $newEducationalProgram->educational_program_origin_uid = null;
+        }
+
+        $introductionStatus = EducationalProgramStatusesModel::where('code', 'INTRODUCTION')->first();
+        $newEducationalProgram->educational_program_status_uid = $introductionStatus->uid;
+
+        $newEducationalProgramUid = generateUuid();
+        DB::transaction(function () use ($newEducationalProgram, $educationalProgramBd, $educationalProgramUid, $action, $newEducationalProgramUid) {
+            $newEducationalProgram->uid = $newEducationalProgramUid;
+            $newEducationalProgram->identifier = $this->generateIdentificerEducationalProgram();
+            $newEducationalProgram->save();
+
+            $this->duplicateEducationalProgramDocuments($educationalProgramBd, $newEducationalProgramUid);
+
+            $courses = CoursesModel::where('educational_program_uid', $educationalProgramUid)->get();
 
             foreach ($courses as $course) {
 
-                $this->duplicateCourse($course->uid, $new_educational_program_uid);
+                $this->duplicateCourse($course->uid, $newEducationalProgramUid);
             }
 
-            $this->duplicateEducationalProgramTags($educational_program_bd, $new_educational_program_uid);
+            $this->duplicateEducationalProgramTags($educationalProgramBd, $newEducationalProgramUid);
 
-            $this->duplicateEducationalProgramsCategories($educational_program_bd, $new_educational_program_uid, $new_educational_program);
+            $this->duplicateEducationalProgramsCategories($educationalProgramBd, $newEducationalProgramUid, $newEducationalProgram);
 
-            if ($educational_program_bd->payment_mode == "INSTALLMENT_PAYMENT") {
-                $this->duplicateEducationalProgramsPaymentTerms($educational_program_bd, $new_educational_program_uid);
+            if ($educationalProgramBd->payment_mode == "INSTALLMENT_PAYMENT") {
+                $this->duplicateEducationalProgramsPaymentTerms($educationalProgramBd, $newEducationalProgramUid);
             }
 
-            if ($action === "edition") $logMessage = 'Creación de edición de programa formativo';
-            else $logMessage = 'Duplicación de programa formativo';
+            if ($action === "edition") {
+                $logMessage = 'Creación de edición de programa formativo';
+            }
+            else {
+                $logMessage = 'Duplicación de programa formativo';
+            }
 
             LogsController::createLog($logMessage, 'Programas formativos', auth()->user()->uid);
         }, 5);
 
-        return response()->json(['message' => $action == 'edition' ? 'Edición creada correctamente' : 'Programa duplicado correctamente', 'educational_program_uid' => $new_educational_program_uid], 200);
+        return response()->json(['message' => $action == 'edition' ? 'Edición creada correctamente' : 'Programa duplicado correctamente', 'educational_program_uid' => $newEducationalProgramUid], 200);
     }
 
     public function deleteInscriptionsEducationalProgram(Request $request)
@@ -1343,32 +1365,33 @@ class EducationalProgramsController extends BaseController
         return response()->json(['message' => 'Inscripciones eliminadas correctamente'], 200);
     }
 
-    private function duplicateCourse($course_uid, $new_educational_program_uid)
+    private function duplicateCourse($courseUid, $newEducationalProgramUid)
     {
-        $course_bd = CoursesModel::where('uid', $course_uid)->with(['teachers', 'tags', 'categories'])->first();
+        $courseBd = CoursesModel::where('uid', $courseUid)->with(['teachers', 'tags', 'categories'])->first();
 
-        if (!$course_bd) return response()->json(['message' => 'El curso no existe'], 406);
+        if (!$courseBd) {
+            return response()->json(['message' => 'El curso no existe'], 406);
+        }
 
-        $new_course = $course_bd->replicate();
-        $new_course->title = $new_course->title;
-        $new_course->identifier = $this->generateIdentificerEducationalProgram();
-        $new_course->educational_program_uid = $new_educational_program_uid;
-        $new_course->creator_user_uid = auth()->user()->uid;
+        $newCourse = $courseBd->replicate();
+        $newCourse->identifier = $this->generateIdentificerEducationalProgram();
+        $newCourse->educational_program_uid = $newEducationalProgramUid;
+        $newCourse->creator_user_uid = auth()->user()->uid;
 
-        $introduction_status = CourseStatusesModel::where('code', 'ADDED_EDUCATIONAL_PROGRAM')->first();
-        $new_course->course_status_uid = $introduction_status->uid;
-        $new_course->belongs_to_educational_program = true;
+        $introductionStatus = CourseStatusesModel::where('code', 'ADDED_EDUCATIONAL_PROGRAM')->first();
+        $newCourse->course_status_uid = $introductionStatus->uid;
+        $newCourse->belongs_to_educational_program = true;
 
-        $new_course_uid = generate_uuid();
-        $new_course->uid = $new_course_uid;
+        $newCourseUid = generateUuid();
+        $newCourse->uid = $newCourseUid;
 
-        $new_course->save();
+        $newCourse->save();
 
-        $this->duplicateCourseTeachers($course_bd, $new_course_uid, $new_course);
+        $this->duplicateCourseTeachers($courseBd, $newCourseUid, $newCourse);
 
-        $this->duplicateCourseTags($course_bd, $new_course_uid);
+        $this->duplicateCourseTags($courseBd, $newCourseUid);
 
-        $this->duplicateCourseCategories($course_bd, $new_course_uid, $new_course);
+        $this->duplicateCourseCategories($courseBd, $newCourseUid, $newCourse);
     }
 
 
@@ -1396,104 +1419,102 @@ class EducationalProgramsController extends BaseController
 
         $studentCounts = $courses->pluck('students_count');
 
-        $median = calculateMedian($studentCounts->toArray());
-
-        return $median;
+        return calculateMedian($studentCounts->toArray());
     }
 
-    private function duplicateEducationalProgramTags($educational_program_bd, $new_educational_program_uid)
+    private function duplicateEducationalProgramTags($educationalProgramBd, $newEducationalProgramUid)
     {
-        $tags = $educational_program_bd->tags->pluck('tag')->toArray();
-        $tags_to_add = [];
+        $tags = $educationalProgramBd->tags->pluck('tag')->toArray();
+        $tagsToAdd = [];
         foreach ($tags as $tag) {
-            $tags_to_add[] = [
-                'uid' => generate_uuid(),
-                'educational_program_uid' => $new_educational_program_uid,
+            $tagsToAdd[] = [
+                'uid' => generateUuid(),
+                'educational_program_uid' => $newEducationalProgramUid,
                 'tag' => $tag,
                 'created_at' => date('Y-m-d H:i:s')
             ];
         }
-        EducationalProgramTagsModel::insert($tags_to_add);
+        EducationalProgramTagsModel::insert($tagsToAdd);
     }
 
-    private function duplicateEducationalProgramsPaymentTerms($educational_program_bd, $new_educational_program_uid)
+    private function duplicateEducationalProgramsPaymentTerms($educationalProgramBd, $newEducationalProgramUid)
     {
-        $paymentTerms = $educational_program_bd->paymentTerms->toArray();
-        $paymentTerms_to_add = [];
+        $paymentTerms = $educationalProgramBd->paymentTerms->toArray();
+        $paymentTermsToAdd = [];
         foreach ($paymentTerms as $paymentTerm) {
-            $paymentTerms_to_add[] = [
-                'uid' => generate_uuid(),
-                'educational_program_uid' => $new_educational_program_uid,
+            $paymentTermsToAdd[] = [
+                'uid' => generateUuid(),
+                'educational_program_uid' => $newEducationalProgramUid,
                 'name' => $paymentTerm['name'],
                 'start_date' => $paymentTerm['start_date'],
                 'finish_date' => $paymentTerm['finish_date'],
                 'cost' => $paymentTerm['cost'],
             ];
         }
-        EducationalProgramsPaymentTermsModel::insert($paymentTerms_to_add);
+        EducationalProgramsPaymentTermsModel::insert($paymentTermsToAdd);
     }
 
-    private function duplicateEducationalProgramsCategories($educational_program_bd, $new_educational_program_uid, $new_educational_program)
+    private function duplicateEducationalProgramsCategories($educationalProgramBd, $newEducationalProgramUid, $newEducationalProgram)
     {
-        $categories = $educational_program_bd->categories->pluck('uid')->toArray();
-        $categories_to_sync = [];
-        foreach ($categories as $category_uid) {
-            $categories_to_sync[] = [
-                'uid' => generate_uuid(),
-                'educational_program_uid' => $new_educational_program_uid,
-                'category_uid' => $category_uid
+        $categories = $educationalProgramBd->categories->pluck('uid')->toArray();
+        $categoriesToSync = [];
+        foreach ($categories as $categoryUid) {
+            $categoriesToSync[] = [
+                'uid' => generateUuid(),
+                'educational_program_uid' => $newEducationalProgramUid,
+                'category_uid' => $categoryUid
             ];
         }
-        $new_educational_program->categories()->sync($categories_to_sync);
+        $newEducationalProgram->categories()->sync($categoriesToSync);
     }
-    private function duplicateCourseTeachers($course_bd, $new_course_uid, $new_course)
+    private function duplicateCourseTeachers($courseBd, $newCourseUid, $newCourse)
     {
-        $teachers = $course_bd->teachers->pluck('uid')->toArray();
-        $teachers_to_sync = [];
+        $teachers = $courseBd->teachers->pluck('uid')->toArray();
+        $teachersToSync = [];
 
-        foreach ($teachers as $teacher_uid) {
-            $teachers_to_sync[$teacher_uid] = [
-                'uid' => generate_uuid(),
-                'course_uid' => $new_course_uid,
-                'user_uid' => $teacher_uid
+        foreach ($teachers as $teacherUid) {
+            $teachersToSync[$teacherUid] = [
+                'uid' => generateUuid(),
+                'course_uid' => $newCourseUid,
+                'user_uid' => $teacherUid
             ];
         }
-        $new_course->teachers()->sync($teachers_to_sync);
+        $newCourse->teachers()->sync($teachersToSync);
     }
-    private function duplicateCourseTags($course_bd, $new_course_uid)
+    private function duplicateCourseTags($courseBd, $newCourseUid)
     {
-        $tags = $course_bd->tags->pluck('tag')->toArray();
-        $tags_to_add = [];
+        $tags = $courseBd->tags->pluck('tag')->toArray();
+        $tagsToAdd = [];
         foreach ($tags as $tag) {
-            $tags_to_add[] = [
-                'uid' => generate_uuid(),
-                'course_uid' => $new_course_uid,
+            $tagsToAdd[] = [
+                'uid' => generateUuid(),
+                'course_uid' => $newCourseUid,
                 'tag' => $tag,
                 'created_at' => date('Y-m-d H:i:s')
             ];
         }
-        CoursesTagsModel::insert($tags_to_add);
+        CoursesTagsModel::insert($tagsToAdd);
     }
-    private function duplicateCourseCategories($course_bd, $new_course_uid, $new_course)
+    private function duplicateCourseCategories($courseBd, $newCourseUid, $newCourse)
     {
-        $categories = $course_bd->categories->pluck('uid')->toArray();
-        $categories_to_sync = [];
-        foreach ($categories as $category_uid) {
-            $categories_to_sync[] = [
-                'uid' => generate_uuid(),
-                'course_uid' => $new_course_uid,
-                'category_uid' => $category_uid
+        $categories = $courseBd->categories->pluck('uid')->toArray();
+        $categoriesToSync = [];
+        foreach ($categories as $categoryUid) {
+            $categoriesToSync[] = [
+                'uid' => generateUuid(),
+                'course_uid' => $newCourseUid,
+                'category_uid' => $categoryUid
             ];
         }
-        $new_course->categories()->sync($categories_to_sync);
+        $newCourse->categories()->sync($categoriesToSync);
     }
 
-    private function duplicateEducationalProgramDocuments($educational_program_bd, $new_educational_program_uid)
+    private function duplicateEducationalProgramDocuments($educationalProgramBd, $newEducationalProgramUid)
     {
-        foreach ($educational_program_bd->EducationalProgramDocuments as $document) {
+        foreach ($educationalProgramBd->EducationalProgramDocuments as $document) {
             $newEducationalProgramDocument = $document->replicate();
-            $newEducationalProgramDocument->uid = generate_uuid();
-            $newEducationalProgramDocument->educational_program_uid = $new_educational_program_uid;
+            $newEducationalProgramDocument->uid = generateUuid();
+            $newEducationalProgramDocument->educational_program_uid = $newEducationalProgramUid;
             $newEducationalProgramDocument->save();
         }
     }
@@ -1508,8 +1529,6 @@ class EducationalProgramsController extends BaseController
     private function generateIdentificerEducationalProgram()
     {
         $educationalProgramsCount = EducationalProgramsModel::count();
-        $identifier = 'PF-' . str_pad($educationalProgramsCount + 1, 4, '0', STR_PAD_LEFT);
-
-        return $identifier;
+        return 'PF-' . str_pad($educationalProgramsCount + 1, 4, '0', STR_PAD_LEFT);
     }
 }

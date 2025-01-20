@@ -12,7 +12,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        $uid = generate_uuid();
+        $uid = generateUuid();
         DB::table('automatic_notification_types')->insert([
             'uid' => $uid,
             'code' => 'NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS_MANAGEMENTS',

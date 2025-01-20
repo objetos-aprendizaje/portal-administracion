@@ -65,12 +65,12 @@ class DepartmentsController extends BaseController
     /**
      * Obtiene una licencia específico basada en su UID.
      *
-     * @param  string $center_uid El UID del centro.
+     * @param  string $centerUid El UID del centro.
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getDepartment($department_uid)
+    public function getDepartment($departmentUid)
     {
-        $department = DepartmentsModel::where('uid', $department_uid)->first()->toArray();
+        $department = DepartmentsModel::where('uid', $departmentUid)->first()->toArray();
         return response()->json($department);
     }
 
@@ -96,17 +96,17 @@ class DepartmentsController extends BaseController
             return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validator->errors()], 422);
         }
 
-        $department_uid = $request->input("department_uid");
+        $departmentUid = $request->input("department_uid");
 
-        return DB::transaction(function () use ($request, $department_uid) {
+        return DB::transaction(function () use ($request, $departmentUid) {
 
-            if (!$department_uid) {
+            if (!$departmentUid) {
                 $department = new DepartmentsModel();
-                $department_uid = generate_uuid();
-                $department->uid = $department_uid;
+                $departmentUid = generateUuid();
+                $department->uid = $departmentUid;
                 $isNew = true;
             } else {
-                $department = DepartmentsModel::find($department_uid);
+                $department = DepartmentsModel::find($departmentUid);
                 $isNew = false;
             }
 

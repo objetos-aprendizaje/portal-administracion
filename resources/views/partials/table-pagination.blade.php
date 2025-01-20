@@ -13,10 +13,10 @@
 
     <div class="flex gap-[40px]">
         <button type="button" class="pagination-btn btn-first-page" title="Ir a la primera página">
-            {{ e_heroicon('chevron-double-left', 'solid') }}
+            {{ eHeroicon('chevron-double-left', 'solid') }}
         </button>
         <button type="button" class="pagination-btn btn-previous-page" title="Ir a la página anterior">
-            {{ e_heroicon('chevron-left', 'solid') }}
+            {{ eHeroicon('chevron-left', 'solid') }}
         </button>
 
         <span class="counter page-info"></span>
@@ -24,11 +24,11 @@
         <input class="pages-show-input current-page" type="number" value="1">
 
         <button type="button" class="pagination-btn btn-next-page" title="Ir a la página siguiente">
-            {{ e_heroicon('chevron-right', 'solid') }}
+            {{ eHeroicon('chevron-right', 'solid') }}
         </button>
 
         <button type="button" class="pagination-btn btn-last-page" title="Ir a la última página">
-            {{ e_heroicon('chevron-double-right', 'solid') }}
+            {{ eHeroicon('chevron-double-right', 'solid') }}
         </button>
     </div>
 

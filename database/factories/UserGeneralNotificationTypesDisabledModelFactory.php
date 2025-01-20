@@ -18,7 +18,7 @@ class UserGeneralNotificationTypesDisabledModelFactory extends Factory
     public function definition(): array
     {
         return [
-           'uid' => generate_uuid(),
+           'uid' => generateUuid(),
            'user_uid' => Str::ulid(),
            'notification_type_uid' => Str::ulid(),
         ];

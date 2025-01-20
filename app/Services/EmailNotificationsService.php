@@ -11,21 +11,21 @@ class EmailNotificationsService
 
     public function processNotification($notification)
     {
-        $all_users = UsersModel::with('roles')->with("emailNotificationsTypesDisabled")->get();
+        $allUsers = UsersModel::with('roles')->with("emailNotificationsTypesDisabled")->get();
 
         if ($notification->type == 'ALL_USERS') {
-            $this->processAllUsersNotification($notification, $all_users);
-        } else if ($notification->type == 'ROLES') {
-            $this->processRolesNotification($notification, $all_users);
-        } else if ($notification->type == 'USERS') {
+            $this->processAllUsersNotification($notification, $allUsers);
+        } elseif ($notification->type == 'ROLES') {
+            $this->processRolesNotification($notification, $allUsers);
+        } elseif ($notification->type == 'USERS') {
             $this->processUsersNotification($notification);
         }
     }
 
-    public function processAllUsersNotification($notification, $all_users)
+    public function processAllUsersNotification($notification, $allUsers)
     {
         // Excluímos los usuarios que tienen deshabilitado el tipo de notificación
-        $usersInterested = $this->filterUsersNotInterestedNotificationType($all_users, $notification);
+        $usersInterested = $this->filterUsersNotInterestedNotificationType($allUsers, $notification);
 
         $userChunks = array_chunk($usersInterested->toArray(), 200);
         foreach ($userChunks as $usersChunk) {
@@ -43,10 +43,10 @@ class EmailNotificationsService
         }
     }
 
-    public function processRolesNotification($notification, $all_users)
+    public function processRolesNotification($notification, $allUsers)
     {
         // Excluímos los usuarios que tienen deshabilitado el tipo de notificación
-        $usersInterested = $this->filterUsersNotInterestedNotificationType($all_users, $notification);
+        $usersInterested = $this->filterUsersNotInterestedNotificationType($allUsers, $notification);
 
         // Tipo de notificación de roles
         foreach ($notification->roles as $role) {

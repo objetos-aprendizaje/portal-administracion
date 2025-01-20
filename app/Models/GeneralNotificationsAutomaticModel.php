@@ -26,7 +26,7 @@ class GeneralNotificationsAutomaticModel extends Model
         'automatic_notification_type_uid'
     ];
 
-    function users()
+    public function users()
     {
         return $this->belongsToMany(UsersModel::class, 'general_notifications_automatic_users', 'general_notifications_automatic_uid', 'user_uid');
     }

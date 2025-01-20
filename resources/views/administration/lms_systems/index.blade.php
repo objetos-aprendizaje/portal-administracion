@@ -10,17 +10,17 @@
             <div class="flex gap-1">
                 <div>
                     <button type="button" id="new-lms-system-btn" class="btn-icon" title="Añadir sistema LMS">
-                        {{ e_heroicon('plus', 'outline') }}
+                        {{ eHeroicon('plus', 'outline') }}
                     </button>
                 </div>
                 <div>
                     <button type="button" class="btn-icon" id="btn-delete-lms-system" title="Eliminar sistema LMS">
-                        {{ e_heroicon('trash', 'outline') }}
+                        {{ eHeroicon('trash', 'outline') }}
                     </button>
                 </div>
                 <div>
                     <button type="button" class="btn-icon" id="btn-reload-table" title="Actualizar">
-                        {{ e_heroicon('arrow-path', 'outline') }}
+                        {{ eHeroicon('arrow-path', 'outline') }}
                     </button>
                 </div>
             </div>

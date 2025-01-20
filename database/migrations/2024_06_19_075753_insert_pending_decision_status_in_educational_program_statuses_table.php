@@ -13,7 +13,7 @@ class InsertPendingDecisionStatusInEducationalProgramStatusesTable extends Migra
     public function up()
     {
         DB::table('educational_program_statuses')->insert([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Pendiente de decisión',
             'code' => 'PENDING_DECISION',
         ]);

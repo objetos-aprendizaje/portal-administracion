@@ -132,7 +132,7 @@ class DepartamentApiControllerTest extends TestCase
     public function testErrorDepartmentNotFound()
     {
 
-        $uid = generate_uuid();
+        $uid = generateUuid();
         DepartmentsModel::where('uid', $uid)->first();
         // Datos para actualizar un departamento que no existe
         $data = [
@@ -168,7 +168,7 @@ class DepartamentApiControllerTest extends TestCase
 /** @test  Departamento no encontrado al eliminar*/
     public function testError404DepartmentNotFoundNotDelete()
     {
-        $uid_delete = generate_uuid();
+        $uid_delete = generateUuid();
         $data = [
             'name' => 'Updated Department Name',
         ];

@@ -23,7 +23,9 @@ class CourseTypesController extends BaseController
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            if (!$this->checkAccessManagers()) abort(403);
+            if (!$this->checkAccessManagers()) {
+                abort(403);
+            }
             return $next($request);
         })->except('index');
     }
@@ -37,7 +39,7 @@ class CourseTypesController extends BaseController
             ]);
         }
 
-        $course_types = CourseTypesModel::get()->toArray();
+        $courseTypes = CourseTypesModel::get()->toArray();
 
         return view(
             'cataloging.course_types.index',
@@ -47,7 +49,7 @@ class CourseTypesController extends BaseController
                 "resources" => [
                     "resources/js/cataloging_module/course_types.js"
                 ],
-                "course_types" => $course_types,
+                "course_types" => $courseTypes,
                 "tabulator" => true,
                 "submenuselected" => "cataloging-course-types",
             ]
@@ -85,20 +87,16 @@ class CourseTypesController extends BaseController
     /**
      * Obtiene un tipo de curso por uid
      */
-    public function getCourseType($course_type_uid)
+    public function getCourseType($courseTypeUid)
     {
 
-        // if (!$course_type_uid) {
-        //     return response()->json(['message' => env('ERROR_MESSAGE')], 400);
-        // }
+        $courseType = CourseTypesModel::where('uid', $courseTypeUid)->first();
 
-        $course_type = CourseTypesModel::where('uid', $course_type_uid)->first();
-
-        if (!$course_type) {
+        if (!$courseType) {
             return response()->json(['message' => 'El tipo de curso no existe'], 406);
         }
 
-        return response()->json($course_type, 200);
+        return response()->json($courseType, 200);
     }
 
     /**
@@ -132,34 +130,34 @@ class CourseTypesController extends BaseController
 
         $isNew = true;
 
-        $course_type_uid = $request->get('course_type_uid');
+        $courseTypeUid = $request->get('course_type_uid');
         $name = $request->get('name');
         $description = $request->get('description');
 
-        if ($course_type_uid) {
-            $course_type = CourseTypesModel::find($course_type_uid);
+        if ($courseTypeUid) {
+            $courseType = CourseTypesModel::find($courseTypeUid);
             $isNew = false;
         } else {
-            $course_type = new CourseTypesModel();
-            $course_type->uid = generate_uuid();
+            $courseType = new CourseTypesModel();
+            $courseType->uid = generateUuid();
             $isNew = true;
         }
 
-        $course_type->name = $name;
-        $course_type->description = $description;
+        $courseType->name = $name;
+        $courseType->description = $description;
 
-        DB::transaction(function () use ($course_type) {
-            $course_type->save();
+        DB::transaction(function () use ($courseType) {
+            $courseType->save();
 
-            LogsController::createLog('Guardar tipo de curso: ' . $course_type->name, 'Tipos de cursos', auth()->user()->uid);
+            LogsController::createLog('Guardar tipo de curso: ' . $courseType->name, 'Tipos de cursos', auth()->user()->uid);
         });
 
         // Obtenemos todas los tipos
-        $course_types = CourseTypesModel::get()->toArray();
+        $courseTypes = CourseTypesModel::get()->toArray();
 
         return response()->json([
             'message' => ($isNew) ? 'Tipo de curso añadido correctamente' : 'Tipo de curso actualizado correctamente',
-            'course_types' => $course_types
+            'course_types' => $courseTypes
         ], 200);
     }
 
@@ -182,21 +180,21 @@ class CourseTypesController extends BaseController
             }
         });
 
-        $course_types = CourseTypesModel::get()->toArray();
+        $courseTypes = CourseTypesModel::get()->toArray();
 
-        return response()->json(['message' => 'Tipos de curso eliminados correctamente', 'course_types' => $course_types], 200);
+        return response()->json(['message' => 'Tipos de curso eliminados correctamente', 'course_types' => $courseTypes], 200);
     }
 
     private function checkAccessManagers()
     {
         $user = Auth::user();
 
-        $roles_user = $user->roles->pluck('code')->toArray();
+        $rolesUser = $user->roles->pluck('code')->toArray();
 
-        $general_options = app('general_options');
+        $generalOptions = app('general_options');
 
         // Aplicable si sólo tiene el rol de gestor
-        if (empty(array_diff($roles_user, ['MANAGEMENT'])) && !$general_options['managers_can_manage_course_types']) {
+        if (empty(array_diff($rolesUser, ['MANAGEMENT'])) && !$generalOptions['managers_can_manage_course_types']) {
             return false;
         }
 

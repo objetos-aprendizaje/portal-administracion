@@ -9,21 +9,21 @@
             <div class="flex gap-1">
                 <div>
                     <button type="button" id="new-educational-program-btn" class="btn-icon" title="Añadir programa formativo">
-                        {{ e_heroicon('plus', 'outline') }}
+                        {{ eHeroicon('plus', 'outline') }}
                     </button>
                 </div>
 
                 @if (Auth::user()->hasAnyRole(['MANAGEMENT']))
                     <div>
                         <button type="button" class="btn-icon" id="change-statuses-btn" title="Cambio de estado">
-                            {{ e_heroicon('arrows-right-left', 'outline') }}
+                            {{ eHeroicon('arrows-right-left', 'outline') }}
                         </button>
                     </div>
                 @endif
 
                 <div>
                     <button type="button" class="btn-icon" id="btn-reload-table" title="Recargar">
-                        {{ e_heroicon('arrow-path', 'outline') }}
+                        {{ eHeroicon('arrow-path', 'outline') }}
                     </button>
                 </div>
             </div>

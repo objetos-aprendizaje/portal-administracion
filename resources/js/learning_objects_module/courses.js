@@ -81,7 +81,6 @@ let tomSelectCoordinatorsTeachersFilter;
 let tomSelectCreatorsFilter;
 let tomSelectCourseStatusesFilter;
 let tomSelectCallsFilter;
-let tomSelectEducationalProgramsFilter;
 let tomSelectCourseTypesFilter;
 
 let flatpickrInscriptionDate;
@@ -720,7 +719,7 @@ class Trees {
     // Elimina un nodo seleccionado
     deleteSelectedNode(node) {
         this.selectedNodes.delete(node);
-        this.updateSelectedNodesLabel;
+        this.updateSelectedNodesLabel();
     }
 
     // Elimina varios nodos seleccionados
@@ -924,7 +923,7 @@ async function instanceTreeCompetences(order, selectedNodes = []) {
         }
     };
 
-    var tree = new InfiniteTree(
+    const tree = new InfiniteTree(
         document.querySelector(`.competences-section[data-order="${order}"]`),
         {
             rowRenderer: renderer,
@@ -1155,7 +1154,7 @@ function initHandlers() {
     document
         .getElementById("belongs_to_educational_program")
         .addEventListener("change", function (e) {
-            var isChecked = e.target.checked;
+            const isChecked = e.target.checked;
             setVisibilityCourseFieldsBasedOnProgramMembership(
                 isChecked ? true : false
             );
@@ -1556,8 +1555,6 @@ function controlDeleteFilters(deleteBtn) {
     if (filterKey == "calls") tomSelectCallsFilter.clear();
     else if (filterKey == "course_statuses")
         tomSelectCourseStatusesFilter.clear();
-    else if (filterKey == "educational_programs")
-        tomSelectEducationalProgramsFilter.clear();
     else if (filterKey == "course_types") tomSelectCourseTypesFilter.clear();
     else if (filterKey == "creators") tomSelectCreatorsFilter.clear();
     else if (filterKey == "filter_inscription_date")
@@ -1591,7 +1588,6 @@ function resetFilters() {
     tomSelectLearningResultsFilter.clear();
     tomSelectCoordinatorsTeachersFilter.clear();
     tomSelectCategoriesFilter.clear();
-    tomSelectEducationalProgramsFilter.clear();
 
     document.getElementById("filter_min_ects_workload").value = "";
     document.getElementById("filter_max_ects_workload").value = "";
@@ -1633,7 +1629,7 @@ function controlSaveHandlerFilters() {
  */
 function showFilters() {
     // Eliminamos todos los filtros
-    var currentFilters = document.querySelectorAll(".filter");
+    const currentFilters = document.querySelectorAll(".filter");
 
     // Recorre cada elemento y lo elimina
     currentFilters.forEach(function (filter) {
@@ -1642,7 +1638,7 @@ function showFilters() {
 
     filters.forEach((filter) => {
         // Crea un nuevo div
-        var newDiv = document.createElement("div");
+        const newDiv = document.createElement("div");
 
         // Agrega la clase 'filter' al div
         newDiv.classList.add("filter");
@@ -1748,50 +1744,50 @@ function collectFilters() {
         );
     }
 
-    const filter_min_ects_workload = document.getElementById(
+    const filterMinEctsWorkload = document.getElementById(
         "filter_min_ects_workload"
     ).value;
 
-    if (filter_min_ects_workload) {
+    if (filterMinEctsWorkload) {
         addFilter(
             "Mínimo ECTS",
-            filter_min_ects_workload,
-            filter_min_ects_workload,
+            filterMinEctsWorkload,
+            filterMinEctsWorkload,
             "filter_min_ects_workload",
             "min_ects_workload"
         );
     }
 
-    const filter_max_ects_workload = document.getElementById(
+    const filterMaxEctsWorkload = document.getElementById(
         "filter_max_ects_workload"
     ).value;
 
-    if (filter_max_ects_workload) {
+    if (filterMaxEctsWorkload) {
         addFilter(
             "Máximo ECTS",
-            filter_max_ects_workload,
-            filter_max_ects_workload,
+            filterMaxEctsWorkload,
+            filterMaxEctsWorkload,
             "filter_max_ects_workload",
             "max_ects_workload"
         );
     }
 
-    const filter_min_cost = document.getElementById("filter_min_cost").value;
+    const filterMinCost = document.getElementById("filter_min_cost").value;
     if (filter_min_cost)
         addFilter(
             "Coste mínimo",
-            filter_min_cost,
-            filter_min_cost,
+            filterMinCost,
+            filterMinCost,
             "filter_min_cost",
             "min_cost"
         );
 
-    const filter_max_cost = document.getElementById("filter_max_cost").value;
+    const filterMaxCost = document.getElementById("filter_max_cost").value;
     if (filter_max_cost)
         addFilter(
             "Coste máximo",
-            filter_max_cost,
-            filter_max_cost,
+            filterMaxCost,
+            filterMaxCost,
             "filter_max_cost",
             "max_cost"
         );
@@ -1924,26 +1920,6 @@ function collectFilters() {
         }
     }
 
-    if (tomSelectEducationalProgramsFilter) {
-        const educationalPrograms =
-            tomSelectEducationalProgramsFilter.getValue();
-
-        const selectedEducationalProgramsLabel =
-            getOptionsSelectedTomSelectInstance(
-                tomSelectEducationalProgramsFilter
-            );
-
-        if (educationalPrograms.length) {
-            addFilter(
-                "Programas formativos",
-                tomSelectEducationalProgramsFilter.getValue(),
-                selectedEducationalProgramsLabel,
-                "educational_programs",
-                "educational_programs"
-            );
-        }
-    }
-
     if (tomSelectCourseTypesFilter) {
         const courseTypes = tomSelectCourseTypesFilter.getValue();
 
@@ -1962,29 +1938,29 @@ function collectFilters() {
         }
     }
 
-    const filter_min_required_students = document.getElementById(
+    const filterMinRequiredStudents = document.getElementById(
         "filter_min_required_students"
     ).value;
 
-    if (filter_min_required_students !== "") {
+    if (filterMinRequiredStudents !== "") {
         addFilter(
             "Mínimo estudiantes requeridos",
-            filter_min_required_students,
-            filter_min_required_students,
+            filterMinRequiredStudents,
+            filterMinRequiredStudents,
             "filter_min_required_students",
             "min_required_students"
         );
     }
 
-    const filter_max_required_students = document.getElementById(
+    const filterMaxRequiredStudents = document.getElementById(
         "filter_max_required_students"
     ).value;
 
-    if (filter_max_required_students !== "") {
+    if (filterMaxRequiredStudents !== "") {
         addFilter(
             "Máximo estudiantes requeridos",
-            filter_max_required_students,
-            filter_max_required_students,
+            filterMaxRequiredStudents,
+            filterMaxRequiredStudents,
             "filter_max_required_students",
             "max_required_students"
         );
@@ -2071,10 +2047,6 @@ function initializeTomSelect() {
     );
 
     tomSelectCallsFilter = getMultipleTomSelectInstance("#filter_calls");
-
-    tomSelectEducationalProgramsFilter = getMultipleTomSelectInstance(
-        "#filter_educational_program_types"
-    );
 
     tomSelectCourseTypesFilter = getMultipleTomSelectInstance(
         "#filter_course_types"
@@ -3248,7 +3220,7 @@ function bulkChangeStatuses() {
     const selectors = document.querySelectorAll("#courses-list .status-course");
     bulkSelect.addEventListener("change", function () {
         selectors.forEach((select) => {
-            var opcionExist = select.querySelector(
+            const opcionExist = select.querySelector(
                 'option[value="' + bulkSelect.value + '"]'
             );
             if (opcionExist) {
@@ -3749,7 +3721,7 @@ function getStatusCourseColor(statusCode) {
  * en función de si el curso tiene validación de estudiantes.
  */
 function controlValidationStudents() {
-    var checkbox = document.getElementById("validate_student_registrations");
+    const checkbox = document.getElementById("validate_student_registrations");
 
     const documentsContainer = document.getElementById("documents-container");
     const criteriaArea = document.getElementById("criteria-area");
@@ -3947,7 +3919,6 @@ function toggleFormFieldsAccessibility(isDisabled) {
     const idsDisable = [
         "validate_student_registrations",
         "call_uid",
-        "educational_program_type_uid",
         "course_type_uid",
         "certification_type_uid",
         "center_uid",
@@ -4026,7 +3997,6 @@ function setFieldsNewEdition() {
 
     // Desactivamos estos campos
     const idsDisable = [
-        "educational_program_type_uid",
         "course_type_uid",
         "certification_type_uid",
         "belongs_to_educational_program",
@@ -4061,9 +4031,9 @@ function getDocuments() {
 
     courseDocuments.forEach((courseDocument) => {
         const uid = courseDocument.dataset.documentUid;
-        const document_name =
+        const documentName =
             courseDocument.querySelector(".document-name").value;
-        documentsData.push({ uid, document_name });
+        documentsData.push({ uid, documentName });
     });
 
     return documentsData;
@@ -4161,7 +4131,7 @@ function syncTomSelectsTeachers() {
 //abrimos modal para seleccionar columnas
 function controlColumnsSecectorModal() {
     showModal("columns-courses-modal");
-    var checkboxes = document.querySelectorAll(
+    const checkboxes = document.querySelectorAll(
         '.checkbox_columns_selector input[type="checkbox"]'
     );
     checkboxes.forEach(function (checkbox) {
@@ -4178,10 +4148,10 @@ function controlColumnsSecectorModal() {
             coursesTable.redraw();
 
             // Recoger todas las columnas marcadas y guardarlas en cookie
-            var checkboxes = document.querySelectorAll(
+            const checkboxes = document.querySelectorAll(
                 '.checkbox_columns_selector input[type="checkbox"]:checked'
             );
-            var values = Array.from(checkboxes).map(
+            const values = Array.from(checkboxes).map(
                 (checkbox) => checkbox.value
             );
 

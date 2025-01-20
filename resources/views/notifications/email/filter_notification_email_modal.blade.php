@@ -7,7 +7,7 @@
 
             <div>
                 <button data-modal-id="filter-notification-email-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
         </div>
@@ -99,7 +99,7 @@
 
         <div class="flex justify-center mt-8">
             <button id="filter-btn" type="button" class="btn btn-primary">
-                Filtrar {{ e_heroicon('adjustments-horizontal', 'outline') }}</button>
+                Filtrar {{ eHeroicon('adjustments-horizontal', 'outline') }}</button>
         </div>
     </div>
 </div>

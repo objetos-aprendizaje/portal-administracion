@@ -44,8 +44,8 @@ class AdministrationGeneralOptionsTest extends TestCase
 
         // Crear un usuario de prueba y asignar roles
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -137,8 +137,8 @@ class AdministrationGeneralOptionsTest extends TestCase
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -176,7 +176,7 @@ class AdministrationGeneralOptionsTest extends TestCase
         $response->assertViewHas('tabulator', true);
         $response->assertViewHas('submenuselected', 'lms-systems');
     }
-    
+
     /**
      * @test  Guardar Lms Systems */
     public function testSaveLmsSystemCreatesNewLms()
@@ -218,7 +218,7 @@ class AdministrationGeneralOptionsTest extends TestCase
         $user = UsersModel::factory()->create();
         $this->actingAs($user);
 
-        $lms = LmsSystemsModel::factory()->create()->first();      
+        $lms = LmsSystemsModel::factory()->create()->first();
 
 
         // Enviar una solicitud para crear un nuevo sistema LMS
@@ -300,13 +300,13 @@ class AdministrationGeneralOptionsTest extends TestCase
 
         // Crear algunos sistemas LMS para eliminar
         $lms1 = LmsSystemsModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Sistema LMS 1',
             'identifier' => 'lms-1',
         ]);
 
         $lms2 = LmsSystemsModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Sistema LMS 2',
             'identifier' => 'lms-2',
         ]);

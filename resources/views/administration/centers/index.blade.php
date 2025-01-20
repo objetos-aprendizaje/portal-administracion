@@ -10,17 +10,17 @@
             <div class="flex gap-1">
                 <div>
                     <button type="button" id="new-center-btn" class="btn-icon" title="Añadir centro">
-                        {{ e_heroicon('plus', 'outline') }}
+                        {{ eHeroicon('plus', 'outline') }}
                     </button>
                 </div>
                 <div>
                     <button type="button" class="btn-icon" id="btn-delete-center" title="Eliminar centro">
-                        {{ e_heroicon('trash', 'outline') }}
+                        {{ eHeroicon('trash', 'outline') }}
                     </button>
                 </div>
                 <div>
                     <button type="button" class="btn-icon" id="btn-reload-table" title="Actualizar">
-                        {{ e_heroicon('arrow-path', 'outline') }}
+                        {{ eHeroicon('arrow-path', 'outline') }}
                     </button>
                 </div>
             </div>

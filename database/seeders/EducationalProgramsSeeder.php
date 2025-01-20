@@ -173,7 +173,7 @@ class EducationalProgramsSeeder extends Seeder
     private function createEducationalProgram($customData, $status)
     {
 
-        $educationalProgramUid = generate_uuid();
+        $educationalProgramUid = generateUuid();
 
         $data = [
             'uid' => $educationalProgramUid,
@@ -206,7 +206,9 @@ class EducationalProgramsSeeder extends Seeder
         $this->addEmailsContacts($educationalProgramUid);
         $this->addStudents($educationalProgramUid, $status);
 
-        if ($customData['payment_mode'] == 'INSTALLMENT_PAYMENT') $this->addPaymentTerms($educationalProgramUid, $customData['realization_start_date'], $customData['realization_finish_date']);
+        if ($customData['payment_mode'] == 'INSTALLMENT_PAYMENT') {
+            $this->addPaymentTerms($educationalProgramUid, $customData['realization_start_date'], $customData['realization_finish_date']);
+        }
 
 
         $numberCourses = $this->faker->numberBetween(2, 5);
@@ -238,7 +240,7 @@ class EducationalProgramsSeeder extends Seeder
     private function createCourse($educationalProgramUid, $realizationStartDate, $realizationFinishDate)
     {
         $data = [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'belongs_to_educational_program' => true,
             'educational_program_uid' => $educationalProgramUid,
             'image_path' => $this->demoImages[array_rand($this->demoImages)],
@@ -304,7 +306,7 @@ class EducationalProgramsSeeder extends Seeder
         $csv = readCsv('database/seeders/dataset_learning_objects.csv');
 
         // Filtrar los cursos que se encuentran entre las posiciones start y end
-        $courses = array_slice($csv, $start, $end);
-        return $courses;
+        return array_slice($csv, $start, $end);
+       
     }
 }

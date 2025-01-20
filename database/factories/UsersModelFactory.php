@@ -25,7 +25,7 @@ class UsersModelFactory extends Factory
         $faker->addProvider(new NifProvider($faker));
 
         return [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'first_name' => $this->faker->firstName,
             'last_name' => $this->faker->lastName,
             'email' => fake()->unique()->safeEmail(),

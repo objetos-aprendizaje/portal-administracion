@@ -33,11 +33,13 @@ class RecoverPasswordController extends BaseController
 
         $user = UsersModel::where('email', $email)->first();
 
-        if ($user) $this->sendEmailRecoverPassword($user);
+        if ($user) {
+            $this->sendEmailRecoverPassword($user);
+        }
 
         return redirect()->route('login')->with([
             'sent_email_recover_password' => true,
-            'email' => $user->email
+            'email' => $user->email ?? null
         ]);
     }
 
@@ -46,11 +48,10 @@ class RecoverPasswordController extends BaseController
         $email = $request->input('email');
         $user = UsersModel::where('email', $email)->first();
 
-        if (!$user) throw new OperationFailedException('No se ha encontrado el usuario con el email proporcionado');
-
-        ResetPasswordTokensModel::where('uid_user', $user->uid)->delete();
-
-        $this->sendEmailRecoverPassword($user);
+        if ($user) {
+            ResetPasswordTokensModel::where('uid_user', $user->uid)->delete();
+            $this->sendEmailRecoverPassword($user);
+        }
 
         return response()->json([
             'message' => 'Se ha reenviado el email de restablecimiento de contraseña'
@@ -60,16 +61,16 @@ class RecoverPasswordController extends BaseController
     private function sendEmailRecoverPassword($user)
     {
         $token = md5(uniqid(rand(), true));
-        $minutes_expiration_token = env('PWRES_TOKEN_EXPIRATION_MIN', 60);
-        $expiration_date = date("Y-m-d H:i:s", strtotime("+$minutes_expiration_token minutes"));
+        $minutesExpirationToken = env('PWRES_TOKEN_EXPIRATION_MIN', 60);
+        $expirationDate = date("Y-m-d H:i:s", strtotime("+$minutesExpirationToken minutes"));
 
         // Insertar el token en la tabla password_reset_tokens
         $resetPasswordToken = new ResetPasswordTokensModel();
-        $resetPasswordToken->uid = generate_uuid();
+        $resetPasswordToken->uid = generateUuid();
         $resetPasswordToken->uid_user = $user->uid;
         $resetPasswordToken->email = $user->email;
         $resetPasswordToken->token = $token;
-        $resetPasswordToken->expiration_date = $expiration_date;
+        $resetPasswordToken->expiration_date = $expirationDate;
         $resetPasswordToken->save();
 
         $url = URL::temporarySignedRoute(

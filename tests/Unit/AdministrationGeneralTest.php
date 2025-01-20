@@ -44,8 +44,8 @@ class AdministrationGeneralTest extends TestCase
 
         // Crear un usuario de prueba y asignar roles
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -89,7 +89,7 @@ class AdministrationGeneralTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -103,10 +103,9 @@ class AdministrationGeneralTest extends TestCase
             // Datos de prueba
             $data = [
                 'company_name' => 'Universidad Ejemplo',
-                'commercial_name' => 'UniEjemplo',
                 'cif' => 'A12345678',
                 'fiscal_domicile' => 'Calle Ejemplo, 123',
-                'work_center_address' => 'Avenida Ejemplo, 456',
+                'phone_number' => '123456789',
             ];
 
             // Realiza la solicitud POST para guardar la información de la universidad
@@ -135,7 +134,7 @@ class AdministrationGeneralTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -176,7 +175,7 @@ class AdministrationGeneralTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -231,7 +230,7 @@ class AdministrationGeneralTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -293,30 +292,30 @@ class AdministrationGeneralTest extends TestCase
          $roles_to_sync = [];
          foreach ($roles_bd as $rol_uid) {
              $roles_to_sync[] = [
-                 'uid' => generate_uuid(),
+                 'uid' => generateUuid(),
                  'user_uid' => $admin->uid,
                  'user_role_uid' => $rol_uid
              ];
          }
- 
+
          $admin->roles()->sync($roles_to_sync);
          $this->actingAs($admin);
- 
+
          if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
- 
+
              // Prepara los datos iniciales
              GeneralOptionsModel::create(['option_name' => 'carrousel_title', 'option_value' => '']);
              GeneralOptionsModel::create(['option_name' => 'carrousel_description', 'option_value' => '']);
              GeneralOptionsModel::create(['option_name' => 'main_slider_color_font', 'option_value' => '']);
- 
+
              // Datos que se enviarán en la solicitud
              $data = [
-                 'carrousel_title' => 'Título del Carrousel',                
+                 'carrousel_title' => 'Título del Carrousel',
              ];
- 
+
              // Realiza la solicitud POST
              $response = $this->postJson('/administration/save_carrousel',$data);
- 
+
              // Verifica la respuesta
              $response->assertStatus(422)
                  ->assertJson(['message' => 'Algunos campos son incorrectos']);
@@ -334,7 +333,7 @@ class AdministrationGeneralTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -388,7 +387,7 @@ class AdministrationGeneralTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -424,7 +423,7 @@ class AdministrationGeneralTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -492,7 +491,7 @@ class AdministrationGeneralTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -563,7 +562,7 @@ class AdministrationGeneralTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -595,48 +594,6 @@ class AdministrationGeneralTest extends TestCase
         }
     }
 
-    // public function testSaveLogoImageSuccessfullyV1()
-    // {
-    //     $admin = UsersModel::factory()->create();
-    //     $roles_bd = UserRolesModel::get()->pluck('uid');
-    //     $roles_to_sync = [];
-    //     foreach ($roles_bd as $rol_uid) {
-    //         $roles_to_sync[] = [
-    //             'uid' => generate_uuid(),
-    //             'user_uid' => $admin->uid,
-    //             'user_role_uid' => $rol_uid
-    //         ];
-    //     }
-    //     $admin->roles()->sync($roles_to_sync);
-
-    //     $this->actingAs($admin);
-
-    //     if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
-    //         // Configura el almacenamiento real para evitar conflictos
-    //         Storage::fake('local');
-    //         // Simula el archivo subido
-    //         $file = UploadedFile::fake()->image('logo.png');
-    //         // Define la ruta esperada del archivo
-    //         $fileName = $file->hashName(); // Esto genera un nombre único para el archivo simulado
-    //         $filePath = 'app/public/images/custom-logos/' . $fileName;
-    //         // Ejecuta el método del controlador
-    //         $response = $this->postJson('/administration/save_logo_image', [
-    //             'logoPoaFile' => $filePath,
-    //             'logoId' => 'test_logo_id'
-    //         ]);
-    //         // Espera que el archivo sea guardado en 'storage/app/images/custom-logos/'
-    //         $storagePath = storage_path('app/public/images/custom-logos/');
-    //         $fullFilePath = $storagePath . $fileName;
-    //         // Verifica que el archivo exista en la ruta real
-    //         $this->assertFileExists($fullFilePath, "El archivo no se encuentra en la ruta esperada: $fullFilePath");
-    //         // Verifica la respuesta del controlador
-    //         $response->assertJson([
-    //             'message' => 'Logo actualizado correctamente',
-    //             'route' => $filePath
-    //         ]);
-    //     }
-    // }  
-
     /**
      * @test
      * Este test verifica que la imagen del logo se guarda correctamente y que se actualiza la base de datos.
@@ -648,7 +605,7 @@ class AdministrationGeneralTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -688,7 +645,7 @@ class AdministrationGeneralTest extends TestCase
             $response->assertStatus(200);
 
             // Obtener la estructura de la respuesta JSON
-            $responseData = $response->json();
+            $response->json();
 
             // Verificar que la base de datos se actualizó correctamente
             $this->assertDatabaseHas('general_options', [
@@ -765,9 +722,7 @@ class AdministrationGeneralTest extends TestCase
         $response = $this->createTestResponse($response);
 
         // Verificar la respuesta
-        // $response->assertStatus(405);
         $response->assertStatus(200);
-        // $response->assertJson(['message' => 'Error al guardar la imagen']);
     }
 
 
@@ -775,7 +730,7 @@ class AdministrationGeneralTest extends TestCase
     public function testRegeneratesEmbeddingsSuccessfully()
     {
         // Configurar datos de prueba
-        $options = ['openai_key' => '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'];
+        $options = ['openai_key' => env('OPENAI_KEY')];
         app()->instance('general_options', $options);
 
         // Simular que no hay un trabajo pendiente

@@ -21,22 +21,22 @@ return new class extends Migration
 
         $user_roles = [
             [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "Administrador",
                 "code" => "ADMINISTRATOR"
             ],
             [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "Gestor",
                 "code" => "MANAGEMENT"
             ],
             [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "Docente",
                 "code" => "TEACHER"
             ],
             [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "Estudiante",
                 "code" => "STUDENT"
             ],

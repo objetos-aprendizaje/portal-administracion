@@ -49,8 +49,8 @@ class EducationalResourcesControllerTest extends TestCase
     public function testIndexEducationalResourcesPage()
     {
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -117,7 +117,7 @@ class EducationalResourcesControllerTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $user_teacher->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -173,7 +173,7 @@ class EducationalResourcesControllerTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $user_teacher->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -190,7 +190,7 @@ class EducationalResourcesControllerTest extends TestCase
             ])->first();
 
         $resource->categories()->attach($category->uid, [
-            'uid' => generate_uuid() // Asegúrate de generar un UUID para el campo `uid`
+            'uid' => generateUuid() // Asegúrate de generar un UUID para el campo `uid`
         ]);
 
         $this->actingAs($user_teacher);
@@ -217,7 +217,7 @@ class EducationalResourcesControllerTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $user_teacher->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -240,10 +240,7 @@ class EducationalResourcesControllerTest extends TestCase
             ]);
 
         $this->actingAs($user_teacher);
-
-        $sort = [
-            ['field' => 'title', 'dir' => 'asc']
-        ];
+      
 
         $response = $this->getJson('/learning_objects/educational_resources/get_resources?sort[0][field]=title&sort[0][dir]=asc&size=2');
 
@@ -261,10 +258,10 @@ class EducationalResourcesControllerTest extends TestCase
         $role = UserRolesModel::where('code', 'TEACHER')->first();
 
         $user->roles()->attach($role->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
         ]);
 
-        $resource = EducationalResourcesModel::factory()
+        EducationalResourcesModel::factory()
             ->withStatus()
             ->withEducationalResourceType()
             ->create([
@@ -303,7 +300,7 @@ class EducationalResourcesControllerTest extends TestCase
         ]);
 
         // Realiza la solicitud GET a la ruta con un UID válido pero no existente error 406
-        $response = $this->get('/learning_objects/educational_resources/get_resource/' . generate_uuid());
+        $response = $this->get('/learning_objects/educational_resources/get_resource/' . generateUuid());
 
         // Verifica que la respuesta sea 200 (OK)
         $response->assertStatus(406);
@@ -491,7 +488,7 @@ class EducationalResourcesControllerTest extends TestCase
             'title'                         => 'Nuevo Recurso Educativo',
             'description'                   => 'Descripción del recurso',
             'educational_resource_type_uid' => $educationalResourceTypes->uid,
-            'status_uid' => generate_uuid(),
+            'status_uid' => generateUuid(),
             'license_type_uid'              => $licenseTypes->uid,
             'resource_way'                  => 'FILE',
             'resource_input_file'           => 'text.txt',
@@ -525,7 +522,7 @@ class EducationalResourcesControllerTest extends TestCase
             'title'                         => 'Nuevo Recurso Educativo',
             'description'                   => 'Descripción del recurso',
             'educational_resource_type_uid' => $educationalResourceTypes->uid,
-            'status_uid' => generate_uuid(),
+            'status_uid' => generateUuid(),
             'license_type_uid'              => $licenseTypes->uid,
             'resource_way'                  => 'URL',
             'resource_url'                  => 'http://miweb.com',
@@ -594,7 +591,7 @@ class EducationalResourcesControllerTest extends TestCase
             [
                 'educational_resource_uid'=> $resource->uid
             ]
-        );        
+        );
 
 
         // Configura el mock de general_options con la clave correcta
@@ -676,13 +673,6 @@ class EducationalResourcesControllerTest extends TestCase
         // Verifica que los resultados de aprendizaje se hayan actualizado correctamente
         $this->assertDatabaseHas('educational_resources_learning_results', ['learning_result_uid' => $learningResult1->uid]);
         $this->assertDatabaseHas('educational_resources_learning_results', ['learning_result_uid' => $learningResult2->uid]);
-
-        // // Verifica que se haya creado un log correctamente
-        // $this->assertDatabaseHas('logs', [
-        //     'info' => 'Recurso educativo actualizado',
-        //     'entity' => 'Recursos educativos',
-        //     'user_uid' => $user->uid,
-        // ]);
     }
 
 
@@ -722,7 +712,7 @@ class EducationalResourcesControllerTest extends TestCase
         $user = UsersModel::factory()->create();
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
         Auth::login($user);
 
@@ -806,25 +796,20 @@ class EducationalResourcesControllerTest extends TestCase
         $user = UsersModel::factory()->create();
         $role = UserRolesModel::where('code', 'STUDENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
         Auth::login($user);
-
-        // $status = EducationalResourceStatusesModel::factory()
-        //     ->create([
-        //         'code' => 'PUBLISHED',
-        //     ])->latest()->first();
 
         $category1 = CategoriesModel::factory()->create()->first();
 
         $user->categories()->attach($category1->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
         ]);
 
         $automaticNotificationType = AutomaticNotificationTypesModel::where('code', 'NEW_EDUCATIONAL_PROGRAMS')->first();
 
         $user->automaticGeneralNotificationsTypesDisabled()->attach($automaticNotificationType->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
         ]);
 
 
@@ -840,7 +825,7 @@ class EducationalResourcesControllerTest extends TestCase
             ->withCreatorUser()
             ->create(['status_uid' => $status->uid]);
 
-        $resource1->categories()->attach($category1, ['uid' => generate_uuid() ]);
+        $resource1->categories()->attach($category1, ['uid' => generateUuid() ]);
 
         // Datos de la solicitud
         $changesResourcesStatuses = [
@@ -876,7 +861,7 @@ class EducationalResourcesControllerTest extends TestCase
         $user = UsersModel::factory()->create();
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
         Auth::login($user);
 

@@ -46,7 +46,9 @@ class ChangeStatusToDevelopment extends Command
             })
             ->get();
 
-        if (!$courses->count()) return;
+        if (!$courses->count()) {
+            return;
+        }
 
         DB::transaction(function () use ($courses) {
             $statusesCourse = CourseStatusesModel::whereIn('code', ['DEVELOPMENT', 'PENDING_DECISION'])->get()->keyBy('code');
@@ -107,7 +109,7 @@ class ChangeStatusToDevelopment extends Command
     {
         $automaticNotificationType = AutomaticNotificationTypesModel::where('code', 'COURSE_ENROLLMENT_COMMUNICATIONS')->first();
 
-        $generalNotificationAutomaticUid = generate_uuid();
+        $generalNotificationAutomaticUid = generateUuid();
         $generalNotificationAutomatic = new GeneralNotificationsAutomaticModel();
         $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
         $generalNotificationAutomatic->title = "El curso " . $course->title . " ya está en período de realización";
@@ -121,7 +123,7 @@ class ChangeStatusToDevelopment extends Command
 
         foreach ($studentsFiltered as $student) {
             $generalNotificationAutomaticUser = new GeneralNotificationsAutomaticUsersModel();
-            $generalNotificationAutomaticUser->uid = generate_uuid();
+            $generalNotificationAutomaticUser->uid = generateUuid();
             $generalNotificationAutomaticUser->general_notifications_automatic_uid = $generalNotificationAutomaticUid;
             $generalNotificationAutomaticUser->user_uid = $student->uid;
             $generalNotificationAutomaticUser->save();

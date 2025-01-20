@@ -28,14 +28,14 @@ class CertificateAccessController extends BaseController {
         if ($validate) {
             $certInfo = openssl_x509_parse($certificateClient);
 
-            $first_name = $certInfo['subject']['GN'];
-            $last_name = $certInfo['subject']['SN'];
+            $firstName = $certInfo['subject']['GN'];
+            $lastName = $certInfo['subject']['SN'];
             $temp = explode("-", $certInfo['subject']['serialNumber']);
             $nif = strtoupper(trim($temp[1]));
 
             $data = json_encode([
-                'first_name' => $first_name,
-                'last_name' => $last_name,
+                'first_name' => $firstName,
+                'last_name' => $lastName,
                 'nif' => $nif,
             ]);
 

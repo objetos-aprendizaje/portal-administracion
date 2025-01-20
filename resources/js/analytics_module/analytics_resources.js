@@ -25,10 +25,10 @@ const endPointTableResources = "/analytics/users/get_poa_resources";
 let analyticsPoaTableResources;
 
 let flatpickrDateFilterResource;
-let resource_uid;
+let resourceUid;
 
-let filter_date = "";
-let filter_type = "";
+let filterDate = "";
+let filterType = "";
 
 let tomFilterSelectCategories;
 
@@ -138,30 +138,30 @@ function collectFilters() {
             });
         }
     }
-    let filter_resource_way = document.getElementById("filter_resource_way");
+    let filterResourceWay = document.getElementById("filter_resource_way");
 
-    if (filter_resource_way.value) {
+    if (filterResourceWay.value) {
         addFilter(
             "Forma de recurso",
-            filter_resource_way.value,
-            filter_resource_way.value == "FILE" ? "Fichero" : "URL",
+            filterResourceWay.value,
+            filterResourceWay.value == "FILE" ? "Fichero" : "URL",
             "filter_resource_way",
             "resource_way"
         );
     }
 
-    let filter_educational_resource_type_uid = document.getElementById(
+    let filterEducationalResourceTypeUid = document.getElementById(
         "filter_educational_resource_type_uid"
     );
-    if (filter_educational_resource_type_uid.value) {
+    if (filterEducationalResourceTypeUid.value) {
         let selectedFilterOptionText =
-            filter_educational_resource_type_uid.options[
-                filter_educational_resource_type_uid.selectedIndex
+        filterEducationalResourceTypeUid.options[
+            filterEducationalResourceTypeUid.selectedIndex
             ].text;
 
         addFilter(
             "Tipo",
-            filter_educational_resource_type_uid.value,
+            filterEducationalResourceTypeUid.value,
             selectedFilterOptionText,
             "filter_educational_resource_type_uid",
             "educational_resource_type_uid"
@@ -207,7 +207,7 @@ function collectFilters() {
  */
 function showFilters() {
     // Eliminamos todos los filtros
-    var currentFilters = document.querySelectorAll(".filter");
+    const currentFilters = document.querySelectorAll(".filter");
 
     // Recorre cada elemento y lo elimina
     currentFilters.forEach(function (filter) {
@@ -216,7 +216,7 @@ function showFilters() {
 
     filters.forEach((filter) => {
         // Crea un nuevo div
-        var newDiv = document.createElement("div");
+        const newDiv = document.createElement("div");
 
         // Agrega la clase 'filter' al div
         newDiv.classList.add("filter");
@@ -291,7 +291,7 @@ function drawTableResources() {
                 const data = cell.getRow().getData();
                 showModal("analytics-resource-modal", "Datos del Recurso");
                 fillDataResourceModal();
-                resource_uid = data.uid;
+                resourceUid = data.uid;
                 sendDataResources();
                 document.getElementById("last_access_resource").innerHTML = "";
                 document.getElementById("unique_users_resource").innerHTML = "";
@@ -343,25 +343,25 @@ function drawTableResources() {
 }
 
 function fillDataResourceModal() {
-    const filter_data_input = document.querySelector(
+    const filterDataInput = document.querySelector(
         "#filter_date_accesses_resource"
     );
-    const filter_type_input = document.querySelector("#filter_type_resource");
+    const filterTypeInput = document.querySelector("#filter_type_resource");
 
-    filter_data_input.addEventListener("change", function () {
-        filter_date = getFlatpickrDateRangeSql(flatpickrDateFilterResource);
-        if (filter_date.length > 1) {
-            const startDate = new Date(filter_date[0]);
-            const endDate = new Date(filter_date[1]);
+    filterDataInput.addEventListener("change", function () {
+        filterDate = getFlatpickrDateRangeSql(flatpickrDateFilterResource);
+        if (filterDate.length > 1) {
+            const startDate = new Date(filterDate[0]);
+            const endDate = new Date(filterDate[1]);
             const diffInMs = endDate - startDate;
             const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
             const days = Math.ceil(diffInDays);
             if (days > 20) {
-                filter_type = "YYYY-MM";
+                filterType = "YYYY-MM";
                 document.getElementById("filter_type_resource").value =
                     "YYYY-MM";
             } else if (days > 365) {
-                filter_type = "YYYY";
+                filterType = "YYYY";
                 document.getElementById("filter_type_resource").value = "YYYY";
             }
 
@@ -369,9 +369,9 @@ function fillDataResourceModal() {
         }
     });
 
-    filter_type_input.addEventListener("change", function () {
-        filter_type = document.getElementById("filter_type_resource").value;
-        if (filter_type != null) {
+    filterTypeInput.addEventListener("change", function () {
+        filterType = document.getElementById("filter_type_resource").value;
+        if (filterType != null) {
             sendDataResources();
         }
     });
@@ -380,9 +380,9 @@ function fillDataResourceModal() {
 function sendDataResources() {
     const formData = new FormData();
 
-    formData.append("filter_date_resource", filter_date);
-    formData.append("filter_type_resource", filter_type);
-    formData.append("educational_resource_uid", resource_uid);
+    formData.append("filter_date_resource", filterDate);
+    formData.append("filter_type_resource", filterType);
+    formData.append("educational_resource_uid", resourceUid);
 
     const params = {
         url: "/analytics/users/get_resources_data",
@@ -441,21 +441,21 @@ function drawGraphResource(datas) {
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
     // Preparar los datos y definir colores
-    let new_data;
+    let newData;
     if (datas["accesses"][0].length == 0) {
-        new_data = datas["visits"][0].map((item1) => ({
+        newData = datas["visits"][0].map((item1) => ({
             group: item1.access_date_group,
             Accesos: 0,
             Visitas: item1.access_count || 0,
         }));
     } else if (datas["visits"][0].length == 0) {
-        new_data = datas["accesses"][0].map((item1) => ({
+        newData = datas["accesses"][0].map((item1) => ({
             group: item1.access_date_group,
             Accesos: item1.access_count || 0,
             Visitas: 0,
         }));
     } else {
-        new_data = datas["accesses"][0].map((item1) => {
+        newData = datas["accesses"][0].map((item1) => {
             const item2 = datas["visits"][0].find(
                 (item) => item.access_date_group === item1.access_date_group
             );
@@ -467,9 +467,9 @@ function drawGraphResource(datas) {
         });
     }
 
-    new_data.columns = ["group", "Accesos", "Visitas"];
+    newData.columns = ["group", "Accesos", "Visitas"];
     const subgroups = ["Accesos", "Visitas"];
-    const groups = new_data.map((d) => d.group);
+    const groups = newData.map((d) => d.group);
 
     let itemMax = datas.max_value;
 
@@ -499,10 +499,10 @@ function drawGraphResource(datas) {
         .call(d3.axisBottom(x).tickSize(0));
 
     // Añadir líneas punteadas horizontales
-    const yAxis = svg.append("g").call(d3.axisLeft(y));
+    svg.append("g").call(d3.axisLeft(y));
 
     // Dibujar líneas punteadas horizontales
-    const gridlines = svg
+    svg
         .append("g")
         .attr("class", "grid")
         .selectAll("line")
@@ -528,7 +528,7 @@ function drawGraphResource(datas) {
     // Dibujar barras con animación y tooltip
     svg.append("g")
         .selectAll("g")
-        .data(new_data)
+        .data(newData)
         .enter()
         .append("g")
         .attr("transform", (d) => `translate(${x(d.group)},0)`)
@@ -652,18 +652,18 @@ function graficarResources(allDatas, quantity) {
             .classList.add("hidden");
     }
 
-    const new_datas = datas.map((element, index) => ({
+    const newDatas = datas.map((element, index) => ({
         title: index + 1 + " " + element.title.substring(0, 50),
         count: parseInt(element.accesses_count),
     }));
 
-    const itemWithMaxAccesses = new_datas.reduce((max, current) =>
+    const itemWithMaxAccesses = newDatas.reduce((max, current) =>
         current.count > max.count ? current : max,
         { count: 0 }  // Valor inicial
     );
 
-    var div = document.getElementById("d3_graph_resources");
-    var ancho = div.clientWidth;
+    const div = document.getElementById("d3_graph_resources");
+    const ancho = div.clientWidth;
 
     // Definir márgenes y dimensiones
     const margin = { top: 20, right: 30, bottom: 40, left: 200 },
@@ -672,7 +672,7 @@ function graficarResources(allDatas, quantity) {
         maxHeight = 400; // Altura máxima fija cuando quantity es "all"
 
     // Definir la altura total dependiendo de la cantidad de datos
-    let height = new_datas.length * barHeight + margin.top + margin.bottom;
+    let height = newDatas.length * barHeight + margin.top + margin.bottom;
 
     // Si quantity es "all", limitar la altura y activar el scroll
     if (quantity === "all" && height > maxHeight) {
@@ -692,7 +692,7 @@ function graficarResources(allDatas, quantity) {
         .attr("width", width + margin.left + margin.right)
         .attr(
             "height",
-            new_datas.length * barHeight + margin.top + margin.bottom
+            newDatas.length * barHeight + margin.top + margin.bottom
         ) // Altura real sin restricciones
         .append("g")
         .attr("transform", `translate(${margin.left}, ${margin.top})`);
@@ -706,7 +706,7 @@ function graficarResources(allDatas, quantity) {
     if (quantity !== "all") {
         // Dibujar eje X directamente en el gráfico si quantity no es "all"
         svg.append("g")
-            .attr("transform", `translate(0, ${new_datas.length * barHeight})`)
+            .attr("transform", `translate(0, ${newDatas.length * barHeight})`)
             .call(d3.axisBottom(x))
             .selectAll("text")
             .attr("transform", "translate(-10,0)rotate(-45)")
@@ -732,8 +732,8 @@ function graficarResources(allDatas, quantity) {
     // Eje Y
     const y = d3
         .scaleBand()
-        .range([0, new_datas.length * barHeight]) // Ajustar el rango Y según la cantidad de datos
-        .domain(new_datas.map((d) => d.title))
+        .range([0, newDatas.length * barHeight]) // Ajustar el rango Y según la cantidad de datos
+        .domain(newDatas.map((d) => d.title))
         .padding(0.1);
 
     svg.append("g").call(d3.axisLeft(y));
@@ -769,7 +769,7 @@ function graficarResources(allDatas, quantity) {
 
     // Dibujar barras con animación y tooltip
     svg.selectAll("rect")
-        .data(new_datas)
+        .data(newDatas)
         .join("rect")
         .attr("x", x(0))
         .attr("y", (d) => y(d.title))
@@ -802,7 +802,7 @@ function graficarTreeMapResources(allDatas) {
             })),
         ];
 
-        const color_treemap = d3
+        const colorTreemap = d3
             .scaleOrdinal()
             .domain(data.map((d) => d.name)) // Definir dominio según los nombres
             .range([
@@ -850,7 +850,7 @@ function graficarTreeMapResources(allDatas) {
         d3.treemap().size([width, height]).padding(4)(root);
 
         // Define a color scale
-        const color = d3.scaleOrdinal(d3.schemeCategory10); // Usar una escala de colores predefinida o personalizada
+        d3.scaleOrdinal(d3.schemeCategory10); // Usar una escala de colores predefinida o personalizada
 
         // Use this information to add rectangles:
         svg.selectAll("rect")
@@ -870,7 +870,7 @@ function graficarTreeMapResources(allDatas) {
             })
             .style("stroke", "black")
             .style("fill", function (d) {
-                return color_treemap(d.data.name);
+                return colorTreemap(d.data.name);
             }) // Apply the color scale here
             .on("mouseover", function (event, d) {
                 const tooltip = d3.select("#tooltip");
@@ -937,7 +937,6 @@ function graficarTreeMapResources(allDatas) {
 }
 
 function convertirFechas(date) {
-    const regex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
     const fecha = new Date(date);
     const dia = String(fecha.getDate()).padStart(2, "0"); // Obtener día con dos dígitos
     const mes = String(fecha.getMonth() + 1).padStart(2, "0"); // Obtener mes (0-11) + 1

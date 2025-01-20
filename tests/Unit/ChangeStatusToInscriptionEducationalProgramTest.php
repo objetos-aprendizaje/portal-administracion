@@ -41,11 +41,11 @@ class ChangeStatusToInscriptionEducationalProgramTest extends TestCase
         $statusInscription = EducationalProgramStatusesModel::where('code', 'INSCRIPTION')->first();
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'STUDENT'], ['uid' => generate_uuid()]);
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'STUDENT'], ['uid' => generateUuid()]);
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Curso de Prueba',
             'description' => 'Descripción del curso de prueba',
             'inscription_start_date' => now()->subDay(),

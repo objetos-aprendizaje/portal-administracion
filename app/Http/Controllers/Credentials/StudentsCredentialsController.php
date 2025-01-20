@@ -46,9 +46,7 @@ class StudentsCredentialsController extends BaseController
         $size = $request->get('size', 1);
         $search = $request->get('search');
         $sort = $request->get('sort');
-
-        $query = UsersModel::query()->with("roles");
-
+                
         $query = UsersModel::query()->whereHas('roles', function ($query) {
             $query->where('code', 'STUDENT');
         });
@@ -75,25 +73,9 @@ class StudentsCredentialsController extends BaseController
         $coursesUids = $request->get('courses');
         $userUid = $request->get('user_uid');
 
-        // Tipos de programa asociados a los cursos
-        $educationalProgramTypesCourses = EducationalProgramTypesModel::whereIn('uid', function ($query) use ($coursesUids) {
-            $query->select('educational_program_type_uid')
-                ->from('courses')
-                ->whereIn('uid', $coursesUids);
-        })->get();
-
-        // Rol del usuario
-        $userRoles = auth()->user()->roles()->get()->pluck('code')->toArray();
-
-        // Comprobación de si el usuario tiene el rol correcto para emitir en base a los tipos de programa
-        foreach ($educationalProgramTypesCourses as $educationalProgramTypeCourse) {
-            if ($educationalProgramTypeCourse->managers_can_emit_credentials && in_array('MANAGEMENT', $userRoles)) {
-                continue;
-            } else if ($educationalProgramTypeCourse->teachers_can_emit_credentials && in_array('TEACHER', $userRoles)) {
-                continue;
-            }
-
-            throw new OperationFailedException('No tienes permisos para emitir credenciales en alguno de los cursos');
+        $user = UsersModel::find($userUid);
+        if(!$user->verified) {
+            throw new OperationFailedException('No se pueden emitir credenciales porque el usuario no está verificado');
         }
 
         $coursesStudentWithEmissions = CoursesStudentsModel::where('user_uid', $userUid)
@@ -171,34 +153,39 @@ class StudentsCredentialsController extends BaseController
             throw new OperationFailedException('No se pueden sellar credenciales porque alguno de los objetos de aprendizaje no las tiene emitidas');
         }
 
-        if (count($coursesUids)) $this->certidigitalService->sealCoursesCredentials($coursesUids, $userUid);
-        if (count($educationalProgramsUids)) $this->certidigitalService->sealEducationalProgramsCredentials($educationalProgramsUids, $userUid);
+        if (count($coursesUids)) {
+            $this->certidigitalService->sealCoursesCredentials($coursesUids, $userUid);
+        }
+
+        if (count($educationalProgramsUids)) {
+            $this->certidigitalService->sealEducationalProgramsCredentials($educationalProgramsUids, $userUid);
+        }
 
         return response()->json(['message' => 'Credenciales selladas correctamente'], 200);
     }
 
-    public function getCoursesStudents(Request $request, $student_uid)
+    public function getCoursesStudents(Request $request, $studentUid)
     {
         $size = $request->get('size', 1);
         $search = $request->get('search');
         $sort = $request->get('sort');
 
         $queries = [];
-        $queries[] = $this->getQueryCoursesStudents($student_uid, $search);
-        $queries[] = $this->getQueryEducationalProgramsStudents($student_uid, $search);
+        $queries[] = $this->getQueryCoursesStudents($studentUid, $search);
+        $queries[] = $this->getQueryEducationalProgramsStudents($studentUid, $search);
 
-        $learning_objects_query = array_shift($queries);
+        $learningObjectsQuery = array_shift($queries);
         foreach ($queries as $query) {
-            $learning_objects_query->unionAll($query);
+            $learningObjectsQuery->unionAll($query);
         }
 
         if (isset($sort) && !empty($sort)) {
             foreach ($sort as $order) {
-                $learning_objects_query->orderBy($order['field'], $order['dir']);
+                $learningObjectsQuery->orderBy($order['field'], $order['dir']);
             }
         }
 
-        $data = $learning_objects_query->paginate($size);
+        $data = $learningObjectsQuery->paginate($size);
 
         return response()->json($data, 200);
     }

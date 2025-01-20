@@ -13,8 +13,6 @@ const endPointTable = "/notifications/notifications_per_users/get_list_users";
 let notificationPerUsersTable;
 let notificationsPerUserTable;
 
-let selectedNotificationPerUsers = [];
-
 document.addEventListener("DOMContentLoaded", function () {
     initializeNotificationPerUsersTable();
 
@@ -56,8 +54,6 @@ function initializeNotificationPerUsersTable() {
                 response,
                 "notification-per-users-table"
             );
-
-            selectedNotificationPerUsers = [];
 
             return {
                 last_page: response.last_page,
@@ -120,14 +116,14 @@ async function fillFormNotificationsPerUsersModal(uid,last_name,first_name) {
     controlsSearch(notificationsPerUserTable, endPointTable, "notifications-per-user-table");
 
     // Luego, puedes llamar a esta función cuando sea necesario, por ejemplo, en el evento click de un botón.
-    var buttons = document.getElementsByClassName("search-table-btn");
-    for (var i = 0; i < buttons.length; i++) {
+    const buttons = document.getElementsByClassName("search-table-btn");
+    for (let i = 0; i < buttons.length; i++) {
         buttons[i].addEventListener("click", limpiarBusqueda);
     }
 }
 function limpiarBusqueda() {
-    var buttons = document.getElementsByClassName("search-table");
-    for (var i = 0; i < buttons.length; i++) {
+    const buttons = document.getElementsByClassName("search-table");
+    for (let i = 0; i < buttons.length; i++) {
         buttons[i].value = "";
     }
 }

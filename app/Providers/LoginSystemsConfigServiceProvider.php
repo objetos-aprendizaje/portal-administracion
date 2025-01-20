@@ -22,11 +22,15 @@ class LoginSystemsConfigServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (env('DB_HOST') == 'image_build') return;
+        if (env('DB_HOST') == 'image_build') {
+            return;
+        }
 
-        if (!Schema::hasTable('general_options')) return;
+        if (!Schema::hasTable('general_options')) {
+            return;
+        }
 
-        $parameters_login_systems = GeneralOptionsModel::whereIn('option_name', [
+        $parametersLoginSystems = GeneralOptionsModel::whereIn('option_name', [
             'google_login_active',
             'google_client_id',
             'google_client_secret',
@@ -42,24 +46,24 @@ class LoginSystemsConfigServiceProvider extends ServiceProvider
         ])->pluck('option_value', 'option_name')->toArray();
 
         config([
-            'services.google.client_id' => $parameters_login_systems['google_client_id'],
-            'services.google.client_secret' => $parameters_login_systems['google_client_secret'],
+            'services.google.client_id' => $parametersLoginSystems['google_client_id'],
+            'services.google.client_secret' => $parametersLoginSystems['google_client_secret'],
             'services.google.redirect' => env('APP_URL') . '/auth/callback/google',
 
-            'services.facebook.client_id' => $parameters_login_systems['facebook_client_id'],
-            'services.facebook.client_secret' => $parameters_login_systems['facebook_client_secret'],
+            'services.facebook.client_id' => $parametersLoginSystems['facebook_client_id'],
+            'services.facebook.client_secret' => $parametersLoginSystems['facebook_client_secret'],
             'services.facebook.redirect' => env('APP_URL') . '/auth/callback/facebook',
 
-            'services.twitter.client_id' => $parameters_login_systems['twitter_client_id'],
-            'services.twitter.client_secret' => $parameters_login_systems['twitter_client_secret'],
+            'services.twitter.client_id' => $parametersLoginSystems['twitter_client_id'],
+            'services.twitter.client_secret' => $parametersLoginSystems['twitter_client_secret'],
             'services.twitter.redirect' => env('APP_URL') . '/auth/callback/twitter',
 
-            'services.linkedin-openid.client_id' => $parameters_login_systems['linkedin_client_id'],
-            'services.linkedin-openid.client_secret' => $parameters_login_systems['linkedin_client_secret'],
+            'services.linkedin-openid.client_id' => $parametersLoginSystems['linkedin_client_id'],
+            'services.linkedin-openid.client_secret' => $parametersLoginSystems['linkedin_client_secret'],
             'services.linkedin-openid.redirect' => env('APP_URL') . '/auth/callback/linkedin-openid'
         ]);
 
-        View::share('parameters_login_systems', $parameters_login_systems);
+        View::share('parameters_login_systems', $parametersLoginSystems);
 
     }
 }

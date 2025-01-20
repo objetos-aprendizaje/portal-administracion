@@ -48,7 +48,7 @@ class LogsTest extends TestCase
         // Asignar un rol específico al usuario (por ejemplo, el rol 'ADMINISTRATOR')
         $role = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         // Autenticar al usuario
@@ -66,13 +66,7 @@ class LogsTest extends TestCase
 
         // Realizar la petición GET a la ruta correspondiente
         $response = $this->get(route('list-logs'));
-
-        $data = [
-            [
-                'uid' => $log1->entity,
-                'name' => $log1->entity,
-            ],
-        ];
+        
 
         // Verificar que la respuesta sea 200 (OK)
         $response->assertStatus(200);
@@ -195,24 +189,24 @@ class LogsTest extends TestCase
     {
         $user = UsersModel::factory()->create()->latest()->first();
         // Crear registros de logs en diferentes fechas
-        $log1 = LogsModel::create([
-            'uid' => generate_uuid(),
+        LogsModel::create([
+            'uid' => generateUuid(),
             'info' => 'Log de prueba 1',
             'entity' => 'Entidad 1',
             'user_uid' => $user->uid,
             'created_at' => now()->subDays(3), // Fecha anterior al rango
         ]);
 
-        $log2 = LogsModel::create([
-            'uid' => generate_uuid(),
+        LogsModel::create([
+            'uid' => generateUuid(),
             'info' => 'Log de prueba 2',
             'entity' => 'Entidad 2',
             'user_uid' => $user->uid,
             'created_at' => now()->subDays(1), // Dentro del rango
         ]);
 
-        $log3 = LogsModel::create([
-            'uid' => generate_uuid(),
+        LogsModel::create([
+            'uid' => generateUuid(),
             'info' => 'Log de prueba 3',
             'entity' => 'Entidad 3',
             'user_uid' => $user->uid,
@@ -241,15 +235,15 @@ class LogsTest extends TestCase
 
         // Crear registros de logs en diferentes fechas
         $log1 = LogsModel::create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'info' => 'Log de prueba 1',
             'entity' => 'Entidad 1',
             'user_uid' => $user->uid,
             'created_at' => now()->subDays(1), // Dentro de la fecha
         ]);
 
-        $log2 = LogsModel::create([
-            'uid' => generate_uuid(),
+        LogsModel::create([
+            'uid' => generateUuid(),
             'info' => 'Log de prueba 2',
             'entity' => 'Entidad 2',
             'user_uid' => $user->uid,
@@ -283,7 +277,7 @@ class LogsTest extends TestCase
         Auth::login($user2);
         // Crear algunos registros de logs para la prueba
         LogsModel::create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'info' => 'Log de prueba 1',
             'entity' => 'Entidad 1',
             'user_uid' => $user1->uid,
@@ -291,7 +285,7 @@ class LogsTest extends TestCase
         ]);
 
         LogsModel::create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'info' => 'Log de prueba 2',
             'entity' => 'Entidad 2',
             'user_uid' => $user2->uid,
@@ -311,28 +305,28 @@ class LogsTest extends TestCase
     {
         // Crear algunos usuarios
         $user1 = UsersModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'first_name' => 'John',
             'last_name' => 'Doe',
         ]);
 
         $user2 = UsersModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'first_name' => 'Jane',
             'last_name' => 'Smith',
         ]);
 
         // Crear registros de logs para diferentes usuarios
         $log1 = LogsModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'info' => 'Log de prueba 1',
             'entity' => 'Entidad 1',
             'user_uid' => $user1->uid, // Log asociado a user1
             'created_at' => now(),
         ]);
 
-        $log2 = LogsModel::factory()->create([
-            'uid' => generate_uuid(),
+        LogsModel::factory()->create([
+            'uid' => generateUuid(),
             'info' => 'Log de prueba 2',
             'entity' => 'Entidad 2',
             'user_uid' => $user2->uid, // Log asociado a user2

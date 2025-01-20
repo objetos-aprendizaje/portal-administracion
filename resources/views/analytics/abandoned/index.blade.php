@@ -30,7 +30,7 @@
                             value="{{ $general_options['threshold_abandoned_courses'] }}">
 
                         <button class="btn btn-primary mt-[20px]" type="submit">Guardar
-                            {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                            {{ eHeroicon('paper-airplane', 'outline') }}</button>
                     </form>
                 </div>
             </div>
@@ -41,7 +41,7 @@
                 <h2 class="hidden" id="bnt-exportar-csv-title">Usuarios que han abandonado</h2>
                 <div id="bnt-exportar-csv" class="hidden text-right mb-4">
                     <button id="export-csv" type="button" class="btn btn-icon"
-                        title="Exportar">{{ e_heroicon('arrow-down-tray', 'outline') }}</button>
+                        title="Exportar">{{ eHeroicon('arrow-down-tray', 'outline') }}</button>
                 </div>
             </div>
 

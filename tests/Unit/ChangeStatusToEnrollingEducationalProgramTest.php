@@ -26,8 +26,8 @@ class ChangeStatusToEnrollingEducationalProgramTest extends TestCase
         $statusEnrolling = EducationalProgramStatusesModel::where('code', 'ENROLLING')->first();
 
         // Crear un programa educativo en estado INSCRIPTION
-        $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
-            'uid' => generate_uuid(),
+        EducationalProgramsModel::factory()->withEducationalProgramType()->create([
+            'uid' => generateUuid(),
             'name' => 'Curso de Prueba educational program',
             'description' => 'Descripción del curso',
             'inscription_start_date' => Carbon::now()->format('Y-m-d\TH:i'),
@@ -38,7 +38,7 @@ class ChangeStatusToEnrollingEducationalProgramTest extends TestCase
         ]);
 
         $educationalProgram2 = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Curso de Prueba educational program',
             'description' => 'Descripción del curso',
             'inscription_start_date' => Carbon::now()->format('Y-m-d\TH:i'),
@@ -69,7 +69,7 @@ class ChangeStatusToEnrollingEducationalProgramTest extends TestCase
 
         foreach ($students as $student) {
             $educationalProgram2->students()->attach($student, [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'status' => 'ENROLLED',
                 'acceptance_status' => 'ACCEPTED'
             ]);
@@ -86,7 +86,7 @@ class ChangeStatusToEnrollingEducationalProgramTest extends TestCase
         $this->assertEquals($statusEnrolling->uid, $educationalProgram2->educational_program_status_uid);
 
         // Validar que hay programas educativos en estado INSCRIPTION antes del cambio
-        $educationalPrograms = EducationalProgramsModel::where('educational_program_status_uid', $statusInscription->uid)->get();
+        EducationalProgramsModel::where('educational_program_status_uid', $statusInscription->uid)->get();
 
         // Asegurarse de que hay programas educativos para procesar
         // $this->assertTrue($educationalPrograms->count() > 0, 'No hay programas educativos en estado INSCRIPTION para cambiar a ENROLLING.');

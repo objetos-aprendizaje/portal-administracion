@@ -29,8 +29,8 @@ class AnaliticsAbandonedControllerTest extends TestCase
         $this->withoutMiddleware();
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -71,53 +71,6 @@ class AnaliticsAbandonedControllerTest extends TestCase
         $response->assertViewHas('submenuselected', 'analytics-abandoned');
     }
 
-
-    /** @test */
-    // public function testReturnsAbandonedGraphData()
-    // {
-    //     $student1 = UsersModel::factory()->create()->first();
-    //     $student2 = UsersModel::factory()->create()->first();
-
-
-    //     // Arrange: Create mock data for courses, accesses, and students
-    //     $course = CoursesModel::factory()->withCourseType()->withCourseStatus()->create([
-    //         'uid' => generate_uuid(),
-    //         'realization_start_date' => now(),
-    //         'lms_url' => 'http://example.com/course',
-    //     ]);
-
-    //     $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
-    //     app()->instance('general_options', $general_options);
-    //     View::share('general_options', $general_options);
-
-
-    //     $course->accesses()->createMany([
-    //         ['uid' => generate_uuid(), 'user_uid' => $student1->uid, 'access_date' => now()->subDays(31)],
-    //         ['uid' => generate_uuid(), 'user_uid' => $student2->uid, 'access_date' => now()->subDays(10)],
-    //     ]);
-
-    //     // Attach students with additional pivot data
-    //     $course->students()->syncWithoutDetaching([
-    //         $student1->uid => [
-    //             'uid' => generate_uuid(),
-    //             'status' => 'ENROLLED',
-    //             'acceptance_status' => 'ACCEPTED'
-    //         ],
-    //         $student2->uid => [
-    //             'uid' => generate_uuid(),
-    //             'status' => 'ENROLLED',
-    //             'acceptance_status' => 'ACCEPTED'
-    //         ]
-    //     ]);
-
-    //     // Act: Call the method directly or through a route if applicable
-    //     $response = $this->get('/analytics/users/get_abandoned_graph'); // Adjust route name as needed
-
-    //     // Assert: Check that the response is successful and contains expected data
-    //     $response->assertStatus(200);
-    // }
-
-
     /**
      * @test Gráfico de cursos abandonados con estudiantes y accesos validados por fecha
      */
@@ -127,10 +80,10 @@ class AnaliticsAbandonedControllerTest extends TestCase
         $mockGeneralOptions = ['threshold_abandoned_courses' => 30];
         app()->instance('general_options', $mockGeneralOptions);
 
-        $status = CourseStatusesModel::where('code','DEVELOPMENT')->first();   
+        $status = CourseStatusesModel::where('code','DEVELOPMENT')->first();
 
         // Crear curso en estado "DEVELOPMENT" con una fecha de inicio antigua
-        $course = CoursesModel::factory()           
+        $course = CoursesModel::factory()
             ->withCourseType()
             ->create([
                 'course_status_uid'=>$status->uid,
@@ -143,12 +96,12 @@ class AnaliticsAbandonedControllerTest extends TestCase
         $course->students()->attach($student->uid, [
             'status' => 'ENROLLED',
             'acceptance_status' => 'ACCEPTED',
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
         ]);
 
         // Simular acceso del estudiante hace 40 días
         $course->accesses()->create([
-            'uid'=> generate_uuid(),
+            'uid'=> generateUuid(),
             'user_uid' => $student->uid,
             'access_date' => now()->subDays(40),
         ]);
@@ -177,12 +130,7 @@ class AnaliticsAbandonedControllerTest extends TestCase
         // Asegurar estructura de respuesta para `abandoned_users`
         $this->assertArrayHasKey('abandoned_users', $responseData[0]);
         $this->assertIsArray($responseData[0]['abandoned_users']);
-        // $this->assertContains($student->uid, $responseData[0]['abandoned_users']);
     }
-
-
-
-
 
     /**
      * @test Actualizar el umbral de cursos abandonados.
@@ -190,7 +138,7 @@ class AnaliticsAbandonedControllerTest extends TestCase
     public function testSaveThresholdAbandonedCourses()
     {
         // Crea una instancia de la opción general para el umbral de cursos abandonados
-        $option = GeneralOptionsModel::factory()->create([
+        GeneralOptionsModel::factory()->create([
             'option_name' => 'threshold_abandoned_courses',
             'option_value' => 5
         ]);
@@ -228,11 +176,7 @@ class AnaliticsAbandonedControllerTest extends TestCase
             ]);
 
             // Verifica que la respuesta tenga el estado de error
-            // $response->assertStatus(500);
             $response->assertStatus(406);
-            //     $this->expectException(OperationFailedException::class);
-            // $this->expectExceptionMessage('No puedes editar un curso que no esté en estado de introducción o subsanación');
-
             $response->assertJson(['message' => 'El número introducido no es válido']);
         }
     }

@@ -15,7 +15,6 @@ let analyticsAbandonedTable;
 let analyticsAbandonedTableFromGraph;
 
 document.addEventListener("DOMContentLoaded", function () {
-    //drawTable();
     drawGraph();
     document
         .getElementById("export-csv")
@@ -98,7 +97,7 @@ function drawGraph() {
 }
 
 function graficar(datas) {
-    const new_datas = datas.map((element, index) => ({
+    const newDatas = datas.map((element, index) => ({
         group: element.title.substring(0, 50) + "...",
         acepted: parseInt(
             element.enrolled_accepted_students_count - element.abandoned
@@ -107,24 +106,24 @@ function graficar(datas) {
         abandoned_users: element.abandoned_users,
     }));
 
-    const groups = new_datas.map((d) => d.group);
+    const groups = newDatas.map((d) => d.group);
 
-    const maxnumber1 = new_datas.reduce(
+    const maxnumber1 = newDatas.reduce(
         (max, current) => (current.acepted > max.acepted ? current : max),
         { acepted: 0 }
     );
 
-    const maxnumber2 = new_datas.reduce(
+    const maxnumber2 = newDatas.reduce(
         (max, current) => (current.abandoned > max.abandoned ? current : max),
         { abandoned: 0 }
     );
 
     const maxnumber = maxnumber1.acepted + maxnumber2.abandoned;
 
-    new_datas["columns"] = ["group", "acepted", "abandoned"];
+    newDatas["columns"] = ["group", "acepted", "abandoned"];
 
-    var div = document.getElementById("d3_graph");
-    var ancho = div.clientWidth;
+    const div = document.getElementById("d3_graph");
+    const ancho = div.clientWidth;
 
     // Establecer altura fija y habilitar scroll
     const barWidthFactor = 2;
@@ -150,13 +149,13 @@ function graficar(datas) {
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
     // List of subgroups
-    const subgroups = new_datas.columns.slice(1);
+    const subgroups = newDatas.columns.slice(1);
 
     // Add Y axis
     const y = d3
         .scaleBand()
         .domain(groups) // Usando "groups" correctamente
-        .range([0, new_datas.length * barHeight * 5]) // Altura dinámica basada en el número de filas
+        .range([0, newDatas.length * barHeight * 5]) // Altura dinámica basada en el número de filas
         .padding([0.2]);
 
     svg.append("g")
@@ -188,7 +187,7 @@ function graficar(datas) {
         .range(["#2C4C7E", "#7E2C4C"]);
 
     // Stack the data
-    const stackedData = d3.stack().keys(subgroups)(new_datas);
+    const stackedData = d3.stack().keys(subgroups)(newDatas);
 
     // ----------------
     // Create a tooltip
@@ -239,8 +238,8 @@ function graficar(datas) {
     const mouseclic = function (event, d) {
         if (!d.data.abandoned) return;
 
-        let abandoned_users;
-        let abandoned_users_formated = [];
+        let abandonedUsers;
+        let abandonedUsersFormated = [];
         if (d.data["abandoned_users"] != undefined) {
             abandoned_users = d.data["abandoned_users"];
             let temp;
@@ -366,7 +365,6 @@ function graficar(datas) {
                 .style("opacity", "0");
         });
 
-    var div = document.getElementById("d3_graph");
-    var nuevoAncho = div.clientWidth * 0.99;
+    const nuevoAncho = div.clientWidth * 0.99;
     div.style.width = nuevoAncho + "px";
 }

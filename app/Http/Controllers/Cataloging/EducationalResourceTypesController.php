@@ -24,7 +24,9 @@ class EducationalResourceTypesController extends BaseController
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            if (!$this->checkManagementAccess()) abort(403);
+            if (!$this->checkManagementAccess()) {
+                abort(403);
+            }
             return $next($request);
         })->except('index');
     }
@@ -39,7 +41,7 @@ class EducationalResourceTypesController extends BaseController
             ]);
         }
 
-        $educational_resource_types = EducationalResourceTypesModel::get()->toArray();
+        $educationalResourceTypes = EducationalResourceTypesModel::get()->toArray();
 
         return view(
             'cataloging.educational_resource_types.index',
@@ -49,7 +51,7 @@ class EducationalResourceTypesController extends BaseController
                 "resources" => [
                     "resources/js/cataloging_module/educational_resource_types.js"
                 ],
-                "educational_resource_types" => $educational_resource_types,
+                "educational_resource_types" => $educationalResourceTypes,
                 "tabulator" => true,
                 "submenuselected" => "cataloging-educational-resources",
             ]
@@ -85,21 +87,16 @@ class EducationalResourceTypesController extends BaseController
 
     /**
      * Obtiene un tipo de recurso educativo por uid
-     */   
-    public function getEducationalResourceType($educational_resource_type_uid)
+     */
+    public function getEducationalResourceType($educationalResourceTypeUid)
     {
+        $educationalResourceType = EducationalResourceTypesModel::where('uid', $educationalResourceTypeUid)->first();
 
-        // if (!$educational_resource_type_uid) {
-        //     return response()->json(['message' => env('ERROR_MESSAGE')], 400);
-        // }
-
-        $educational_resource_type = EducationalResourceTypesModel::where('uid', $educational_resource_type_uid)->first();
-
-        if (!$educational_resource_type) {
+        if (!$educationalResourceType) {
             return response()->json(['message' => 'El tipo de recurso educativo no existe'], 406);
         }
 
-        return response()->json($educational_resource_type, 200);
+        return response()->json($educationalResourceType, 200);
     }
 
     /**
@@ -133,34 +130,34 @@ class EducationalResourceTypesController extends BaseController
 
         $isNew = true;
 
-        $educational_resource_type_uid = $request->get('educational_resource_type_uid');
+        $educationalResourceTypeUid = $request->get('educational_resource_type_uid');
 
         $name = $request->get('name');
         $description = $request->get('description');
 
-        if ($educational_resource_type_uid) {
-            $educational_resource_type = EducationalResourceTypesModel::find($educational_resource_type_uid);
+        if ($educationalResourceTypeUid) {
+            $educationalResourceType = EducationalResourceTypesModel::find($educationalResourceTypeUid);
             $isNew = false;
         } else {
-            $educational_resource_type = new EducationalResourceTypesModel();
-            $educational_resource_type->uid = generate_uuid();
+            $educationalResourceType = new EducationalResourceTypesModel();
+            $educationalResourceType->uid = generateUuid();
             $isNew = true;
         }
 
-        $educational_resource_type->name = $name;
-        $educational_resource_type->description = $description;
+        $educationalResourceType->name = $name;
+        $educationalResourceType->description = $description;
 
-        DB::transaction(function () use ($educational_resource_type) {
-            $educational_resource_type->save();
-            LogsController::createLog('Guardar tipo de recurso educativo: ' . $educational_resource_type->name, 'Tipos de recursos educativos', auth()->user()->uid);
+        DB::transaction(function () use ($educationalResourceType) {
+            $educationalResourceType->save();
+            LogsController::createLog('Guardar tipo de recurso educativo: ' . $educationalResourceType->name, 'Tipos de recursos educativos', auth()->user()->uid);
         });
 
         // Obtenemos todas los tipos
-        $educational_resource_types = EducationalResourceTypesModel::get()->toArray();
+        $educationalResourceTypes = EducationalResourceTypesModel::get()->toArray();
 
         return response()->json([
             'message' => ($isNew) ? 'Tipo de recurso educativo añadido correctamente' : 'Tipo de recurso educativo actualizado correctamente',
-            'educational_resource_types' => $educational_resource_types
+            'educational_resource_types' => $educationalResourceTypes
         ], 200);
     }
 
@@ -183,9 +180,9 @@ class EducationalResourceTypesController extends BaseController
             }
         });
 
-        $educational_resource_types = EducationalResourceTypesModel::get()->toArray();
+        $educationalResourceTypes = EducationalResourceTypesModel::get()->toArray();
 
-        return response()->json(['message' => 'Tipos de recurso educativo eliminados correctamente', 'educational_resource_types' => $educational_resource_types], 200);
+        return response()->json(['message' => 'Tipos de recurso educativo eliminados correctamente', 'educational_resource_types' => $educationalResourceTypes], 200);
     }
 
     // Verifica si en caso de que el usuario sea sólo gestor, si tiene permisos
@@ -193,12 +190,12 @@ class EducationalResourceTypesController extends BaseController
     {
         $user = Auth::user();
 
-        $roles_user = $user->roles->pluck('code')->toArray();
+        $rolesUser = $user->roles->pluck('code')->toArray();
 
-        $general_options = app('general_options');
+        $generalOptions = app('general_options');
 
         // Aplicable si sólo tiene el rol de gestor
-        if (empty(array_diff($roles_user, ['MANAGEMENT'])) && !$general_options['managers_can_manage_educational_resources_types']) {
+        if (empty(array_diff($rolesUser, ['MANAGEMENT'])) && !$generalOptions['managers_can_manage_educational_resources_types']) {
             return false;
         }
 

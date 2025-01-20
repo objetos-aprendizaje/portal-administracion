@@ -8,7 +8,7 @@
             </div>
             <div>
                 <button data-modal-id="notification-email-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
         </div>
@@ -99,17 +99,17 @@
 
                 <div class="btn-block" id="email-notification-modal-add-btns">
                     <button type="submit" class="btn btn-primary">
-                        Guardar {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                        Guardar {{ eHeroicon('paper-airplane', 'outline') }}</button>
 
                     <button data-modal-id="notification-email-modal" type="button"
                         class="btn btn-secondary close-modal-btn btn-close-modal-notification-email">Cancelar
-                        {{ e_heroicon('x-mark', 'outline') }}</button>
+                        {{ eHeroicon('x-mark', 'outline') }}</button>
                 </div>
 
                 <div class="btn-block" id="email-notification-modal-view-btns">
                     <button data-modal-id="notification-email-modal" type="button"
                         class="btn btn-secondary close-modal-btn btn-close-modal-notification-email">Cerrar
-                        {{ e_heroicon('x-mark', 'outline') }}</button>
+                        {{ eHeroicon('x-mark', 'outline') }}</button>
                 </div>
 
             </div>

@@ -5,16 +5,16 @@
     <div class="poa-container mb-8">
         <div class="title-filter flex items-center mb-[26px]">
             <span>Listado de usuarios</span>
-            <button id="filter-users-btn" class="btn-filter">{{ e_heroicon('adjustments-horizontal', 'outline') }}</button>
+            <button id="filter-users-btn" class="btn-filter">{{ eHeroicon('adjustments-horizontal', 'outline') }}</button>
         </div>
 
         <div class="table-control-header">
             @include('partials.table-search', ['table' => 'users-table'])
 
             <div>
-                <button id="add-user-btn" type="button" class="btn btn-icon mb-4" title="Añadir usuario">{{e_heroicon('plus', 'outline')}}</button>
-                <button id="delete-user-btn" type="button" class="btn btn-icon mb-4" title="Eliminar usuarios">{{e_heroicon('trash', 'outline')}}</button>
-                <button id="export-users-btn" type="button" class="btn btn-icon mb-4" title="Exportar usuarios">{{e_heroicon('arrow-down-tray', 'outline')}}</button>
+                <button id="add-user-btn" type="button" class="btn btn-icon mb-4" title="Añadir usuario">{{eHeroicon('plus', 'outline')}}</button>
+                <button id="delete-user-btn" type="button" class="btn btn-icon mb-4" title="Eliminar usuarios">{{eHeroicon('trash', 'outline')}}</button>
+                <button id="export-users-btn" type="button" class="btn btn-icon mb-4" title="Exportar usuarios">{{eHeroicon('arrow-down-tray', 'outline')}}</button>
             </div>
 
         </div>

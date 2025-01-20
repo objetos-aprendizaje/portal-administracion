@@ -17,8 +17,8 @@ class BackendFileDownloadTokensModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => generate_uuid(),
-            'token'=> generate_uuid(),
+            'uid' => generateUuid(),
+            'token'=> generateUuid(),
             'file' => 'prueba.text'
         ];
     }

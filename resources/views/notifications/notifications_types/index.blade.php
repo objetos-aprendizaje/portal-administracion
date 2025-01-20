@@ -9,8 +9,8 @@
             @include('partials.table-search', ['table' => 'notification-types-table'])
 
             <div>
-                <button id="add-notification-type-btn" type="button" class="btn btn-icon mb-4" title="Añadit tipo de notificación">{{e_heroicon('plus', 'outline')}}</button>
-                <button id="delete-notification-type-btn" type="button" class="btn btn-icon mb-4" title="Eliminar tipos de notificaciones">{{e_heroicon('trash', 'outline')}}</button>
+                <button id="add-notification-type-btn" type="button" class="btn btn-icon mb-4" title="Añadit tipo de notificación">{{eHeroicon('plus', 'outline')}}</button>
+                <button id="delete-notification-type-btn" type="button" class="btn btn-icon mb-4" title="Eliminar tipos de notificaciones">{{eHeroicon('trash', 'outline')}}</button>
             </div>
 
         </div>

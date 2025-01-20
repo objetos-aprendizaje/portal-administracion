@@ -40,8 +40,8 @@ class AnaliticsUsersControllerTest extends TestCase
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -109,9 +109,11 @@ class AnaliticsUsersControllerTest extends TestCase
         Auth::login($user);
 
         // Arrange: Create a role and users with that role
-        $roles1 = UserRolesModel::firstOrCreate(['name' => 'Gestor', 'code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);
-        $roles2 = UserRolesModel::firstOrCreate(['name' => 'Administrador', 'code' => 'ADMNINISTRATOR'], ['uid' => generate_uuid()]);
-        $user->roles()->attach($roles1->uid, ['uid' => generate_uuid()]);
+        $roles1 = UserRolesModel::firstOrCreate(['name' => 'Gestor', 'code' => 'MANAGEMENT'], ['uid' => generateUuid()]);
+        
+        UserRolesModel::firstOrCreate(['name' => 'Administrador', 'code' => 'ADMNINISTRATOR'], ['uid' => generateUuid()]);
+        
+        $user->roles()->attach($roles1->uid, ['uid' => generateUuid()]);
 
 
         // Compartir la variable de roles manualmente con la vista
@@ -135,8 +137,9 @@ class AnaliticsUsersControllerTest extends TestCase
     public function testGetUsersRolesWithSorting()
     {
         // Prepara los datos necesarios para la prueba
-        $roles1 = UserRolesModel::firstOrCreate(['name' => 'Gestor', 'code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);
-        $roles2 = UserRolesModel::firstOrCreate(['name' => 'Administrador', 'code' => 'ADMNINISTRATOR'], ['uid' => generate_uuid()]);
+        UserRolesModel::firstOrCreate(['name' => 'Gestor', 'code' => 'MANAGEMENT'], ['uid' => generateUuid()]);
+
+        UserRolesModel::firstOrCreate(['name' => 'Administrador', 'code' => 'ADMNINISTRATOR'], ['uid' => generateUuid()]);
 
         // Define los parámetros de ordenación
         $sort = [
@@ -150,7 +153,6 @@ class AnaliticsUsersControllerTest extends TestCase
         $response->assertStatus(200);
     }
 
-    
     /**
      * @test
      * Prueba obtener lista de estudiantes con filtros, búsqueda y ordenamiento.
@@ -161,7 +163,7 @@ class AnaliticsUsersControllerTest extends TestCase
         $studentRole = UserRolesModel::where('code','STUDENT')->first();
         $student = UsersModel::factory()->create();
         $student->roles()->attach($studentRole->uid,[
-            'uid'=> generate_uuid(),
+            'uid'=> generateUuid(),
         ]);
 
         // Crear accesos y cursos para el estudiante
@@ -200,21 +202,21 @@ class AnaliticsUsersControllerTest extends TestCase
         // Verificar que los datos del estudiante están en la respuesta
         $responseData = $response->json('data');
         $this->assertCount(0, $responseData);
-        // $this->assertEquals($student->first_name, $responseData[0]['first_name']);
     }
 
-     
+
 
     public function testGetStudentsDataReturnsJson()
     {
         // Crear un usuario para la prueba
         $user = UsersModel::factory()->create()->first();
 
-        $useraccess1 = UsersAccessesModel::factory()->create([
+        UsersAccessesModel::factory()->create([
             'user_uid' => $user->uid,
             'date' => Carbon::now()
         ]);
-        $useraccess2 = UsersAccessesModel::factory()->create([
+
+        UsersAccessesModel::factory()->create([
             'user_uid' => $user->uid,
             'date' => Carbon::today()->subDays(1)
         ]);
@@ -222,7 +224,7 @@ class AnaliticsUsersControllerTest extends TestCase
         $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create();
 
         CoursesAccesesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'user_uid' => $user->uid,
             'access_date' => Carbon::today(),
             'course_uid' => $course->uid,
@@ -231,7 +233,7 @@ class AnaliticsUsersControllerTest extends TestCase
         $educationalresource = EducationalResourcesModel::factory()->withStatus()->withEducationalResourceType()->withCreatorUser()->create();
 
         EducationalResourcesAccesesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'user_uid' => $user->uid,
             'date' => Carbon::today()->subDays(2),
             'created_at' => now(),
@@ -279,11 +281,12 @@ class AnaliticsUsersControllerTest extends TestCase
         // Crear un usuario para la prueba
         $user = UsersModel::factory()->create()->first();
 
-        $useraccess1 = UsersAccessesModel::factory()->create([
+        UsersAccessesModel::factory()->create([
             'user_uid' => $user->uid,
             'date' => Carbon::now()
         ]);
-        $useraccess2 = UsersAccessesModel::factory()->create([
+        
+        UsersAccessesModel::factory()->create([
             'user_uid' => $user->uid,
             'date' => Carbon::today()->subDays(1)
         ]);
@@ -291,7 +294,7 @@ class AnaliticsUsersControllerTest extends TestCase
         $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create();
 
         CoursesAccesesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'user_uid' => $user->uid,
             'access_date' => Carbon::today(),
             'course_uid' => $course->uid,
@@ -300,7 +303,7 @@ class AnaliticsUsersControllerTest extends TestCase
         $educationalresource = EducationalResourcesModel::factory()->withStatus()->withEducationalResourceType()->withCreatorUser()->create();
 
         EducationalResourcesAccesesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'user_uid' => $user->uid,
             'date' => Carbon::today()->subDays(2),
             'created_at' => now(),
@@ -347,7 +350,7 @@ class AnaliticsUsersControllerTest extends TestCase
         $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create();
 
         CoursesAccesesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'user_uid' => $user->uid,
             'access_date' => Carbon::today(),
             'course_uid' => $course->uid,
@@ -356,7 +359,7 @@ class AnaliticsUsersControllerTest extends TestCase
         $educationalresource = EducationalResourcesModel::factory()->withStatus()->withEducationalResourceType()->withCreatorUser()->create();
 
         EducationalResourcesAccesesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'user_uid' => $user->uid,
             'date' => Carbon::today()->subDays(2),
             'created_at' => now(),

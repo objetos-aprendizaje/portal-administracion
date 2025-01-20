@@ -9,7 +9,7 @@
             <div
                 class="flex flex-shrink-0 items-center justify-between rounded-t-md border-b-2 border-neutral-100 border-opacity-100 p-4 dark:border-opacity-50">
                 <!--Modal title-->
-                <h5 class="text-xl font-medium leading-normal text-neutral-800 dark:text-neutral-200" id="modal-title"></h5>
+                <h5 class="text-xl font-medium leading-normal text-neutral-800 dark:text-neutral-200" id="modal-title">Información</h5>
                 <!--Close button-->
                 <button type="button"
                     class="box-content rounded-none border-none hover:no-underline hover:opacity-75 focus:opacity-100 focus:shadow-none focus:outline-none"

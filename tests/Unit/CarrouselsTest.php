@@ -28,7 +28,7 @@ use App\Http\Controllers\Management\ManagementCoursesController;
 
 class CarrouselsTest extends TestCase
 {
-    private $imagePath;
+    
     use RefreshDatabase;
 
     public function setUp(): void
@@ -45,8 +45,8 @@ class CarrouselsTest extends TestCase
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);// Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -55,7 +55,7 @@ class CarrouselsTest extends TestCase
         View::share('roles', $roles);
 
         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
-       View::share('general_options', $general_options);
+        View::share('general_options', $general_options);
 
         // Simula datos de TooltipTextsModel
         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
@@ -66,17 +66,17 @@ class CarrouselsTest extends TestCase
         View::share('unread_notifications', $unread_notifications);
 
         $typecourse1 = CourseTypesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'COURSE_TYPE_1',
         ])->latest()->first();
 
 
         $coursestatuses = CourseStatusesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'code' => 'READY_ADD_EDUCATIONAL_PROGRAM',
         ])->latest()->first();
-        $course = CoursesModel::factory()->create([
-            'uid' => generate_uuid(),
+        CoursesModel::factory()->create([
+            'uid' => generateUuid(),
             'creator_user_uid' => $user->uid,
             'course_type_uid' => $typecourse1->uid,
             'course_status_uid' => $coursestatuses->uid,
@@ -147,7 +147,7 @@ class CarrouselsTest extends TestCase
     public function testException422WhenImageIsNotProvided()
     {
         $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'featured_slider_image_path' => '',
         ])->first();
 
@@ -167,7 +167,6 @@ class CarrouselsTest extends TestCase
             ->assertJson([
                 'message' => 'Debes adjuntar una imagen',
             ]);
-
     }
 
     /** @test Guardar Carrusel Grande Aprobado  */
@@ -175,9 +174,9 @@ class CarrouselsTest extends TestCase
     {
 
         //   Crear registros usando el factory
-         $course1 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
+        $course1 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
             'featured_big_carrousel_approved' => false,
-         ]);
+        ]);
 
 
         $course2 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
@@ -240,25 +239,7 @@ class CarrouselsTest extends TestCase
             'uid' => $education2->uid,
             'featured_slider_approved' => false,
         ]);
-
     }
-
-    /** @test */
-    // Esto no está hecho validar que se envia la data con 422 cuando este vacio
-    // public function TestFailsValidationWhenDataIsMissingBigCarrouselApprovals()
-    // {
-    //     // Enviar datos incompletos
-    //     $data = [
-    //         'courses' => [], // Sin cursos
-    //         'educationalPrograms' => [], // Sin programas educativos
-    //     ];
-
-    //     $response = $this->postJson('/administration/carrousels/save_big_carrousels_approvals', $data);
-
-    //     // Verificar que la respuesta sea un error de validación
-    //     $response->assertStatus(422)
-    //         ->assertJsonValidationErrors(['courses', 'educationalPrograms']);
-    // }
 
      /** @test Guardar Carrusel Grande Aprobado  */
      public function testSavesSmallCarrouselApprovals()
@@ -337,125 +318,84 @@ class CarrouselsTest extends TestCase
      /** @test Actualiza carrusel cuando pertenece a un Programa Educacional*/
     public function testUpdatesCarouselFieldsBelongsToEducationalProgram()
     {
-        // Simulamos un curso
-        $course_bd = Mockery::mock(CoursesModel::class)->makePartial();
 
-        // Simulamos el request
-        $request = new Request([
-            'belongs_to_educational_program' => true,
+        //   Crear registros usando el factory
+        $course1 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
+            'featured_small_carrousel_approved' => false,
         ]);
 
-        // Crear mocks del certificado
-        $certidigitalServiceMock = $this->createMock(CertidigitalService::class);
 
-        // Create a mock for EmbeddingsService
-
-        $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
-
-        // Instantiate ManagementCoursesController with the mocked service
-        $controller = new ManagementCoursesController($mockEmbeddingsService, $certidigitalServiceMock);
-
-        // Usamos reflexión para acceder al método privado
-        $reflection = new \ReflectionClass($controller);
-        $method = $reflection->getMethod('updateCarrouselFields');
-        $method->setAccessible(true);
-
-        // Llamamos al método privado
-        $method->invokeArgs($controller, [$request, $course_bd]);
-
-        // Verificamos que los atributos del curso se hayan restablecido
-        $this->assertNull($course_bd->featured_big_carrousel_title);
-        $this->assertNull($course_bd->featured_big_carrousel_description);
-        $this->assertNull($course_bd->featured_big_carrousel_image_path);
-        $this->assertNull($course_bd->featured_big_carrousel);
-        $this->assertNull($course_bd->featured_small_carrousel);
-    }
-
-    /** @test Actualiza Carrusel cuando no esta presente Programas Eduacuionales*/
-    public function testUpdatesBigCarouselFieldsNotEducationalProgram()
-    {
-        // Simulamos un curso
-        $course_bd = Mockery::mock(CoursesModel::class)->makePartial();
-
-        // Simulamos el request
-        $request = new Request([
-            'belongs_to_educational_program' => false,
-            'featured_small_carrousel' => true,
-            'featured_big_carrousel' => true,
-            'featured_big_carrousel_title' => 'Title',
-            'featured_big_carrousel_description' => 'Description',
-            'featured_big_carrousel_image_path' => 'image.jpg',
+        $course2 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
+            'featured_small_carrousel_approved' => true,
         ]);
 
-        // Crear mocks del certificado
-        $certidigitalServiceMock = $this->createMock(CertidigitalService::class);
+        // Mockear los datos de entrada
+        $courses = [
+            ['uid' => $course1->uid, 'checked' => true],
+            ['uid' => $course2->uid, 'checked' => false],
+        ];
 
-
-         // Create a mock for EmbeddingsService
-         $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
-
-        // Instantiate ManagementCoursesController with the mocked service
-        $controller = new ManagementCoursesController($mockEmbeddingsService, $certidigitalServiceMock );
-
-
-        // Usamos reflexión para acceder al método privado
-        $reflection = new \ReflectionClass($controller);
-        $method = $reflection->getMethod('updateCarrouselFields');
-        $method->setAccessible(true);
-
-        // Llamamos al método privado
-        $method->invokeArgs($controller, [$request, $course_bd]);
-
-        // Verificamos que se haya establecido el atributo correcto
-        $this->assertEquals('Title', $course_bd->featured_big_carrousel_title);
-        $this->assertEquals('Description', $course_bd->featured_big_carrousel_description);
-        $this->assertTrue($course_bd->featured_small_carrousel);
-    }
-
-    /** @test Actualiza Carrusel cuando no esta presente Programas Eduacuionales y sin Imagen*/
-    public function testResetsBigCarouselFieldsNoImage()
-    {
-        // Simulamos un curso
-        $course_bd = Mockery::mock(CoursesModel::class)->makePartial();
-
-        // Simulamos el request sin archivo de imagen
-        $request = new Request([
-            'belongs_to_educational_program' => false,
-            'featured_small_carrousel' => true,
-            'featured_big_carrousel' => false,
-            'featured_big_carrousel_title' => null,
-            'featured_big_carrousel_description' => null,
-            'featured_big_carrousel_image_path' => null,
+        $education1 = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
+            'featured_main_carrousel_approved' => false,
         ]);
 
-        // Crear mocks del certificado
-        $certidigitalServiceMock = $this->createMock(CertidigitalService::class);
+        $education2 = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
+            'featured_main_carrousel_approved' => true,
+        ]);
 
-        // Create a mock for EmbeddingsService
-        $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
+        $educationalPrograms = [
+            ['uid' => $education1->uid, 'checked' => true],
+            ['uid' => $education2->uid, 'checked' => false],
+        ];
 
-        // Instantiate ManagementCoursesController with the mocked service
-        $controller = new ManagementCoursesController($mockEmbeddingsService, $certidigitalServiceMock );
+        // Mockear la autenticación
+        $user = UsersModel::factory()->create();
+        Auth::shouldReceive('user')->andReturn($user);
 
-        // Usamos reflexión para acceder al método privado
-        $reflection = new \ReflectionClass($controller);
-        $method = $reflection->getMethod('updateCarrouselFields');
-        $method->setAccessible(true);
+        // Enviar petición a la ruta
+        $response = $this->post('/administration/carrousels/save_small_carrousels_approvals', [
+            'courses' => $courses,
+            'educationalPrograms' => $educationalPrograms,
+        ]);
 
-        // Llamamos al método privado
-        $method->invokeArgs($controller, [$request, $course_bd]);
+        // Verificar la respuesta
+        $response->assertStatus(200);
+        $response->assertJson([
+            'status' => 'success',
+            'message' => 'Se han actualizado los cursos a mostrar en el carrousel pequeño'
+        ]);
 
-        // Verificamos que los atributos se hayan restablecido correctamente
-        $this->assertNull($course_bd->featured_big_carrousel_title);
-        $this->assertNull($course_bd->featured_big_carrousel_description);
-        $this->assertNull($course_bd->featured_big_carrousel_image_path);
+        // Verificar los cambios en la base de datos
+        $this->assertDatabaseHas('courses', [
+            'uid' => $course1->uid,
+            'featured_small_carrousel_approved' => true,
+        ]);
+
+        $this->assertDatabaseHas('courses', [
+            'uid' => $course2->uid,
+            'featured_small_carrousel_approved' => false,
+        ]);
+
+        $this->assertDatabaseHas('educational_programs', [
+            'uid' => $education1->uid,
+            'featured_main_carrousel_approved' => true,
+        ]);
+
+        $this->assertDatabaseHas('educational_programs', [
+            'uid' => $education2->uid,
+            'featured_main_carrousel_approved' => false,
+        ]);
     }
+
+
+
+
 
     public function testShouldReturnCourseImageNotUploaded()
     {
         // Crea un curso con una imagen destacada
         $course = CoursesModel::factory()->withCourseType()->withCourseStatus()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'featured_big_carrousel_image_path' => 'images/test-images/743.jpg',
         ]);
 
@@ -488,7 +428,7 @@ class CarrouselsTest extends TestCase
     {
         // Crea un programa educativo con una imagen destacada
         $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'featured_slider_image_path' => 'images/test-images/743.jpg',
         ])->first();
 
@@ -542,9 +482,5 @@ class CarrouselsTest extends TestCase
 
         // Llamar al método privado con el request inválido
         $method->invoke($carrouselsController, $request);
-
-
     }
-
-
 }

@@ -29,7 +29,7 @@ class CompetencesLearningResultsSeeder extends Seeder
      */
     private function createCompetenceFramework(): string
     {
-        $competenceFrameworkUid = generate_uuid();
+        $competenceFrameworkUid = generateUuid();
         CompetenceFrameworksModel::factory()->create([
             'uid' => $competenceFrameworkUid,
             'has_levels' => true,
@@ -60,7 +60,7 @@ class CompetencesLearningResultsSeeder extends Seeder
     private function createCompetences(string $competenceFrameworkUid, int $count): void
     {
         for ($i = 0; $i < $count; $i++) {
-            $competenceUid = generate_uuid();
+            $competenceUid = generateUuid();
             CompetencesModel::factory()->create([
                 'uid' => $competenceUid,
                 'competence_framework_uid' => $competenceFrameworkUid,
@@ -81,7 +81,7 @@ class CompetencesLearningResultsSeeder extends Seeder
     private function createSubCompetences(string $parentUid, int $count, $competenceFrameworkUid): void
     {
         for ($j = 0; $j < $count; $j++) {
-            $subcompetenceUid = generate_uuid();
+            $subcompetenceUid = generateUuid();
             CompetencesModel::factory()->create([
                 'uid' => $subcompetenceUid,
                 'parent_competence_uid' => $parentUid,

@@ -192,13 +192,8 @@ a {
 
 
 /************************ TABULATOR ****************/
-
 .table-container .tabulator .tabulator-header .tabulator-col {
-    @apply bg-white text-primary
-}
-
-.table-container .tabulator .tabulator-header .tabulator-col {
-    @apply border-r-0 hover:bg-white
+    @apply bg-white text-primary border-r-0 hover:bg-white;
 }
 
 .table-container .tabulator .tabulator-header .tabulator-col.tabulator-sortable.tabulator-col-sorter-element:hover {
@@ -206,11 +201,7 @@ a {
 }
 
 .table-container .tabulator .tabulator-header {
-    @apply border-b-2 border-gray-300 border-t-2
-}
-
-.table-container .tabulator .tabulator-header {
-    @apply font-roboto-bold
+    @apply font-roboto-bold border-b-2 border-gray-300 border-t-2;
 }
 
 .table-container .tabulator .tabulator-footer {
@@ -241,10 +232,6 @@ a {
     @apply border-b-2 border-gray-300 bg-white
 }
 
-.table-container .tabulator-row .tabulator-cell {
-    @apply border-r-0 text-base
-}
-
 .table-container .tabulator-col {
     @apply pt-2 pb-2
 }
@@ -258,7 +245,7 @@ a {
 }
 
 .table-container .tabulator-row .tabulator-cell {
-    @apply pt-2 pb-2
+    @apply pt-2 pb-2 border-r-0 text-base;
 }
 
 .table-container .checkbox-cell {
@@ -503,31 +490,19 @@ button.element-disabled {
     @apply rounded-[8px] mt-2 border-0
 }
 
-.custom-treeselect .treeselect-list__item--checked .treeselect-list__item-checkbox-container, .treeselect-list__item--partial-checked .treeselect-list__item-checkbox-container {
-    @apply bg-primary;
-}
-
-.custom-treeselect .treeselect-list__item-label {
-    @apply text-[16px]
-}
-
-.custom-treeselect .treeselect-list__item {
-    @apply py-[10px] h-auto
-}
-
 .custom-treeselect .treeselect-list__item[level="0"] {
     @apply text-primary font-medium;
 }
 
 .custom-treeselect .treeselect-list__item {
-    @apply hover:text-white;
+    @apply hover:text-white py-[10px] h-auto;
 }
 
 .custom-treeselect .treeselect-list__item.treeselect-list__item--focused {
     @apply text-white;
 }
 .custom-treeselect .treeselect-list__item-label {
-    @apply pl-[8px]
+    @apply pl-[8px] text-[16px];
 }
 .custom-treeselect .treeselect-input--value-not-selected .treeselect-input__edit, .treeselect-input--value-not-selected.treeselect-input--unsearchable .treeselect-input__edit {
   @apply focus:outline-none focus:ring-0;
@@ -535,10 +510,6 @@ button.element-disabled {
 
 .custom-treeselect .treeselect-input--unsearchable .treeselect-input__edit {
     @apply placeholder:text-[#C7C7C7] placeholder:text-[14px] text-sm;
-}
-
-.custom-treeselect .treeselect-input {
-    @apply px-[20px] py-[12px] border-0 rounded-[8px]
 }
 
 .custom-treeselect .treeselect-input__tags-count {
@@ -597,19 +568,6 @@ button.element-disabled {
 #tree-competences-learning-results .infinite-tree-scroll {
     @apply max-h-full
 }
-/******************************* ACCORDION ***************/
-.accordion {
-    .accordion-element {
-        .accordion-header {
-            @apply w-full text-left px-4 py-2 flex justify-between items-center focus:outline-none hover:bg-gray-50;
-        }
-
-        @apply border-b;
-    }
-
-    @apply w-full shadow-md rounded-md;
-}
-
 
 /******************************* NOTIFICATIONS ***************/
 .notifications {
@@ -656,16 +614,12 @@ button.element-disabled {
         @apply flex sm:flex-row flex-col mb-4 gap-2;
     }
 
-    & .field .label-container {
-        @apply flex;
-    }
-
     & .field .label-container label {
         @apply w-auto break-words text-sm font-roboto-regular;
     }
 
     & .field .label-container {
-        @apply sm:w-3/12 w-auto
+        @apply sm:w-3/12 w-auto flex;
     }
 
     & .field .content-container.little {
@@ -686,17 +640,11 @@ button.element-disabled {
             @apply text-[#DB371F]
         }
 
-        @apply sm:w-9/12 w-auto
+        @apply sm:w-9/12 w-auto text-[14px];
     }
 
     & .field textarea {
         @apply h-auto resize-y
-    }
-
-    & .field .content-container {
-        .error-label {
-            @apply text-red-500 text-[14px]
-        }
     }
 }
 
@@ -714,18 +662,12 @@ button.element-disabled {
 .flatpickr-day:hover {
     background-color: var(--primary-color) !important;
     border: none !important;
+    color: white !important;
 }
 
 .flatpickr-day.endRange {
     -webkit-box-shadow: -10px 0 0 var(--color-hover) !important;
     box-shadow: -10px 0 0 var(--color-hover) !important;
-}
-
-.flatpickr-day:hover {
-    color: white !important;
-}
-
-.flatpickr-day.endRange {
     background-color: var(--primary-color) !important;
     border: none !important;
 }
@@ -955,10 +897,6 @@ body.modal-open {
 }
 
 .delete-filters-btn {
-    @apply border rounded-[6px] p-[10px] text-[14px] text-primary select-none;
-}
-
-.delete-filters-btn {
     @apply p-[10px] border rounded-[6px] text-primary select-none text-[14px]
 }
 
@@ -991,8 +929,15 @@ body.modal-open {
 
         @apply flex flex-col rounded-lg bg-white p-[30px] text-primary  border-gray-100 border
     }
+    .accordion-element {
+        .accordion-header {
+            @apply w-full text-left px-4 py-2 flex justify-between items-center focus:outline-none hover:bg-gray-50;
+        }
 
-    @apply m-2 space-y-2
+        @apply border-b;
+    }
+
+    @apply m-2 space-y-2 w-full shadow-md rounded-md;
 }
 
 /******************************* COMPOSICIÓN CURSO ********************/
@@ -1031,7 +976,7 @@ body.modal-open {
 
 .choices {
     .choices__inner {
-        @apply bg-inherit h-[32px] min-h-[32px]
+        @apply bg-inherit h-[32px] min-h-[32px] rounded pt-[1px] pb-0;
     }
 
     .choices__list--dropdown .choices__item--selectable.is-highlighted, .choices__list[aria-expanded] .choices__item--selectable.is-highlighted {
@@ -1042,28 +987,16 @@ body.modal-open {
         @apply rounded
     }
 
-    .choices__inner {
-        @apply rounded
-    }
-
     .is-open .choices__inner {
         @apply rounded
     }
 
     .choices__list--dropdown .choices__item, .choices__list[aria-expanded] .choices__item {
-        @apply text-[#697386]
-    }
-
-    .choices__inner {
-        @apply pt-[1px] pb-0
+        @apply text-[#697386] p-[5px];
     }
 
     .choices__placeholder {
         @apply opacity-100
-    }
-
-    .choices__list--dropdown .choices__item, .choices__list[aria-expanded] .choices__item {
-        @apply p-[5px]
     }
 
     .is-focused .choices__inner, .is-open .choices__inner {

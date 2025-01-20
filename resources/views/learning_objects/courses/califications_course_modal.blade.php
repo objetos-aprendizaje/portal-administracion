@@ -7,7 +7,7 @@
 
             <div>
                 <button data-modal-id="califications-course-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
         </div>
@@ -24,7 +24,7 @@
 
         <div class="btn-block">
             <button type="button" class="btn btn-primary" id="save-califications">Guardar
-                {{ e_heroicon('paper-airplane', 'outline') }}
+                {{ eHeroicon('paper-airplane', 'outline') }}
             </button>
         </div>
 

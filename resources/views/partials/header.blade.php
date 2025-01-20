@@ -22,7 +22,7 @@
             @if (Auth::user()->general_notifications_allowed)
                 <div class="notifications">
                     <div class="bell" id="bell-btn">
-                        {{ e_heroicon('bell', 'solid') }}
+                        {{ eHeroicon('bell', 'solid') }}
                         <div id="notification-dot"
                             class="notification-dot {{ $unread_notifications ? 'block' : 'hidden' }}"></div>
                     </div>
@@ -34,7 +34,7 @@
 
             <div>
                 <img src="{{ asset(Auth::user()->photo_path ?? 'data/images/default_images/no-user.svg') }}"
-                    class="rounded-full h-12 w-12" />
+                    class="rounded-full h-12 w-12" alt="no imagen de usuario" />
             </div>
             <div class="border-l border-gray-300"></div>
             <div>
@@ -45,7 +45,7 @@
             <div class="flex items-center" title="Cerrar sesión">
                 <a href="{{ env('APP_URL') }}/logout">
                     <button type="button" class="btn btn-primary btn-close-session">Cerrar sesión
-                        {{ e_heroicon('arrow-left-on-rectangle', 'outline') }}
+                        {{ eHeroicon('arrow-left-on-rectangle', 'outline') }}
                     </button>
                 </a>
             </div>

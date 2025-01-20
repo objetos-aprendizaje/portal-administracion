@@ -21,7 +21,7 @@ class CertificationTypesModelFactory extends Factory
         return [
             'uid' => Str::uuid(),
             'name' => $this->faker->name(),
-            'category_uid' => generate_uuid(),
+            'category_uid' => generateUuid(),
             'description' => '',
             'created_at' => Carbon::now()->format('Y-m-d\TH:i'),
             'updated_at' => Carbon::now()->format('Y-m-d\TH:i'),

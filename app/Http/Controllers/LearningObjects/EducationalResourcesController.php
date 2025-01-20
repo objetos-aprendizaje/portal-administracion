@@ -43,9 +43,9 @@ class EducationalResourcesController extends BaseController
     public function index()
     {
 
-        $educational_resources_types = EducationalResourceTypesModel::all();
+        $educationalResourcesTypes = EducationalResourceTypesModel::all();
         $categories = CategoriesModel::with('parentCategory')->get();
-        $license_types = LicenseTypesModel::get();
+        $licenseTypes = LicenseTypesModel::get();
 
         $competencesLearningResults = $this->getCompetencesFrameworks();
 
@@ -59,7 +59,7 @@ class EducationalResourcesController extends BaseController
                 ],
                 "tabulator" => true,
                 "tomselect" => true,
-                "educational_resources_types" => $educational_resources_types,
+                "educational_resources_types" => $educationalResourcesTypes,
                 "categories" => $categories,
                 "submenuselected" => "learning-objects-educational-resources",
                 "variables_js" => [
@@ -68,7 +68,7 @@ class EducationalResourcesController extends BaseController
                     "enabledRecommendationModule" => (bool) app('general_options')['enabled_recommendation_module']
                 ],
                 "infiniteTree" => true,
-                "license_types" => $license_types,
+                "license_types" => $licenseTypes,
             ]
         );
     }
@@ -100,7 +100,9 @@ class EducationalResourcesController extends BaseController
                 ->orWhere('identifier', $search);
         }
 
-        if ($filters) $this->applyFilters($filters, $query);
+        if ($filters) {
+            $this->applyFilters($filters, $query);
+        }
 
         if (isset($sort) && !empty($sort)) {
             foreach ($sort as $order) {
@@ -120,7 +122,7 @@ class EducationalResourcesController extends BaseController
                 $query->whereHas('categories', function ($query) use ($filter) {
                     $query->whereIn('categories.uid', $filter['value']);
                 });
-            } else if ($filter['database_field'] == "embeddings") {
+            } elseif ($filter['database_field'] == "embeddings") {
                 $query->where(DB::raw('CASE WHEN educational_resources_embeddings.embeddings IS NULL THEN 0 ELSE 1 END'), '=', $filter['value']);
             } else {
                 $query->where($filter['database_field'], $filter['value']);
@@ -131,14 +133,9 @@ class EducationalResourcesController extends BaseController
     /**
      * Obtiene un recurso por uid
      */
-    public function getResource($resource_uid)
+    public function getResource($resourceUid)
     {
-
-        // if (!$resource_uid) {
-        //     return response()->json(['message' => env('ERROR_MESSAGE')], 400);
-        // }
-
-        $resource = EducationalResourcesModel::where('uid', $resource_uid)->with([
+        $resource = EducationalResourcesModel::where('uid', $resourceUid)->with([
             "creatorUser",
             "status",
             "type",
@@ -166,40 +163,40 @@ class EducationalResourcesController extends BaseController
             return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $errorsValidators], 422);
         }
 
-        $uid_resource = $request->educational_resource_uid;
-        $isNew = !$uid_resource;
+        $uidResource = $request->educational_resource_uid;
+        $isNew = !$uidResource;
 
         if ($isNew) {
             $resource = new EducationalResourcesModel();
-            $resource->uid = generate_uuid();
+            $resource->uid = generateUuid();
             $resource->identifier = $this->generateIdentificerEducationalResources();
             $resource->creator_user_uid = auth()->user()->uid;
         } else {
-            $resource = EducationalResourcesModel::where('uid', $uid_resource)->with(['categories', 'embeddings'])->first();
+            $resource = EducationalResourcesModel::where('uid', $uidResource)->with(['categories', 'embeddings'])->first();
         }
 
         // Comprobamos el nuevo estado que le corresponde al recurso.
         $action = $request->input('action');
 
         if ($isNew) {
-            $new_resource_status = $this->getStatusResource($action);
+            $newResourceStatus = $this->getStatusResource($action);
         } else {
-            $actual_status_course = $resource->status['code'];
-            $new_resource_status = $this->getStatusResource($action, $actual_status_course);
+            $actualStatusCourse = $resource->status['code'];
+            $newResourceStatus = $this->getStatusResource($action, $actualStatusCourse);
         }
 
         $resource->license_type_uid = $request->input('license_type_uid');
 
-        return DB::transaction(function () use ($request, $resource, $isNew, $new_resource_status) {
+        return DB::transaction(function () use ($request, $resource, $isNew, $newResourceStatus) {
             $embeddings = $this->generateResourceEmbeddings($request, $resource);
 
             $this->handleResourceImage($request, $resource);
             $this->fillResourceDetails($request, $resource);
             $this->handleResourceWay($request, $resource);
 
-            if ($new_resource_status) {
-                $resource->status_uid = $new_resource_status->uid;
-                if ($new_resource_status->code == "PENDING_APPROVAL") {
+            if ($newResourceStatus) {
+                $resource->status_uid = $newResourceStatus->uid;
+                if ($newResourceStatus->code == "PENDING_APPROVAL") {
                     dispatch(new SendEducationalResourceNotificationToManagements($resource->toArray()));
                 }
             }
@@ -293,7 +290,7 @@ class EducationalResourcesController extends BaseController
             'resource_url.url' => 'La URL no es válida'
         ];
 
-        $resource_way = $request->resource_way;
+        $resourceWay = $request->resource_way;
 
         $rules = [
             'title' => 'required|string',
@@ -301,14 +298,14 @@ class EducationalResourcesController extends BaseController
             'resource_way' => 'required|string',
         ];
 
-        $uid_resource = $request->educational_resource_uid;
+        $uidResource = $request->educational_resource_uid;
 
         // En función del tipo de recurso, establecemos como obligatorio adjuntar un archivo o URL
-        if (!$uid_resource && $resource_way == 'FILE') {
+        if (!$uidResource && $resourceWay == 'FILE') {
             $rules['resource_input_file'] = 'required';
-        } else if (!$uid_resource && $resource_way == 'URL') {
+        } elseif (!$uidResource && $resourceWay == 'URL') {
             $rules['resource_url'] = 'required|url';
-        } else if ($resource_way == 'URL') {
+        } elseif ($resourceWay == 'URL') {
             $rules['resource_url'] = 'required|url';
         }
 
@@ -340,7 +337,7 @@ class EducationalResourcesController extends BaseController
         return $errorsValidators;
     }
 
-    function getStatusResource($action, $actualStatusCourse = null)
+    private function getStatusResource($action, $actualStatusCourse = null)
     {
         $statusResources = EducationalResourceStatusesModel::whereIn('code', [
             'INTRODUCTION',
@@ -359,27 +356,31 @@ class EducationalResourcesController extends BaseController
     }
 
     // Si el gestor ha definido de forma global o a este usuario específico que se le aprueben automáticamente los recursos
-    function checkAutomaticApproval()
+    private function checkAutomaticApproval()
     {
         // Comprobamos si está de forma específica
         $teacherApproved = AutomaticResourceAprovalUsersModel::where('user_uid', auth()->user()->uid)->exists();
-        if ($teacherApproved) return true;
+        if ($teacherApproved) {
+            return true;
+        }
 
         // Comprobamos si está de forma global
-        if (app('general_options')['necessary_approval_resources']) return true;
+        if (app('general_options')['necessary_approval_resources']) {
+            return true;
+        }
 
         return false;
     }
 
-    function handleResourceImage($request, $resource)
+    private function handleResourceImage($request, $resource)
     {
-        $resource_image_input_file = $request->file('resource_image_input_file');
-        if ($resource_image_input_file) {
-            $resource->image_path = saveFile($resource_image_input_file, "images/resources-images", null, true);
+        $resourceImageInputFile = $request->file('resource_image_input_file');
+        if ($resourceImageInputFile) {
+            $resource->image_path = saveFile($resourceImageInputFile, "images/resources-images", null, true);
         }
     }
 
-    function fillResourceDetails($request, $resource)
+    private function fillResourceDetails($request, $resource)
     {
         $resource->fill($request->only([
             "title",
@@ -390,12 +391,14 @@ class EducationalResourcesController extends BaseController
         ]));
     }
 
-    function handleResourceWay($request, $resource)
+    private function handleResourceWay($request, $resource)
     {
         if (in_array($request->resource_way, ['FILE', 'IMAGE', 'PDF', 'VIDEO', 'AUDIO'])) {
-            $resource_input_file = $request->file('resource_input_file');
+            $resourceInputFile = $request->file('resource_input_file');
 
-            if ($resource_input_file) $resource->resource_path = saveFile($resource_input_file, "attachments/resources", null, true);
+            if ($resourceInputFile) {
+                $resource->resource_path = saveFile($resourceInputFile, "attachments/resources", null, true);
+            }
 
             $resource->resource_url = null;
         } elseif ($request->resource_way == 'URL') {
@@ -404,23 +407,23 @@ class EducationalResourcesController extends BaseController
         }
     }
 
-    function handleTags($request, $resource)
+    private function handleTags($request, $resource)
     {
         $tags = $request->input('tags');
         $tags = json_decode($tags, true);
 
         if (!empty($tags)) {
-            $current_tags = EducationalResourcesTagsModel::where('educational_resource_uid', $resource->uid)->pluck('tag')->toArray();
+            $currentTags = EducationalResourcesTagsModel::where('educational_resource_uid', $resource->uid)->pluck('tag')->toArray();
 
-            $tags_to_add = array_diff($tags, $current_tags);
-            $tags_to_delete = array_diff($current_tags, $tags);
+            $tagsToAdd = array_diff($tags, $currentTags);
+            $tagsToDelete = array_diff($currentTags, $tags);
 
-            EducationalResourcesTagsModel::where('educational_resource_uid', $resource->uid)->whereIn('tag', $tags_to_delete)->delete();
+            EducationalResourcesTagsModel::where('educational_resource_uid', $resource->uid)->whereIn('tag', $tagsToDelete)->delete();
 
             $insertData = [];
-            foreach ($tags_to_add as $tag) {
+            foreach ($tagsToAdd as $tag) {
                 $insertData[] = [
-                    'uid' => generate_uuid(),
+                    'uid' => generateUuid(),
                     'educational_resource_uid' => $resource->uid,
                     'tag' => $tag
                 ];
@@ -432,25 +435,25 @@ class EducationalResourcesController extends BaseController
         }
     }
 
-    function handleEmails($request, $resource)
+    private function handleEmails($request, $resource)
     {
-        $contact_emails = $request->input('contact_emails');
-        $contact_emails = json_decode($contact_emails, true);
+        $contactEmails = $request->input('contact_emails');
+        $contactEmails = json_decode($contactEmails, true);
 
-        if (!empty($contact_emails)) {
-            $current_contact_emails = EducationalResourcesEmailContactsModel::where('educational_resource_uid', $resource->uid)->pluck('email')->toArray();
+        if (!empty($contactEmails)) {
+            $currentContactEmails = EducationalResourcesEmailContactsModel::where('educational_resource_uid', $resource->uid)->pluck('email')->toArray();
 
-            $contact_emails_to_add = array_diff($contact_emails, $current_contact_emails);
-            $contact_emails_to_delete = array_diff($current_contact_emails, $contact_emails);
+            $contactEmailsToAdd = array_diff($contactEmails, $currentContactEmails);
+            $contactEmailsToDelete = array_diff($currentContactEmails, $contactEmails);
 
-            EducationalResourcesEmailContactsModel::where('educational_resource_uid', $resource->uid)->whereIn('email', $contact_emails_to_delete)->delete();
+            EducationalResourcesEmailContactsModel::where('educational_resource_uid', $resource->uid)->whereIn('email', $contactEmailsToDelete)->delete();
 
             $insertData = [];
-            foreach ($contact_emails_to_add as $contact_email) {
+            foreach ($contactEmailsToAdd as $contactEmail) {
                 $insertData[] = [
-                    'uid' => generate_uuid(),
+                    'uid' => generateUuid(),
                     'educational_resource_uid' => $resource->uid,
-                    'email' => $contact_email
+                    'email' => $contactEmail
                 ];
             }
 
@@ -460,35 +463,35 @@ class EducationalResourcesController extends BaseController
         }
     }
 
-    function handleMetadata($request, $resource)
+    private function handleMetadata($request, $resource)
     {
         $metadata = $request->input('metadata');
         $metadata = json_decode($metadata, true);
         $resource->updateMetadata($metadata);
     }
 
-    function handleCategories($request, $resource)
+    private function handleCategories($request, $resource)
     {
         $categories = $request->input('categories');
         $categories = json_decode($categories, true);
 
-        $categories_bd = CategoriesModel::whereIn('uid', $categories)->get()->pluck('uid');
+        $categoriesBd = CategoriesModel::whereIn('uid', $categories)->get()->pluck('uid');
 
         EducationalResourceCategoriesModel::where('educational_resource_uid', $resource->uid)->delete();
 
-        $categories_to_sync = [];
-        foreach ($categories_bd as $category_uid) {
-            $categories_to_sync[] = [
-                'uid' => generate_uuid(),
+        $categoriesToSync = [];
+        foreach ($categoriesBd as $categoryUid) {
+            $categoriesToSync[] = [
+                'uid' => generateUuid(),
                 'educational_resource_uid' => $resource->uid,
-                'category_uid' => $category_uid
+                'category_uid' => $categoryUid
             ];
         }
 
-        $resource->categories()->sync($categories_to_sync);
+        $resource->categories()->sync($categoriesToSync);
     }
 
-    function createLog($isNew, $resourceName)
+    private function createLog($isNew, $resourceName)
     {
         $logMessage = $isNew ? 'Recurso educativo añadido: ' : 'Recurso educativo actualizado: ';
         $logMessage .= $resourceName;
@@ -497,8 +500,8 @@ class EducationalResourcesController extends BaseController
 
     public function deleteResources()
     {
-        $resources_uids = request()->input('resourcesUids');
-        $educationalResources = EducationalResourcesModel::whereIn('uid', $resources_uids)->get();
+        $resourcesUids = request()->input('resourcesUids');
+        $educationalResources = EducationalResourcesModel::whereIn('uid', $resourcesUids)->get();
 
         DB::transaction(function () use ($educationalResources) {
             foreach ($educationalResources as $educationalResource) {
@@ -520,7 +523,7 @@ class EducationalResourcesController extends BaseController
         }
 
         // Sacamos los recursos de la base de datos
-        $resources_bd = EducationalResourcesModel::whereIn('uid', array_column($changesResourcesStatuses, "uid"))
+        $resourcesBd = EducationalResourcesModel::whereIn('uid', array_column($changesResourcesStatuses, "uid"))
             ->with([
                 "status",
                 "tags",
@@ -529,20 +532,20 @@ class EducationalResourcesController extends BaseController
             ->get()->keyBy("uid");
 
         // Actualizamos los estados de los recursos y enviamos los recursos a la api de búsqueda
-        $this->updateEducationalResourcesStatuses($changesResourcesStatuses, $resources_bd);
+        $this->updateEducationalResourcesStatuses($changesResourcesStatuses, $resourcesBd);
 
         return response()->json(['message' => 'Se han actualizado los estados de los recursos correctamente'], 200);
     }
 
     private function updateEducationalResourcesStatuses($changesResourcesStatuses, $resourcesBd)
     {
-        $statuses_resources = EducationalResourceStatusesModel::get()->keyBy("code");
+        $statusesResources = EducationalResourceStatusesModel::get()->keyBy("code");
 
         $studentsUsers = $this->getStudentsUsers();
 
-        DB::transaction(function () use ($changesResourcesStatuses, $resourcesBd, $statuses_resources, $studentsUsers) {
+        DB::transaction(function () use ($changesResourcesStatuses, $resourcesBd, $statusesResources, $studentsUsers) {
             foreach ($changesResourcesStatuses as $changeStatus) {
-                $newStatus = $statuses_resources[$changeStatus['status']];
+                $newStatus = $statusesResources[$changeStatus['status']];
                 $resource = $resourcesBd[$changeStatus['uid']];
 
                 $resource->status_uid = $newStatus->uid;
@@ -551,7 +554,9 @@ class EducationalResourcesController extends BaseController
                 if ($newStatus->code == 'PUBLISHED') {
                     $this->sendEmailNotifications($resource, $studentsUsers);
                     $this->sendGeneralNotifications($resource, $studentsUsers);
-                    if (env('ENABLED_API_SEARCH')) $this->sendResourcesToApiSearch($resource);
+                    if (env('ENABLED_API_SEARCH')) {
+                        $this->sendResourcesToApiSearch($resource);
+                    }
                 }
             }
 
@@ -573,11 +578,9 @@ class EducationalResourcesController extends BaseController
             // Si hay categorías en común, el usuario debe ser incluido en el filtro
             return !$commonCategories->isEmpty() && !$user->automaticGeneralNotificationsTypesDisabled->contains('code', 'NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS_MANAGEMENTS');
         });
-
-        //Todo: se agregó esto ya que el campo automatic_notification_type_uid es obligatorio si no da error 500,
-        //Todo solo se hizo para poder correr la prueba unitaria
+                     
         $type = AutomaticNotificationTypesModel::where('code', 'NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS_MANAGEMENTS')->first();
-        $generalNotificationAutomaticUid = generate_uuid();
+        $generalNotificationAutomaticUid = generateUuid();
         $generalAutomaticNotification = new GeneralNotificationsAutomaticModel();
         $generalAutomaticNotification->uid = $generalNotificationAutomaticUid;
         $generalAutomaticNotification->title = "Nuevo recurso educativo";
@@ -591,7 +594,7 @@ class EducationalResourcesController extends BaseController
         $dataInsert = [];
         foreach ($usersFiltered as $user) {
             $dataInsert[] = [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "general_notifications_automatic_uid" => $generalNotificationAutomaticUid,
                 "user_uid" => $user->uid,
             ];
@@ -621,7 +624,7 @@ class EducationalResourcesController extends BaseController
         $dataInsert = [];
         foreach ($usersFiltered as $user) {
             $dataInsert[] = [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "user_uid" => $user->uid,
                 "template" => "recommended_educational_resource_user",
                 'subject' => 'Nuevo recurso educativo',
@@ -656,7 +659,7 @@ class EducationalResourcesController extends BaseController
 
     private function getStudentsUsers()
     {
-        $students = UsersModel::whereHas('roles', function ($query) {
+        return UsersModel::whereHas('roles', function ($query) {
             $query->where('code', 'STUDENT');
         })
             ->with([
@@ -665,16 +668,12 @@ class EducationalResourcesController extends BaseController
                 "automaticEmailNotificationsTypesDisabled"
             ])
             ->get();
-
-        return $students;
     }
 
     private function generateIdentificerEducationalResources()
     {
         $educationalProgramsCount = EducationalResourcesModel::count();
-        $identifier = 'RE-' . str_pad($educationalProgramsCount + 1, 4, '0', STR_PAD_LEFT);
-
-        return $identifier;
+        return 'RE-' . str_pad($educationalProgramsCount + 1, 4, '0', STR_PAD_LEFT);
     }
 
     private function getCompetencesFrameworks()

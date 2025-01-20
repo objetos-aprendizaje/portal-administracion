@@ -19,7 +19,7 @@ class CoursesPaymentTermsModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => $this->faker->words(2, true),
             'start_date' => Carbon::now(),
             'finish_date' => Carbon::now()->addDays(10),
@@ -29,7 +29,7 @@ class CoursesPaymentTermsModelFactory extends Factory
 
     public function withCourse(): Factory
     {
-        return $this->state(function (array $attributes) {
+        return $this->state(function () {
             return [
                 'course_uid' => CoursesModel::factory()->create()->first(),
             ];

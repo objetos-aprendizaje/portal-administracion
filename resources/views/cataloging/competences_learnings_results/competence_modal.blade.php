@@ -9,7 +9,7 @@
 
             <div>
                 <button data-modal-id="competence-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
         </div>
@@ -39,10 +39,10 @@
 
                 <div class="btn-block">
                     <button type="submit" class="btn btn-primary">Guardar
-                        {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                        {{ eHeroicon('paper-airplane', 'outline') }}</button>
 
                     <button data-modal-id="competence-modal" type="button" class="btn btn-secondary close-modal-btn">
-                        Cancelar {{ e_heroicon('x-mark', 'outline') }}</button>
+                        Cancelar {{ eHeroicon('x-mark', 'outline') }}</button>
                 </div>
 
                 <input type="hidden" id="competence_uid" name="competence_uid" value="" />

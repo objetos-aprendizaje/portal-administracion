@@ -12,17 +12,17 @@
             <div class="flex gap-1">
                 <div>
                     <button type="button" class="btn-icon" id="new-header-page-btn" title="Añadir página de header">
-                        {{ e_heroicon('plus', 'outline') }}
+                        {{ eHeroicon('plus', 'outline') }}
                     </button>
                 </div>
                 <div>
                     <button type="button" class="btn-icon" id="delete-header-pages-btn" title="Eliminar páginas de header">
-                        {{ e_heroicon('trash', 'outline') }}
+                        {{ eHeroicon('trash', 'outline') }}
                     </button>
                 </div>
                 <div>
                     <button type="button" class="btn-icon" id="btn-reload-table" title="Actualizar">
-                        {{ e_heroicon('arrow-path', 'outline') }}
+                        {{ eHeroicon('arrow-path', 'outline') }}
                     </button>
                 </div>
             </div>

@@ -3,7 +3,7 @@
     <section class="md:flex hidden">
 
         <div class="w-1/2">
-            <img id="image-background" src="{{ asset('data/images/background_login.png') }}" class="object-cover w-full h-screen">
+            <img id="image-background" src="{{ asset('data/images/background_login.png') }}" class="object-cover w-full h-screen" alt="Imagen de fondo">
         </div>
 
         <div class="w-1/2 justify-center flex items-center">
@@ -18,7 +18,7 @@
                             <div class="flex flex-col mb-[20px]">
 
                                 <div class="flex flex-col mb-[20px]">
-                                    <label class="px-3 mb-[8px]">Nueva contraseña</label>
+                                    <label class="px-3 mb-[8px]" for="password">Nueva contraseña</label>
                                     <input
                                         class="border-[1.5px] border-solid border-primary rounded-full p-3 focus:border-primary h-[60px]"
                                         type="password" name="password" />
@@ -27,7 +27,7 @@
 
                                 <div class="flex flex-col mb-[20px]">
 
-                                    <label class="px-3 mb-[8px]">Repite la contraseña</label>
+                                    <label class="px-3 mb-[8px]" for="confirm_password">Repite la contraseña</label>
                                     <input
                                         class="border-[1.5px] border-solid border-primary rounded-full p-3 focus:border-primary h-[60px]"
                                         type="password" name="confirm_password" />
@@ -38,7 +38,7 @@
                             <button type="submit"
                                 class="btn bg-primary text-white hover:bg-secondary w-full h-[60px]">Restablecer
                                 contraseña
-                                {{ e_heroicon('arrow-up-right', 'outline') }}</button>
+                                {{ eHeroicon('arrow-up-right', 'outline') }}</button>
 
                         </div>
 
@@ -67,7 +67,7 @@
                     <div class="flex flex-col mb-[20px]">
 
                         <div class="flex flex-col mb-[20px]">
-                            <label class="px-3 mb-[8px]">Nueva contraseña</label>
+                            <label class="px-3 mb-[8px]" for="password">Nueva contraseña</label>
                             <input
                                 class="border-[1.5px] border-solid border-primary rounded-full p-3 focus:border-primary h-[60px]"
                                 type="password" name="password" />
@@ -76,7 +76,7 @@
 
                         <div class="flex flex-col mb-[20px]">
 
-                            <label class="px-3 mb-[8px]">Repite la contraseña</label>
+                            <label class="px-3 mb-[8px]" for="confirm_password">Repite la contraseña</label>
                             <input
                                 class="border-[1.5px] border-solid border-primary rounded-full p-3 focus:border-primary h-[60px]"
                                 type="password" name="confirm_password" />
@@ -85,7 +85,7 @@
 
                         <button type="submit"
                             class="btn bg-primary text-white hover:bg-secondary w-full h-[60px]">Restablecer contraseña
-                            {{ e_heroicon('arrow-up-right', 'outline') }}</button>
+                            {{ eHeroicon('arrow-up-right', 'outline') }}</button>
 
                     </div>
                     <p class="text-center">Volver a <a href="{{ route('login') }}">Iniciar sesión</a></p>

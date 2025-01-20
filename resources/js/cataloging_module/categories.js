@@ -238,13 +238,13 @@ function fillCategoryModal(category) {
  */
 function checkChildren(element, isChecked) {
     if (element.checked) {
-        var inputsHijos =
+        const inputsHijos =
             element.parentElement.parentElement.querySelectorAll("input");
         inputsHijos.forEach(function (input) {
             input.checked = true;
         });
     } else {
-        var inputsHijos =
+        const inputsHijos =
             element.parentElement.parentElement.querySelectorAll("input");
         inputsHijos.forEach(function (input) {
             input.checked = false;

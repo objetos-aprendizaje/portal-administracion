@@ -14,11 +14,13 @@ class FileController extends BaseController
     {
         $file = $request->file('file');
 
-        if(!$file) abort(406);
+        if(!$file) {
+            abort(406);
+        }
 
-        $photo_path = saveFile($file, '/app/files', null, false);
+        $photoPath = saveFile($file, '/app/files', null, false);
 
-        return response()->json(['file_path' => $photo_path]);
+        return response()->json(['file_path' => $photoPath]);
 
     }
 
@@ -27,7 +29,9 @@ class FileController extends BaseController
         $token = $request->input('token');
         $backendFileDownloadToken = BackendFileDownloadTokensModel::where('token', $token)->first();
 
-        if(!$backendFileDownloadToken) abort(406);
+        if(!$backendFileDownloadToken) {
+            abort(406);
+        }
 
         $filePath = storage_path($backendFileDownloadToken->file);
         if (!file_exists($filePath)) {

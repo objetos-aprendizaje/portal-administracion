@@ -13,7 +13,6 @@ class Kernel extends ConsoleKernel
         \App\Console\Commands\ChangeStatusToEnrolling::class,
         \App\Console\Commands\ChangeStatusToFinished::class,
         \App\Console\Commands\SendEmailNotificationsAutomatic::class,
-        \App\Console\Commands\SendSuggestions::class,
 
         \App\Console\Commands\ChangeStatusToInscriptionEducationalProgram::class,
         \App\Console\Commands\ChangeStatusToDevelopmentEducationalProgram::class,
@@ -31,7 +30,6 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:change-status-to-enrolling')->everyFiveMinutes()->withoutOverlapping();
         $schedule->command('app:change-status-to-development')->everyFiveMinutes()->withoutOverlapping();
         $schedule->command('app:change-status-to-finished')->everyFiveMinutes()->withoutOverlapping();
-        $schedule->command('app:send-suggestions')->everyFiveMinutes()->withoutOverlapping();
 
         // Programas educativos
         $schedule->command('app:change-status-to-inscription-educational-program')->everyFiveMinutes()->withoutOverlapping();

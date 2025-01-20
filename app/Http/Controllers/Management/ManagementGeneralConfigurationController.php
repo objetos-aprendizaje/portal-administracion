@@ -25,7 +25,7 @@ class ManagementGeneralConfigurationController extends BaseController
             $query->where('code', 'TEACHER');
         })->get()->toArray();
 
-        $uids_teachers_automatic_aproval_resources = AutomaticResourceAprovalUsersModel::pluck('user_uid')->toArray();
+        $uidsTeachersAutomaticAprovalResources = AutomaticResourceAprovalUsersModel::pluck('user_uid')->toArray();
 
         return view(
             'management.general_configuration.index',
@@ -37,7 +37,7 @@ class ManagementGeneralConfigurationController extends BaseController
                 ],
                 "tomselect" => true,
                 "teachers" => $teachers,
-                "uids_teachers_automatic_aproval_resources" => $uids_teachers_automatic_aproval_resources,
+                "uids_teachers_automatic_aproval_resources" => $uidsTeachersAutomaticAprovalResources,
                 "submenuselected" => "management-general-configuration",
             ]
         );
@@ -74,7 +74,7 @@ class ManagementGeneralConfigurationController extends BaseController
             foreach ($uidsTeachers as $uidTeacher) {
                 AutomaticResourceAprovalUsersModel::firstOrCreate(
                     ['user_uid' => $uidTeacher],
-                    ['uid' => generate_uuid()]
+                    ['uid' => generateUuid()]
                 );
             }
 

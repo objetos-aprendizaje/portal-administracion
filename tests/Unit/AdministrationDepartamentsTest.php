@@ -44,8 +44,8 @@ class AdministrationDepartamentsTest extends TestCase
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -119,10 +119,10 @@ class AdministrationDepartamentsTest extends TestCase
         $user = UsersModel::factory()->create();
         $this->actingAs($user);
 
-        $departament = DepartmentsModel::factory()->create()->first();       
+        $departament = DepartmentsModel::factory()->create()->first();
 
         $data = [
-            'department_uid'=>  $departament->uid,            
+            'department_uid'=>  $departament->uid,
             'name' => $departament->name,
         ];
 
@@ -177,7 +177,7 @@ class AdministrationDepartamentsTest extends TestCase
             'name' => $department->name,
         ]);
     }
-    
+
     /**
      * @test Elimina departamento*/
     public function testDeleteDepartmentsWithoutUsersReturnsSuccess()
@@ -206,10 +206,10 @@ class AdministrationDepartamentsTest extends TestCase
     {
         // Crear departamentos de prueba
         $department1 = DepartmentsModel::factory()->create();
-        
+
         UsersModel::factory()->create([
             'department_uid'=> $department1->uid,
-        ]);        
+        ]);
 
         // Hacer la solicitud DELETE a la ruta
         $response = $this->delete('/administration/departments/delete_departments', [
@@ -220,7 +220,7 @@ class AdministrationDepartamentsTest extends TestCase
         $response->assertStatus(406);
         $response->assertJson(['message' => 'No se pueden eliminar los departamentos porque hay usuarios vinculados a ellos']);
 
-      
+
     }
 
     /** @test Obtener todos los departamentos */

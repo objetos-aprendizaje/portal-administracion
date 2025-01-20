@@ -23,7 +23,7 @@ class AnalyticsUsersController extends BaseController
     {
 
         // Obtenemos el total de usuarios
-        $total_users = UsersModel::count();
+        $totalUsers = UsersModel::count();
 
         $userRoles = UserRolesModel::all();
 
@@ -36,7 +36,7 @@ class AnalyticsUsersController extends BaseController
                     "resources/js/analytics_module/analytics_users.js"
                 ],
                 "roles_with_user_count" => "roles_with_user_count",
-                "total_users" => $total_users,
+                "total_users" => $totalUsers,
                 "userRoles" => $userRoles,
                 "tabulator" => true,
                 "submenuselected" => "analytics-users",
@@ -119,7 +119,7 @@ class AnalyticsUsersController extends BaseController
                     if (count($filter['value']) == 2) {
                         $query->whereBetween('created_at', [$filter['value'][0], $filter['value'][1]]);
                     }
-                } else if ($filter['database_field'] == "roles") {
+                } elseif ($filter['database_field'] == "roles") {
                     $query->whereHas('roles', function ($query) use ($filter) {
                         $query->whereIn('user_roles.uid', $filter['value']);
                     });
@@ -139,9 +139,9 @@ class AnalyticsUsersController extends BaseController
         $requestData = $request->all();
 
         $data = [];
-        $first_graph = "";
-        $second_graph = "";
-        $third_graph = "";
+        $firstGraph = "";
+        $secondGraph = "";
+        $thirdGraph = "";
 
         if ($requestData['filter_type'] == null) {
             $dateFormat = 'YYYY-MM-DD';
@@ -161,7 +161,7 @@ class AnalyticsUsersController extends BaseController
 
         $dates = explode(",", $requestData['filter_date']);
 
-        $first_graph = DB::table('users_accesses')
+        $firstGraph = DB::table('users_accesses')
             ->select(DB::raw('to_char(date, \'' . $dateFormat . '\') as period'), DB::raw('count(*) as access_count'))
             ->where('user_uid', $requestData['user_uid'])
             ->whereBetween('date', [
@@ -173,11 +173,11 @@ class AnalyticsUsersController extends BaseController
             ->get();
 
         $maxFristGraphCount = 0;
-        if (!empty($first_graph->max('access_count'))) {
-            $maxFristGraphCount = $first_graph->max('access_count');
+        if (!empty($firstGraph->max('access_count'))) {
+            $maxFristGraphCount = $firstGraph->max('access_count');
         }
 
-        $second_graph = DB::table('courses_accesses')
+        $secondGraph = DB::table('courses_accesses')
             ->select(DB::raw('to_char(access_date, \'' . $dateFormat . '\') as period'), DB::raw('count(*) as access_count'))
             ->where('user_uid', $requestData['user_uid'])
             ->whereBetween('access_date', [
@@ -189,11 +189,11 @@ class AnalyticsUsersController extends BaseController
             ->get();
 
         $maxSecondGraphCount = 0;
-        if (!empty($second_graph->max('access_count'))) {
-            $maxSecondGraphCount = $second_graph->max('access_count');
+        if (!empty($secondGraph->max('access_count'))) {
+            $maxSecondGraphCount = $secondGraph->max('access_count');
         }
 
-        $third_graph = DB::table('educational_resource_access')
+        $thirdGraph = DB::table('educational_resource_access')
             ->select(DB::raw('to_char(date, \'' . $dateFormat . '\') as period'), DB::raw('count(*) as access_count'))
             ->where('user_uid', $requestData['user_uid'])
             ->whereBetween('date', [
@@ -205,8 +205,8 @@ class AnalyticsUsersController extends BaseController
             ->get();
 
         $maxThirdGraphCount = 0;
-        if (!empty($third_graph->max('access_count'))) {
-            $maxThirdGraphCount = $third_graph->max('access_count');
+        if (!empty($thirdGraph->max('access_count'))) {
+            $maxThirdGraphCount = $thirdGraph->max('access_count');
         }
 
         $startDate = Carbon::parse($dates[0]);
@@ -224,9 +224,9 @@ class AnalyticsUsersController extends BaseController
             $dateFormatPeriod = 'Y'; // Formato para años
         }
 
-        $dataFromDbFrist = $first_graph->pluck('access_count', 'period')->toArray();
-        $dataFromDbSecond = $second_graph->pluck('access_count', 'period')->toArray();
-        $dataFromDbThird = $third_graph->pluck('access_count', 'period')->toArray();
+        $dataFromDbFrist = $firstGraph->pluck('access_count', 'period')->toArray();
+        $dataFromDbSecond = $secondGraph->pluck('access_count', 'period')->toArray();
+        $dataFromDbThird = $thirdGraph->pluck('access_count', 'period')->toArray();
 
         $fullData1 = [];
         $fullData2 = [];

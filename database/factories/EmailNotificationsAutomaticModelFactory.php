@@ -17,9 +17,9 @@ class EmailNotificationsAutomaticModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'sent' => false,
-            'user_uid' => generate_uuid(),
+            'user_uid' => generateUuid(),
             'subject' => 'Test Subject',
             'parameters' => json_encode(['key' => 'value']), // Ejemplo de parámetros
             'template' => 'notification_template',

@@ -7,7 +7,7 @@
 
             <div>
                 <button data-modal-id="filter-courses-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
         </div>
@@ -42,23 +42,6 @@
                             placeholder="Selecciona convocatorias..." autocomplete="off">
                             @foreach ($calls as $call)
                                 <option value="{{ $call['uid'] }}">{{ $call['name'] }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <div class="label-container label-center">
-                        <label for="filter_educational_program_types">Tipo de programa formativo</label>
-                    </div>
-
-                    <div class="content-container mt-1">
-                        <select id="filter_educational_program_types" class="mb-4"
-                            name="filter_educational_program_types[]" multiple
-                            placeholder="Selecciona tipos de programas..." autocomplete="off">
-                            @foreach ($educationals_programs_types as $educational_program_type)
-                                <option value="{{ $educational_program_type['uid'] }}">
-                                    {{ $educational_program_type['name'] }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -292,7 +275,7 @@
 
             <div class="flex justify-center mt-8">
                 <button id="filter-btn" type="button" class="btn btn-primary">
-                    Filtrar {{ e_heroicon('adjustments-horizontal', 'outline') }}</button>
+                    Filtrar {{ eHeroicon('adjustments-horizontal', 'outline') }}</button>
             </div>
 
         </div>

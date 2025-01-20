@@ -22,35 +22,35 @@ class JobsSendCourseNotificationToManagementsTest extends TestCase
     {
             // Datos
         $course = [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'title' => 'Curso 1'
         ];
 
         // Crear el tipo de notificación si no existe
         AutomaticNotificationTypesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Tipo de notificación 1',
             'code' => 'NEW_COURSES_NOTIFICATIONS_MANAGEMENTS'
         ]);
 
         // Crea el rol si no existe
-        $role = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);
+        $role = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]);
 
         // Crear usuarios gestores
         $manager1 = UsersModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'email' => 'manager1@example.com'
         ]);
         $manager1->roles()->attach($role->uid, [
-            'uid' => generate_uuid()
+            'uid' => generateUuid()
         ]);
 
         $manager2 = UsersModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'email' => 'manager2@example.com'
         ]);
         $manager2->roles()->attach($role->uid, [
-            'uid' => generate_uuid()
+            'uid' => generateUuid()
         ]);
 
         // Act: Fake the Queue and Notification

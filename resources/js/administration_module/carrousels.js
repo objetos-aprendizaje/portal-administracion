@@ -51,22 +51,22 @@ function submitSmallCoursesCarrouselsForm() {
 }
 
 function getInputsChecksForm(form) {
-    var allCoursesInputs = Array.from(
+    const allCoursesInputs = Array.from(
         form.querySelectorAll("input[type=checkbox][data-type='course']")
     );
 
-    var allEducationalProgramsInputs = Array.from(
+    const allEducationalProgramsInputs = Array.from(
         form.querySelectorAll(
             "input[type=checkbox][data-type='educational_program']"
         )
     );
 
-    var courses = allCoursesInputs.map((input) => ({
+    const courses = allCoursesInputs.map((input) => ({
         uid: input.name,
         checked: input.checked,
     }));
 
-    var educationalPrograms = allEducationalProgramsInputs.map((input) => ({
+    const educationalPrograms = allEducationalProgramsInputs.map((input) => ({
         uid: input.name,
         checked: input.checked,
     }));

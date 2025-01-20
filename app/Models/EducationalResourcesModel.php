@@ -53,7 +53,7 @@ class EducationalResourcesModel extends Model
 
     public function metadata()
     {
-        return $this->hasMany(EducationalResourcesMetadataModel::class, 'educational_resources_uid', 'uid')->orderBy('updated_at', 'asc');;
+        return $this->hasMany(EducationalResourcesMetadataModel::class, 'educational_resources_uid', 'uid')->orderBy('updated_at', 'asc');
     }
 
     public function updateMetadata($metadataArray)
@@ -70,7 +70,7 @@ class EducationalResourcesModel extends Model
                     ]);
             } else {
                 $this->metadata()->create([
-                    'uid' => generate_uuid(),
+                    'uid' => generateUuid(),
                     'metadata_key' => $metadata['metadata_key'],
                     'metadata_value' => $metadata['metadata_value']
                 ]);

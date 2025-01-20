@@ -19,7 +19,7 @@ class EducationalProgramTypesModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => $this->faker->unique()->sentence(3),
             'description' => $this->faker->paragraph(1),
             'managers_can_emit_credentials' => 1,

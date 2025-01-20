@@ -38,7 +38,7 @@ class EducationalResourceTypesControllerTest extends TestCase
         $user = UsersModel::factory()->create();
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
         Auth::login($user);
 
@@ -77,7 +77,7 @@ class EducationalResourceTypesControllerTest extends TestCase
         $user = UsersModel::factory()->create();
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
         Auth::login($user);
 
@@ -173,7 +173,7 @@ class EducationalResourceTypesControllerTest extends TestCase
 
         // lanzando el error 406
         // Realizar la solicitud a la ruta con el UID
-        $response = $this->get('/cataloging/educational_resources_types/get_educational_resource_type/' . generate_uuid());
+        $response = $this->get('/cataloging/educational_resources_types/get_educational_resource_type/' . generateUuid());
 
         // Verificar que la respuesta sea un JSON y contenga los datos correctos
         $response->assertStatus(406)
@@ -192,7 +192,7 @@ class EducationalResourceTypesControllerTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -251,7 +251,7 @@ class EducationalResourceTypesControllerTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -288,7 +288,7 @@ class EducationalResourceTypesControllerTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -316,8 +316,6 @@ class EducationalResourceTypesControllerTest extends TestCase
 
             $responseDelete->assertStatus(200);
             $responseDelete->assertJson(['message' => 'Tipos de recurso educativo eliminados correctamente']);
-
-            // $this->assertDatabaseMissing('educational_resource_types', ['uid' => $uidResource]);
         }
     }
 
@@ -331,7 +329,7 @@ class EducationalResourceTypesControllerTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];

@@ -17,7 +17,7 @@ class EducationalProgramsDocumentsModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid'=> generate_uuid(),
+            'uid'=> generateUuid(),
             'document_name'=> $this->faker->sentence(2),
         ];
     }

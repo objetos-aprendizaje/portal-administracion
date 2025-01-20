@@ -1,4 +1,4 @@
-FROM php:8.2.7-apache
+FROM php:8.3-apache
 
 RUN apt-get update && apt install --fix-missing -y \
 		libpq-dev nano \
@@ -74,8 +74,6 @@ RUN composer install
 RUN npm install
 RUN npm run build
 
-# Generar un certificado autofirmado
-RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/apache-selfsigned.key -out /etc/ssl/certs/apache-selfsigned.crt -subj "/CN=localhost"
 # Copiar la configuración de Apache SSL
 COPY docker_files/000-default-ssl.conf /etc/apache2/sites-available/000-default-ssl.conf
 # Habilitar el sitio SSL

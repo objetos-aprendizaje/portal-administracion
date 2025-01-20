@@ -18,9 +18,9 @@ class EducationalProgramsStudentsModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => generate_uuid(),
-            'educational_program_uid' => generate_uuid(),
-            'user_uid' => generate_uuid(),
+            'uid' => generateUuid(),
+            'educational_program_uid' => generateUuid(),
+            'user_uid' => generateUuid(),
             'acceptance_status' => 'PENDING',
             'status' => 'INSCRIBED',
             'created_at' => Carbon::now()->format('Y-m-d\TH:i'),

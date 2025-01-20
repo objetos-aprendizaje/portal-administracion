@@ -17,15 +17,15 @@ class GeneralOptionsMiddleware
      */
     public function handle($request, Closure $next)
     {
-        $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
+        $generalOptions = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
 
-        app()->instance('general_options', $general_options);
+        app()->instance('general_options', $generalOptions);
 
-        View::share('general_options', $general_options);
+        View::share('general_options', $generalOptions);
 
-        $tooltip_texts = TooltipTextsModel::get();
+        $tooltipTexts = TooltipTextsModel::get();
 
-        View::share('tooltip_texts', $tooltip_texts);
+        View::share('tooltip_texts', $tooltipTexts);
 
         return $next($request);
 

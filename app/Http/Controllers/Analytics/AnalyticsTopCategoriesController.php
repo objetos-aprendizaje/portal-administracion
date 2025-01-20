@@ -79,7 +79,9 @@ class AnalyticsTopCategoriesController extends BaseController
                     ->join('course_categories', 'courses.uid', '=', 'course_categories.course_uid')
                     ->whereColumn('categories.uid', 'course_categories.category_uid');
 
-                if ($filters) $this->applyFilters($query, $filters);
+                if ($filters) {
+                    $this->applyFilters($query, $filters);
+                }
             }, 'student_count');
     }
 
@@ -88,7 +90,7 @@ class AnalyticsTopCategoriesController extends BaseController
         foreach ($filters as $filter) {
             if ($filter['database_field'] == 'acceptance_status') {
                 $query->whereIn('courses_students.acceptance_status', $filter['value']);
-            } else if ($filter['database_field'] == "status") {
+            } elseif ($filter['database_field'] == "status") {
                 $query->whereIn('courses_students.status', $filter['value']);
             } elseif ($filter['database_field'] == 'created_at') {
                 if (count($filter['value']) == 2) {

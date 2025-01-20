@@ -84,9 +84,7 @@ class PaymentsController extends BaseController {
 
         $validator = Validator::make($request->all(), $rules, $messages);
 
-        $errorMessages = $validator->errors();
-
-        return $errorMessages;
+        return $validator->errors();
     }
 
 }

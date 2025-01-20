@@ -205,8 +205,8 @@ class CoursesSeeder extends Seeder
         $randomDemoImage = $this->demoImages[array_rand($this->demoImages)];
 
         $data = [
-            'uid' => generate_uuid(),
-            'course_lms_uid' => generate_uuid(),
+            'uid' => generateUuid(),
+            'course_lms_uid' => generateUuid(),
             'course_status_uid' => $this->courseStatuses[$status]->uid,
             'educational_program_type_uid' => $this->educationalProgramTypes->random(),
             'call_uid' => $this->calls->random(),
@@ -255,8 +255,8 @@ class CoursesSeeder extends Seeder
         $csv = readCsv('database/seeders/dataset_learning_objects.csv');
 
         // Filtrar los cursos que se encuentran entre las posiciones start y end
-        $courses = array_slice($csv, $start, $end);
-        return $courses;
+        return array_slice($csv, $start, $end);
+        
     }
 
     private function addCategories($courseUid)
@@ -302,7 +302,7 @@ class CoursesSeeder extends Seeder
     {
         $blocks = rand(1, 5);
         for ($i = 0; $i < $blocks; $i++) {
-            $blockUid = generate_uuid();
+            $blockUid = generateUuid();
             BlocksModel::factory()->create([
                 'uid' => $blockUid,
                 'course_uid' => $courseUid,
@@ -314,11 +314,11 @@ class CoursesSeeder extends Seeder
         }
     }
 
-    function addSubblocks($blockUid)
+    private function addSubblocks($blockUid)
     {
         $subblocks = rand(1, 5);
         for ($i = 0; $i < $subblocks; $i++) {
-            $subBlockUid = generate_uuid();
+            $subBlockUid = generateUuid();
             SubblocksModel::factory()->create([
                 'uid' => $subBlockUid,
                 'block_uid' => $blockUid,
@@ -328,11 +328,11 @@ class CoursesSeeder extends Seeder
         }
     }
 
-    function addElements($subBlockUid)
+    private function addElements($subBlockUid)
     {
         $elements = rand(1, 5);
         for ($i = 0; $i < $elements; $i++) {
-            $elementUid = generate_uuid();
+            $elementUid = generateUuid();
             ElementsModel::factory()->create([
                 'uid' => $elementUid,
                 'subblock_uid' => $subBlockUid,
@@ -343,7 +343,7 @@ class CoursesSeeder extends Seeder
         }
     }
 
-    function addSubelements($elementUid)
+    private function addSubelements($elementUid)
     {
         $subelements = rand(1, 5);
         for ($i = 0; $i < $subelements; $i++) {
@@ -354,7 +354,7 @@ class CoursesSeeder extends Seeder
         }
     }
 
-    function addBlockLearningResults($blockUid)
+    private function addBlockLearningResults($blockUid)
     {
         $learningResults = $this->learningResults->random(3);
         foreach ($learningResults as $learningResult) {
@@ -368,8 +368,12 @@ class CoursesSeeder extends Seeder
     private function addStudents($courseUid, $statusCourse)
     {
         $students = [];
-        if ($statusCourse == "INSCRIPTION") $students[] = $this->students->random();
-        else $students = $this->students->pluck("uid");
+        if ($statusCourse == "INSCRIPTION") {
+            $students[] = $this->students->random();
+        }
+        else {
+            $students = $this->students->pluck("uid");
+        }
 
         foreach ($students as $student) {
             $statusStudent = $statusCourse == "INSCRIPTION" ? "INSCRIBED" : $this->faker->randomElement(['ENROLLED', 'INSCRIBED']);
@@ -429,7 +433,7 @@ class CoursesSeeder extends Seeder
 
         $documentsAddedUids = [];
         for ($i = 0; $i < $randomNumberDocuments; $i++) {
-            $documentUid = generate_uuid();
+            $documentUid = generateUuid();
             $documentsAddedUids[] = $documentUid;
             CourseDocumentsModel::factory()->create([
                 'uid' => $documentUid,
@@ -454,7 +458,7 @@ class CoursesSeeder extends Seeder
         }
     }
     private function AddCourseVisits($courseUid,$studentsUids){
-        foreach ($studentsUids as $index => $student) {
+        foreach ($studentsUids as $student) {
             $visits = rand(1, 1000);
             for ($i = 0; $i < $visits; $i++) {
                 CoursesVisitsModel::factory()->create([

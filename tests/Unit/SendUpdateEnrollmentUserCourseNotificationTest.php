@@ -38,7 +38,7 @@ class SendUpdateEnrollmentUserCourseNotificationTest extends TestCase
         $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create();
 
         // Crear un UID para el pivot
-        $uid = generate_uuid();
+        $uid = generateUuid();
 
         // Asociar el usuario con el curso a través de la tabla pivot `courses_students`
         $user->coursesStudents()->attach($course->uid, [
@@ -61,7 +61,7 @@ class SendUpdateEnrollmentUserCourseNotificationTest extends TestCase
         ])->once()->andReturnSelf();
 
         // Instanciar el job
-        $job = new SendUpdateEnrollmentUserCourseNotification($courseStudentMock);
+        new SendUpdateEnrollmentUserCourseNotification($courseStudentMock);
 
         // Verificar que se llamara el método load
         $this->assertTrue(true); // Si no hay excepciones, la prueba pasa
@@ -72,10 +72,9 @@ class SendUpdateEnrollmentUserCourseNotificationTest extends TestCase
      * Este test verifica que se envíe una notificación general si el usuario no ha deshabilitado las notificaciones automáticas generales.
      */
     public function testSendsGeneralNotificationIfNotDisabled()
-    { // Crear un UID para el pivot
-        $uid = generate_uuid();
+    {
 
-        $automaticNotificationType = AutomaticNotificationTypesModel::factory()->create([
+        AutomaticNotificationTypesModel::factory()->create([
             'code' => 'COURSE_ENROLLMENT_COMMUNICATIONS'
         ])->first();
 
@@ -111,7 +110,7 @@ class SendUpdateEnrollmentUserCourseNotificationTest extends TestCase
         $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create();
 
         // Crear un UID para el pivot
-        $uid = generate_uuid();
+        $uid = generateUuid();
 
         // Asociar el usuario con el curso a través de la tabla pivot `courses_students`
         $user->coursesStudents()->attach($course->uid, [
@@ -139,6 +138,5 @@ class SendUpdateEnrollmentUserCourseNotificationTest extends TestCase
 
         // Verificar que el valor de una propiedad es diferente de cero
         $this->assertNotEquals(1, $courseStudent->someNumericProperty, 'La propiedad debe ser diferente de cero.');
-
     }
 }

@@ -20,14 +20,14 @@ document.addEventListener("DOMContentLoaded", function () {
             const email = this.getAttribute("data-email-account");
             resendEmailConfirmation(email);
         });
-    });});
+    });
+});
 
 function login(formId) {
     document
         .getElementById(formId)
         .addEventListener("submit", function (event) {
             event.preventDefault();
-
 
             const email = event.target.elements.email.value;
             const password = event.target.elements.password.value;
@@ -83,44 +83,39 @@ function checkErrorMessages() {
         });
     }
 
-        // Función para obtener los parámetros de la URL
-        function getParameterByName(name) {
-            const url = new URL(window.location.href);
-            const paramValue = url.searchParams.get(name);
-            return paramValue ? decodeURIComponent(paramValue) : null;
+    // Obtener los errores de la URL
+    const errorsParam = getParameterByName("errors");
+
+    if (errorsParam) {
+        try {
+            // Parsear el JSON de errores
+            window.errors = JSON.parse(errorsParam);
+
+            // Mostrar los errores en la consola o en el DOM
+            window.errors.forEach(function (error) {
+                console.error(error); // O mostrarlo en el DOM
+            });
+
+            // Opcional: Limpiar el parámetro de la URL sin recargar la página
+            const url = new URL(window.location);
+            url.searchParams.delete("errors");
+            window.history.replaceState({}, document.title, url.toString());
+        } catch (e) {
+            console.error("Error al parsear los errores:", e);
         }
+    }
 
-        // Obtener los errores de la URL
-        const errorsParam = getParameterByName('errors');
+    const paramE = getParameterByName("e");
+    if (paramE == "certificate-error") {
+        showToast("Error de acceso mediante certificado digital");
+    }
+}
 
-        if (errorsParam) {
-            try {
-                // Parsear el JSON de errores
-                window.errors = JSON.parse(errorsParam);
-
-                // Mostrar los errores en la consola o en el DOM
-                window.errors.forEach(function(error) {
-                    console.error(error); // O mostrarlo en el DOM
-                });
-
-                // Opcional: Limpiar el parámetro de la URL sin recargar la página
-                const url = new URL(window.location);
-                url.searchParams.delete('errors');
-                window.history.replaceState({}, document.title, url.toString());
-            } catch (e) {
-                console.error('Error al parsear los errores:', e);
-            }
-        }
-
-        function getParameterByName(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
-        }
-        const paramE = getParameterByName('e');
-        if (paramE == "certificate-error"){
-            showToast("Error de acceso mediante certificado digital");
-        }
-
+// Función para obtener los parámetros de la URL
+function getParameterByName(name) {
+    const url = new URL(window.location.href);
+    const paramValue = url.searchParams.get(name);
+    return paramValue ? decodeURIComponent(paramValue) : null;
 }
 
 function resendEmailConfirmation(email) {

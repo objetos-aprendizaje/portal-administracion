@@ -13,7 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         DB::table('automatic_notification_types')->insert([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Nuevos programas formativos',
             'description' => 'Notificación automática sobre nuevos programas formativos de tu interés',
             'code' => 'NEW_EDUCATIONAL_PROGRAMS',

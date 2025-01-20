@@ -16,12 +16,11 @@ class AutomaticResourceAprovalUsersModelFactory extends Factory
      *
      * @return array<string, mixed>
      */
-    // protected $model = AutomaticResourceAprovalUsersModel::class;  
 
     public function definition(): array
     {
         return [
-            'uid'=> generate_uuid(),
+            'uid'=> generateUuid(),
             'user_uid' => UsersModel::factory()->create()->first(),
         ];
     }

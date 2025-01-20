@@ -55,7 +55,7 @@
                 </label>
             </div>
 
-            <button type="submit" class="btn btn-primary mt-4">Guardar {{ e_heroicon('paper-airplane', 'outline') }}</button>
+            <button type="submit" class="btn btn-primary mt-4">Guardar {{ eHeroicon('paper-airplane', 'outline') }}</button>
 
         </form>
 

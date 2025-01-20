@@ -63,7 +63,7 @@ class FileControllerTest extends TestCase
 
         // Crear un token en la base de datos que apunte al archivo
         $token = Str::random(40);
-        $backendFileDownloadToken = BackendFileDownloadTokensModel::factory()->create([
+        BackendFileDownloadTokensModel::factory()->create([
             'token' => $token,
             'file' => $filePath,
         ]);

@@ -19,7 +19,7 @@ class CoursesStudentDocumentsModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid'=> generate_uuid(),            
+            'uid'=> generateUuid(),
             'user_uid' => UsersModel::factory()->create()->first(),
             'course_document_uid' => CourseDocumentsModel::factory()->withCourseUid()->create()->first(),
             'document_path' => 'storage/',

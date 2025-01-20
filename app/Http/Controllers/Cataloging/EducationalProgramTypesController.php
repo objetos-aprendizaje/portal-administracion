@@ -25,7 +25,7 @@ class EducationalProgramTypesController extends BaseController
     public function index()
     {
 
-        $educational_program_types = EducationalProgramTypesModel::get()->toArray();
+        $educationalProgramTypes = EducationalProgramTypesModel::get()->toArray();
 
         return view(
             'cataloging.educational_program_types.index',
@@ -35,7 +35,7 @@ class EducationalProgramTypesController extends BaseController
                 "resources" => [
                     "resources/js/cataloging_module/educational_program_types.js"
                 ],
-                "educational_program_types" => $educational_program_types,
+                "educational_program_types" => $educationalProgramTypes,
                 "tabulator" => true,
                 "submenuselected" => "cataloging-educational-program-types",
             ]
@@ -72,20 +72,15 @@ class EducationalProgramTypesController extends BaseController
     /**
      * Obtiene un tipo de programa educativo por uid
      */
-    public function getEducationalProgramType($educational_program_type_uid)
+    public function getEducationalProgramType($educationalProgramTypeUid)
     {
+        $educationalProgramType = EducationalProgramTypesModel::where('uid', $educationalProgramTypeUid)->first();
 
-        // if (!$educational_program_type_uid) {
-        //     return response()->json(['message' => env('ERROR_MESSAGE')], 400);
-        // }
-
-        $educational_program_type = EducationalProgramTypesModel::where('uid', $educational_program_type_uid)->first();
-
-        if (!$educational_program_type) {
+        if (!$educationalProgramType) {
             return response()->json(['message' => 'El tipo de programa formativo no existe'], 406);
         }
 
-        return response()->json($educational_program_type, 200);
+        return response()->json($educationalProgramType, 200);
     }
 
     /**
@@ -119,44 +114,44 @@ class EducationalProgramTypesController extends BaseController
 
         $isNew = true;
 
-        $educational_program_type_uid = $request->get('educational_program_type_uid');
+        $educationalProgramTypeUid = $request->get('educational_program_type_uid');
 
-        if ($educational_program_type_uid) {
-            $educational_program_type = EducationalProgramTypesModel::find($educational_program_type_uid);
+        if ($educationalProgramTypeUid) {
+            $educationalProgramType = EducationalProgramTypesModel::find($educationalProgramTypeUid);
             $isNew = false;
         } else {
-            $educational_program_type = new EducationalProgramTypesModel();
-            $educational_program_type->uid = generate_uuid();
+            $educationalProgramType = new EducationalProgramTypesModel();
+            $educationalProgramType->uid = generateUuid();
             $isNew = true;
         }
 
 
-        $managers_can_emit_credentials = intval($request->get('managers_can_emit_credentials'));
-        $teachers_can_emit_credentials = intval($request->get('teachers_can_emit_credentials'));
+        $managersCanEmitCredentials = intval($request->get('managers_can_emit_credentials'));
+        $teachersCanEmitCredentials = intval($request->get('teachers_can_emit_credentials'));
 
-        $educational_program_type->fill([
+        $educationalProgramType->fill([
             'name' => $request->get('name'),
             'description' => $request->get('description'),
-            'managers_can_emit_credentials' => $managers_can_emit_credentials,
-            'teachers_can_emit_credentials' => $teachers_can_emit_credentials,
+            'managers_can_emit_credentials' => $managersCanEmitCredentials,
+            'teachers_can_emit_credentials' => $teachersCanEmitCredentials,
         ]);
 
 
 
-        DB::transaction(function () use ($educational_program_type, $isNew) {
-            $educational_program_type->save();
+        DB::transaction(function () use ($educationalProgramType, $isNew) {
+            $educationalProgramType->save();
 
             $messageLog = $isNew ? 'Añadir tipo de programa formativo: ' : 'Actualizar tipo de programa formativo: ';
-            $messageLog .= $educational_program_type->name;
+            $messageLog .= $educationalProgramType->name;
             LogsController::createLog($messageLog, 'Tipos de programas formativo', auth()->user()->uid);
         });
 
         // Obtenemos todas los tipos
-        $educational_program_types = EducationalProgramTypesModel::get()->toArray();
+        $educationalProgramTypes = EducationalProgramTypesModel::get()->toArray();
 
         return response()->json([
             'message' => ($isNew) ? 'Tipo de programa formativo añadido correctamente' : 'Tipo de programa formativo actualizado correctamente',
-            'educational_program_types' => $educational_program_types
+            'educational_program_types' => $educationalProgramTypes
         ], 200);
     }
 
@@ -166,8 +161,6 @@ class EducationalProgramTypesController extends BaseController
         $uids = $request->input('uids');
 
         $this->checkExistence(EducationalProgramsModel::class, $uids, 'No se pueden eliminar los tipos de programa formativo porque están siendo utilizados en programas formativos');
-        $this->checkExistence(CoursesModel::class, $uids, 'No se pueden eliminar los tipos de programa formativo porque están siendo utilizados en cursos');
-        $this->checkExistence(RedirectionQueriesEducationalProgramTypesModel::class, $uids, 'No se pueden eliminar los tipos de programa formativo porque están siendo utilizados en redirecciones de consulta');
         $this->checkExistence(CallsEducationalProgramTypesModel::class, $uids, 'No se pueden eliminar los tipos de programa formativo porque están siendo utilizados en convocatorias');
 
         $educationalProgramTypes = EducationalProgramTypesModel::whereIn('uid', $uids)->get();
@@ -178,15 +171,17 @@ class EducationalProgramTypesController extends BaseController
             }
         });
 
-        $educational_program_types = EducationalProgramTypesModel::get()->toArray();
+        $educationalProgramTypes = EducationalProgramTypesModel::get()->toArray();
 
-        return response()->json(['message' => 'Tipos de programa formativo eliminados correctamente', 'educational_program_types' => $educational_program_types], 200);
+        return response()->json(['message' => 'Tipos de programa formativo eliminados correctamente', 'educational_program_types' => $educationalProgramTypes], 200);
     }
 
     private function checkExistence($model, $uids, $errorMessage)
     {
         $exists = $model::whereIn('educational_program_type_uid', $uids)->exists();
 
-        if ($exists) throw new OperationFailedException($errorMessage, 406);
+        if ($exists) {
+            throw new OperationFailedException($errorMessage, 406);
+        }
     }
 }

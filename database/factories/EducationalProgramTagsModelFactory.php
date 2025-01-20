@@ -17,7 +17,7 @@ class EducationalProgramTagsModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'tag' => $this->faker->sentence(2),
         ];
     }

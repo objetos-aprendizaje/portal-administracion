@@ -15,7 +15,7 @@
     <div class="poa-container w-full mb-8">
         <div class="title-filter flex items-center mb-[26px]">
             <span>Listado de cursos</span>
-            <button id="filter-courses-btn" class="btn-filter">{{ e_heroicon('adjustments-horizontal', 'outline') }}</button>
+            <button id="filter-courses-btn" class="btn-filter">{{ eHeroicon('adjustments-horizontal', 'outline') }}</button>
         </div>
 
         <div class="table-control-header">
@@ -24,7 +24,7 @@
             <div class="flex gap-1">
                 <div>
                     <button type="button" id="download-xlsx-course" class="btn-icon" title="Exportar a excel">
-                        {{ e_heroicon('arrow-down-tray', 'outline') }}
+                        {{ eHeroicon('arrow-down-tray', 'outline') }}
                     </button>
                 </div>
             </div>

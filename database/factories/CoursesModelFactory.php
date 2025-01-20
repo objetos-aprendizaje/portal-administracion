@@ -25,8 +25,8 @@ class CoursesModelFactory extends Factory
         $identifier = 'CUR-' . str_pad($courseCount + 1, 4, '0', STR_PAD_LEFT);
 
         return [
-            'uid' => generate_uuid(),
-            'course_lms_uid' => generate_uuid(),
+            'uid' => generateUuid(),
+            'course_lms_uid' => generateUuid(),
             'title' => $this->faker->sentence(),
             'description' => $this->faker->paragraph(),
             'ects_workload' => $this->faker->numberBetween(1, 10),
@@ -43,14 +43,14 @@ class CoursesModelFactory extends Factory
 
     public function withCourseStatus(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn () => [
             'course_status_uid' => CourseStatusesModel::factory()->create()->first(),
         ]);
     }
 
     public function withCourseType(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn () => [
             'course_type_uid' => CourseTypesModel::factory()->create()->first(),
         ]);
     }

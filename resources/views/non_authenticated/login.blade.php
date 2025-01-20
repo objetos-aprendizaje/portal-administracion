@@ -4,7 +4,7 @@
 
         <div class="w-1/2">
             <img id="image-background" src="{{ asset('data/images/background_login.png') }}"
-                class="object-cover w-full h-screen">
+                class="object-cover w-full h-screen" alt="imagen fondo">
         </div>
 
         <div class="w-1/2 justify-center flex items-center">
@@ -13,7 +13,7 @@
 
                     @if ($general_options['poa_logo_1'])
                         <img class="mx-auto block max-w-[211px] max-h-[80px] mb-[15px]"
-                            src="{{ $general_options['poa_logo_1'] }}" />
+                            src="{{ $general_options['poa_logo_1'] }}" alt="Logo" />
                     @endif
 
                     <div class="text-[28px] font-bold text-center mb-[15px]">Inicia sesión</div>
@@ -43,14 +43,14 @@
                         @csrf
                         <div class="mb-[25px]">
                             <div class="flex flex-col mb-[20px]">
-                                <label class="px-3 mb-[8px]">Correo</label>
+                                <label class="px-3 mb-[8px]" for="email">Correo</label>
                                 <input
                                     class="border-[1.5px] border-solid border-primary rounded-full p-3 focus:border-primary h-[60px]"
                                     type="text" name="email" value="" />
                             </div>
 
                             <div class="flex flex-col mb-[8px]">
-                                <label class="px-3 mb-[8px]">Contraseña</label>
+                                <label class="px-3 mb-[8px]" for="password">Contraseña</label>
                                 <input class="border-[1.5px] border-solid border-primary rounded-full h-[60px] p-3"
                                     name="password" type="password" />
                             </div>
@@ -61,7 +61,7 @@
 
 
                             <button class="btn bg-primary text-white hover:bg-secondary w-full h-[60px]">Iniciar sesión
-                                {{ e_heroicon('arrow-up-right', 'outline') }}</button>
+                                {{ eHeroicon('arrow-up-right', 'outline') }}</button>
 
                         </div>
 
@@ -88,7 +88,7 @@
                                         class="inline-flex border rounded-full hover:border-primary items-center justify-center pl-[6px] pr-[14px] py-[6px] gap-2">
                                         <div>
                                             <img src="{{ asset('/data/images/logo_min_boton_login.png') }}"
-                                                class="w-[40px] h-[40px] mx-auto rounded-full  block" />
+                                                class="w-[40px] h-[40px] mx-auto rounded-full  block" alt="Logo botón login universidad" />
                                         </div>
 
                                         <div class="border-l h-10"></div>
@@ -108,7 +108,7 @@
                                     <button type="button"
                                         class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
                                         <a href="/auth/facebook">
-                                            <img class="w-[45px] h-[45px]" src="data/images/login_icons/facebook.png" />
+                                            <img class="w-[45px] h-[45px]" src="data/images/login_icons/facebook.png" alt="logo facebook"/>
                                         </a>
                                     </button>
                                 @endif
@@ -117,7 +117,7 @@
                                     <button type="button"
                                         class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
                                         <a href="/auth/twitter"><img class="w-[32px] h-[32px]"
-                                                src="data/images/login_icons/x_icon.png" /></a>
+                                                src="data/images/login_icons/x_icon.png" alt="logo x" /></a>
                                     </button>
                                 @endif
 
@@ -125,7 +125,7 @@
                                     <button type="button"
                                         class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
                                         <a href="/auth/linkedin-openid"><img class="w-[32px] h-[32px]"
-                                                src="data/images/login_icons/linkedin_icon.png" /></a>
+                                                src="data/images/login_icons/linkedin_icon.png" alt="logo linkedin" /></a>
                                     </button>
                                 @endif
 
@@ -133,7 +133,7 @@
                                     <button type="button"
                                         class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
                                         <a href="/auth/google"><img class="w-[32px] h-[32px]"
-                                                src="data/images/login_icons/google_icon.png" /></a>
+                                                src="data/images/login_icons/google_icon.png" alt="logo google" /></a>
                                     </button>
                                 @endif
 
@@ -141,7 +141,7 @@
                                     <button type="button"
                                         class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
                                         <a href="{{ $urlRediris }}"><img class="w-[32px] h-[32px]"
-                                                src="data/images/login_icons/rediris.png" /></a>
+                                                src="data/images/login_icons/rediris.png" alt="logo rediris" /></a>
                                     </button>
                                 @endif
 
@@ -149,7 +149,7 @@
                                     <button type="button"
                                         class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
                                         <a href='{{ env('URL_LOGIN_CERT') }}?origin="portal_admin"'><img class="w-[32px] h-[32px]"
-                                                src="data/images/login_icons/certificate_icon.svg" /></a>
+                                                src="data/images/login_icons/certificate_icon.svg" alt="logo certificado" /></a>
                                     </button>
                                 @endif
                             @endif
@@ -200,14 +200,14 @@
             <form id="loginFormMobile" action="/login/authenticate" method="POST">
                 @csrf
                 <div class="flex flex-col mb-[20px]">
-                    <label class="px-3 mb-[8px]">Correo</label>
+                    <label class="px-3 mb-[8px]" for="email">Correo</label>
                     <input
                         class="border-[1.5px] border-solid border-primary rounded-full h-[60px] p-3 focus:border-primary "
                         type="text" name="email" />
                 </div>
 
                 <div class="flex flex-col mb-[8px]">
-                    <label class="px-3 mb-[8px]">Contraseña</label>
+                    <label class="px-3 mb-[8px]" for="password">Contraseña</label>
                     <input class="border-[1.5px] border-solid border-primary rounded-full h-[60px] p-3" name="password"
                         type="password" />
                 </div>
@@ -219,7 +219,7 @@
 
 
                 <button class="btn bg-primary text-white hover:bg-secondary w-full h-[60px]">Iniciar sesión
-                    {{ e_heroicon('arrow-up-right', 'outline') }}</button>
+                    {{ eHeroicon('arrow-up-right', 'outline') }}</button>
 
             </form>
         </div>
@@ -247,7 +247,7 @@
                         class="inline-flex border cursor-pointer hover:border-primary rounded-full items-center justify-center pl-[6px] pr-[14px] py-[6px] gap-2">
                         <div>
                             <img src="{{ asset('data/images/logo_min_boton_login.png') }}"
-                                class="w-[40px] h-[40px] mx-auto rounded-full  block" />
+                                class="w-[40px] h-[40px] mx-auto rounded-full  block" alt="imagen logo" />
                         </div>
 
                         <div class="border-l h-10"></div>
@@ -271,7 +271,7 @@
                     <button type="button"
                         class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
                         <a href="/auth/facebook">
-                            <img class="max-w-[45px] max-h-[45px]" src="data/images/login_icons/facebook.png" />
+                            <img class="max-w-[45px] max-h-[45px]" src="data/images/login_icons/facebook.png" alt="logo facebook" />
                         </a>
                     </button>
                 @endif
@@ -280,7 +280,7 @@
                     <button type="button"
                         class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
                         <a href="/auth/twitter"><img class="max-w-[32px] max-h-[32px]"
-                                src="data/images/login_icons/x_icon.png" /></a>
+                                src="data/images/login_icons/x_icon.png" alt="logo x" /></a>
                     </button>
                 @endif
 
@@ -288,7 +288,7 @@
                     <button type="button"
                         class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
                         <a href="/auth/linkedin-openid"><img class="max-w-[32px] max-h-[32px]"
-                                src="data/images/login_icons/linkedin_icon.png" /></a>
+                                src="data/images/login_icons/linkedin_icon.png" alt="logo linkedin" /></a>
                     </button>
                 @endif
 
@@ -296,7 +296,7 @@
                     <button type="button"
                         class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
                         <a href="/auth/google"><img class="max-w-[32px] max-h-[32px]"
-                                src="data/images/login_icons/google_icon.png" /></a>
+                                src="data/images/login_icons/google_icon.png" alt="logo google" /></a>
                     </button>
                 @endif
             @endif

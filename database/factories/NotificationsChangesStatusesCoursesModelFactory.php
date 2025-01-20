@@ -19,8 +19,8 @@ class NotificationsChangesStatusesCoursesModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => generate_uuid(),
-            'user_uid' => generate_uuid(),
+            'uid' => generateUuid(),
+            'user_uid' => generateUuid(),
             'course_uid' => Str::uuid(),
             'course_status_uid' => Str::uuid(),
             'date' => Carbon::now()->format('Y-m-d\TH:i'),

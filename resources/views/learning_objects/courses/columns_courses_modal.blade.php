@@ -7,7 +7,7 @@
 
             <div>
                 <button data-modal-id="columns-courses-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
             <div style="flex-basis: 100%;" class="-top-3 relative">
@@ -67,13 +67,6 @@
                                 name="column_educational_programs_name" value="educational_programs_name"
                                 class="mr-[11px] w-[22px] h-[22px]">
                             <label for="column_educational_programs_name">Programa formativo</label>
-                        </div>
-
-                        <div class="flex">
-                            <input type="checkbox" id="column_educational_program_types_name"
-                                name="column_educational_program_types_name" value="educational_program_types_name"
-                                class="mr-[11px] w-[22px] h-[22px]">
-                            <label for="column_educational_program_types_name">Tipo de programa formativo</label>
                         </div>
 
                         <div class="flex">
@@ -232,7 +225,7 @@
                 <div class="flex justify-center mt-8 gap-4">
                     <button data-modal-id="columns-courses-modal" type="button"
                         class="btn btn-secondary close-modal-btn">Cerrar
-                        {{ e_heroicon('x-mark', 'outline') }}</button>
+                        {{ eHeroicon('x-mark', 'outline') }}</button>
                 </div>
             </div>
 

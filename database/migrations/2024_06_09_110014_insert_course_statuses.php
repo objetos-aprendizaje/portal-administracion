@@ -13,12 +13,12 @@ class InsertCourseStatuses extends Migration
     {
         DB::table('course_statuses')->insert([
             [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'name' => 'Listo para añadir a programa formativo',
                 'code' => 'READY_ADD_EDUCATIONAL_PROGRAM',
             ],
             [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'name' => 'Añadido a programa formativo',
                 'code' => 'ADDED_EDUCATIONAL_PROGRAM',
             ],

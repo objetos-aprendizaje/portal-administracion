@@ -4,7 +4,7 @@
     <div class="poa-container mb-8">
         <div class="title-filter flex items-center mb-[26px]">
             <span>Listado de cursos</span>
-            <button id="filter-courses-btn" class="btn-filter">{{ e_heroicon('adjustments-horizontal', 'outline') }}</button>
+            <button id="filter-courses-btn" class="btn-filter">{{ eHeroicon('adjustments-horizontal', 'outline') }}</button>
         </div>
 
 
@@ -14,14 +14,14 @@
             <div class="flex gap-1">
                 <div>
                     <button type="button" id="add-course-btn" class="btn-icon" title="Crear curso">
-                        {{ e_heroicon('plus', 'outline') }}
+                        {{ eHeroicon('plus', 'outline') }}
                     </button>
                 </div>
 
                 @if (Auth::user()->hasAnyRole(['ADMINISTRATOR', 'MANAGEMENT']))
                     <div>
                         <button type="button" class="btn-icon" id="change-statuses-btn" title="Cambiar estado de cursos">
-                            {{ e_heroicon('arrows-right-left', 'outline') }}
+                            {{ eHeroicon('arrows-right-left', 'outline') }}
                         </button>
                     </div>
                 @endif
@@ -29,14 +29,14 @@
                 @if ($general_options['enabled_recommendation_module'])
                     <div>
                         <button type="button" class="btn-icon" id="btn-regenerate-embeddings" title="Regenerar embeddings">
-                            {{ e_heroicon('arrow-path-rounded-square', 'outline') }}
+                            {{ eHeroicon('arrow-path-rounded-square', 'outline') }}
                         </button>
                     </div>
                 @endif
 
                 <div>
                     <button type="button" class="btn-icon" id="btn-reload-table" title="Actualizar tabla">
-                        {{ e_heroicon('arrow-path', 'outline') }}
+                        {{ eHeroicon('arrow-path', 'outline') }}
                     </button>
                 </div>
 

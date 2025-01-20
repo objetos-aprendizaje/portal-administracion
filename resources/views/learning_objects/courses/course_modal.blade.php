@@ -7,7 +7,7 @@
 
             <div>
                 <button data-modal-id="course-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
         </div>
@@ -134,7 +134,7 @@
 
                             <div class="field mt-2">
                                 <div class="label-container label-center">
-                                    <label for="teachers-no-coordinators">Docentes coordinadores</label>
+                                    <label for="teachers-coordinators">Docentes coordinadores</label>
                                 </div>
                                 <div class="content-container mt-1" id="teachers-container">
                                     <select id="teachers-coordinators" class="mb-4" name="teacher_coordinators[]"
@@ -176,26 +176,6 @@
 
                             <div class="field mt-2">
                                 <div class="label-container label-center">
-                                    <label for="educational_program_type_uid">Tipo de programa formativo <span
-                                            class="text-danger">*</span></label>
-                                </div>
-                                <div class="content-container mt-1">
-                                    <div class="select-container">
-                                        <select id="educational_program_type_uid" name="educational_program_type_uid"
-                                            class="poa-select w-full">
-                                            <option value="" selected>Ninguno</option>
-                                            @foreach ($educationals_programs_types as $educational_program_type)
-                                                <option value="{{ $educational_program_type['uid'] }}">
-                                                    {{ $educational_program_type['name'] }}</option>
-                                            @endforeach
-                                        </select>
-
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="field mt-2">
-                                <div class="label-container label-center">
                                     <label for="course_type_uid">Tipo de curso <span
                                             class="text-danger">*</span></label>
                                 </div>
@@ -231,7 +211,7 @@
                                 </div>
                                 <div class="content-container mt-1">
                                     <div class="poa-input-image">
-                                        <img id="image_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}" />
+                                        <img id="image_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}" alt="preview imagen" />
                                         <span class="dimensions">*Dimensiones: Alto: 50px x Ancho: 300px. Formato: PNG,
                                             JPG. Tam.
                                             Máx.: 1MB</span>
@@ -240,7 +220,7 @@
                                                 name="image_input_file" class="hidden" />
                                             <div class="flex items-center gap-[20px]">
                                                 <label for="image_input_file" class="btn btn-rectangular">
-                                                    Subir {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                    Subir {{ eHeroicon('arrow-up-tray', 'outline') }}
                                                 </label>
                                                 <span class="image-name text-[14px]">Ningún archivo seleccionado</span>
                                             </div>
@@ -483,7 +463,7 @@
                                         <div class="flex justify-end">
                                             <div>
                                                 <button type="button" class="btn-icon" id="btn-add-document">
-                                                    {{ e_heroicon('plus', 'outline') }}
+                                                    {{ eHeroicon('plus', 'outline') }}
                                                 </button>
                                             </div>
                                         </div>
@@ -518,7 +498,7 @@
                                             <div class="flex justify-end">
                                                 <div>
                                                     <button type="button" class="btn-icon" id="btn-add-payment">
-                                                        {{ e_heroicon('plus', 'outline') }}
+                                                        {{ eHeroicon('plus', 'outline') }}
                                                     </button>
                                                 </div>
                                             </div>
@@ -630,7 +610,7 @@
                                         <div class="content-container mt-1">
                                             <div class="poa-input-image mb-2">
                                                 <img id="featured_big_carrousel_image_path_preview"
-                                                    src="{{ env('NO_IMAGE_SELECTED_PATH') }}" />
+                                                    src="{{ env('NO_IMAGE_SELECTED_PATH') }}" alt="imagen destacada de slider grande" />
 
                                                 <div class="select-file-container">
                                                     <input accept="image/*" type="file"
@@ -640,7 +620,7 @@
                                                     <div class="flex items-center gap-[20px]">
                                                         <label for="featured_big_carrousel_image_path"
                                                             class="btn btn-rectangular">
-                                                            Subir {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                            Subir {{ eHeroicon('arrow-up-tray', 'outline') }}
                                                         </label>
 
                                                         <span class="image-name text-[14px]">Ningún archivo
@@ -695,13 +675,13 @@
 
                                 </div>
                                 <button type="button" id="addBlock" class="btn btn-primary mt-4">Añadir Bloque
-                                    {{ e_heroicon('plus', 'outline') }}</button>
+                                    {{ eHeroicon('plus', 'outline') }}</button>
 
                                 <template id="block-template">
                                     <div class="composition block p-4 border rounded" data-uid="" data-order="">
                                         <div class="flex flex-col">
                                             <button type="button" class="removeBlock btn-remove">Eliminar bloque
-                                                {{ e_heroicon('trash', 'outline') }}</button>
+                                                {{ eHeroicon('trash', 'outline') }}</button>
 
                                             <select class="block-type border-full border-x">
                                                 <option disabled value="">Tipo de bloque</option>
@@ -731,7 +711,7 @@
                                         <div class="sub-blocks ml-4"></div>
                                         <button type="button" class="addSubBlock btn btn-primary mt-4">Añadir
                                             Sub-Bloque
-                                            {{ e_heroicon('plus', 'outline') }}</button>
+                                            {{ eHeroicon('plus', 'outline') }}</button>
                                     </div>
                                 </template>
 
@@ -743,7 +723,7 @@
                                             <button type="button"
                                                 class="removeSubBlock btn-composition btn-remove">Eliminar
                                                 Sub-bloque
-                                                {{ e_heroicon('trash', 'outline') }}</button>
+                                                {{ eHeroicon('trash', 'outline') }}</button>
 
                                             <input type="text"
                                                 class="input-field p-2 rounded border sub-block-name"
@@ -753,7 +733,7 @@
                                         </div>
                                         <div class="elements ml-4"></div>
                                         <button type="button" class="addElement btn btn-primary mt-4">Añadir elemento
-                                            {{ e_heroicon('plus', 'outline') }}</button>
+                                            {{ eHeroicon('plus', 'outline') }}</button>
                                     </div>
                                 </template>
 
@@ -763,7 +743,7 @@
                                         <div class="flex flex-col">
 
                                             <button type="button" class="removeElement btn-remove">Eliminar Elemento
-                                                {{ e_heroicon('trash', 'outline') }}</button>
+                                                {{ eHeroicon('trash', 'outline') }}</button>
 
                                             <input type="text" class="input-field p-2 rounded border element-name"
                                                 placeholder="Nombre del elemento">
@@ -774,7 +754,7 @@
 
                                         <button type="button" class="addSubElement btn btn-primary mt-4">Añadir
                                             Sub-Elemento
-                                            {{ e_heroicon('plus', 'outline') }}</button>
+                                            {{ eHeroicon('plus', 'outline') }}</button>
                                     </div>
                                 </template>
 
@@ -784,7 +764,7 @@
                                         <div class="flex flex-col">
                                             <button type="button" class="removeSubElement btn-remove">Eliminar
                                                 Sub-Elemento
-                                                {{ e_heroicon('trash', 'outline') }}</button>
+                                                {{ eHeroicon('trash', 'outline') }}</button>
 
                                             <input type="text"
                                                 class="input-field p-2 rounded border sub-element-name"
@@ -812,11 +792,11 @@
 
                     <div id="draft-button-container" class="hidden">
                         <button type="submit" value="draft" id="draft-button" class="btn btn-secondary">
-                            Guardar como borrador {{ e_heroicon('check', 'outline') }}</button>
+                            Guardar como borrador {{ eHeroicon('check', 'outline') }}</button>
                     </div>
 
                     <button type="submit" value="submit" id="submit-button" class="btn btn-primary">
-                        Guardar {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                        Guardar {{ eHeroicon('paper-airplane', 'outline') }}</button>
                 </div>
 
             </div>
@@ -834,7 +814,7 @@
             <input type="text" class="poa-input document-name" placeholder="Nombre" />
             <div class="flex-none">
                 <button type="button" class="btn-icon btn-remove-document">
-                    {{ e_heroicon('trash', 'outline') }}
+                    {{ eHeroicon('trash', 'outline') }}
                 </button>
             </div>
         </div>
@@ -861,7 +841,7 @@
             </div>
 
             <button class="w-[32px] h-[32px] btn-icon btn-remove-payment-term" type="button">
-                {{ e_heroicon('trash', 'outline') }}
+                {{ eHeroicon('trash', 'outline') }}
             </button>
         </div>
         <input type="hidden" class="payment-term-uid" name="payment_term_uid" />

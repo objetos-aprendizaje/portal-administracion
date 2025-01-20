@@ -39,7 +39,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -83,7 +83,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -129,7 +129,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
     {
         $data = [
             'name' => 'Competencia con padre inexistente',
-            'parent_competence_uid' => generate_uuid(),
+            'parent_competence_uid' => generateUuid(),
 
         ];
 
@@ -147,7 +147,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -160,7 +160,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
             // Datos de prueba
             // Crea una competencia para asociar el resultado de aprendizaje
             $competence = new CompetencesModel();
-            $competence->uid = generate_uuid(); // Asigno el uid manualmente
+            $competence->uid = generateUuid(); // Asigno el uid manualmente
             $competence->name = 'Competencia para Resultados de Aprendizaje';
             $competence->description = 'Descripción de la competencia';
             $competence->save();
@@ -198,7 +198,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
 
         $rol = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
 
-        $admin->roles()->attach($rol->uid, ['uid' => generate_uuid()]);
+        $admin->roles()->attach($rol->uid, ['uid' => generateUuid()]);
 
         $this->actingAs($admin);
 
@@ -214,8 +214,6 @@ class CompetencesLearningsResultsControllerTest extends TestCase
         // Verifica la respuesta
         $response->assertStatus(422);
         $response->assertJson(['message' => 'El nombre es obligatorio.']);
-        // $response->assertJson(['message' => 'Algunos campos son incorrectos']);
-
     }
 
     /**
@@ -228,7 +226,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -241,7 +239,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
 
             // Crear algunos registros de ejemplo
             $competenceFramework = CompetenceFrameworksModel::create([
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'name' => 'Example Competence Framework',
                 'description' => 'Example framework',
                 'has_levels' => 0
@@ -249,7 +247,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
 
             // Crear algunos registros de ejemplo
             $competence = CompetencesModel::create([
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'description' => 'Example Competence',
                 'name' => 'Example Competence',
                 'competence_framework_uid' => $competenceFramework->uid
@@ -257,7 +255,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
             $uid_competence = $competence->uid;
 
             $learningResult = LearningResultsModel::create([
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'name' => 'Example Learning Result',
                 'competence_uid' => $uid_competence
             ]);
@@ -316,7 +314,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
     {
         // Creamos una competencia de prueba
         $competence = CompetencesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Test Competence',
         ])->latest()->first();
 
@@ -337,14 +335,14 @@ class CompetencesLearningsResultsControllerTest extends TestCase
     {
         // Creamos algunas competencias de prueba
         $competence1 = CompetencesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Competence 1',
             'description' => 'Description 1',
             'parent_competence_uid' => null, // Competencia principal
         ])->latest()->first();
 
-        $competence2 = CompetencesModel::factory()->create([
-            'uid' => generate_uuid(),
+        CompetencesModel::factory()->create([
+            'uid' => generateUuid(),
             'name' => 'Competence 2',
             'description' => 'Description 2',
             'parent_competence_uid' => $competence1->uid, // Subcompetencia
@@ -365,10 +363,10 @@ class CompetencesLearningsResultsControllerTest extends TestCase
     public function testSearchLearningResults()
     {
         // Crear algunos resultados de aprendizaje simulados
-        $learningResult1 = LearningResultsModel::factory()->withCompetence()->create([
+        LearningResultsModel::factory()->withCompetence()->create([
             'name' => 'Result 1',
         ]);
-        $learningResult2 = LearningResultsModel::factory()->withCompetence()->create([
+        LearningResultsModel::factory()->withCompetence()->create([
             'name' => 'Result 2',
         ]);
 
@@ -419,7 +417,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
 
         $rol = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
 
-        $admin->roles()->attach($rol->uid, ['uid' => generate_uuid()]);
+        $admin->roles()->attach($rol->uid, ['uid' => generateUuid()]);
 
         $this->actingAs($admin);
 
@@ -538,7 +536,7 @@ class CompetencesLearningsResultsControllerTest extends TestCase
 
         // Crear un resultado de aprendizaje existente
         $learningResult = LearningResultsModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'competence_uid' => $competence->uid,
             'name' => 'Existing Learning Result',
             'description' => 'Description of the existing learning result.',

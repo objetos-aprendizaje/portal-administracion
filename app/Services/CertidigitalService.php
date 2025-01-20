@@ -18,7 +18,6 @@ use Illuminate\Support\Facades\Http;
 
 class CertidigitalService
 {
-    public function __construct() {}
 
     public function createUpdateEducationalProgramCredential($educationalProgramUid)
     {
@@ -116,7 +115,9 @@ class CertidigitalService
                 });
             },
             'students' => function ($query) use ($studentsUids) {
-                if ($studentsUids) $query->whereIn('user_uid', $studentsUids);
+                if ($studentsUids) {
+                    $query->whereIn('user_uid', $studentsUids);
+                }
             },
             'students.courseGlobalCalifications' => function ($query) use ($uidsCoursesEducationalProgram) {
                 $query->whereIn('course_uid', $uidsCoursesEducationalProgram);
@@ -156,7 +157,9 @@ class CertidigitalService
                             return $calification->course_block_uid === $block->uid && $calification->learning_result_uid === $learningResult->uid;
                         })->first();
 
-                        if (!$calification) continue;
+                        if (!$calification) {
+                            continue;
+                        }
 
                         $certidigitalAssesment = $course->certidigitalAssesments->filter(function ($assesment) use ($learningResult, $block) {
                             return $assesment->learning_result_uid === $learningResult->uid && $assesment->course_block_uid === $block->uid;
@@ -178,7 +181,9 @@ class CertidigitalService
                             return $calification->learning_result_uid === $learningResult->uid && $calification->course_uid === $course->uid;
                         })->first();
 
-                        if (!$calification) continue;
+                        if (!$calification) {
+                            continue;
+                        }
 
                         $assesmentLearningResult = $course->certidigitalAssesments->filter(function ($assesment) use ($learningResult, $course) {
                             return $assesment->learning_result_uid === $learningResult->uid && !$assesment->course_block_uid && $assesment->course_uid === $course->uid;
@@ -242,7 +247,9 @@ class CertidigitalService
                 });
             },
             'students' => function ($query) use ($studentsUids, $courseUid) {
-                if ($studentsUids) $query->whereIn('user_uid', $studentsUids);
+                if ($studentsUids) {
+                    $query->whereIn('user_uid', $studentsUids);
+                }
                 // Añadir una subconsulta para obtener la calificación de cada estudiante
                 $query->addSelect([
                     'global_calification_info' => CourseGlobalCalificationsModel::selectRaw('calification_info')
@@ -284,7 +291,9 @@ class CertidigitalService
                         return $calification->course_block_uid === $block->uid && $calification->learning_result_uid === $learningResult->uid;
                     })->first();
 
-                    if (!$calification) continue;
+                    if (!$calification) {
+                        continue;
+                    }
 
                     $certidigitalAssesment = $course->certidigitalAssesments->filter(function ($assesment) use ($learningResult, $block) {
                         return $assesment->learning_result_uid === $learningResult->uid && $assesment->course_block_uid === $block->uid;
@@ -307,7 +316,9 @@ class CertidigitalService
                     return $calification->learning_result_uid === $learningResult->uid;
                 })->first();
 
-                if (!$calification) continue;
+                if (!$calification) {
+                    continue;
+                }
 
                 $assesmentLearningResult = $course->certidigitalAssesments->filter(function ($assesment) use ($learningResult) {
                     return $assesment->learning_result_uid === $learningResult->uid && !$assesment->course_block_uid;
@@ -535,13 +546,11 @@ class CertidigitalService
 
     private function getCourseWithTeachers($courseUid, $teacherUids)
     {
-        $course = CoursesModel::where("uid", $courseUid)->with([
+        return CoursesModel::where("uid", $courseUid)->with([
             "teachers" => function ($query) use ($teacherUids) {
                 $query->where("user_uid", $teacherUids);
             }
         ])->first();
-
-        return $course;
     }
 
     private function sendEmissionsRequest($emissionsBlockUuids)
@@ -762,7 +771,6 @@ class CertidigitalService
     private function emitCredentialsCourse($course, $data)
     {
         $emissions = $this->emitCredentialsRequest($course->certidigitalCredential->id, $data);
-        // dd($course->students->email, $emissions );
         foreach ($emissions as $emission) {
             // Buscar el estudiante
             $student = $course->students->filter(function ($student) use ($emission) {
@@ -787,9 +795,7 @@ class CertidigitalService
         $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/credentials/{$credentialId}/issuecredentials?issuingCenterId={$generalOptions['certidigital_center_id']}&locale=es";
         $response = $this->sendRequest($endpoint, $data, false);
 
-        $emissions = $response->json();
-
-        return $emissions;
+        return $response->json();
     }
 
     private function getBasicDataEmissionCredential($student, $certidigitalCredentialUid)
@@ -846,10 +852,7 @@ class CertidigitalService
             "oid" => []
         ];
 
-        // Evaluaciones
-        $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/achievements/$achievementOid/provenBy?issuingCenterId={$generalOptions['certidigital_center_id']}";
         // TODO eliminación de evaluaciones
-        //$this->sendRequest($endpoint, $data, false);
 
         // Activities
         $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/achievements/$achievementOid/influencedBy?issuingCenterId={$generalOptions['certidigital_center_id']}";
@@ -1017,6 +1020,7 @@ class CertidigitalService
 
     private function deleteAssesments($assesments)
     {
+
         $generalOptions = app('general_options');
 
         foreach ($assesments as $assesment) {
@@ -1024,7 +1028,6 @@ class CertidigitalService
             $endpoint = "{$generalOptions['certidigital_url']}/certi-bridge/api/v1/assessments/$assesmentOid";
 
             //TODO Eliminar las evaluaciones
-            //$this->sendRequest($endpoint, [], false, "delete");
 
             $assesment->delete();
         }
@@ -1182,13 +1185,14 @@ class CertidigitalService
 
     private function request($url, $data, $token = null, $method = "POST")
     {
-        if ($token) $httpRequest = Http::withToken($token);
-        else $httpRequest = Http::asForm();
+        if ($token) {
+            $httpRequest = Http::withToken($token);
+        } else {
+            $httpRequest = Http::asForm();
+        }
 
         $httpRequest->withoutVerifying();
 
-        $response = $httpRequest->$method($url, $data);
-
-        return $response;
+        return $httpRequest->$method($url, $data);
     }
 }

@@ -69,7 +69,7 @@ class ChangeStatusToInscriptionEducationalProgram extends Command
     {
         $automaticNotificationType = AutomaticNotificationTypesModel::where('code', 'NEW_EDUCATIONAL_PROGRAMS')->first();
 
-        $generalNotificationAutomaticUid = generate_uuid();
+        $generalNotificationAutomaticUid = generateUuid();
         $generalNotificationAutomatic = new GeneralNotificationsAutomaticModel();
         $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
         $generalNotificationAutomatic->title = "Disponible nuevo programa formativo";
@@ -84,7 +84,7 @@ class ChangeStatusToInscriptionEducationalProgram extends Command
 
         foreach ($studentsFiltered as $student) {
             $generalNotificationAutomaticUser = new GeneralNotificationsAutomaticUsersModel();
-            $generalNotificationAutomaticUser->uid = generate_uuid();
+            $generalNotificationAutomaticUser->uid = generateUuid();
             $generalNotificationAutomaticUser->general_notifications_automatic_uid = $generalNotificationAutomaticUid;
             $generalNotificationAutomaticUser->user_uid = $student->uid;
             $generalNotificationAutomaticUser->save();

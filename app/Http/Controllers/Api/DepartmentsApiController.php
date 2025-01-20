@@ -82,11 +82,11 @@ class DepartmentsApiController extends BaseController
     {
 
         foreach ($departments as $depart) {
-            $department_bd = new DepartmentsModel();
-            $uid = generate_uuid();
-            $department_bd->uid = $uid;
-            $department_bd->name = $depart['name'];
-            $department_bd->save();
+            $departmentBd = new DepartmentsModel();
+            $uid = generateUuid();
+            $departmentBd->uid = $uid;
+            $departmentBd->name = $depart['name'];
+            $departmentBd->save();
         }
     }
 

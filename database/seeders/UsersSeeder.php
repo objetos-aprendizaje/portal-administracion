@@ -16,7 +16,7 @@ class UsersSeeder extends Seeder
     {
         $userRoles = UserRolesModel::all();
 
-        $userUid = generate_uuid();
+        $userUid = generateUuid();
         UsersModel::factory()
             ->create([
                 'uid' => $userUid,
@@ -39,7 +39,7 @@ class UsersSeeder extends Seeder
 
     private function createUser()
     {
-        $userUid = generate_uuid();
+        $userUid = generateUuid();
         UsersModel::factory()
             ->create([
                 'uid' => $userUid,

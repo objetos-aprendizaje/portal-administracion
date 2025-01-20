@@ -48,58 +48,6 @@ class AnalyticsAbandonedController extends BaseController
         return response()->json(['message' => 'Umbral actualizado correctamente'], 200);
     }
 
-    /*
-    public function getAbandoned(Request $request)
-    {
-
-        $size = $request->get('size', 1);
-        $search = $request->get('search');
-        $sort = $request->get('sort');
-
-
-        $query = CoursesModel::select(
-                'courses.*',
-                DB::raw('DATE_ADD(realization_start_date, INTERVAL 30 DAY) as abandoned_date'),
-                DB::raw('(
-                    SELECT COUNT(*)
-                    FROM qvkei_users
-                    INNER JOIN qvkei_courses_students ON qvkei_courses_students.user_uid = qvkei_users.uid
-                        AND qvkei_courses_students.course_uid = qvkei_courses.uid
-                    LEFT JOIN qvkei_courses_accesses ON qvkei_courses_accesses.user_uid = qvkei_users.uid
-                        AND qvkei_courses_accesses.course_uid = qvkei_courses.uid
-                        AND qvkei_courses_accesses.access_date >= DATE_ADD(qvkei_courses.realization_start_date, INTERVAL 30 DAY)
-                    WHERE qvkei_courses_students.status = "ENROLLED"
-                      AND qvkei_courses_students.acceptance_status = "ACCEPTED"
-                      AND qvkei_courses_accesses.user_uid IS NULL
-                ) as students_access_after_realization_date')
-            )
-            ->with(['accesses', 'status', 'students' => function ($query) {
-                $query->where('status', 'ENROLLED')
-                    ->where('acceptance_status', 'ACCEPTED');
-            }])
-            ->withCount(['students as enrolled_accepted_students_count' => function ($query) {
-                $query->where('status', 'ENROLLED')
-                      ->where('acceptance_status', 'ACCEPTED');
-            }])
-            ->whereHas('status', function ($query) {
-                $query->where('code', 'DEVELOPMENT');
-            })
-            ->whereNotNull('lms_url')->get()->toArray();
-
-
-        if (isset($sort) && !empty($sort)) {
-            foreach ($sort as $order) {
-                $query->orderBy($order['field'], $order['dir']);
-            }
-        }
-        // Ahora aplicamos la paginación antes de obtener los resultados.
-        $data = $query->paginate($size);
-
-        return response()->json($data, 200);
-    }
-*/
-
-
     public function getAbandonedGraph()
     {
 
@@ -124,7 +72,7 @@ class AnalyticsAbandonedController extends BaseController
             ->whereHas('accesses')
             ->whereNotNull('lms_url')->get()->toArray();
 
-        $new_data = [];
+        $newData = [];
         $fechaHoy = new DateTime();
         foreach ($query as $index => $course) {
             $fecha = new DateTime($course['abandoned_date']);
@@ -143,7 +91,7 @@ class AnalyticsAbandonedController extends BaseController
                     $alumnos = $course['students'];
                     $accesos = $course['accesses'];
 
-                    $data = $this->verificarAccesosAlumnos($alumnos, $accesos, $fecha);
+                    $data = $this->verificarAccesosAlumnos($alumnos, $accesos);
 
                     if (!empty($data)) {
                         $course['abandoned'] = count($data);
@@ -154,17 +102,17 @@ class AnalyticsAbandonedController extends BaseController
                     }
                 }
             }
-            $new_data[$index] = $course;
+            $newData[$index] = $course;
         }
 
-        return response()->json($new_data, 200);
+        return response()->json($newData, 200);
     }
 
-    private function verificarAccesosAlumnos($alumnos, $accesos, $fecha)
+    private function verificarAccesosAlumnos($alumnos, $accesos)
     {
 
         $fechaHoy = new DateTime();
-        $abandoned_users = [];
+        $abandonedUsers = [];
 
         //revisamos todos los accesos por usuario y cogemos el último acceso para verificar el abandono.
         foreach ($alumnos as $alumno) {
@@ -187,10 +135,10 @@ class AnalyticsAbandonedController extends BaseController
                 });
 
                 // Mostrar el resultado con la fecha más reciente
-                $fecha_acceso = new DateTime($resultado['access_date']);
+                $fechaAcceso = new DateTime($resultado['access_date']);
 
                 //calculamos la diferencia entre hoy y el último acceso
-                $diferencia = $fechaHoy->diff($fecha_acceso);
+                $diferencia = $fechaHoy->diff($fechaAcceso);
 
                 // Obtener la diferencia en días
                 $dias = $diferencia->days;
@@ -198,9 +146,9 @@ class AnalyticsAbandonedController extends BaseController
                 $thresholdAbandonedCourses = (int) app('general_options')['threshold_abandoned_courses'];
                 if ($dias > $thresholdAbandonedCourses) {
                     //es usuario abandonado
-                    $abandoned_users[] = $alumno;
+                    $abandonedUsers[] = $alumno;
                 }
-                return $abandoned_users;
+                return $abandonedUsers;
             }
         }
     }

@@ -17,7 +17,7 @@ class CertidigitalCredentialsModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid'=> generate_uuid(),
+            'uid'=> generateUuid(),
             'id'=> $this->faker->numberBetween(1,100),
             'title'=> $this->faker->words(3, true),
             'description' => $this->faker->paragraph(3),

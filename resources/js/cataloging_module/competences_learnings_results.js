@@ -745,9 +745,9 @@ function exportCSV() {
     };
 
     apiFetch(params).then((data) => {
-        var jsonString = JSON.stringify(data, null, 2);
-        var blob = new Blob([jsonString], { type: "application/json" });
-        var downloadLink = document.createElement("a");
+        const jsonString = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonString], { type: "application/json" });
+        const downloadLink = document.createElement("a");
         downloadLink.href = window.URL.createObjectURL(blob);
         downloadLink.download = "data.json";
         downloadLink.innerHTML = "Descargar JSON";
@@ -801,8 +801,8 @@ function addLevel() {
 
 function removeLevel(event) {
 
-    var elements = document.getElementsByClassName('level');
-    var count = elements.length;
+    const elements = document.getElementsByClassName('level');
+    const count = elements.length;
 
     if (count > 1){
         let target = event.target;

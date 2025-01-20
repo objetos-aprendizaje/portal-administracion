@@ -3,7 +3,7 @@
     <div class="poa-container">
         <div class="alert alert-info">
             <div class="flex-none w-6">
-                {{ e_heroicon('exclamation-circle', 'outline') }}
+                {{ eHeroicon('exclamation-circle', 'outline') }}
             </div>
             <div class="flex-grow">
                 <h3>{{ $title }}</h3>

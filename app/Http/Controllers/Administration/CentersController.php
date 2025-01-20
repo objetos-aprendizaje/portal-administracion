@@ -65,12 +65,12 @@ class CentersController extends BaseController
     /**
      * Obtiene un centro específico basada en su UID.
      *
-     * @param  string $center_uid El UID del centro.
+     * @param  string $centerUid El UID del centro.
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getCenter($center_uid)
+    public function getCenter($centerUid)
     {
-        $center = CentersModel::where('uid', $center_uid)->first()->toArray();
+        $center = CentersModel::where('uid', $centerUid)->first()->toArray();
         return response()->json($center);
     }
 
@@ -95,17 +95,17 @@ class CentersController extends BaseController
             return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validator->errors()], 422);
         }
 
-        $center_uid = $request->input("center_uid");
+        $centerUid = $request->input("center_uid");
 
-        return DB::transaction(function () use ($request, $center_uid) {
+        return DB::transaction(function () use ($request, $centerUid) {
 
-            if (!$center_uid) {
+            if (!$centerUid) {
                 $center = new CentersModel();
-                $center_uid = generate_uuid();
-                $center->uid = $center_uid;
+                $centerUid = generateUuid();
+                $center->uid = $centerUid;
                 $isNew = true;
             } else {
-                $center = CentersModel::find($center_uid);
+                $center = CentersModel::find($centerUid);
                 $isNew = false;
             }
 

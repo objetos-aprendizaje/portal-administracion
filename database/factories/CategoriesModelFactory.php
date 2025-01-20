@@ -25,7 +25,7 @@ class CategoriesModelFactory extends Factory
             })->toArray();
 
         return [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => $this->faker->words(2, true),
             'description' => $this->faker->paragraph(2),
             'color' => '#fff',

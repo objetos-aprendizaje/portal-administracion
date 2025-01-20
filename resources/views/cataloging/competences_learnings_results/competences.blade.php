@@ -6,10 +6,10 @@
                 <input type="checkbox" class="element-checkbox competence-checkbox" id="{{ $competence['uid'] }}">
                 <label for="{{ $competence['uid'] }}" class="element-label">{{ $competence['name'] }}</label>
                 <button class="edit-competence-btn"
-                    data-uid="{{ $competence['uid'] }}">{{ e_heroicon('pencil-square', 'solid') }}</button>
+                    data-uid="{{ $competence['uid'] }}">{{ eHeroicon('pencil-square', 'solid') }}</button>
                 @if ($competence['parent_competence_uid'])
                     <button class="add-learning-result-btn"
-                        data-uid="{{ $competence['uid'] }}">{{ e_heroicon('plus', 'solid') }}</button>
+                        data-uid="{{ $competence['uid'] }}">{{ eHeroicon('plus', 'solid') }}</button>
                 @endif
             </div>
 

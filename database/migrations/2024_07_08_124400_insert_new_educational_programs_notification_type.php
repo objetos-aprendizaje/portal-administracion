@@ -13,7 +13,7 @@ class InsertNewEducationalProgramsNotificationType extends Migration
      */
     public function up()
     {
-        $uid = generate_uuid();
+        $uid = generateUuid();
         DB::table('automatic_notification_types')->insert([
             'uid' => $uid,
             'name' => 'Comunicaciones para gestores sobre nuevos programas formativos',

@@ -12,6 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 class ApiRegisterControllerTest extends TestCase
 {
     use RefreshDatabase;
+    
     /**
      * @test  Verifica que los usuarios se registran correctamente.
      */
@@ -21,7 +22,7 @@ class ApiRegisterControllerTest extends TestCase
         $admin = UsersModel::factory()->create();
         $this->actingAs($admin);
 
-        // Datos de para genera la key de la api 
+        // Datos de para genera la key de la api
         $apikey = ApiKeysModel::factory()->create()->first();
 
         $this->assertDatabaseHas('api_keys', ['uid' => $apikey->uid]);
@@ -93,7 +94,7 @@ class ApiRegisterControllerTest extends TestCase
         $admin = UsersModel::factory()->create();
         $this->actingAs($admin);
 
-        // Datos de para genera la key de la api 
+        // Datos de para genera la key de la api
         $apikey = ApiKeysModel::factory()->create()->first();
 
         $this->assertDatabaseHas('api_keys', ['uid' => $apikey->uid]);
@@ -104,7 +105,6 @@ class ApiRegisterControllerTest extends TestCase
             'last_name' => 'Doe',
             'nif' => '12345678A', // Debe ser un NIF válido según la regla NifNie
             'roles' => ['STUDENT'],
-            // 'email' => 'janedoe@example.com', // Faltante a propósito
         ];
 
         // Realizar la solicitud POST con los datos de usuario
@@ -128,7 +128,7 @@ class ApiRegisterControllerTest extends TestCase
         $admin = UsersModel::factory()->create();
         $this->actingAs($admin);
 
-        // Datos de para genera la key de la api 
+        // Datos de para genera la key de la api
         $apikey = ApiKeysModel::factory()->create()->first();
 
         $this->assertDatabaseHas('api_keys', ['uid' => $apikey->uid]);
@@ -162,11 +162,11 @@ class ApiRegisterControllerTest extends TestCase
     public function testGetRolesReturnsUserRoles()
     {
 
-        // Datos de para genera la key de la api 
+        // Datos de para genera la key de la api
         $apikey = ApiKeysModel::factory()->create()->first();
 
         // Crear algunos roles de usuario simulados
-        $roles = UserRolesModel::get();
+        // UserRolesModel::get();
 
         // Hacer la solicitud GET a la ruta que devuelve los roles
         $response = $this->getJson('/api/users/get_roles', [
@@ -200,15 +200,12 @@ class ApiRegisterControllerTest extends TestCase
             'last_name' => 'Smith',
             'email' => 'jane.smith@example.com',
         ]);
-
-        // Datos de para genera la key de la api 
-        $apikey = ApiKeysModel::factory()->create()->first();
-
+        
         // Asignar roles a los usuarios
-        $user1->roles()->attach($roleTeacher->uid, ['uid' => generate_uuid()]);
-        $user2->roles()->attach($roleStudent->uid, ['uid' => generate_uuid()]);
+        $user1->roles()->attach($roleTeacher->uid, ['uid' => generateUuid()]);
+        $user2->roles()->attach($roleStudent->uid, ['uid' => generateUuid()]);
 
-        // Datos de para genera la key de la api 
+        // Datos de para genera la key de la api
         $apikey = ApiKeysModel::factory()->create()->first();
         // Realizar la solicitud GET con filtros (por nombre y rol)
         $response = $this->getJson('/api/users?first_name=John&roles=TEACHER', [
@@ -224,14 +221,13 @@ class ApiRegisterControllerTest extends TestCase
         $this->assertEquals('John', $responseData[0]['first_name']);
         $this->assertEquals('Doe', $responseData[0]['last_name']);
         $this->assertEquals('john.doe@example.com', $responseData[0]['email']);
-        // $this->assertEquals('TEACHER', $responseData[0]['roles'][0]['code']);
+       
     }
 
     /**
      * @test
      * Prueba que un usuario se actualiza correctamente a través de la API.
-     */
-    //Todo: pendiente por terminar faltando un metodo privaddo
+     */    
     public function testUpdateUserSuccessfully()
     {
         // Crear un usuario existente en la base de datos

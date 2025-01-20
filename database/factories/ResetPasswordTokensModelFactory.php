@@ -19,7 +19,7 @@ class ResetPasswordTokensModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'email' => 'example@example.com',
             'uid_user' =>Str::uuid(),
             'token' => Str::uuid(),

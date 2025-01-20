@@ -42,8 +42,7 @@ class TeachersCredentialsController extends BaseController
         $size = $request->get('size', 1);
         $search = $request->get('search');
         $sort = $request->get('sort');
-
-        $query = UsersModel::query()->with("roles");
+               
 
         $query = UsersModel::query()->whereHas('roles', function ($query) {
             $query->where('code', 'TEACHER');
@@ -66,14 +65,14 @@ class TeachersCredentialsController extends BaseController
         return response()->json($data, 200);
     }
 
-    public function getCoursesTeacher(Request $request, $teacher_uid)
+    public function getCoursesTeacher(Request $request, $teacherUid)
     {
 
         $size = $request->get('size', 1);
         $search = $request->get('search');
         $sort = $request->get('sort');
 
-        $user = UsersModel::where('uid', $teacher_uid)->first();
+        $user = UsersModel::where('uid', $teacherUid)->first();
         $query = $user->coursesTeachers();
 
         if ($search) {

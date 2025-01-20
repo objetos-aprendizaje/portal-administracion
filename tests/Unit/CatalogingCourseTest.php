@@ -42,8 +42,8 @@ class CatalogingCourseTest extends TestCase
     public function testIndexViewCourseTypesWithAccess()
     {
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -92,8 +92,8 @@ class CatalogingCourseTest extends TestCase
         $user = UsersModel::factory()->create();
 
         // Crear un rol de prueba y asignarlo al usuario
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]);
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -131,8 +131,8 @@ class CatalogingCourseTest extends TestCase
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -176,8 +176,8 @@ class CatalogingCourseTest extends TestCase
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -307,7 +307,7 @@ class CatalogingCourseTest extends TestCase
                 'origin_code'=>'origin_code_relation_1',
             ]
         );
-        
+
         CompetencesModel::factory()->create(
             [
                 'origin_code'=>'Skill Name 0',
@@ -387,7 +387,7 @@ class CatalogingCourseTest extends TestCase
         $invalidJsonContent = 'invalid json content';
 
         // Crea un archivo temporal para simular la carga del archivo
-        $file = UploadedFile::fake()->create('data.json', 0, null, TRUE);
+        $file = UploadedFile::fake()->create('data.json', 0, null, true);
         file_put_contents($file->getRealPath(), $invalidJsonContent);
 
         // Simular un request POST a la ruta
@@ -492,7 +492,7 @@ class CatalogingCourseTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -509,7 +509,7 @@ class CatalogingCourseTest extends TestCase
 
             // request POST a la ruta con datos válidos
             $response = $this->postJson('/cataloging/certification_types/save_certification_type', [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'name' => 'New Certification Type',
                 'description' => 'Description',
                 'category_uid' => $category->uid
@@ -531,7 +531,7 @@ class CatalogingCourseTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -576,7 +576,7 @@ class CatalogingCourseTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -613,7 +613,7 @@ class CatalogingCourseTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -630,13 +630,13 @@ class CatalogingCourseTest extends TestCase
 
             // Crear tipos de certificación de prueba
             $certificationType1 = CertificationTypesModel::create([
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'name' => 'Certification Type 1',
                 'category_uid' => $categori->uid,
             ]);
 
             $certificationType2 = CertificationTypesModel::create([
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'name' => 'Certification Type 2',
                 'category_uid' => $categori->uid,
             ]);
@@ -668,7 +668,7 @@ class CatalogingCourseTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -685,7 +685,7 @@ class CatalogingCourseTest extends TestCase
             // Simular un request POST a la ruta con datos válidos
             // Generar un nombre único
             $uniqueName = 'Educational Program Type ' . Str::random(10);
-            $response = $this->postJson('/cataloging/educational_program_types/save_educational_program_type', [                
+            $response = $this->postJson('/cataloging/educational_program_types/save_educational_program_type', [
                 'name' => $uniqueName,
                 'description' => $educational->description,
                 'managers_can_emit_credentials' => $educational->managers_can_emit_credentials,
@@ -704,13 +704,13 @@ class CatalogingCourseTest extends TestCase
                     'description' => $educational->description,
                     'managers_can_emit_credentials' => $educational->managers_can_emit_credentials,
                     'teachers_can_emit_credentials' => $educational->teachers_can_emit_credentials,
-            ]);     
+            ]);
 
             // Verificar que la respuesta sea correcta
             $response->assertStatus(200)
-            ->assertJson(['message' => 'Tipo de programa formativo actualizado correctamente']); 
+            ->assertJson(['message' => 'Tipo de programa formativo actualizado correctamente']);
 
-            
+
         }
     }
 
@@ -726,7 +726,7 @@ class CatalogingCourseTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -764,7 +764,7 @@ class CatalogingCourseTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -862,7 +862,7 @@ class CatalogingCourseTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -893,7 +893,7 @@ class CatalogingCourseTest extends TestCase
     public function testGetEducationalProgramTypeNotFound()
     {
         // Hacer una solicitud GET a la ruta con un uid que no existe
-        $uuid = generate_uuid();
+        $uuid = generateUuid();
         $response = $this->get('/cataloging/educational_program_types/get_educational_program_type/' . $uuid);
 
         // Verificar que la respuesta tenga un código de estado 406 (Not Acceptable)
@@ -947,19 +947,19 @@ class CatalogingCourseTest extends TestCase
 
         // Crear subcompetencias asociadas a competence1
         $subcompetence1 = CompetencesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Subcompetence 1',
             'parent_competence_uid' => $competence->uid // Establecer la relación padre
         ])->first();
 
-        $subcompetence2 = CompetencesModel::factory()->create([
-            'uid' => generate_uuid(),
+        CompetencesModel::factory()->create([
+            'uid' => generateUuid(),
             'name' => 'Subcompetence 2',
             'parent_competence_uid' => $subcompetence1->uid // Establecer la relación padre
         ])->first();
 
 
-        $competence2 = CompetencesModel::factory()->create(['uid' => generate_uuid(), 'name' => 'Competence 2'])->latest()->first();
+        CompetencesModel::factory()->create(['uid' => generateUuid(), 'name' => 'Competence 2'])->latest()->first();
 
 
         // Simular un request GET a la ruta

@@ -87,14 +87,20 @@ class ApiCoursesController extends BaseController
     public function updateCourse(Request $request, $courseLmsId)
     {
         $course = CoursesModel::where("course_lms_id", $courseLmsId)->with("educational_program")->first();
-        if (!$course) throw new OperationFailedException("No existe un curso con el uid de LMS proporcionado", 404);
+        if (!$course) {
+            throw new OperationFailedException("No existe un curso con el uid de LMS proporcionado", 404);
+        }
 
         DB::transaction(function () use ($request, $course) {
             $teachersRequest = $request['teachers'];
-            if (isset($teachersRequest)) $this->updateTeachers($teachersRequest, $course);
+            if (isset($teachersRequest)) {
+                $this->updateTeachers($teachersRequest, $course);
+            }
 
             $studentsRequest = $request['students'];
-            if (isset($studentsRequest)) $this->updateStudents($studentsRequest, $course);
+            if (isset($studentsRequest)) {
+                $this->updateStudents($studentsRequest, $course);
+            }
 
             $updateData = $request->all();
             $this->updateCourseDb($updateData, $course);
@@ -123,16 +129,16 @@ class ApiCoursesController extends BaseController
             }
         }
 
-        $students_to_sync = [];
+        $studentsToSync = [];
         foreach ($uidsStudents as $studentUid) {
-            $students_to_sync[$studentUid] = [
-                'uid' => generate_uuid(),
+            $studentsToSync[$studentUid] = [
+                'uid' => generateUuid(),
                 'course_uid' => $course->uid,
                 'user_uid' => $studentUid
             ];
         }
 
-        $course->students()->sync($students_to_sync);
+        $course->students()->sync($studentsToSync);
     }
 
     private function updateTeachers($teachersData, $course)
@@ -173,17 +179,17 @@ class ApiCoursesController extends BaseController
             }
         }
 
-        $teachers_to_sync = [];
+        $teachersToSync = [];
         foreach ($uidsTeachers as $teacherUid) {
-            $teachers_to_sync[$teacherUid] = [
-                'uid' => generate_uuid(),
+            $teachersToSync[$teacherUid] = [
+                'uid' => generateUuid(),
                 'course_uid' => $course->uid,
                 'user_uid' => $teacherUid,
                 'type' =>  $teachersData['coordinator'] && in_array($teacherUid, $teachersData['coordinator']) ? 'COORDINATOR' : 'NO_COORDINATOR'
             ];
         }
 
-        $course->teachers()->sync($teachers_to_sync);
+        $course->teachers()->sync($teachersToSync);
     }
 
     private function updateCourseDb($updateData, $course)

@@ -21,28 +21,28 @@ return new class extends Migration
 
         $resource_statuses = [
             [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "En introducción",
                 "code" => "INTRODUCTION"
             ],
             [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "Pendiente de aprobación",
                 "code" => "PENDING_APPROVAL"
             ],            [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "Rechazado",
                 "code" => "REJECTED"
             ],            [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "En subsanación para aprobación",
                 "code" => "UNDER_CORRECTION_APPROVAL"
             ],            [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "Publicado",
                 "code" => "PUBLISHED"
             ],            [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "Retirado",
                 "code" => "RETIRED"
             ]

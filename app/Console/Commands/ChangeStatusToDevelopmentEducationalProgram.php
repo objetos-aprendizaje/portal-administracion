@@ -46,7 +46,9 @@ class ChangeStatusToDevelopmentEducationalProgram extends Command
             })
             ->get();
 
-        if (!$educationalPrograms->count()) return;
+        if (!$educationalPrograms->count()) {
+            return;
+        }
 
         DB::transaction(function () use ($educationalPrograms) {
 
@@ -110,7 +112,7 @@ class ChangeStatusToDevelopmentEducationalProgram extends Command
     {
         $automaticNotificationType = AutomaticNotificationTypesModel::where('code', 'EDUCATIONAL_PROGRAMS_ENROLLMENT_COMMUNICATIONS')->first();
 
-        $generalNotificationAutomaticUid = generate_uuid();
+        $generalNotificationAutomaticUid = generateUuid();
         $generalNotificationAutomatic = new GeneralNotificationsAutomaticModel();
         $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
         $generalNotificationAutomatic->title = "El programa formativo " . $educationalProgram->name . " ya está en período de realización";
@@ -124,7 +126,7 @@ class ChangeStatusToDevelopmentEducationalProgram extends Command
 
         foreach ($studentsFiltered as $student) {
             $generalNotificationAutomaticUser = new GeneralNotificationsAutomaticUsersModel();
-            $generalNotificationAutomaticUser->uid = generate_uuid();
+            $generalNotificationAutomaticUser->uid = generateUuid();
             $generalNotificationAutomaticUser->general_notifications_automatic_uid = $generalNotificationAutomaticUid;
             $generalNotificationAutomaticUser->user_uid = $student->uid;
             $generalNotificationAutomaticUser->save();

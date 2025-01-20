@@ -17,8 +17,8 @@ class EmbeddingsService
 
     public function __construct()
     {
-        $openai_key = GeneralOptionsModel::where('option_name', 'openai_key')->first();
-        $this->openAiApiKey = $openai_key ? $openai_key['option_value'] : null;
+        $openaiKey = GeneralOptionsModel::where('option_name', 'openai_key')->first();
+        $this->openAiApiKey = $openaiKey ? $openaiKey['option_value'] : null;
     }
 
     public function getEmbedding($text)
@@ -80,15 +80,13 @@ class EmbeddingsService
     {
         $embedding = $course->embeddings;
 
-        $similarCourses = CoursesModel::select('courses.*')
+        return CoursesModel::select('courses.*')
             ->selectRaw('1 - (embeddings <=> ?) AS similarity', [$embedding])
             ->where('embeddings', '!=', null)
             ->where('uid', '!=', $course->uid) // Exclude the current course
             ->orderByDesc('similarity')
             ->limit($limit)
             ->get();
-
-        return $similarCourses;
     }
 
     public function getSimilarCoursesList(Collection $courses, $limit = 5)
@@ -116,9 +114,7 @@ class EmbeddingsService
         // Convert the average embedding into a PostgreSQL vector string format
         $embeddingVectorString = '[' . implode(',', $averageEmbedding) . ']';
 
-        // dd($embeddingVectorString);
-
-        $similarCourses = CoursesModel::select('courses.*')
+        return CoursesModel::select('courses.*')
             ->selectRaw('1 - (embeddings <=> ?) AS similarity', [$embeddingVectorString])
             ->where('embeddings', '!=', null)
             ->whereNotIn('uid', $uids)
@@ -126,7 +122,6 @@ class EmbeddingsService
             ->limit($limit)
             ->get();
 
-        return $similarCourses;
     }
 
     // Regenerate all embeddings

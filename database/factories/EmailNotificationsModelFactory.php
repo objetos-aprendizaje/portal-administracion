@@ -18,11 +18,12 @@ class EmailNotificationsModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'notification_type_uid' => Str::uuid(),
             'subject' => $this->faker->unique()->sentence(3),
             'body' => 'Cuerpo de Ejemplo',
-            'sent' => 0
+            'status' => 'SENT',
+            // 'status' => $this->faker->randomElement(['SENT', 'FAILED']),
         ];
     }
 }

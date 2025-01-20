@@ -18,7 +18,7 @@ class CourseDocumentsModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'document_name'=> $this->faker->word(3),
             'created_at' => now(),
             'updated_at' => now(),
@@ -27,7 +27,7 @@ class CourseDocumentsModelFactory extends Factory
 
     public function withCourseUid(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn () => [
             'course_uid' => CoursesModel::factory()
             ->withCourseStatus()
             ->withCourseType()

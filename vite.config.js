@@ -49,7 +49,6 @@ export default defineConfig({
                 "resources/js/administration_module/login_systems.js",
                 "resources/js/cataloging_module/certification_types.js",
                 "resources/js/login.js",
-                "resources/js/refresh_csrf_token.js",
                 "node_modules/choices.js/public/assets/styles/choices.min.css",
                 "node_modules/choices.js/public/assets/scripts/choices.min.js",
                 "resources/js/credentials_module/students_credentials.js",

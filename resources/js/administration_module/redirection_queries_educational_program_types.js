@@ -15,11 +15,10 @@ import { TabulatorFull as Tabulator } from "tabulator-tables";
 let redirectionQueriesTable;
 let selectedRedirectionQueries = [];
 const endPointTable =
-    "/administration/redirection_queries_educational_program_types/get_redirections_queries";
+    "/administration/redirection_queries_learning_objects/get_redirections_queries";
 
 document.addEventListener("DOMContentLoaded", function () {
     initHandlers();
-
     initializeRedirectionQueriesTable();
 });
 
@@ -65,6 +64,13 @@ function initHandlers() {
     document
         .getElementById("redirection-query-form")
         .addEventListener("submit", submitNewRedirectionQuery);
+
+    document
+        .getElementById("learning_object_type")
+        .addEventListener("change", function () {
+            const value = this.value;
+            controlObjectType(value);
+        });
 }
 
 function newRedirectionQuery() {
@@ -76,6 +82,7 @@ function resetForm() {
     const form = document.getElementById("redirection-query-form");
     resetFormErrors("redirection-query-form");
     form.reset();
+    controlObjectType(null);
     document.getElementById("redirection_query_uid").value = "";
 }
 
@@ -123,11 +130,15 @@ function initializeRedirectionQueriesTable() {
         },
         { title: "Tipo", field: "type", widthGrow: "2" },
         {
-            title: "Tipo de programa formativo",
-            field: "educational_program_type_name",
-            widthGrow: "6",
+            title: "Tipo de objeto",
+            field: "learning_object_type",
+            widthGrow: "2",
+            formatter: function (cell, formatterParams, onRendered) {
+                const value = cell.getValue();
+                return value === "COURSE" ? "Curso" : "Programas educativo";
+            },
         },
-        { title: "Contacto", field: "contact", widthGrow: "2" },
+        { title: "Contacto", field: "contact", widthGrow: "4" },
         {
             title: "",
             field: "actions",
@@ -180,7 +191,7 @@ function initializeRedirectionQueriesTable() {
 
 async function loadRedirectionQueryModal(redirectionQueryUid) {
     const params = {
-        url: `/administration/redirection_queries_educational_program_types/get_redirection_query/${redirectionQueryUid}`,
+        url: `/administration/redirection_queries_learning_objects/get_redirection_queries/${redirectionQueryUid}`,
         method: "GET",
         loader: true,
     };
@@ -193,34 +204,43 @@ async function loadRedirectionQueryModal(redirectionQueryUid) {
 }
 
 function fillRedirectionQueryModal(redirectionQuery) {
+    document.getElementById("learning_object_type").value =
+        redirectionQuery.learning_object_type;
+    controlObjectType(redirectionQuery.learning_object_type);
     document.getElementById("educational_program_type_uid").value =
-        redirectionQuery.educational_program_type_uid;
+        redirectionQuery.educational_program_type_uid ?? "";
+    document.getElementById("course_type_uid").value =
+        redirectionQuery.course_type_uid ?? "";
     document.getElementById("type").value = redirectionQuery.type;
     document.getElementById("contact").value = redirectionQuery.contact;
     document.getElementById("redirection_query_uid").value =
         redirectionQuery.uid;
 }
 
-/**
- *
- * Elimina una redirección de consulta
- */
-async function deleteRedirectionQueryProgramType(uidRedirectionQuery) {
-    const params = {
-        url: "/administration/redirection_queries_educational_program_types/delete_redirection_query",
-        method: "DELETE",
-        body: { uidRedirectionQuery },
-        stringify: true,
-        loader: true,
-        toast: true,
-    };
+function controlObjectType(objectType) {
+    const courseTypeContainer = document.getElementById(
+        "course-type-container"
+    );
 
-    apiFetch(params);
+    const educationalProgramContainer = document.getElementById(
+        "educational-program-type-container"
+    );
+
+    if (objectType == "COURSE") {
+        courseTypeContainer.classList.remove("hidden");
+        educationalProgramContainer.classList.add("hidden");
+    } else if (objectType == "EDUCATIONAL_PROGRAM") {
+        courseTypeContainer.classList.add("hidden");
+        educationalProgramContainer.classList.remove("hidden");
+    } else {
+        courseTypeContainer.classList.add("hidden");
+        educationalProgramContainer.classList.add("hidden");
+    }
 }
 
 async function deleteRedirectionQueries() {
     const params = {
-        url: "/administration/redirection_queries_educational_program_types/delete_redirections_queries",
+        url: "/administration/redirection_queries_learning_objects/delete_redirections_queries",
         method: "DELETE",
         body: {
             uids: selectedRedirectionQueries.map(
@@ -243,11 +263,10 @@ async function deleteRedirectionQueries() {
  * Si la operación tiene éxito, actualiza la tabla y muestra un toast.
  */
 function submitNewRedirectionQuery() {
-
     const formData = new FormData(this);
 
     const params = {
-        url: "/administration/redirection_queries_educational_program_types/save_redirection_query",
+        url: "/administration/redirection_queries_learning_objects/save_redirection_query",
         method: "POST",
         body: formData,
         toast: true,
@@ -264,5 +283,4 @@ function submitNewRedirectionQuery() {
         .catch((data) => {
             showFormErrors(data.errors);
         });
-
 }

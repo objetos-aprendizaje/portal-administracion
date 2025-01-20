@@ -166,7 +166,7 @@ function openFiltersModal() {
 
 function showFilters() {
     // Eliminamos todos los filtros
-    var currentFilters = document.querySelectorAll(".filter");
+    const currentFilters = document.querySelectorAll(".filter");
 
     // Recorre cada elemento y lo elimina
     currentFilters.forEach(function (filter) {
@@ -175,7 +175,7 @@ function showFilters() {
 
     filters.forEach((filter) => {
         // Crea un nuevo div
-        var newDiv = document.createElement("div");
+        const newDiv = document.createElement("div");
 
         // Agrega la clase 'filter' al div
         newDiv.classList.add("filter");
@@ -260,7 +260,6 @@ function collectFilters() {
         typeNotificationLabel,
         "type-filter",
         "type",
-        "type"
     );
 
     const startDateFilter = document.getElementById("start_date_filter").value;
@@ -270,7 +269,6 @@ function collectFilters() {
         formatDateTime(startDateFilter),
         "start_date_filter",
         "start_date",
-        "date"
     );
 
     const endDateFilter = document.getElementById("end_date_filter").value;
@@ -280,7 +278,6 @@ function collectFilters() {
         formatDateTime(endDateFilter),
         "end_date_filter",
         "end_date",
-        "date"
     );
 
     // Collect values from TomSelects
@@ -299,7 +296,6 @@ function collectFilters() {
                 selectedNotificationTypesLabel,
                 "notification_types",
                 "notification_types",
-                "notifications"
             );
     }
 

@@ -6,7 +6,7 @@
             <div class="title-filter flex items-center mb-[26px]">
                 <span>TOP Categorias</span>
                 <button id="filter-top-categories-btn"
-                    class="btn-filter">{{ e_heroicon('adjustments-horizontal', 'outline') }}</button>
+                    class="btn-filter">{{ eHeroicon('adjustments-horizontal', 'outline') }}</button>
             </div>
 
             <div class="table-control-header">
@@ -15,7 +15,7 @@
                 <div class="flex gap-1">
                     <div>
                         <button type="button" id="download-xlsx" class="btn-icon" title="Exportar a excel">
-                            {{ e_heroicon('arrow-down-tray', 'outline') }}
+                            {{ eHeroicon('arrow-down-tray', 'outline') }}
                         </button>
                     </div>
                 </div>
