@@ -53,7 +53,9 @@ class AppServiceProvider extends ServiceProvider
 
             $dataLogin = $this->getDataLogin($userDataSaml, $event);
 
-            if (!$dataLogin["email"]) Redirect::to('/')->send();
+            if (!$dataLogin["email"]) {
+                Redirect::to('/')->send();
+            }
 
             $user = UsersModel::with('roles')
                 ->whereHas('roles', function ($query) {
@@ -63,12 +65,16 @@ class AppServiceProvider extends ServiceProvider
                 ->first();
 
             DB::transaction(function () use ($dataLogin, &$user) {
-                if (!$user) $user = $this->registerCasRediris($dataLogin);
-                if (!$user->hasAnyRole(['TEACHER'])) $this->addRoleTeacher($user);
+                if (!$user) {
+                    $user = $this->registerCasRediris($dataLogin);
+                }
+                if (!$user->hasAnyRole(['TEACHER'])) {
+                    $this->addRoleTeacher($user);
+                }
 
                 // Registro de la sesión
                 UsersAccessesModel::insert([
-                    'uid' => generate_uuid(),
+                    'uid' => generateUuid(),
                     'user_uid' => $user->uid,
                     'date' => date('Y-m-d H:i:s')
                 ]);
@@ -77,7 +83,7 @@ class AppServiceProvider extends ServiceProvider
             Auth::login($user);
         });
 
-        Event::listen('Slides\Saml2\Events\SignedOut', function (SignedOut $event) {
+        Event::listen('Slides\Saml2\Events\SignedOut', function () {
             Auth::logout();
         });
     }
@@ -85,12 +91,14 @@ class AppServiceProvider extends ServiceProvider
     private function registerCasRediris($dataLogin)
     {
         $newUser = new UsersModel();
-        $newUser->uid = generate_uuid();
+        $newUser->uid = generateUuid();
         $newUser->first_name = $dataLogin["email"];
         $newUser->email = $dataLogin["email"];
         $newUser->identity_verified = true;
 
-        if (isset($dataLogin["nif"])) $newUser->nif = $dataLogin["nif"];
+        if (isset($dataLogin["nif"])) {
+            $newUser->nif = $dataLogin["nif"];
+        }
 
         $newUser->save();
         return $newUser;
@@ -99,11 +107,11 @@ class AppServiceProvider extends ServiceProvider
     private function addRoleTeacher($user)
     {
         $rol = UserRolesModel::where("code", "TEACHER")->first();
-        $rol_relation = new UserRoleRelationshipsModel();
-        $rol_relation->uid = generate_uuid();
-        $rol_relation->user_uid = $user->uid;
-        $rol_relation->user_role_uid = $rol->uid;
-        $rol_relation->save();
+        $rolRelation = new UserRoleRelationshipsModel();
+        $rolRelation->uid = generateUuid();
+        $rolRelation->user_uid = $user->uid;
+        $rolRelation->user_role_uid = $rol->uid;
+        $rolRelation->save();
     }
 
     private function getDataLogin($userDataSaml, $event)
@@ -116,12 +124,11 @@ class AppServiceProvider extends ServiceProvider
                 "email" => $userDataSaml['id'],
                 "nif" => $userDataSaml['attributes']['sPUID'][0],
             ];
-        } else if ($loginSystem == "rediris") {
+        } elseif ($loginSystem == "rediris") {
             $xml = $event->getAuth()->getBase();
             $xml = $xml->getLastResponseXML();
             $xmlObj = simplexml_load_string($xml, null, null, "urn:oasis:names:tc:SAML:2.0:assertion", true);
             // Busca todos los elementos de AuthenticatingAuthority
-            $namespaces = $xmlObj->getNamespaces(true);
             $authAuthorities = $xmlObj->xpath('//saml:AuthenticatingAuthority');
             $results = [];
             $access = false;
@@ -134,7 +141,9 @@ class AppServiceProvider extends ServiceProvider
                     }
                 }
             }
-            if ($access == false) Redirect::to('/')->send();
+            if (!$access) {
+                Redirect::to('/')->send();
+            }
             $dataLogin = [
                 "email" => $userDataSaml['attributes']['urn:oid:0.9.2342.19200300.100.1.3'][0],
             ];

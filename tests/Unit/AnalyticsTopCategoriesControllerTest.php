@@ -33,8 +33,8 @@ class AnalyticsTopCategoriesControllerTest extends TestCase
         $this->withoutMiddleware();
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -155,7 +155,7 @@ class AnalyticsTopCategoriesControllerTest extends TestCase
 
         // Asignar estudiantes a las categorías
         CoursesStudentsModel::factory()->create(['user_uid' => $student1->uid, 'course_uid' => $course->uid, ]);
-        
+
         CoursesStudentsModel::factory()->create(['user_uid' => $student2->uid, 'course_uid' => $course->uid,]);
 
         // Crear filtros

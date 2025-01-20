@@ -21,6 +21,7 @@ class GeneralAdministrationController extends BaseController
     public function index()
     {
 
+        $isPendingJobRegenerateEmbeddingsRunning = $this->isPendingJobRegenerateEmbeddingsRunning();
 
         return view(
             'administration.general',
@@ -32,7 +33,7 @@ class GeneralAdministrationController extends BaseController
                     "resources/js/administration_module/general.js"
                 ],
                 'submenuselected' => 'administracion-general',
-
+                'isPendingJobRegenerateEmbeddingsRunning' => $isPendingJobRegenerateEmbeddingsRunning
             ]
         );
     }
@@ -68,10 +69,6 @@ class GeneralAdministrationController extends BaseController
 
         $updateData = $request->all();
 
-        // if(!$updateData['smtp_password']) {
-        //     unset($updateData['smtp_password']);
-        // }
-
         DB::transaction(function () use ($updateData) {
             foreach ($updateData as $key => $value) {
                 GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
@@ -89,12 +86,14 @@ class GeneralAdministrationController extends BaseController
 
     public function saveLogoImage(Request $request)
     {
-        if (!isset($_FILES["logoPoaFile"])) return response()->json(['message' => env('ERROR_MESSAGE'), 400]);
+        if (!isset($_FILES["logoPoaFile"])) {
+            return response()->json(['message' => env('ERROR_MESSAGE'), 400]);
+        }
 
-        $loga_poa_image = $request->file('logoPoaFile');
+        $logaPoaImage = $request->file('logoPoaFile');
         $logoId = $request->input('logoId');
 
-        $targetFile = saveFile($loga_poa_image, "images/custom-logos", null, true);
+        $targetFile = saveFile($logaPoaImage, "images/custom-logos", null, true);
 
         if (!$targetFile) {
             return response()->json(['message' => 'Error al guardar la imagen', 405]);
@@ -130,7 +129,9 @@ class GeneralAdministrationController extends BaseController
             ];
 
             foreach ($updateData as $color) {
-                if (!validateHexadecimalColor($color)) return response()->json(['success' => false, 'message' => 'Hay algún color que no es válido'], 400);
+                if (!validateHexadecimalColor($color)) {
+                    return response()->json(['success' => false, 'message' => 'Hay algún color que no es válido'], 400);
+                }
             }
 
             foreach ($updateData as $key => $value) {
@@ -150,10 +151,9 @@ class GeneralAdministrationController extends BaseController
 
             $updateData = [
                 'company_name' => $request->input('company_name'),
-                'commercial_name' => $request->input('commercial_name'),
+                'phone_number' => $request->input('phone_number'),
                 'cif' => $request->input('cif'),
                 'fiscal_domicile' => $request->input('fiscal_domicile'),
-                'work_center_address' => $request->input('work_center_address'),
             ];
 
             foreach ($updateData as $key => $value) {
@@ -245,10 +245,10 @@ class GeneralAdministrationController extends BaseController
             'main_slider_color_font' => $request->input('main_slider_color_font'),
         ];
 
-        $carrousel_image_input_file = $request->file('carrousel_image_input_file');
+        $carrouselImageInputFile = $request->file('carrousel_image_input_file');
 
-        if ($carrousel_image_input_file) {
-            $updateData['carrousel_image_path'] = saveFile($carrousel_image_input_file, "images/carrousel-default-images", null, true);
+        if ($carrouselImageInputFile) {
+            $updateData['carrousel_image_path'] = saveFile($carrouselImageInputFile, "images/carrousel-default-images", null, true);
         }
 
         DB::transaction(function () use ($updateData) {
@@ -269,7 +269,9 @@ class GeneralAdministrationController extends BaseController
         $fontKey = $request->input('fontKey');
         $fontPath = saveFile($fontFile, "fonts", $fontKey, true);
 
-        if (!$fontPath) return response()->json(['message' => 'Error al guardar la fuente', 405]);
+        if (!$fontPath) {
+            return response()->json(['message' => 'Error al guardar la fuente', 405]);
+        }
 
         DB::transaction(function () use ($fontPath, $fontKey) {
             GeneralOptionsModel::where('option_name', $fontKey)->update(['option_value' => $fontPath]);
@@ -325,7 +327,7 @@ class GeneralAdministrationController extends BaseController
             throw new OperationFailedException('No se ha configurado la clave de OpenAI');
         }
 
-        $pendingJob = DB::table('jobs')->where('payload', 'like', '%RegenerateAllEmbeddingsJob%')->exists();
+        $pendingJob = $this->isPendingJobRegenerateEmbeddingsRunning();
 
         if($pendingJob) {
             throw new OperationFailedException('Ya se están regenerando los embeddings. Espere unos minutos.');
@@ -337,6 +339,10 @@ class GeneralAdministrationController extends BaseController
 
     }
 
+    public function isPendingJobRegenerateEmbeddingsRunning() {
+        return  DB::table('jobs')->where('payload', 'like', '%RegenerateAllEmbeddingsJob%')->exists();
+    }
+    
     public function saveFooterTexts(Request $request) {
 
         $footerText1 = $request->input('footer_text_1');

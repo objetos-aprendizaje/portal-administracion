@@ -16,8 +16,6 @@ const endPointTable = "/learning_objects/educational_resources_per_users/get_lis
 let EducationalResourcesPerUsersTable;
 let EducationalResourcesPerUserTable;
 
-let selectedEducationalResourcesPerUsers = [];
-
 document.addEventListener("DOMContentLoaded", function () {
     initializeEducationalResourcesPerUsersTable();
     controlsSearch(EducationalResourcesPerUsersTable, endPointTable, "resources-per-users-table");
@@ -60,8 +58,6 @@ function initializeEducationalResourcesPerUsersTable() {
                 response,
                 "resources-per-users-table"
             );
-
-            selectedEducationalResourcesPerUsers = [];
 
             return {
                 last_page: response.last_page,

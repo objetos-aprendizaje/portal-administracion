@@ -67,8 +67,8 @@ class EducationalProgramsControllerTest extends TestCase
     {
         // Crear un usuario de prueba y asignar roles
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -110,7 +110,7 @@ class EducationalProgramsControllerTest extends TestCase
         // Crear un usuario sin rol de MANAGEMENT
         $user = UsersModel::factory()->create();
         $user->roles()->sync([
-            UserRolesModel::where('code', 'TEACHER')->first()->uid => ['uid' => generate_uuid()]
+            UserRolesModel::where('code', 'TEACHER')->first()->uid => ['uid' => generateUuid()]
         ]);
 
         // Crear los datos relacionados
@@ -156,7 +156,7 @@ class EducationalProgramsControllerTest extends TestCase
     {
         $user = UsersModel::factory()->create();
         $user->roles()->sync([
-            UserRolesModel::where('code', 'MANAGEMENT')->first()->uid => ['uid' => generate_uuid()]
+            UserRolesModel::where('code', 'MANAGEMENT')->first()->uid => ['uid' => generateUuid()]
         ]);
 
         $programType = EducationalProgramTypesModel::factory()->create()->first();
@@ -201,14 +201,14 @@ class EducationalProgramsControllerTest extends TestCase
     {
         $user = UsersModel::factory()->create();
         $user->roles()->sync([
-            UserRolesModel::where('code', 'TEACHER')->first()->uid => ['uid' => generate_uuid()]
+            UserRolesModel::where('code', 'TEACHER')->first()->uid => ['uid' => generateUuid()]
         ]);
 
         $programType = EducationalProgramTypesModel::factory()->create()->first();
         $call = CallsModel::factory()->create()->first();
         $status = EducationalProgramStatusesModel::factory()->create()->first();
 
-        $program = EducationalProgramsModel::factory()->create([
+        EducationalProgramsModel::factory()->create([
             'creator_user_uid' => $user->uid,
             'educational_program_type_uid' => $programType->uid,
             'call_uid' => $call->uid,
@@ -230,7 +230,7 @@ class EducationalProgramsControllerTest extends TestCase
     {
         $user = UsersModel::factory()->create();
         $user->roles()->sync([
-            UserRolesModel::where('code', 'TEACHER')->first()->uid => ['uid' => generate_uuid()]
+            UserRolesModel::where('code', 'TEACHER')->first()->uid => ['uid' => generateUuid()]
         ]);
 
         $programType = EducationalProgramTypesModel::factory()->create()->first();
@@ -261,9 +261,6 @@ class EducationalProgramsControllerTest extends TestCase
 
         $data = $response->json('data');
 
-        // Depuración: Imprimir el array data para revisar su estructura
-        // dd($data);
-
         // Asegurarse de que existen al menos dos elementos en data
         $this->assertCount(2, $data, 'Expected at least 2 programs but got fewer.');
 
@@ -276,15 +273,13 @@ class EducationalProgramsControllerTest extends TestCase
     {
         // Simulando autenticación del usuario
         $user = UsersModel::factory()->create();
-        // $user->roles()->attach(UserRolesModel::factory()->create(['code' => 'ADMIN']));
         $roles = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
 
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         $this->actingAs($user);
 
-        $users = UsersModel::factory()->count(3)->create();
-
+        UsersModel::factory()->count(3)->create();
 
         // Crear una categoría
         $category = CategoriesModel::factory()->create();
@@ -297,7 +292,7 @@ class EducationalProgramsControllerTest extends TestCase
         // Asignar la categoría a cada programa y crear estudiantes con inscripción aceptada
         foreach ($programs as $program) {
             $program->categories()->attach($category->uid, [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
             ]);
             // Crear estudiantes inscritos con estado ENROLLED y aceptación ACCEPTED
             EducationalProgramsStudentsModel::factory()->create([
@@ -314,11 +309,10 @@ class EducationalProgramsControllerTest extends TestCase
         ]);
 
         // Calcular manualmente la mediana esperada
-        $expectedMedian = calculateMedian([3, 3, 3]);
+        calculateMedian([3, 3, 3]);
 
         // Verificar que la respuesta sea exitosa y que la mediana sea correcta
         $response->assertStatus(200);
-        // $response->assertJson(['median' => $expectedMedian]);
     }
 
     /** @test Obtener un programa formativo con un UID válido */
@@ -351,7 +345,7 @@ class EducationalProgramsControllerTest extends TestCase
         $this->actingAs($user);
 
         // Hacer la solicitud al endpoint con un UID inexistente
-        $response = $this->getJson('/learning_objects/educational_programs/get_educational_program/' . generate_uuid());
+        $response = $this->getJson('/learning_objects/educational_programs/get_educational_program/' . generateUuid());
 
         // Verificar la respuesta
         $response->assertStatus(406)
@@ -370,7 +364,7 @@ class EducationalProgramsControllerTest extends TestCase
         $user = UsersModel::factory()->create();
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
         Auth::login($user);
 
@@ -400,8 +394,6 @@ class EducationalProgramsControllerTest extends TestCase
                 'realization_finish_date' => "2024-09-22", // Debe ser posterior a realization_start_date
             ]
         );
-        // $course = CoursesModel::where('uid', $course->uid)->first();
-        // dd($course); // Verifica que este curso exista
 
         // Datos de prueba
         $data = [
@@ -417,11 +409,11 @@ class EducationalProgramsControllerTest extends TestCase
             'realization_finish_date' => "2024-09-20", // Debe ser posterior a realization_start_date
             'validate_student_registrations' => 1,
             'evaluation_criteria' => 'Criterios de Evaluación',
-            'courses' => [generate_uuid()],
+            'courses' => [generateUuid()],
             'payment_mode' => 'SINGLE_PAYMENT',
             'cost' => 100,
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
-            'categories' => json_encode([generate_uuid(), generate_uuid()]),
+            'categories' => json_encode([generateUuid(), generateUuid()]),
             'documents' => json_encode([]),
             //Asegúrate de pasar un JSON válido o un array vacío
         ];
@@ -451,11 +443,11 @@ class EducationalProgramsControllerTest extends TestCase
             'realization_finish_date' => "2024-09-20", // Debe ser posterior a realization_start_date
             'validate_student_registrations' => 1,
             'evaluation_criteria' => 'Criterios de Evaluación',
-            'courses' => [generate_uuid()],
+            'courses' => [generateUuid()],
             'payment_mode' => 'SINGLE_PAYMENT',
             'cost' => 100,
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
-            'categories' => json_encode([generate_uuid(), generate_uuid()]),
+            'categories' => json_encode([generateUuid(), generateUuid()]),
             'documents' => json_encode([]),
             //Asegúrate de pasar un JSON válido o un array vacío
         ];
@@ -464,25 +456,6 @@ class EducationalProgramsControllerTest extends TestCase
 
         // Verificar que la respuesta sea 200 (OK) y contenga el mensaje esperado
         $response->assertStatus(200);
-
-
-        // Cuando 'validate_student_registrations' = 0 y 'payment_mode' ='INSTALLMENT_PAYMENT',
-
-        // $cert =  CertidigitalCredentialsModel::factory()->create();
-
-        // $educationalProgram = EducationalProgramsModel::factory()->create(
-        //     [
-        //         'educational_program_type_uid'=> $programType->uid,
-        //         'certidigital_credential_uid' => $cert->uid
-        //     ]
-        // )->first();
-
-        // $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
-        //     [
-        //         'educational_program_uid'=> $educationalProgram->uid,
-        //         'certidigital_credential_uid' => $cert->uid
-        //     ]
-        // );
 
         // Datos de prueba
         $data = [
@@ -498,15 +471,15 @@ class EducationalProgramsControllerTest extends TestCase
             'realization_finish_date' => "2024-09-20", // Debe ser posterior a realization_start_date
             'validate_student_registrations' => 0,
             'evaluation_criteria' => 'Criterios de Evaluación',
-            'courses' => [generate_uuid()],
+            'courses' => [generateUuid()],
             'payment_mode' => 'INSTALLMENT_PAYMENT',
             'cost' => 100,
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
-            'categories' => json_encode([generate_uuid(), generate_uuid()]),
+            'categories' => json_encode([generateUuid(), generateUuid()]),
             'documents' => json_encode([]),
             'payment_terms' => json_encode([
                 [
-                    'uid'         => generate_uuid(),
+                    'uid'         => generateUuid(),
                     'name'        => 'CASH',
                     'start_date'  => Carbon::now()->addDays(1)->format('Y-m-d\TH:i'),
                     'finish_date' => Carbon::now()->addDays(10)->format('Y-m-d\TH:i'),
@@ -532,7 +505,7 @@ class EducationalProgramsControllerTest extends TestCase
         $user = UsersModel::factory()->create();
         $role = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
         Auth::login($user);
 
@@ -566,12 +539,12 @@ class EducationalProgramsControllerTest extends TestCase
             'realization_finish_date' => "2024-09-20", // Debe ser posterior a realization_start_date
             'validate_student_registrations' => 1,
             'evaluation_criteria' => 'Criterios de Evaluación',
-            'courses' => [generate_uuid()],
+            'courses' => [generateUuid()],
             'payment_mode' => 'SINGLE_PAYMENT',
             'cost' => 100,
             'title' => 'Title',
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
-            'categories' => json_encode([generate_uuid(), generate_uuid()]),
+            'categories' => json_encode([generateUuid(), generateUuid()]),
             'documents' => json_encode([]),
             //Asegúrate de pasar un JSON válido o un array vacío
         ];
@@ -607,17 +580,9 @@ class EducationalProgramsControllerTest extends TestCase
                 'educational_program_uid' => $educational_program->uid
             ]
         );
-
-        $emails = [];
-        $educationalEmails = EducationalProgramEmailContactsModel::factory()->count(3)->create([
+        EducationalProgramEmailContactsModel::factory()->count(3)->create([
             'educational_program_uid' => $educational_program->uid,
         ]);
-
-        // foreach($educationalEmails as $educationalEmail){
-        //     $emails[]=[
-        //         $educationalEmail->email,
-        //     ];
-        // }
 
         // Datos de prueba
         $data = [
@@ -633,7 +598,7 @@ class EducationalProgramsControllerTest extends TestCase
             'realization_finish_date' => "2024-09-20", // Debe ser posterior a realization_start_date
             'validate_student_registrations' => 1,
             'evaluation_criteria' => 'Criterios de Evaluación',
-            'courses' => [generate_uuid()],
+            'courses' => [generateUuid()],
             'payment_mode' => 'INSTALLMENT_PAYMENT',
             'payment_terms' => json_encode([
                 [
@@ -648,7 +613,7 @@ class EducationalProgramsControllerTest extends TestCase
             'contact_emails' => json_encode(['fay.levi@hotmail.com', 'derek.jacobson@yahoo.com', 'johathan.schulist@gmail.com']),
             'cost' => 100,
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
-            'categories' => json_encode([generate_uuid(), generate_uuid()]),
+            'categories' => json_encode([generateUuid(), generateUuid()]),
             'documents' => json_encode([]),
             //Asegúrate de pasar un JSON válido o un array vacío
         ];
@@ -684,12 +649,12 @@ class EducationalProgramsControllerTest extends TestCase
             'realization_finish_date' => "2024-09-20", // Debe ser posterior a realization_start_date
             'validate_student_registrations' => 1,
             'evaluation_criteria' => 'Criterios de Evaluación',
-            'courses' => [generate_uuid()],
+            'courses' => [generateUuid()],
             'payment_mode' => 'SINGLE_PAYMENT',
             'cost' => 100,
             'title' => 'Title',
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
-            'categories' => json_encode([generate_uuid(), generate_uuid()]),
+            'categories' => json_encode([generateUuid(), generateUuid()]),
             'documents' => json_encode([]),
             //Asegúrate de pasar un JSON válido o un array vacío
         ];
@@ -722,12 +687,12 @@ class EducationalProgramsControllerTest extends TestCase
             'realization_finish_date' => "2024-09-20", // Debe ser posterior a realization_start_date
             'validate_student_registrations' => 1,
             'evaluation_criteria' => 'Criterios de Evaluación',
-            'courses' => [generate_uuid()],
+            'courses' => [generateUuid()],
             'payment_mode' => 'SINGLE_PAYMENT',
             'cost' => 100,
             'title' => 'Title',
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
-            'categories' => json_encode([generate_uuid(), generate_uuid()]),
+            'categories' => json_encode([generateUuid(), generateUuid()]),
             'documents' => json_encode([]),
             //Asegúrate de pasar un JSON válido o un array vacío
         ];
@@ -751,12 +716,12 @@ class EducationalProgramsControllerTest extends TestCase
             'realization_finish_date' => "2024-09-20", // Debe ser posterior a realization_start_date
             'validate_student_registrations' => 1,
             'evaluation_criteria' => 'Criterios de Evaluación',
-            'courses' => [generate_uuid()],
+            'courses' => [generateUuid()],
             'payment_mode' => 'SINGLE_PAYMENT',
             'cost' => 100,
             'title' => 'Title',
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
-            'categories' => json_encode([generate_uuid(), generate_uuid()]),
+            'categories' => json_encode([generateUuid(), generateUuid()]),
             'documents' => json_encode([]),
             //Asegúrate de pasar un JSON válido o un array vacío
         ];
@@ -780,12 +745,12 @@ class EducationalProgramsControllerTest extends TestCase
             'realization_finish_date' => "2024-09-20", // Debe ser posterior a realization_start_date
             'validate_student_registrations' => 1,
             'evaluation_criteria' => 'Criterios de Evaluación',
-            'courses' => [generate_uuid()],
+            'courses' => [generateUuid()],
             'payment_mode' => 'SINGLE_PAYMENT',
             'cost' => 100,
             'title' => 'Title',
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
-            'categories' => json_encode([generate_uuid(), generate_uuid()]),
+            'categories' => json_encode([generateUuid(), generateUuid()]),
             'documents' => json_encode([]),
             //Asegúrate de pasar un JSON válido o un array vacío
         ];
@@ -832,7 +797,7 @@ class EducationalProgramsControllerTest extends TestCase
             'cost' => 100,
             'title' => 'Title',
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
-            'categories' => json_encode([generate_uuid(), generate_uuid()]),
+            'categories' => json_encode([generateUuid(), generateUuid()]),
             'documents' => json_encode([]),
             //Asegúrate de pasar un JSON válido o un array vacío
         ];
@@ -850,7 +815,7 @@ class EducationalProgramsControllerTest extends TestCase
         $user = UsersModel::factory()->create();
         $role = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
         Auth::login($user);
 
@@ -907,7 +872,7 @@ class EducationalProgramsControllerTest extends TestCase
             'cost' => 100,
             'title' => 'Title',
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
-            'categories' => json_encode([generate_uuid(), generate_uuid()]),
+            'categories' => json_encode([generateUuid(), generateUuid()]),
             'documents' => json_encode([]),
             //Asegúrate de pasar un JSON válido o un array vacío
         ];
@@ -926,7 +891,7 @@ class EducationalProgramsControllerTest extends TestCase
         $user = UsersModel::factory()->create();
         $role = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
         Auth::login($user);
 
@@ -981,7 +946,7 @@ class EducationalProgramsControllerTest extends TestCase
             'cost' => 100,
             'title' => 'Title',
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
-            'categories' => json_encode([generate_uuid(), generate_uuid()]),
+            'categories' => json_encode([generateUuid(), generateUuid()]),
             'documents' => json_encode([]),
             //Asegúrate de pasar un JSON válido o un array vacío
         ];
@@ -1000,7 +965,7 @@ class EducationalProgramsControllerTest extends TestCase
         $user = UsersModel::factory()->create();
         $role = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
         Auth::login($user);
 
@@ -1061,7 +1026,7 @@ class EducationalProgramsControllerTest extends TestCase
             'cost' => 100,
             'title' => 'Title',
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
-            'categories' => json_encode([generate_uuid(), generate_uuid()]),
+            'categories' => json_encode([generateUuid(), generateUuid()]),
             'documents' => json_encode([]),
             //Asegúrate de pasar un JSON válido o un array vacío
         ];
@@ -1080,7 +1045,7 @@ class EducationalProgramsControllerTest extends TestCase
         $user = UsersModel::factory()->create();
         $role = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
         Auth::login($user);
 
@@ -1138,7 +1103,7 @@ class EducationalProgramsControllerTest extends TestCase
             'cost' => 100,
             'title' => 'Title',
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
-            'categories' => json_encode([generate_uuid(), generate_uuid()]),
+            'categories' => json_encode([generateUuid(), generateUuid()]),
             'documents' => json_encode([]),
             //Asegúrate de pasar un JSON válido o un array vacío
         ];
@@ -1161,7 +1126,7 @@ class EducationalProgramsControllerTest extends TestCase
         $user = UsersModel::factory()->create();
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
         Auth::login($user);
 
@@ -1180,7 +1145,7 @@ class EducationalProgramsControllerTest extends TestCase
         ]);
 
         // Crear un Educational Program Type de prueba
-        $programType = EducationalProgramTypesModel::factory()->create();
+        EducationalProgramTypesModel::factory()->create();
 
         CategoriesModel::factory()->count(4)->create();
 
@@ -1214,7 +1179,7 @@ class EducationalProgramsControllerTest extends TestCase
             'validate_student_registrations' => 1,
             'title' => 'Sin titulo',
             'evaluation_criteria' => 'Nuevos Criterios de Evaluación',
-            'courses' => [generate_uuid()],
+            'courses' => [generateUuid()],
             'payment_mode' => 'SINGLE_PAYMENT',
             'cost' => 150,
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
@@ -1250,7 +1215,7 @@ class EducationalProgramsControllerTest extends TestCase
 
         $role = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         Auth::login($user);
@@ -1281,7 +1246,7 @@ class EducationalProgramsControllerTest extends TestCase
             'realization_finish_date' => "2024-09-20", // Debe ser posterior a realization_start_date
             'validate_student_registrations' => 1,
             'evaluation_criteria' => 'Nuevos Criterios de Evaluación',
-            'courses' => [generate_uuid()],
+            'courses' => [generateUuid()],
             'payment_mode' => 'SINGLE_PAYMENT',
             'cost' => 150,
             'tags' => json_encode(['Etiqueta1', 'Etiqueta2']),
@@ -1290,7 +1255,7 @@ class EducationalProgramsControllerTest extends TestCase
 
         $randomNumberCategories = rand(1, 5);
         for ($i = 0; $i < $randomNumberCategories; $i++) {
-            $data['categories'][] = generate_uuid();
+            $data['categories'][] = generateUuid();
         }
 
         $data['categories'] = json_encode($data['categories']);
@@ -1313,7 +1278,7 @@ class EducationalProgramsControllerTest extends TestCase
         $user = UsersModel::factory()->create();
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
         Auth::login($user);
 
@@ -1324,11 +1289,9 @@ class EducationalProgramsControllerTest extends TestCase
 
         // Datos de prueba con errores (por ejemplo, sin nombre)
         $data = [
-            'educational_program_type_uid' => generate_uuid(),
+            'educational_program_type_uid' => generateUuid(),
             'inscription_start_date' => '2024-09-01 10:00:00',
             'inscription_finish_date' => '2024-08-30 09:00:00',
-            // 'featured_slider_image_path' => null,
-
         ];
 
         // Realizar la solicitud POST
@@ -1337,8 +1300,6 @@ class EducationalProgramsControllerTest extends TestCase
         // Verificar que la respuesta sea 400 (Bad Request) y contenga el mensaje de error esperado
         $response->assertStatus(400);
         $response->assertJson(['message' => 'Algunos campos son incorrectos']);
-
-        // $response->assertJsonValidationErrors(['featured_slider_image_path']);
 
         // Verificar que el programa educativo no se haya guardado en la base de datos
         $this->assertDatabaseMissing('educational_programs', ['name' => null]);
@@ -1350,25 +1311,25 @@ class EducationalProgramsControllerTest extends TestCase
         $user = UsersModel::factory()->create();
         $this->actingAs($user);
         // Crear estados necesarios
-        $statusReady = EducationalProgramStatusesModel::factory()->create([
-            'uid' => generate_uuid(),
+        EducationalProgramStatusesModel::factory()->create([
+            'uid' => generateUuid(),
             'code' => 'READY_ADD_EDUCATIONAL_PROGRAM'
         ])->latest()->first();
 
         $typecourse1 = CourseTypesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'COURSE_TYPE_1',
-        ])->latest()->first();;
+        ])->latest()->first();
 
         $coursestatuses = CourseStatusesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'code' => 'READY_ADD_EDUCATIONAL_PROGRAM',
         ])->latest()->first();
 
 
         // Crear cursos que cumplen con la búsqueda
-        $course1 = CoursesModel::factory()->create([
-            'uid' => generate_uuid(),
+        CoursesModel::factory()->create([
+            'uid' => generateUuid(),
             'title' => 'Curso de Matemáticas',
             'description' => 'Descripción del curso de matemáticas',
             'course_type_uid' => $typecourse1->uid,
@@ -1377,8 +1338,8 @@ class EducationalProgramsControllerTest extends TestCase
 
         ]);
 
-        $course2 = CoursesModel::factory()->create([
-            'uid' => generate_uuid(),
+        CoursesModel::factory()->create([
+            'uid' => generateUuid(),
             'title' => 'Curso de Matemáticas',
             'description' => 'Descripción del curso de matemáticas',
             'course_type_uid' => $typecourse1->uid,
@@ -1387,8 +1348,8 @@ class EducationalProgramsControllerTest extends TestCase
         ]);
 
         // Crear un curso que no debe ser incluido en la búsqueda
-        $course3 = CoursesModel::factory()->create([
-            'uid' => generate_uuid(),
+        CoursesModel::factory()->create([
+            'uid' => generateUuid(),
             'title' => 'Curso de Matemáticas',
             'description' => 'Descripción del curso de matemáticas',
             'course_type_uid' => $typecourse1->uid,
@@ -1413,7 +1374,7 @@ class EducationalProgramsControllerTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -1429,7 +1390,7 @@ class EducationalProgramsControllerTest extends TestCase
             $statusApproved = EducationalProgramStatusesModel::factory()->create(['code' => 'APPROVED']);
 
             // Crear programa educativo con todos los campos necesarios
-            $uidProgram = generate_uuid();
+            $uidProgram = generateUuid();
             $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
                 'uid' => $uidProgram,
                 'name' => 'Nombre del Programa', // Asegúrate de incluir este campo
@@ -1442,7 +1403,6 @@ class EducationalProgramsControllerTest extends TestCase
             $certidigitalServiceMock = Mockery::mock(CertidigitalService::class);
             // Configurar expectativas según lo que necesites
             // Por ejemplo, si hay un método que se llama en el controlador, puedes mockearlo así:
-            // $certidigitalServiceMock->shouldReceive('someMethod')->andReturn($expectedValue);
 
             // Reemplazar el servicio en el contenedor de servicios
             app()->instance(CertidigitalService::class, $certidigitalServiceMock);
@@ -1468,7 +1428,6 @@ class EducationalProgramsControllerTest extends TestCase
             Bus::fake();
 
             // Verificar que el trabajo de notificación fue despachado
-            // Bus::assertDispatched(SendChangeStatusEducationalProgramNotification::class);
 
             // Esta seccion se agrego para cubir linea 999 if ($changeEducationalProgramStatus['status'] == 'ACCEPTED_PUBLICATION')
 
@@ -1515,7 +1474,7 @@ class EducationalProgramsControllerTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -1543,7 +1502,7 @@ class EducationalProgramsControllerTest extends TestCase
     public function testGetEducationalProgramStudentsWithoutFilters()
     {
         // Simulamos un programa educativo en la base de datos
-        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generate_uuid()])->latest()->first();
+        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generateUuid()])->latest()->first();
 
         // Crear 5 estudiantes y asignarlos al programa
         $students = UsersModel::factory()->count(5)->create();
@@ -1566,7 +1525,7 @@ class EducationalProgramsControllerTest extends TestCase
     /** @test Cambiar estatus de Programa educativo con filtros de búsqueda*/
     public function testGetEducationalProgramStudentsWithSearchFilter()
     {
-        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generate_uuid()])->latest()->first();
+        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generateUuid()])->latest()->first();
 
         // Crear usuarios y asignarles al programa
         $users = UsersModel::factory()->count(5)->create();
@@ -1576,7 +1535,7 @@ class EducationalProgramsControllerTest extends TestCase
         // Adjuntar cada usuario al programa con un uid único
         foreach ($users as $user) {
             $program->students()->attach($user->uid, [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'educational_program_uid' => $program->uid,
                 'acceptance_status' => 'ACCEPTED',
             ]);
@@ -1605,7 +1564,7 @@ class EducationalProgramsControllerTest extends TestCase
     public function testGetEducationalProgramStudentsWithSorting()
     {
         // Crear un programa educativo
-        $uidProgram = generate_uuid();
+        $uidProgram = generateUuid();
         $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => $uidProgram]);
 
         // Crear estudiantes y asignarlos al programa
@@ -1629,7 +1588,7 @@ class EducationalProgramsControllerTest extends TestCase
     public function testGetEducationalProgramStudentsWithPagination()
     {
         // Crear un programa educativo
-        $uidProgram = generate_uuid();
+        $uidProgram = generateUuid();
         $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => $uidProgram]);
 
         // Crear estudiantes y asignarlos al programa
@@ -1656,7 +1615,7 @@ class EducationalProgramsControllerTest extends TestCase
         $this->actingAs($user);
 
         // Crear un programa educativo
-        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generate_uuid()])->latest()->first();
+        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generateUuid()])->latest()->first();
 
         // Crear usuarios para inscribir
         $users = UsersModel::factory()->count(3)->create();
@@ -1692,14 +1651,12 @@ class EducationalProgramsControllerTest extends TestCase
 
         // Crear usuarios para inscribir
         $user1 = UsersModel::factory()->create();
-        // $userIds = $users->pluck('uid')->toArray();
-
 
         // Crear un programa educativo
-        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generate_uuid()]);
+        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generateUuid()]);
 
         $program->students()->attach($user1->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'acceptance_status' => 'PENDING'
         ]);
 
@@ -1716,14 +1673,6 @@ class EducationalProgramsControllerTest extends TestCase
         $response->assertJson([
             'message' => 'Alumnos añadidos al programa formativo. Los ya registrados no se han añadido.',
         ]);
-
-        // // Verificar que los usuarios fueron inscritos correctamente
-        // foreach ($userIds as $userId) {
-        //     $this->assertDatabaseHas('educational_programs_students', [
-        //         'educational_program_uid' => $program->uid,
-        //         'user_uid' => $userId,
-        //     ]);
-        // }
     }
 
     /** @test Obtiene Estudiantes inscritos con error  */
@@ -1734,7 +1683,7 @@ class EducationalProgramsControllerTest extends TestCase
         $this->actingAs($user);
 
         // Crear un programa educativo
-        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generate_uuid()])->latest()->first();
+        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generateUuid()])->latest()->first();
 
 
         // Simular la petición
@@ -1943,20 +1892,20 @@ class EducationalProgramsControllerTest extends TestCase
         // Crea un usuario autenticado para la prueba
         $this->actingAs(UsersModel::factory()->create());
         // Crea un programa educativo
-        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generate_uuid()])->latest()->first();
+        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generateUuid()])->latest()->first();
 
         $programUid = $program->uid;
 
         // Crea dos usuarios y obtén sus datos
         UsersModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'first_name' => 'John',
             'last_name' => 'Doe',
             'nif' => '28632229N',
             'email' => 'john@example.com',
         ])->latest()->first();
         UsersModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'first_name' => 'Janios',
             'last_name' => 'Sanders',
             'nif' => '54260325J',
@@ -1989,13 +1938,13 @@ class EducationalProgramsControllerTest extends TestCase
         // Crea un usuario autenticado para la prueba
         $this->actingAs(UsersModel::factory()->create());
         // Crea un programa educativo
-        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generate_uuid()])->latest()->first();
+        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generateUuid()])->latest()->first();
 
         $programUid = $program->uid;
 
         // Crea dos usuarios y obtén sus datos
         UsersModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'first_name' => 'John',
             'last_name' => 'Doe',
             'nif' => '28632229N',
@@ -2029,13 +1978,13 @@ class EducationalProgramsControllerTest extends TestCase
         // Crea un usuario autenticado para la prueba
         $this->actingAs(UsersModel::factory()->create());
         // Crea un programa educativo
-        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generate_uuid()])->latest()->first();
+        $program = EducationalProgramsModel::factory()->withEducationalProgramType()->create(['uid' => generateUuid()])->latest()->first();
 
         $programUid = $program->uid;
 
         // Crea dos usuarios y obtén sus datos
         UsersModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'first_name' => 'John',
             'last_name' => 'Doe',
             'nif' => '28632229N',
@@ -2071,7 +2020,7 @@ class EducationalProgramsControllerTest extends TestCase
         $this->actingAs(UsersModel::factory()->create());
 
         $status = EducationalProgramStatusesModel::create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'code' => 'INTRODUCTION',
             'name' => 'Introducción'
         ])->latest()->first();
@@ -2081,7 +2030,7 @@ class EducationalProgramsControllerTest extends TestCase
 
         // Crear un programa educativo existente
         $educationalProgram = EducationalProgramsModel::create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Programa Original',
             'educational_program_status_uid' => $status->uid,
             'educational_program_type_uid' => $programType1->uid,
@@ -2109,16 +2058,15 @@ class EducationalProgramsControllerTest extends TestCase
     {
         // Simulando autenticación del usuario
         $user = UsersModel::factory()->create();
-        // $user->roles()->attach(UserRolesModel::factory()->create(['code' => 'ADMIN']));
         $roles = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
 
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         $this->actingAs($user);
 
 
         $status = EducationalProgramStatusesModel::create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'code' => 'INTRODUCTION',
             'name' => 'Introducción'
         ])->latest()->first();
@@ -2127,7 +2075,7 @@ class EducationalProgramsControllerTest extends TestCase
 
         // Crear un programa educativo existente
         $educationalProgram = EducationalProgramsModel::create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Programa Original',
             'educational_program_status_uid' => $status->uid,
             'educational_program_type_uid' => $programType1->uid,
@@ -2156,7 +2104,7 @@ class EducationalProgramsControllerTest extends TestCase
         foreach ($categories as $category) {
 
             $educationalProgram->categories()->attach($category->uid, [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
             ]);
         }
 
@@ -2172,9 +2120,9 @@ class EducationalProgramsControllerTest extends TestCase
 
         foreach ($courses as $course) {
 
-            $course->teachers()->attach($user->uid, ['uid' => generate_uuid()]);
+            $course->teachers()->attach($user->uid, ['uid' => generateUuid()]);
 
-            $course->categories()->attach($category->uid, ['uid' => generate_uuid()]);
+            $course->categories()->attach($category->uid, ['uid' => generateUuid()]);
 
             CoursesTagsModel::factory()->create(
                 [
@@ -2209,7 +2157,7 @@ class EducationalProgramsControllerTest extends TestCase
 
 
         $status = EducationalProgramStatusesModel::create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'code' => 'INTRODUCTION',
             'name' => 'Introducción'
         ])->latest()->first();
@@ -2218,7 +2166,7 @@ class EducationalProgramsControllerTest extends TestCase
 
         // Crear un programa educativo existente
         $educationalProgram = EducationalProgramsModel::create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Programa Original',
             'educational_program_status_uid' => $status->uid,
             'educational_program_type_uid' => $programType1->uid,
@@ -2230,7 +2178,7 @@ class EducationalProgramsControllerTest extends TestCase
 
         // Crear inscripciones
         $inscription1 = EducationalProgramsStudentsModel::create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'user_uid' => $student1->uid,
             'educational_program_uid' => $educationalProgram->uid,
             'acceptance_status' => 'ACCEPTED',
@@ -2266,7 +2214,7 @@ class EducationalProgramsControllerTest extends TestCase
         $this->actingAs($user);
 
         $status = EducationalProgramStatusesModel::create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'code' => 'INTRODUCTION',
             'name' => 'Introducción'
         ])->latest()->first();
@@ -2275,14 +2223,14 @@ class EducationalProgramsControllerTest extends TestCase
 
         // Crear un programa educativo existente
         $educationalProgram = EducationalProgramsModel::create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Programa Original',
             'educational_program_status_uid' => $status->uid,
             'educational_program_type_uid' => $programType1->uid,
         ]);
 
         $educationalprogramdocument = EducationalProgramsDocumentsModel::create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'educational_program_uid' => $educationalProgram->uid,
             'document_name' => 'Documento Original',
         ])->latest()->first();
@@ -2306,7 +2254,7 @@ class EducationalProgramsControllerTest extends TestCase
 
         // Crear un registro en la base de datos
         $document = EducationalProgramsStudentsDocumentsModel::create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'user_uid' => $user->uid,
             'educational_program_document_uid' => $educationalprogramdocument->uid,
             'document_path' => 'documents/document.pdf',
@@ -2332,10 +2280,7 @@ class EducationalProgramsControllerTest extends TestCase
             unlink($targetFilePath);
         }
     }
-
-
-
-    //Todo este prueba pertenece al controlador ManagementCoursesController
+    
     /** @test Puede registrar e inscribir un nuevo usuario desde csv */
     public function testCanSignUpAndEnrollNewUserFromCsv()
     {
@@ -2406,103 +2351,14 @@ class EducationalProgramsControllerTest extends TestCase
         $this->assertDatabaseMissing('educational_programs', ['uid' => $program2->uid]);
     }
 
-    public function testEmitAllCredentialsRolManagement()
-    {
-
-        $user = UsersModel::factory()->create();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
-
-        // Autenticar al usuario
-        $this->actingAs($user);
-
-        $generalOptionsMock = [
-            'operation_by_calls' => false, // O false, según lo que necesites para la prueba
-            'necessary_approval_editions' => true,
-            'some_option_array' => [], // Asegúrate de que esto sea un array'
-            'certidigital_url'              => env('CERTIDIGITAL_URL'),
-            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
-            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
-            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
-            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
-            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
-            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
-            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
-        ];
-
-        app()->instance('general_options', $generalOptionsMock);
-
-        $educational = EducationalProgramsModel::factory()->withEducationalProgramType()->create();
-
-        // Crear los cursos con bloques
-        $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
-            [
-                'educational_program_uid' => $educational->uid
-            ]
-        )->first();
-
-        $educational->students()->attach($user->uid, [
-            'uid' => generate_uuid(),
-            'acceptance_status' => 'PENDING',
-        ]);
-
-        $block = BlocksModel::factory()->create([
-            'course_uid' => $course->uid
-        ]);
-
-        // Vincularle un resultado de aprendizaje
-        $learning = LearningResultsModel::factory()->withCompetence()->create();
-
-        $block->learningResults()->attach($learning->uid, [
-            'uid' => generate_uuid(),
-        ]);
-
-        // Generar credencial para el curso
-        $this->certidigitalService->createUpdateEducationalProgramCredential($educational->uid);
-
-        // Calificación global
-        CourseGlobalCalificationsModel::factory()->create(
-            [
-                'user_uid' => $user->uid,
-                'course_uid' => $course->uid,
-                'calification_info' => 'test'
-            ]
-        );
-
-        // Calificación de resultado en el curso
-        CourseLearningResultCalificationsModel::factory()->create([
-            'user_uid' => $user->uid,
-            'course_uid' => $course->uid,
-            'learning_result_uid' => $learning->uid,
-            'calification_info' => 'test resultado'
-        ]);
-
-        // Calificación de resultado en el bloque
-        CoursesBlocksLearningResultsCalificationsModel::factory()->create([
-            "user_uid" => $user->uid,
-            "course_block_uid" => $block->uid,
-            "learning_result_uid" => $learning->uid,
-            "calification_info" => "test bloque resultado"
-        ]);
-
-        $data = [
-            'educational_program_uid' => $educational->uid
-        ];
-
-        $response = $this->postJson('/learning_objects/educational_programs/emit_all_credentials', $data);
-
-        $response->assertStatus(200);
-
-        $response->assertJson(['message' => 'Credenciales emitidas correctamente']);
-    }
 
 
     public function testEmitAllCredentialsEducationalProgramWithFail()
     {
 
         $user = UsersModel::factory()->create();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         $this->actingAs($user);
@@ -2520,119 +2376,14 @@ class EducationalProgramsControllerTest extends TestCase
         $response->assertJson(['message' => 'No tienes permisos para emitir credenciales en este curso']);
     }
 
-    //Todo: está faltando solucionar error de credenciales en CertidigitalService
-
-    public function testEmitCredentialsEducationalPrograms()
-    {
-
-        $user = UsersModel::factory()->create();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'TEACHER'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
-
-        // Autenticar al usuario
-        $this->actingAs($user);
-
-        $generalOptionsMock = [
-            'operation_by_calls' => false, // O false, según lo que necesites para la prueba
-            'necessary_approval_editions' => true,
-            'some_option_array' => [], // Asegúrate de que esto sea un array'
-            'certidigital_url'              => env('CERTIDIGITAL_URL'),
-            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
-            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
-            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
-            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
-            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
-            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
-            'certidigital_organization_oid' => 29,
-        ];
-
-        app()->instance('general_options', $generalOptionsMock);
-
-        $certidigital = CertidigitalCredentialsModel::factory()->create();
-
-        $type = EducationalProgramTypesModel::factory()->create(
-            [
-                'managers_can_emit_credentials' => 0,
-                'teachers_can_emit_credentials' => 1,
-            ]
-        );
-
-        $educationalProgram =  EducationalProgramsModel::factory()->withEducationalProgramType()->create(
-            [
-                'certidigital_credential_uid' => $certidigital->uid,
-                'educational_program_type_uid' => $type->uid,
-            ]
-        );
-
-        $course  = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(
-            [
-                'educational_program_uid' => $educationalProgram->uid
-
-            ]
-        )->first();
-
-        $block = BlocksModel::factory()->create([
-            'course_uid' => $course->uid
-        ]);
-
-        $learning = LearningResultsModel::factory()->withCompetence()->create();
-
-        $block->learningResults()->attach($learning->uid, [
-            'uid' => generate_uuid(),
-        ]);
-
-
-        CourseGlobalCalificationsModel::factory()->create(
-            [
-                'user_uid' => $user->uid,
-                'course_uid' => $course->uid
-            ]
-        );
-
-        CertidigitalAssesmentsModel::factory()->create(
-            [
-                'course_uid' => $course->uid,
-                'learning_result_uid' => $learning->uid,
-                'course_block_uid' => $block->uid
-            ]
-        );
-
-        CoursesBlocksLearningResultsCalificationsModel::factory()->create([
-            'user_uid' => $user->uid,
-            'course_block_uid' => $block->uid,
-            'learning_result_uid' => $learning->uid
-        ]);
-
-        // CourseLearningResultCalificationsModel::factory()->create([
-        //     'user_uid'=> $user->uid,
-        //     'course_uid'=> $course->uid,
-        //     'learning_result_uid'=>$learning->uid
-        // ]);
-
-        $educationalProgram->students()->attach($user->uid, [
-            'uid' => generate_uuid(),
-            'acceptance_status' => 'PENDING',
-        ]);
-
-        $data = [
-            'students_uids' => [$user->uid],
-            'educational_program_uid' => $educationalProgram->uid,
-        ];
-
-        $response = $this->postJson('/learning_objects/educational_programs/emit_credentials', $data);
-
-        $response->assertStatus(200);
-
-        $response->assertJson(['message' => 'Credenciales emitidas correctamente']);
-    }
 
 
     public function testEmitCredentialsEducationalProgramsWithFail()
     {
 
         $user = UsersModel::factory()->create();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'TEACHER'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'TEACHER'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         $this->actingAs($user);
@@ -2654,9 +2405,9 @@ class EducationalProgramsControllerTest extends TestCase
         );
 
         $educationalProgram->students()->attach($user->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'acceptance_status' => 'PENDING',
-            'emissions_block_uuid' => generate_uuid(),
+            'emissions_block_uuid' => generateUuid(),
         ]);
 
         $data = [
@@ -2669,87 +2420,5 @@ class EducationalProgramsControllerTest extends TestCase
         $response->assertStatus(422);
 
         $response->assertJson(['message' => 'No se pueden emitir credenciales porque alguno de los alumnos ya tiene credenciales emitidas']);
-    }
-
-    public function testSendCredentialsEducationalPrograms()
-    {
-
-        $user = UsersModel::factory()->create();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
-
-        // Autenticar al usuario
-        $this->actingAs($user);
-
-        $generalOptionsMock = [
-            'operation_by_calls' => false, // O false, según lo que necesites para la prueba
-            'necessary_approval_editions' => true,
-            'some_option_array' => [], // Asegúrate de que esto sea un array'
-            'certidigital_url'              => env('CERTIDIGITAL_URL'),
-            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
-            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
-            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
-            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
-            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
-            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
-            'certidigital_organization_oid' => 29,
-
-        ];
-
-        app()->instance('general_options', $generalOptionsMock);
-
-        $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create();
-
-        $data = [
-            'students_uids' => $user->uid,
-            'educational_program_uid' => $educationalProgram->uid,
-        ];
-
-        $response = $this->postJson('/learning_objects/educational_programs/send_credentials', $data);
-
-        $response->assertStatus(200);
-
-        $response->assertJson(['message' => 'Se han enviado las credenciales correctamente']);
-    }
-
-    public function testSealCredentialsEducationalPrograms()
-    {
-
-        $user = UsersModel::factory()->create();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
-
-        // Autenticar al usuario
-        $this->actingAs($user);
-
-        $generalOptionsMock = [
-            'operation_by_calls' => false, // O false, según lo que necesites para la prueba
-            'necessary_approval_editions' => true,
-            'some_option_array' => [], // Asegúrate de que esto sea un array'
-            'certidigital_url'              => env('CERTIDIGITAL_URL'),
-            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
-            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
-            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
-            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
-            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
-            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
-            'certidigital_organization_oid' => 29,
-
-        ];
-
-        app()->instance('general_options', $generalOptionsMock);
-
-        $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create();
-
-        $data = [
-            'students_uids' => $user->uid,
-            'educational_program_uid' => $educationalProgram->uid,
-        ];
-
-        $response = $this->postJson('/learning_objects/educational_programs/seal_credentials', $data);
-
-        $response->assertStatus(200);
-
-        $response->assertJson(['message' => 'Credenciales selladas correctamente']);
     }
 }

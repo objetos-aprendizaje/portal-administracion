@@ -42,8 +42,8 @@ class LicensesControllerTest extends TestCase
     public function testIndexRouteReturnsViewLicenses()
     {
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -208,13 +208,13 @@ class LicensesControllerTest extends TestCase
         // Verifica que la respuesta sea correcta
         $response->assertStatus(406)
             ->assertJson(['message' => 'No se pueden eliminar las licencias porque hay recursos educativos vinculados a ellos']);
-       
+
     }
 
 
-    /** 
-     * @test 
-     * Este test verifica que se puedan obtener las licencias con paginación, 
+    /**
+     * @test
+     * Este test verifica que se puedan obtener las licencias con paginación,
      * búsqueda y ordenamiento aplicados correctamente.
      */
     public function testGetLicensesWithPaginationSearchAndSort()
@@ -257,9 +257,9 @@ class LicensesControllerTest extends TestCase
         $this->assertEquals('Test License', $responseData['data'][0]['name']);
     }
 
-    /** 
-     * @test 
-     * Este test verifica que se puede obtener una licencia específica 
+    /**
+     * @test
+     * Este test verifica que se puede obtener una licencia específica
      * por su `uid` y que los datos devueltos son correctos.
      */
     public function testGetLicenseByUid()

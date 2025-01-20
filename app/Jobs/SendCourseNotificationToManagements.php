@@ -12,6 +12,9 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * Envía notificación de nuevo curso para revisar a gestores
+ */
 class SendCourseNotificationToManagements implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
@@ -45,7 +48,7 @@ class SendCourseNotificationToManagements implements ShouldQueue
     private function sendGeneralNotification($managements, $courseUid)
     {
         $generalNotificationAutomatic = new GeneralNotificationsAutomaticModel();
-        $generalNotificationAutomatic->uid = generate_uuid();
+        $generalNotificationAutomatic->uid = generateUuid();
         $generalNotificationAutomatic->title = 'Nuevo curso para revisar';
         $generalNotificationAutomatic->description = 'Hay un nuevo curso pendiente de revisión';
         $generalNotificationAutomatic->entity_uid = $courseUid;
@@ -61,7 +64,7 @@ class SendCourseNotificationToManagements implements ShouldQueue
 
         foreach ($managersFiltered as $management) {
             GeneralNotificationsAutomaticUsersModel::create([
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'general_notifications_automatic_uid' => $generalNotificationAutomatic->uid,
                 'user_uid' => $management->uid,
             ]);

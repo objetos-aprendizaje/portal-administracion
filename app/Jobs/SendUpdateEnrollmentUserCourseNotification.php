@@ -41,7 +41,7 @@ class SendUpdateEnrollmentUserCourseNotification implements ShouldQueue
     private function sendAutomaticGeneralNotification()
     {
         $generalNotificationAutomatic = new GeneralNotificationsAutomaticModel();
-        $generalNotificationAutomaticUid = generate_uuid();
+        $generalNotificationAutomaticUid = generateUuid();
         $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
 
         if ($this->courseStudent->acceptance_status == "ACCEPTED") {
@@ -61,7 +61,7 @@ class SendUpdateEnrollmentUserCourseNotification implements ShouldQueue
         $generalNotificationAutomatic->save();
 
         $generalNotificationAutomaticUser = new GeneralNotificationsAutomaticUsersModel();
-        $generalNotificationAutomaticUser->uid = generate_uuid();
+        $generalNotificationAutomaticUser->uid = generateUuid();
         $generalNotificationAutomaticUser->general_notifications_automatic_uid = $generalNotificationAutomaticUid;
         $generalNotificationAutomaticUser->user_uid = $this->courseStudent->user_uid;
         $generalNotificationAutomaticUser->save();

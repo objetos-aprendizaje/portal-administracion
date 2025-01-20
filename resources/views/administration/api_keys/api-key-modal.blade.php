@@ -4,12 +4,12 @@
 
         <div class="modal-header">
             <div>
-                <h2 id="api-key-modal-title" class="modal-title"></h2>
+                <h2 id="api-key-modal-title" class="modal-title">Modal claves API</h2>
 
             </div>
             <div>
                 <button data-modal-id="api-key-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
         </div>
@@ -43,7 +43,7 @@
                 </div>
 
                 <div class="flex justify-center mt-8">
-                    <button id="add-api-key-btn" type="submit" class="btn btn-primary">Guardar {{e_heroicon('paper-airplane', 'outline')}}</button>
+                    <button id="add-api-key-btn" type="submit" class="btn btn-primary">Guardar {{eHeroicon('paper-airplane', 'outline')}}</button>
                 </div>
 
             </div>

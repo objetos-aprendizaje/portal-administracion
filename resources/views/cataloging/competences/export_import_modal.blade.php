@@ -8,7 +8,7 @@
             </div>
             <div>
                 <button data-modal-id="export_import-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
         </div>
@@ -17,7 +17,7 @@
             <div class="w-full text-center">
                 <p class="mb-[40px]">Exportar marcos de competencias</p>
                 <button id="btn-export" type="button" class="btn btn-primary" id="btn-export">Exportar
-                    {{ e_heroicon('arrow-down-tray', 'outline') }}</button>
+                    {{ eHeroicon('arrow-down-tray', 'outline') }}</button>
             </div>
 
             <div class="border-l my-3"></div>
@@ -33,7 +33,7 @@
                                 <input type="file" id="data-json-import" class="hidden" name="data-json-import"
                                     accept=".json">
                                 <label for="data-json-import" class="btn btn-rectangular btn-input-file">
-                                    Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                    Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                 </label>
                             </div>
                             <div id="file-name" class="file-name text-[14px]">
@@ -51,7 +51,7 @@
                     </p>
 
                     <button type="submit" type="submit" class="btn btn-primary">Importar
-                        {{ e_heroicon('arrow-up-tray', 'outline') }}</button>
+                        {{ eHeroicon('arrow-up-tray', 'outline') }}</button>
                 </form>
             </div>
         </div>
@@ -59,7 +59,7 @@
         <div class="btn-block">
             <button data-modal-id="export_import-modal" type="button"
                 class="btn btn-secondary close-modal-btn">
-                Cerrar {{ e_heroicon('x-mark', 'outline') }}</button>
+                Cerrar {{ eHeroicon('x-mark', 'outline') }}</button>
         </div>
 
     </div>

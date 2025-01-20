@@ -19,25 +19,32 @@ class LoginController extends BaseController
     public function index()
     {
 
-        $logo_bd = GeneralOptionsModel::where('option_name', 'poa_logo')->first();
+        $logoBd = GeneralOptionsModel::where('option_name', 'poa_logo')->first();
 
-        if ($logo_bd != null) $logo = $logo_bd['option_value'];
-        else $logo = null;
-
+        if ($logoBd != null) {
+            $logo = $logoBd['option_value'];
+        }
+        else {
+            $logo = null;
+        }
 
         $loginCas = GeneralOptionsModel::where('option_name', 'cas_active')->first();
         $loginCasUrl = Saml2TenantsModel::where('key', 'cas')->first();
 
         if ($loginCas['option_value'] == 1) {
             $urlCas = url('saml2/' . $loginCasUrl->uuid . '/login');
-        } else $urlCas = false;
+        } else {
+            $urlCas = false;
+        }
 
         $loginRediris = GeneralOptionsModel::where('option_name', 'rediris_active')->first();
         $loginRedirisUrl = Saml2TenantsModel::where('key', 'rediris')->first();
 
         if ($loginRediris['option_value'] == 1) {
             $urlRediris = url('saml2/' . $loginRedirisUrl->uuid . '/login');
-        } else $urlRediris = false;
+        } else {
+            $urlRediris = false;
+        }
 
         return view('non_authenticated.login', [
             "page_name" => "Inicia sesión",
@@ -84,7 +91,9 @@ class LoginController extends BaseController
 
         $hashCheck = md5($data . $expiration . env('KEY_CHECK_CERTIFICATE_ACCESS'));
 
-        if ($expiration < time() || $hash != $hashCheck) return redirect('/login');
+        if ($expiration < time() || $hash != $hashCheck) {
+            return redirect('/login');
+        }
 
         $user = UsersModel::with('roles')
             ->whereRaw('LOWER(nif) = ?', [strtolower($dataParsed->nif)])
@@ -94,7 +103,9 @@ class LoginController extends BaseController
             ->first();
 
 
-        if (!$user || !$user->verified) return redirect('/login?e=certificate-error');
+        if (!$user || !$user->verified) {
+            return redirect('/login?e=certificate-error');
+        }
 
         if (!$user->identity_verified) {
             $user->identity_verified = true;
@@ -131,9 +142,9 @@ class LoginController extends BaseController
         Session::flush();
         Auth::logout();
 
-        $url_logout = env('APP_URL') . "/login";
+        $urlLogout = env('APP_URL') . "/login";
 
-        return redirect($url_logout);
+        return redirect($urlLogout);
     }
 
     private function loginUser($email)
@@ -162,7 +173,7 @@ class LoginController extends BaseController
     private function saveUserAccess($user)
     {
         UsersAccessesModel::insert([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'user_uid' => $user->uid,
             'date' => date('Y-m-d H:i:s')
         ]);

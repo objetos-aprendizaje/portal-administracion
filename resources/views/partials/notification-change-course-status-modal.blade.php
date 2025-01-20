@@ -2,6 +2,7 @@
     <div class="modal-body w-full md:w-[600px]">
         <div class="text-center">
             <h2 class="modal-title">
+                Cambio de estado de curso
             </h2>
             <p id="notification-change-course-status-description">
                 El curso <span id="notification-change-course-status-name" class="font-roboto-bold"></span> ha cambiado al estado <span
@@ -13,12 +14,12 @@
             <div>
                 <a id="notification-change-course-status-url" href="javascript:void(0)"><button data-modal-id="notification-change-course-status-modal"
                     class="btn btn-primary w-[200px]">Ir al curso
-                    {{ e_heroicon('arrow-up-right', 'outline') }}</button></a>
+                    {{ eHeroicon('arrow-up-right', 'outline') }}</button></a>
             </div>
             <div>
                 <button data-modal-id="notification-change-course-status-modal"
                     class="btn btn-secondary w-[200px] close-modal-btn">Cerrar
-                    {{ e_heroicon('x-mark', 'outline') }}</button>
+                    {{ eHeroicon('x-mark', 'outline') }}</button>
             </div>
         </div>
 

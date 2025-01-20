@@ -12,7 +12,9 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 
-
+/**
+ * Envía notificación de nuevo programa formativo para revisar a gestores
+ */
 class SendEducationalResourceNotificationToManagements implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
@@ -46,7 +48,7 @@ class SendEducationalResourceNotificationToManagements implements ShouldQueue
     private function sendGeneralNotification($managements, $educationalResourceUid)
     {
         $generalNotificationAutomatic = new GeneralNotificationsAutomaticModel();
-        $generalNotificationAutomatic->uid = generate_uuid();
+        $generalNotificationAutomatic->uid = generateUuid();
         $generalNotificationAutomatic->title = 'Nuevo recurso educativo para revisar';
         $generalNotificationAutomatic->description = 'Hay un nuevo recurso educativo pendiente de revisión';
         $generalNotificationAutomatic->entity_uid = $educationalResourceUid;
@@ -62,7 +64,7 @@ class SendEducationalResourceNotificationToManagements implements ShouldQueue
 
         foreach ($managersFiltered as $management) {
             GeneralNotificationsAutomaticUsersModel::create([
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'general_notifications_automatic_uid' => $generalNotificationAutomatic->uid,
                 'user_uid' => $management->uid,
             ]);

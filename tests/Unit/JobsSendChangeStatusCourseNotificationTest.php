@@ -36,7 +36,7 @@ class JobsSendChangeStatusCourseNotificationTest extends TestCase
         $user = UsersModel::factory()->create();
 
         $typecourse1 = CourseTypesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'COURSE_TYPE_01',
         ])->latest()->first();
 
@@ -46,7 +46,7 @@ class JobsSendChangeStatusCourseNotificationTest extends TestCase
         $this->assertNotNull($coursestatuses, 'El estado del curso no existe.');
 
         $course = CoursesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'creator_user_uid' => $user->uid,
             'course_type_uid' => $typecourse1->uid,
             'course_status_uid' => $coursestatuses->uid,
@@ -63,7 +63,7 @@ class JobsSendChangeStatusCourseNotificationTest extends TestCase
         // Generar un UID único para la relación
         $userToSync = [
             [
-                "uid" => generate_uuid(), // Generar un UID único
+                "uid" => generateUuid(), // Generar un UID único
                 "automatic_notification_type_uid" => $automaticNotificationType->uid,
                 "user_uid" => $user->uid,
             ],

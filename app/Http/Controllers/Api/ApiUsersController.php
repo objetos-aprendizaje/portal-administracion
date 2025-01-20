@@ -67,13 +67,15 @@ class ApiUsersController extends BaseController
         return response()->json($users, 200);
     }
 
-    public function updateUser(Request $request, $email_user)
+    public function updateUser(Request $request, $emailUser)
     {
         $updateData = $request->all();
 
-        $user = UsersModel::where('email', $email_user)->first();
+        $user = UsersModel::where('email', $emailUser)->first();
 
-        if (!$user) throw new OperationFailedException("Usuario no encontrado", 404);
+        if (!$user) {
+            throw new OperationFailedException("Usuario no encontrado", 404);
+        }
 
         $fields = [
             'first_name',
@@ -107,7 +109,7 @@ class ApiUsersController extends BaseController
 
                 foreach ($rolesBd as $rolUid) {
                     $rolesToSync[] = [
-                        'uid' => generate_uuid(),
+                        'uid' => generateUuid(),
                         'user_uid' => $user->uid,
                         'user_role_uid' => $rolUid
                     ];
@@ -140,7 +142,7 @@ class ApiUsersController extends BaseController
 
         DB::transaction(function () use ($users, $usersData, $usersRolesData, $userRoles) {
             foreach ($users as $user) {
-                $userUid = generate_uuid();
+                $userUid = generateUuid();
 
                 $usersData[] = [
                     'uid' => $userUid,
@@ -155,7 +157,7 @@ class ApiUsersController extends BaseController
 
                 foreach ($user["roles"] as $role) {
                     $usersRolesData[] = [
-                        "uid" => generate_uuid(),
+                        "uid" => generateUuid(),
                         "user_uid" => $userUid,
                         "user_role_uid" => $userRoles[$role]->uid,
                     ];

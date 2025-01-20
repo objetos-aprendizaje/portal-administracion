@@ -50,26 +50,26 @@ class ResetPasswordController extends BaseController
         $token = $request->input('token');
         $password = $request->input('password');
 
-        $reset_password_token = ResetPasswordTokensModel::where('token', $token)->first();
+        $resetPasswordToken = ResetPasswordTokensModel::where('token', $token)->first();
 
-        if (!$reset_password_token) {
+        if (!$resetPasswordToken) {
             return redirect()->route('login')->with(['reset' => false, 'message' => 'El token no es válido']);
         }
 
-        $actual_date = date("Y-m-d H:i:s");
+        $actualDate = date("Y-m-d H:i:s");
 
-        if ($reset_password_token->expiration_date < $actual_date) {
+        if ($resetPasswordToken->expiration_date < $actualDate) {
             return redirect()->route('login')->withErrors(['Ha expirado el tiempo para restablecer la contraseña. Por favor, solicítelo de nuevo']);
         }
 
-        DB::transaction(function () use ($reset_password_token, $password, $actual_date) {
-            $user = UsersModel::where('uid', $reset_password_token->uid_user)->first();
+        DB::transaction(function () use ($resetPasswordToken, $password, $actualDate) {
+            $user = UsersModel::where('uid', $resetPasswordToken->uid_user)->first();
             $user->password = password_hash($password, PASSWORD_BCRYPT);
             $user->save();
 
             // Invalidamos el token añadiendo la fecha de expiracion actual
-            $reset_password_token->expiration_date = $actual_date;
-            $reset_password_token->save();
+            $resetPasswordToken->expiration_date = $actualDate;
+            $resetPasswordToken->save();
         });
 
         return redirect()->route('login')->with([

@@ -9,7 +9,7 @@
 
             <div>
                 <button data-modal-id="competence-framework-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
         </div>
@@ -65,7 +65,7 @@
                             <div class="flex justify-end">
                                 <div>
                                     <button type="button" class="btn-icon" id="btn-add-level">
-                                        {{ e_heroicon('plus', 'outline') }}
+                                        {{ eHeroicon('plus', 'outline') }}
                                     </button>
                                 </div>
                             </div>
@@ -75,11 +75,11 @@
 
                 <div class="btn-block">
                     <button type="submit" class="btn btn-primary">Guardar
-                        {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                        {{ eHeroicon('paper-airplane', 'outline') }}</button>
 
                     <button data-modal-id="competence-framework-modal" type="button"
                         class="btn btn-secondary close-modal-btn">
-                        Cancelar {{ e_heroicon('x-mark', 'outline') }}</button>
+                        Cancelar {{ eHeroicon('x-mark', 'outline') }}</button>
                 </div>
 
 
@@ -98,7 +98,7 @@
             <input type="text" class="poa-input level-name" placeholder="Nombre del nivel" />
 
             <button class="w-[32px] h-[32px] btn-icon btn-remove-level" type="button">
-                {{ e_heroicon('trash', 'outline') }}
+                {{ eHeroicon('trash', 'outline') }}
             </button>
         </div>
 

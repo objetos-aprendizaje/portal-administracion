@@ -9,7 +9,7 @@
 
             <div>
                 <button data-modal-id="user-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
         </div>
@@ -102,7 +102,7 @@
                     <div class="content-container">
 
                         <div class="poa-input-image">
-                            <img id="photo_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}" />
+                            <img id="photo_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}" alt="preview foto" />
 
                             <span class="dimensions">*Se recomienda imagen con aspecto cuadrado con una resolución
                                 mínima de: 400px x 400px.
@@ -113,7 +113,7 @@
                                     class="hidden" />
 
                                 <label for="photo_path" class="btn btn-rectangular w-[110px]">
-                                    Subir {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                    Subir {{ eHeroicon('arrow-up-tray', 'outline') }}
                                 </label>
 
                                 <span id="image-name" class="image-name text-[14px]">Ningún archivo seleccionado</span>
@@ -128,11 +128,11 @@
 
                 <div class="btn-block">
                     <button type="submit" class="btn btn-primary">
-                        Guardar {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                        Guardar {{ eHeroicon('paper-airplane', 'outline') }}</button>
 
                     <button data-modal-id="user-modal" type="button"
                         class="btn btn-secondary close-modal-btn btn-close-modal-user">Cancelar
-                        {{ e_heroicon('x-mark', 'outline') }}</button>
+                        {{ eHeroicon('x-mark', 'outline') }}</button>
                 </div>
 
             </div>

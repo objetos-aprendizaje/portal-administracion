@@ -11,9 +11,9 @@ class UpdateUserImageController extends BaseController
     {
         $image = $request->file('file');
 
-        $photo_path = $this->saveUserImage($image);
+        $photoPath = $this->saveUserImage($image);
 
-        return response()->json(['photo_path' => $photo_path]);
+        return response()->json(['photo_path' => $photoPath]);
     }
 
     private function saveUserImage($image) {
@@ -28,9 +28,7 @@ class UpdateUserImageController extends BaseController
 
         $image->move($destinationPath, $filename);
 
-        $photo_path = $path . "/" . $filename;
-
-        return $photo_path;
+        return $path . "/" . $filename;
     }
 
 

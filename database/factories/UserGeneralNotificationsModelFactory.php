@@ -18,7 +18,7 @@ class UserGeneralNotificationsModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'user_uid' => Str::ulid(),
             'general_notification_uid' => Str::ulid(),
             'view_date' => now(),

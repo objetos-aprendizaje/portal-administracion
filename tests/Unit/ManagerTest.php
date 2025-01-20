@@ -77,7 +77,7 @@ class ManagerTest extends TestCase
 
         $admin->roles()->sync([
             [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_role_uid' => $adminRole->uid,
             ],
         ]);
@@ -86,7 +86,7 @@ class ManagerTest extends TestCase
         $teacher1->roles()->sync(
             [
                 [
-                    'uid' => generate_uuid(),
+                    'uid' => generateUuid(),
                     'user_role_uid' => $teacherRole->uid
                 ]
             ]
@@ -94,7 +94,7 @@ class ManagerTest extends TestCase
         $teacher2->roles()->sync(
             [
                 [
-                    'uid' => generate_uuid(),
+                    'uid' => generateUuid(),
                     'user_role_uid' => $teacherRole->uid
                 ]
             ]
@@ -103,7 +103,7 @@ class ManagerTest extends TestCase
         View::share('roles', $admin->roles->toArray());
 
         // Crear un registro de aprobación automática de recursos para uno de los profesores
-        $autoApproval1 = AutomaticResourceAprovalUsersModel::factory()->create(['user_uid' => $teacher1->uid]);
+        AutomaticResourceAprovalUsersModel::factory()->create(['user_uid' => $teacher1->uid]);
 
         // Simular el inicio de sesión como administrador
         Auth::login($admin);
@@ -142,7 +142,7 @@ class ManagerTest extends TestCase
 
         $role = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         // Autenticar al usuario
@@ -185,7 +185,7 @@ class ManagerTest extends TestCase
 
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         // Autenticar al usuario
@@ -230,7 +230,7 @@ class ManagerTest extends TestCase
 
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         // Autenticar al usuario
@@ -290,7 +290,7 @@ class ManagerTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -342,7 +342,7 @@ class ManagerTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -409,7 +409,7 @@ class ManagerTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -518,7 +518,7 @@ class ManagerTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -582,7 +582,7 @@ class ManagerTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -618,7 +618,7 @@ class ManagerTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -751,7 +751,6 @@ class ManagerTest extends TestCase
     {
         // Crear dos tipos de programas educativos
         $educationalProgramType1 = EducationalProgramTypesModel::factory()->create();
-        // $educationalProgramType2 = EducationalProgramTypesModel::factory()->create();
 
         // Crear una convocatoria
         $call = CallsModel::factory()->create();
@@ -759,7 +758,7 @@ class ManagerTest extends TestCase
         // Asociar los tipos de programas educativos a la convocatoria con un uid adicional en la tabla intermedia
         $call->educationalProgramTypes()->attach([
             [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'call_uid' => $call->uid,
                 'educational_program_type_uid' => $educationalProgramType1->uid,
             ],
@@ -880,7 +879,7 @@ class ManagerTest extends TestCase
 
         $roles = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $roles->uid => ['uid' => generate_uuid()]
+            $roles->uid => ['uid' => generateUuid()]
         ]);
 
         // Autenticar al usuario
@@ -894,50 +893,46 @@ class ManagerTest extends TestCase
 
         View::share('general_options', $general_options);
 
-         // Simula datos de TooltipTextsModel
-         $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
-         View::share('tooltip_texts', $tooltip_texts);
+        // Simula datos de TooltipTextsModel
+        $tooltip_texts = TooltipTextsModel::factory()->count(3)->create();
+        View::share('tooltip_texts', $tooltip_texts);
 
-         // Simula notificaciones no leídas
-         $unread_notifications = $user->notifications->where('read_at', null);
-         View::share('unread_notifications', $unread_notifications);
+        // Simula notificaciones no leídas
+        $unread_notifications = $user->notifications->where('read_at', null);
+        View::share('unread_notifications', $unread_notifications);
 
 
-    // Crear un mock del controlador
-    // Crear una instancia del controlador
-    $controller = new CallsController();
+        // Crear un mock del controlador
+        // Crear una instancia del controlador
+        $controller = new CallsController();
 
-    // Usar reflexión para acceder al método privado checkAccessCalls
-    $reflection = new \ReflectionClass($controller);
+        // Usar reflexión para acceder al método privado checkAccessCalls
+        $reflection = new \ReflectionClass($controller);
 
-    // Verificar el método checkAccessCalls
-    $methodAccess = $reflection->getMethod('checkAccessCalls');
-    $methodAccess->setAccessible(true); // Hacer el método accesible
-    $accessResult = $methodAccess->invoke($controller); // Invocar el método
+        // Verificar el método checkAccessCalls
+        $methodAccess = $reflection->getMethod('checkAccessCalls');
+        $methodAccess->setAccessible(true); // Hacer el método accesible
+        $accessResult = $methodAccess->invoke($controller); // Invocar el método
 
-    // Verificar el resultado del método checkAccessCalls
-    $this->assertFalse($accessResult); // Cambia esto según tu lógica real
+        // Verificar el resultado del método checkAccessCalls
+        $this->assertFalse($accessResult); // Cambia esto según tu lógica real
 
-    // Verificar el método checkManagersAccessCalls
-    $methodManager = $reflection->getMethod('checkManagersAccessCalls');
-    $methodManager->setAccessible(true); // Hacer el método accesible
-    $managerResult = $methodManager->invoke($controller); // Invocar el método
+        // Verificar el método checkManagersAccessCalls
+        $methodManager = $reflection->getMethod('checkManagersAccessCalls');
+        $methodManager->setAccessible(true); // Hacer el método accesible
+        $managerResult = $methodManager->invoke($controller); // Invocar el método
 
-    // Verificar el resultado del método checkManagersAccessCalls
-    $this->assertFalse($managerResult); // Cambia esto según tu lógica real
+        // Verificar el resultado del método checkManagersAccessCalls
+        $this->assertFalse($managerResult); // Cambia esto según tu lógica real
 
-    // Simula un request a la ruta '/management/calls'
-    $response = $this->get('/management/calls');
+        // Simula un request a la ruta '/management/calls'
+        $response = $this->get('/management/calls');
 
-    if (!$accessResult || !$managerResult) {
+        if (!$accessResult || !$managerResult) {
 
             $this->assertEquals(200, $response->getStatusCode());
-
-    } else {
-        $response->assertStatus(200);
+        } else {
+            $response->assertStatus(200);
+        }
     }
-
-
-
-}
 }

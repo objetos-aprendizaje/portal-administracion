@@ -2,10 +2,9 @@ import { setCookie, getCookie } from "./cookie_handler.js";
 
 document.addEventListener("DOMContentLoaded", function () {
     setupMainMenuHoverBehavior();
-    //handleSubmenuPositioning();
 
     // Botón para contraer o desplegar menú
-    var toggleButton = document.getElementById("collapse-expand-menu-btn");
+    const toggleButton = document.getElementById("collapse-expand-menu-btn");
     toggleButton.addEventListener("click", function () {
         toggleMenu();
     });
@@ -18,106 +17,57 @@ document.addEventListener("DOMContentLoaded", function () {
     setMenuStatusShowHide(menuStatusCookieShowHide);
 
     //boton para ocultar o desocultar el menú
-    var showHideButton = document.getElementById("toggle-menu-btn");
+    const showHideButton = document.getElementById("toggle-menu-btn");
     showHideButton.addEventListener("click", function () {
         showHideMenu();
     });
 });
 
 /**
- * Maneja el posicionamiento de los submenús en función de su disponibilidad en la pantalla.
- */
-function handleSubmenuPositioning() {
-    // Selecciona todos los elementos de menú de primer nivel que no sean submenús
-    var menuItems = document.querySelectorAll("#main-menu > li:not(.sub-menu)");
-
-    // Itera sobre los elementos de menú
-    menuItems.forEach(function (menuItem) {
-        menuItem.addEventListener("mouseover", function () {
-            // Calcula la altura de la opción de menú actual
-            var menuOptionHeight = menuItem.offsetHeight;
-
-            // Encuentra el submenú asociado al elemento de menú
-            var submenu = this.querySelector(".sub-menu");
-
-            if (submenu) {
-                // Calcula la altura del submenú
-                var submenuHeight = submenu.offsetHeight;
-                // Calcula la altura del elemento del menú
-                var menuOptionHeight = this.offsetHeight;
-                // Calcula la posición en la que se desplegaría el submenú hacia abajo
-                var position =
-                    this.getBoundingClientRect().bottom + submenuHeight;
-                // Calcula la posición en la que se desplegaría el submenú hacia arriba
-                var positionTop =
-                    this.getBoundingClientRect().top - submenuHeight;
-
-                if (positionTop < 0) {
-                    // Si el submenú se desborda por la parte superior, despliégalo hacia abajo
-                    submenu.style.top = `${
-                        menuOptionHeight - menuOptionHeight
-                    }px`;
-                } else if (position > window.innerHeight) {
-                    // Si el submenú se desborda por la parte inferior, despliégalo hacia arriba
-                    submenu.style.top = `-${
-                        submenuHeight - menuOptionHeight
-                    }px`;
-                } else {
-                    // Si el submenú no se desborda, despliégalo hacia abajo
-                    submenu.style.top = "0px";
-                }
-            }
-        });
-    });
-}
-
-/**
  * Configura el comportamiento de interacción de mostrar/ocultar submenús en el menú principal.
  */
 function setupMainMenuHoverBehavior() {
     // Obtén el elemento del menú principal
-    var mainMenu = document.getElementById("main-menu");
+    const mainMenu = document.getElementById("main-menu");
     // Selecciona todos los elementos de menú en el menú principal
-    var menuItems = mainMenu.querySelectorAll(".container-menu");
+    const menuItems = mainMenu.querySelectorAll(".container-menu");
 
     // Itera sobre los elementos de menú
     menuItems.forEach(function (menuItem) {
         // Encuentra el submenú asociado al elemento de menú actual
-        var subMenu = menuItem.querySelector(".sub-menu");
+        const subMenu = menuItem.querySelector(".sub-menu");
 
         if (subMenu) {
-            var closeIcon = menuItem.querySelector(".close-sub-menu");
-            var openIcon = menuItem.querySelector(".open-sub-menu");
+            const closeIcon = menuItem.querySelector(".close-sub-menu");
+            const openIcon = menuItem.querySelector(".open-sub-menu");
 
-            var clickObject = menuItem.querySelector("li");
+            const clickObject = menuItem.querySelector("li");
             // Agrega el evento "click" para mostrar y/o ocultar el submenú
             clickObject.addEventListener("click", function () {
-                if (subMenu) {
-                    if (subMenu.classList.contains("hidden-opacity")) {
-                        subMenu.style.height = subMenu.scrollHeight + "px";
-                        subMenu.classList.remove("hidden-opacity");
-                        subMenu.classList.add("sub-menu-width");
-                        setTimeout(() => {
-                            subMenu.style.height = "auto";
-                        }, 500); // Duración de la transición en ms
+                if (subMenu.classList.contains("hidden-opacity")) {
+                    subMenu.style.height = subMenu.scrollHeight + "px";
+                    subMenu.classList.remove("hidden-opacity");
+                    subMenu.classList.add("sub-menu-width");
+                    setTimeout(() => {
+                        subMenu.style.height = "auto";
+                    }, 500); // Duración de la transición en ms
 
-                        closeIcon.classList.add("hidden");
-                        openIcon.classList.remove("hidden");
-                    } else {
-                        subMenu.style.height = subMenu.scrollHeight + "px";
-                        setTimeout(() => {
-                            subMenu.style.height = "0";
-                        }, 10); // Pequeño retraso para permitir el repaint antes de colapsar
-                        subMenu.classList.add("hidden-opacity");
-                        subMenu.classList.remove("sub-menu-width");
+                    closeIcon.classList.add("hidden");
+                    openIcon.classList.remove("hidden");
+                } else {
+                    subMenu.style.height = subMenu.scrollHeight + "px";
+                    setTimeout(() => {
+                        subMenu.style.height = "0";
+                    }, 10); // Pequeño retraso para permitir el repaint antes de colapsar
+                    subMenu.classList.add("hidden-opacity");
+                    subMenu.classList.remove("sub-menu-width");
 
-                        closeIcon.classList.remove("hidden");
-                        openIcon.classList.add("hidden");
-                    }
+                    closeIcon.classList.remove("hidden");
+                    openIcon.classList.add("hidden");
                 }
             });
 
-            var menuSelected = menuItem.querySelector("li");
+            const menuSelected = menuItem.querySelector("li");
 
             if (menuSelected.classList.contains("menu-element-selected")) {
                 subMenu.style.height = subMenu.scrollHeight + "px";
@@ -137,8 +87,8 @@ function setupMainMenuHoverBehavior() {
 function toggleMenu() {
     const menu = document.querySelector(".menu");
 
-    var closeIcon = document.querySelectorAll(".close-sub-menu");
-    var openIcon = document.querySelectorAll(".open-sub-menu");
+    const closeIcon = document.querySelectorAll(".close-sub-menu");
+    const openIcon = document.querySelectorAll(".open-sub-menu");
 
     if (menu.classList.contains("menu-collapsed")) {
         setMenuStatus("menu-non-collapsed");

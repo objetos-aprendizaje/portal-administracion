@@ -38,19 +38,6 @@ class FooterPagesController extends BaseController
         );
     }
 
-    // public function saveFooterPages(Request $request)
-    // {
-    //     $updateData = [
-    //         'legal_advice' => $request->input('legalAdvice'),
-    //     ];
-
-    //     foreach ($updateData as $key => $value) {
-    //         GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
-    //     }
-
-    //     return response()->json(['message' => 'Textos guardados correctamente']);
-    // }
-
     public function getFooterPages(Request $request)
     {
         $size = $request->get('size', 1);
@@ -72,16 +59,16 @@ class FooterPagesController extends BaseController
             }
         }
 
-        $footer_pages = $query->paginate($size);
+        $footerPages = $query->paginate($size);
 
-        return response()->json($footer_pages, 200);
+        return response()->json($footerPages, 200);
     }
 
-    public function getFooterPage(Request $request, $footer_page_uid)
+    public function getFooterPage(Request $request, $footerPageUid)
     {
-        $footer_page = FooterPagesModel::where('uid', $footer_page_uid)->first();
+        $footerPage = FooterPagesModel::where('uid', $footerPageUid)->first();
 
-        return response()->json($footer_page, 200);
+        return response()->json($footerPage, 200);
     }
 
     public function saveFooterPage(Request $request)
@@ -96,35 +83,35 @@ class FooterPagesController extends BaseController
             'slug.regex' => 'El campo slug solo puede contener letras minúsculas, números, guiones y guiones bajos'
         ];
 
-        $validator_rules = [
+        $validatorRules = [
             'name' => ['required', 'max:255'],
             'slug' => ['required', 'regex:/^[a-z0-9_-]+$/i', 'max:255'],
             'content' => ['required'],
             'version' => 'required_if:acceptance_required,1'
         ];
 
-        $validator = Validator::make($request->all(), $validator_rules, $messages);
+        $validator = Validator::make($request->all(), $validatorRules, $messages);
 
 
         if ($validator->fails()) {
             return response()->json(['message' => 'Hay campos incorrectos', 'errors' => $validator->errors()], 422);
         }
 
-        $footer_page_uid = $request->input('footer_page_uid');
+        $footerPageUid = $request->input('footer_page_uid');
         $exist = false;
 
-        if (!$footer_page_uid) {
+        if (!$footerPageUid) {
             $isNew = true;
-            $footer_page = new FooterPagesModel();
-            $footer_page->uid = generate_uuid();
+            $footerPage = new FooterPagesModel();
+            $footerPage->uid = generateUuid();
             if (FooterPagesModel::where('slug', $request->input('slug'))->first()){
                 $exist = true;
             }
         } else {
             $isNew = false;
-            $footer_page = FooterPagesModel::where('uid', $footer_page_uid)->first();
+            $footerPage = FooterPagesModel::where('uid', $footerPageUid)->first();
 
-            if(FooterPagesModel::where('slug', $request->input('slug'))->where('uid', '!=', $footer_page_uid)->first()){
+            if(FooterPagesModel::where('slug', $request->input('slug'))->where('uid', '!=', $footerPageUid)->first()){
                 $exist = true;
             }
         }
@@ -138,12 +125,12 @@ class FooterPagesController extends BaseController
         }
 
 
-        $footer_page->name = $request->input('name');
-        $footer_page->content = $request->input('content');
-        $footer_page->slug = $request->input('slug');
-        $footer_page->version = $request->input('version');
-        $footer_page->acceptance_required = $request->input('acceptance_required');
-        $footer_page->save();
+        $footerPage->name = $request->input('name');
+        $footerPage->content = $request->input('content');
+        $footerPage->slug = $request->input('slug');
+        $footerPage->version = $request->input('version');
+        $footerPage->acceptance_required = $request->input('acceptance_required');
+        $footerPage->save();
 
         return response()->json(['message' => $isNew ? 'Página de footer creada correctamente' : 'Página de footer actualizada correctamente']);
     }

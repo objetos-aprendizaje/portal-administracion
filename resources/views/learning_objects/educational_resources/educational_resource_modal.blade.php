@@ -8,7 +8,7 @@
             </div>
             <div>
                 <button data-modal-id="educational-resource-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
         </div>
@@ -62,7 +62,7 @@
                     <div class="content-container">
 
                         <div class="poa-input-image">
-                            <img id="image_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}" />
+                            <img id="image_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}" alt="preview imagen" />
 
                             <span class="dimensions">*Dimensiones: Alto: 50px x Ancho: 300px. Formato: PNG, JPG. Tam.
                                 Máx.: 1MB</span>
@@ -73,7 +73,7 @@
 
                                 <div class="flex items-center gap-[20px]">
                                     <label for="resource_image_input_file" class="btn btn-rectangular">
-                                        Subir <span class="ml-2">{{ e_heroicon('arrow-up-tray', 'outline') }}</span>
+                                        Subir <span class="ml-2">{{ eHeroicon('arrow-up-tray', 'outline') }}</span>
                                     </label>
 
                                     <span class="image-name text-[14px]" id="image-name">Ningún archivo
@@ -114,7 +114,7 @@
                                     <input type="file" id="resource_input_file" class="hidden"
                                         name="resource_input_file">
                                     <label for="resource_input_file" class="btn btn-rectangular btn-input-file">
-                                        Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                        Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                     </label>
                                 </div>
                                 <div class="file-name text-[14px]">
@@ -200,7 +200,7 @@
                             </div>
                             <div>
                                 <button type="button" class="btn-icon" id="btn-add-metadata-pair">
-                                    {{ e_heroicon('plus', 'outline') }}
+                                    {{ eHeroicon('plus', 'outline') }}
                                 </button>
                             </div>
                         </div>
@@ -246,11 +246,11 @@
                 <div class="flex justify-center mt-8 gap-4">
                     <div id="draft-button-container" class="hidden">
                         <button type="submit" id="draft-button" value="draft" class="btn btn-secondary">
-                            Guardar como borrador {{ e_heroicon('check', 'outline') }}</button>
+                            Guardar como borrador {{ eHeroicon('check', 'outline') }}</button>
                     </div>
 
                     <button type="submit" value="submit" id="submit-button" class="btn btn-primary">
-                        Guardar {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                        Guardar {{ eHeroicon('paper-airplane', 'outline') }}</button>
                 </div>
 
             </div>
@@ -271,7 +271,7 @@
         </div>
         <div class="flex-none">
             <button type="button" class="btn-icon btn-remove-metadata-pair">
-                {{ e_heroicon('trash', 'outline') }}
+                {{ eHeroicon('trash', 'outline') }}
             </button>
         </div>
     </div>

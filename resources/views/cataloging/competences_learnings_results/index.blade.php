@@ -9,27 +9,27 @@
             <div class="input-with-button control-search">
                 <input class="w-full" type="text" id="search-competences-input" placeholder="Buscar...">
                 <button type="button" id="clean-search" class="clear-table-btn">
-                    {{ e_heroicon('x-mark', 'solid') }}
+                    {{ eHeroicon('x-mark', 'solid') }}
                 </button>
                 <button type="button" id="search-competences-btn">
-                    {{ e_heroicon('magnifying-glass', 'solid') }}
+                    {{ eHeroicon('magnifying-glass', 'solid') }}
                 </button>
             </div>
 
             <div>
                 <button type="button" class="btn-icon" id="btn-export-import" title="Importar/Exportar">
-                    {{ e_heroicon('arrows-up-down', 'outline') }}
+                    {{ eHeroicon('arrows-up-down', 'outline') }}
                 </button>
                 <button id="import-csv-btn" type="button" class="btn btn-icon" title="Importar marco ESCO">
-                    {{ e_heroicon('folder-plus', 'outline') }}
+                    {{ eHeroicon('folder-plus', 'outline') }}
                 </button>
 
                 <button id="new-competence-framework-btn" type="button" class="btn btn-icon" title="Añadir marco de competencias">
-                    {{ e_heroicon('plus', 'outline') }}
+                    {{ eHeroicon('plus', 'outline') }}
                 </button>
 
                 <button id="btn-delete-competences" type="button" class="btn btn-icon" title="Eliminar elementos seleccionados">
-                    {{ e_heroicon('trash', 'outline') }}
+                    {{ eHeroicon('trash', 'outline') }}
                 </button>
             </div>
 

@@ -3,38 +3,18 @@
 namespace Tests\Unit;
 
 
-use Mockery;
 use Tests\TestCase;
 use ReflectionClass;
 use App\Models\UsersModel;
 use App\Models\CoursesModel;
-use App\Models\UserRolesModel;
-use App\Models\CategoriesModel;
-use App\Models\CompetencesModel;
-use App\Models\LicenseTypesModel;
-use App\Models\TooltipTextsModel;
-use Illuminate\Http\UploadedFile;
-use App\Models\GeneralOptionsModel;
 use App\Services\EmbeddingsService;
-use Illuminate\Support\Facades\App;
-use App\Models\LearningResultsModel;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\View;
 use App\Services\CertidigitalService;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 use App\Models\EducationalProgramsModel;
-use App\Models\CompetenceFrameworksModel;
-use App\Models\EducationalResourcesModel;
 use App\Exceptions\OperationFailedException;
-use App\Models\EducationalResourcesTagsModel;
-use App\Models\EducationalResourceTypesModel;
-use App\Models\AutomaticNotificationTypesModel;
-use App\Models\CompetenceFrameworksLevelsModel;
-use App\Models\EducationalResourceStatusesModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Models\EducationalResourcesEmbeddingsModel;
-use App\Models\EducationalResourcesEmailContactsModel;
+use App\Http\Controllers\LearningObjects\CoursesController;
 use App\Http\Controllers\Management\ManagementCoursesController;
 
 class LearningObjectEducationalResourceTest extends TestCase
@@ -52,7 +32,7 @@ class LearningObjectEducationalResourceTest extends TestCase
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
     }
 
-    
+
     /**
      * @test   Verifica que se devuelve un error cuando status incorrecto.
      */
@@ -68,7 +48,7 @@ class LearningObjectEducationalResourceTest extends TestCase
         $course_bd->belongs_to_educational_program = false;
 
         // Usa la reflexión para acceder al método privado
-        $reflection = new ReflectionClass(ManagementCoursesController::class);
+        $reflection = new ReflectionClass(CoursesController::class);
         $method = $reflection->getMethod('checkStatusCourse');
         $method->setAccessible(true);
 
@@ -82,7 +62,7 @@ class LearningObjectEducationalResourceTest extends TestCase
         $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
 
         // Instantiate ManagementCoursesController with the mocked service
-        $controller = new ManagementCoursesController($mockEmbeddingsService, $certidigitalServiceMock);
+        $controller = new CoursesController($mockEmbeddingsService, $certidigitalServiceMock);
         $method->invokeArgs($controller, [$course_bd]);
     }
 
@@ -104,7 +84,7 @@ class LearningObjectEducationalResourceTest extends TestCase
         $course_bd->educational_program = $educationalProgram;
 
         // Usa la reflexión para acceder al método privado
-        $reflection = new ReflectionClass(ManagementCoursesController::class);
+        $reflection = new ReflectionClass(CoursesController::class);
         $method = $reflection->getMethod('checkStatusCourse');
         $method->setAccessible(true);
 
@@ -118,10 +98,10 @@ class LearningObjectEducationalResourceTest extends TestCase
         $certidigitalServiceMock = $this->createMock(CertidigitalService::class);
 
         // Instantiate ManagementCoursesController with the mocked service
-        $controller = new ManagementCoursesController($mockEmbeddingsService, $certidigitalServiceMock);
+        $controller = new CoursesController($mockEmbeddingsService, $certidigitalServiceMock);
         $method->invokeArgs($controller, [$course_bd]);
     }
 
 
-    
+
 }

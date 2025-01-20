@@ -64,13 +64,13 @@ class LmsSystemsController extends BaseController
     /**
      * Obtiene un LMS específico basada en su UID.
      *
-     * @param  string $lms_system_uid El UID del LMS.
+     * @param  string $lmsSystemUid El UID del LMS.
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getLmsSystem($lms_system_uid)
+    public function getLmsSystem($lmsSystemUid)
     {
-        $lms_system = LmsSystemsModel::where('uid', $lms_system_uid)->first()->toArray();
-        return response()->json($lms_system);
+        $lmsSystem = LmsSystemsModel::where('uid', $lmsSystemUid)->first()->toArray();
+        return response()->json($lmsSystem);
     }
 
     /**
@@ -96,28 +96,28 @@ class LmsSystemsController extends BaseController
             return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validator->errors()], 422);
         }
 
-        $lms_system_uid = $request->input("lms_system_uid");
+        $lmsSystemUid = $request->input("lms_system_uid");
 
-        return DB::transaction(function () use ($request, $lms_system_uid) {
+        return DB::transaction(function () use ($request, $lmsSystemUid) {
 
-            if (!$lms_system_uid) {
-                $lms_system = new LmsSystemsModel();
-                $lms_system_uid = generate_uuid();
-                $lms_system->uid = $lms_system_uid;
+            if (!$lmsSystemUid) {
+                $lmsSystem = new LmsSystemsModel();
+                $lmsSystemUid = generateUuid();
+                $lmsSystem->uid = $lmsSystemUid;
                 $isNew = true;
             } else {
-                $lms_system = LmsSystemsModel::find($lms_system_uid);
+                $lmsSystem = LmsSystemsModel::find($lmsSystemUid);
                 $isNew = false;
             }
 
-            $lms_system->fill($request->only([
+            $lmsSystem->fill($request->only([
                 'name',
                 'identifier',
             ]));
 
-            $lms_system->save();
+            $lmsSystem->save();
 
-            LogsController::createLog('Añadir sistema LMS: ' . $lms_system->name, 'Sistemas LMS', auth()->user()->uid);
+            LogsController::createLog('Añadir sistema LMS: ' . $lmsSystem->name, 'Sistemas LMS', auth()->user()->uid);
 
             return response()->json(['message' => $isNew ? 'LMS añadido correctamente' : 'LMS actualizado correctamente']);
         }, 5);

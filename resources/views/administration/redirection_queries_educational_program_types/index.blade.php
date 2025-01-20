@@ -9,13 +9,13 @@
 
             <div>
                 <button type="button" class="btn-icon" id="new-redirection-query-btn" title="Añadir redirección de consulta">
-                    {{ e_heroicon('plus', 'outline') }}
+                    {{ eHeroicon('plus', 'outline') }}
                 </button>
                 <button type="button" class="btn-icon" id="btn-delete-redirection-queries" title="Eliminar redirección de consulta">
-                    {{ e_heroicon('trash', 'outline') }}
+                    {{ eHeroicon('trash', 'outline') }}
                 </button>
                 <button type="button" class="btn-icon" id="btn-reload-table" title="Actualizar">
-                    {{ e_heroicon('arrow-path', 'outline') }}
+                    {{ eHeroicon('arrow-path', 'outline') }}
                 </button>
             </div>
 

@@ -14,7 +14,7 @@ function validateHexadecimalColor($color)
     return preg_match($regex, $color) === 1;
 }
 
-function generate_uuid()
+function generateUuid()
 {
     return (string) Str::uuid();
 }
@@ -71,7 +71,7 @@ function sanitizeFilename($filename)
  * Recibe un fichero, ruta y nombre (opcional) y lo guarda en la ruta especificada.
  * Devuelve la ruta completa del fichero guardado.
  */
-function saveFile($file, $destinationPath, $filename = null, $public_path = false)
+function saveFile($file, $destinationPath, $filename = null, $publicPath = false)
 {
     // Si el nombre del archivo no se proporciona, generarlo
     $extension = $file->getClientOriginalExtension();
@@ -87,7 +87,7 @@ function saveFile($file, $destinationPath, $filename = null, $public_path = fals
 
     $internalDestinationPath = $destinationPath;
     // Determinar la ruta de destino
-    if ($public_path) {
+    if ($publicPath) {
         public_path($internalDestinationPath);
     } else {
         $internalDestinationPath = storage_path($destinationPath);
@@ -110,8 +110,9 @@ function saveFile($file, $destinationPath, $filename = null, $public_path = fals
  */
 function deleteFile($path)
 {
-    if (file_exists($path))
+    if (file_exists($path)) {
         unlink($path);
+    }
 }
 
 
@@ -168,7 +169,7 @@ function formatDateTimeNotifications($date)
 function renderCategories($categories, $level = 1)
 {
     $html = '';
-    $icon_edit = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 16">
+    $iconEdit = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 16">
     <g clip-path="url(#clip0_224_4598)">
       <path d="M10.7812 15.4988H1.71879C0.770645 15.4988 0 14.7282 0 13.78V4.71757C0 3.76942 0.770645 2.99878 1.71879 2.99878H7.03125C7.29 2.99878 7.5 3.20878 7.5 3.46753C7.5 3.72628 7.29 3.93628 7.03125 3.93628H1.71879C1.28815 3.93628 0.9375 4.28693 0.9375 4.71757V13.78C0.9375 14.2107 1.28815 14.5613 1.71879 14.5613H10.7812C11.2119 14.5613 11.5625 14.2107 11.5625 13.78V8.46757C11.5625 8.20882 11.7725 7.99882 12.0313 7.99882C12.29 7.99882 12.5 8.20824 12.5 8.46757V13.78C12.5 14.7282 11.7294 15.4988 10.7812 15.4988Z" fill="#CCCCCC"/>
       <path d="M5.48218 10.485C5.35904 10.485 5.23899 10.4362 5.15087 10.3476C5.03963 10.2369 4.99214 10.0775 5.02281 9.92435L5.46467 7.71439C5.48275 7.62318 5.52772 7.53998 5.59273 7.47497L12.066 1.00254C12.7359 0.332487 13.8259 0.332487 14.4966 1.00254C14.8209 1.32686 14.9997 1.75819 14.9997 2.21756C14.9997 2.67692 14.8209 3.10814 14.4959 3.43258L8.02345 9.9057C7.95845 9.97127 7.87468 10.0157 7.78404 10.0338L5.57464 10.4756C5.54397 10.4819 5.51273 10.485 5.48218 10.485ZM6.35593 8.03757L6.08024 9.41875L7.46086 9.14249L13.8334 2.77008C13.9809 2.62188 14.0622 2.4263 14.0622 2.21756C14.0622 2.00882 13.9809 1.81312 13.8334 1.66504C13.5297 1.36062 13.034 1.36062 12.7285 1.66504L6.35593 8.03757Z"/>
@@ -187,7 +188,7 @@ function renderCategories($categories, $level = 1)
             $html .= "<div class='anidation-div' style='margin-left:{$level}em;'>";
             $html .= "<div class='flex'>";
             $html .= "<input type='checkbox' class='element-checkbox' id='{$category['uid']}'> ";
-            $html .= "<label for='{$category['uid']}' class='element-label'>{$category['name']} <small>({$category['courses_count']} cursos)</small> </label> <button class='edit-btn' title='Editar categoría' data-uid='{$category['uid']}'>{$icon_edit}</button>";
+            $html .= "<label for='{$category['uid']}' class='element-label'>{$category['name']} <small>({$category['courses_count']} cursos)</small> </label> <button class='edit-btn' title='Editar categoría' data-uid='{$category['uid']}'>{$iconEdit}</button>";
             $html .= "</div>";
             if ($category['description']) {
                 $html .= " <p>{$category['description']}</p>";
@@ -202,7 +203,7 @@ function renderCategories($categories, $level = 1)
             $html .= "<div class='anidation-div' style='margin-left:{$level}em;'>";
             $html .= "<div class='flex'>";
             $html .= "<input type='checkbox' class='element-checkbox' id='{$category['uid']}'> ";
-            $html .= "<label for='{$category['uid']}' class='element-label'>{$category['name']} <small>({$category['courses_count']} cursos)</small> </label> <button class='edit-btn' title='Editar categoría' data-uid='{$category['uid']}'>{$icon_edit}</button>";
+            $html .= "<label for='{$category['uid']}' class='element-label'>{$category['name']} <small>({$category['courses_count']} cursos)</small> </label> <button class='edit-btn' title='Editar categoría' data-uid='{$category['uid']}'>{$iconEdit}</button>";
             $html .= "</div>";
             if ($category['description']) {
                 $html .= " <p>{$category['description']}</p>";
@@ -224,7 +225,7 @@ function currentUser()
     return Auth::user();
 }
 
-function curl_call($url, $data = null, $headers = null, $method = 'GET')
+function curlCall($url, $data = null, $headers = null, $method = 'GET')
 {
     // Inicializa cURL
     $ch = curl_init($url);
@@ -292,15 +293,13 @@ function guzzle_call($url, $data = null, $headers = null, $method = 'GET')
     }
 }
 
-function add_timestamp_name_file($file)
+function addTimestampNameFile($file)
 {
     $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
     $extension = $file->getClientOriginalExtension();
     $timestamp = time();
-
-    $filename = "{$originalName}-{$timestamp}.{$extension}";
-
-    return $filename;
+    
+    return "{$originalName}-{$timestamp}.{$extension}";
 }
 function generateToken($longitud = 64)
 {

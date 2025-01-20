@@ -13,7 +13,7 @@ class InsertEnrollingIntoEducationalProgramStatuses extends Migration
     public function up()
     {
         DB::table('educational_program_statuses')->insert([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'En matriculación',
             'code' => 'ENROLLING',
         ]);

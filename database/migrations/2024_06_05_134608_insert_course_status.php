@@ -11,7 +11,7 @@ return new class extends Migration
     public function up(): void
     {
         DB::table('course_statuses')->insert([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Matriculación',
             'code' => 'ENROLLING',
         ]);

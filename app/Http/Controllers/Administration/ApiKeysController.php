@@ -31,7 +31,7 @@ class ApiKeysController extends BaseController
 
 
     /**
-     * @param {*} string $api_key_uid UID de la clave API.
+     * @param {*} string $apiKeyUid UID de la clave API.
      * Obtiene el listado de claves API
      */
     public function getApiKeys(Request $request)
@@ -59,12 +59,12 @@ class ApiKeysController extends BaseController
     }
 
 
-    public function getApiKey($api_key_uid)
+    public function getApiKey($apiKeyUid)
     {
 
-        $api_key = ApiKeysModel::where('uid', $api_key_uid)->first();
+        $apiKey = ApiKeysModel::where('uid', $apiKeyUid)->first();
 
-        return response()->json($api_key, 200);
+        return response()->json($apiKey, 200);
     }
 
     public function deleteApiKey(Request $request)
@@ -105,24 +105,24 @@ class ApiKeysController extends BaseController
             return response()->json(['message' => 'Hay campos incorrectos', 'errors' => $validator->errors()], 422);
         }
 
-        $api_key_uid = $request->input('api_key_uid');
+        $apiKeyUid = $request->input('api_key_uid');
 
-        if ($api_key_uid) {
-            $api_key_query = ApiKeysModel::where('uid', $api_key_uid)->first();
+        if ($apiKeyUid) {
+            $apiKeyQuery = ApiKeysModel::where('uid', $apiKeyUid)->first();
         } else {
-            $api_key_query = new ApiKeysModel();
-            $api_key_query->uid = generate_uuid();
+            $apiKeyQuery = new ApiKeysModel();
+            $apiKeyQuery->uid = generateUuid();
         }
 
-        $api_key_query->fill($request->only([
+        $apiKeyQuery->fill($request->only([
             'api_key_uid',
             'name',
             'api_key'
         ]));
 
-        DB::transaction(function () use ($api_key_query) {
-            $api_key_query->save();
-            LogsController::createLog('Añadir clave API: ' . $api_key_query->name, 'Claves APIs', auth()->user()->uid);
+        DB::transaction(function () use ($apiKeyQuery) {
+            $apiKeyQuery->save();
+            LogsController::createLog('Añadir clave API: ' . $apiKeyQuery->name, 'Claves APIs', auth()->user()->uid);
         }, 5);
 
         return response()->json(['message' => 'Clave guardada correctamente']);

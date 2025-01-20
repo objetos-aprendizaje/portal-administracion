@@ -87,13 +87,13 @@ class ChangeStatusToDevelopmentCommandTest extends TestCase
 
 
         CoursesStudentsModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'user_uid' => $student1->uid,
             'course_uid' => $course->uid,
         ]);
 
         CoursesStudentsModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'user_uid' => $student2->uid,
             'course_uid' => $course->uid,
         ]);
@@ -121,13 +121,13 @@ class ChangeStatusToDevelopmentCommandTest extends TestCase
          $student2 = UsersModel::factory()->create(['email' => 'student2@example.com']);
 
         CoursesStudentsModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'user_uid' => $student1->uid,
             'course_uid' => $course->uid,
         ]);
 
         CoursesStudentsModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'user_uid' => $student2->uid,
             'course_uid' => $course->uid,
         ]);
@@ -166,19 +166,19 @@ class ChangeStatusToDevelopmentCommandTest extends TestCase
         $student2 = UsersModel::factory()->create(['email' => 'student2@example.com']);
 
         CoursesStudentsModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'user_uid' => $student1->uid,
             'course_uid' => $course->uid,
         ]);
 
         CoursesStudentsModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'user_uid' => $student2->uid,
             'course_uid' => $course->uid,
         ]);
 
         // Create an automatic notification type
-        $notificationType = AutomaticNotificationTypesModel::factory()->create([
+        AutomaticNotificationTypesModel::factory()->create([
             'code' => 'COURSE_ENROLLMENT_COMMUNICATIONS'
         ]);
 
@@ -193,7 +193,7 @@ class ChangeStatusToDevelopmentCommandTest extends TestCase
         $methodFilter->setAccessible(true);
 
         // Use reflection to access and modify the command's behavior
-        $studentsFiltered = collect([$student1, $student2]);
+        collect([$student1, $student2]);
 
         // Call the private method saveGeneralNotificationsUsers using reflection
         $methodSave = $reflection->getMethod('saveGeneralNotificationsUsers');

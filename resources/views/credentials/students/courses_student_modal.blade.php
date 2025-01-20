@@ -4,13 +4,13 @@
 
         <div class="modal-header">
             <div>
-                <h2 id="courses-student-modal-title"></h2>
+                <h2 id="courses-student-modal-title">Listado de estudiantes</h2>
             </div>
 
             <div>
                 <button data-modal-id="courses-student-modal" class="modal-close-modal-btn close-modal-btn">
 
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
 
@@ -23,13 +23,13 @@
                 <div class="flex gap-1">
 
                     <button id="emit-credentials-btn" type="button" class="btn-icon" title="Emitir credenciales"
-                        data-course-uid="">{{ e_heroicon('academic-cap', 'outline') }}</button>
+                        data-course-uid="">{{ eHeroicon('academic-cap', 'outline') }}</button>
 
                     <button id="send-credentials-btn" type="button" class="btn-icon" title="Enviar credenciales"
-                        data-course-uid="">{{ e_heroicon('paper-airplane', 'outline') }}</button>
+                        data-course-uid="">{{ eHeroicon('paper-airplane', 'outline') }}</button>
 
                     <button id="seal-credentials-btn" type="button" class="btn-icon" title="Sellar credenciales"
-                        data-course-uid="">{{ e_heroicon('check-badge', 'outline') }}</button>
+                        data-course-uid="">{{ eHeroicon('check-badge', 'outline') }}</button>
 
                 </div>
             </div>

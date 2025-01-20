@@ -31,8 +31,8 @@ class AdministrationFooterPageTest extends TestCase
     {
         // Crear un usuario de prueba y asignar roles
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]);
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -111,7 +111,7 @@ class AdministrationFooterPageTest extends TestCase
 
         ]);
 
-        $footer = FooterPagesModel::factory()->create()->latest()->first();
+        FooterPagesModel::factory()->create()->latest()->first();
 
         // Realizar la solicitud POST para guardar las opciones
         $response = $this->postJson('/administration/footer_pages/save_footer_page', [
@@ -120,7 +120,7 @@ class AdministrationFooterPageTest extends TestCase
             'slug' => 'footer-page-original',
             'content' => 'content',
             'acceptance_required' => 0,
-            'footer_page_uid'=> generate_uuid(),
+            'footer_page_uid'=> generateUuid(),
         ]);
 
         // Verificar que se haya lanzado la excepción
@@ -149,11 +149,12 @@ class AdministrationFooterPageTest extends TestCase
 
         ]);
 
-        $header = HeaderPagesModel::factory()->create(
+        HeaderPagesModel::factory()->create(
             [
                 'slug'=> 'header-page-original'
             ]
         )->latest()->first();
+        
 
         // Realizar la solicitud POST para guardar las opciones
         $response = $this->postJson('/administration/footer_pages/save_footer_page', [
@@ -162,7 +163,7 @@ class AdministrationFooterPageTest extends TestCase
             'slug' => 'header-page-original',
             'content' => 'content',
             'acceptance_required' => 0,
-            
+
         ]);
 
         // Verificar que se haya lanzado la excepción
@@ -208,13 +209,13 @@ class AdministrationFooterPageTest extends TestCase
         Auth::login($user);
         // Arrange: Crea registros de FooterPagesModel
         FooterPagesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'About Us']);
         FooterPagesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Contact']);
         FooterPagesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Privacy Policy']);
 
         // Act: Realiza la solicitud POST con un parámetro de búsqueda
@@ -238,13 +239,13 @@ class AdministrationFooterPageTest extends TestCase
 
         // Arrange: Crea registros de FooterPagesModel
         FooterPagesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Contact'])->latest()->first();
         FooterPagesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'About Us'])->latest()->first();
         FooterPagesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Privacy Policy'])->latest()->first();
 
         // Realiza la solicitud POST con parámetros de ordenamiento
@@ -268,7 +269,7 @@ class AdministrationFooterPageTest extends TestCase
 
         // Arrange: Crea un registro de FooterPagesModel
         $footerPage = FooterPagesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'About Us',
             'content' => 'This is the About Us page.'
         ])->first();
@@ -290,13 +291,13 @@ class AdministrationFooterPageTest extends TestCase
     {
         // Arrange: Crea algunos registros de FooterPagesModel
         $footer1 = FooterPagesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Contact'])->latest()->first();
         $footer2 = FooterPagesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'About Us'])->latest()->first();
         FooterPagesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Privacy Policy'])->latest()->first();
 
         // Act: Realiza la solicitud DELETE
@@ -344,7 +345,7 @@ class AdministrationFooterPageTest extends TestCase
         $this->actingAs(UsersModel::factory()->create());
 
         // Crea una página de pie de página existente
-        $footerPageUid1= generate_uuid();
+        $footerPageUid1= generateUuid();
         FooterPagesModel::factory()->create([
             'uid' => $footerPageUid1,
             'name' => 'Footer Page Original',
@@ -372,7 +373,7 @@ class AdministrationFooterPageTest extends TestCase
     {
             // Crear una página de footer existente
         FooterPagesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Página de Footer Existente',
             'content' => 'Contenido existente',
             'slug' => 'pagina-existente',
@@ -408,7 +409,7 @@ class AdministrationFooterPageTest extends TestCase
     {
     // Crear una página de footer existente
     $existingFooterPage = FooterPagesModel::factory()->create([
-        'uid' => generate_uuid(),
+        'uid' => generateUuid(),
         'name' => 'Página de Footer Existente',
         'content' => 'Contenido existente',
         'slug' => 'pagina-existente',
@@ -418,7 +419,7 @@ class AdministrationFooterPageTest extends TestCase
 
     // Crear otra página de footer con el mismo slug
     FooterPagesModel::factory()->create([
-        'uid' => generate_uuid(),
+        'uid' => generateUuid(),
         'name' => 'Otra Página de Footer',
         'content' => 'Contenido de otra página',
         'slug' => 'pagina-existente', // Este slug ya existe

@@ -80,12 +80,10 @@ class LearningObjetsController extends BaseController
             'Content-Type: application/json'
         ];
 
-        $response = curl_call('https://api.openai.com/v1/chat/completions', json_encode($data), $header, 'POST');
+        $response = curlCall('https://api.openai.com/v1/chat/completions', json_encode($data), $header, 'POST');
 
         $responseData = json_decode($response, true);
 
-        $content = json_decode($responseData['choices'][0]['message']['content'], true);
-
-        return $content;
+        return json_decode($responseData['choices'][0]['message']['content'], true);
     }
 }

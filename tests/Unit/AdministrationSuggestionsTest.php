@@ -7,6 +7,7 @@ use Tests\TestCase;
 use App\Models\CallsModel;
 use App\Models\UsersModel;
 use Illuminate\Support\Str;
+use App\Models\CoursesModel;
 use Illuminate\Http\Request;
 use App\Models\UserRolesModel;
 use Illuminate\Support\Carbon;
@@ -19,6 +20,7 @@ use App\Models\EducationalProgramTypesModel;
 use App\Models\SuggestionSubmissionEmailsModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Models\RedirectionQueriesLearningObjectsModel;
 use App\Models\RedirectionQueriesEducationalProgramTypesModel;
 
 class AdministrationSuggestionsTest extends TestCase
@@ -43,8 +45,8 @@ class AdministrationSuggestionsTest extends TestCase
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -189,7 +191,7 @@ class AdministrationSuggestionsTest extends TestCase
 
         // Attempt to delete non-existing email IDs
         $response = $this->postJson('/administration/suggestions_improvements/delete_emails', [
-            'uidsEmails' => [generate_uuid(), generate_uuid()], // Assuming these IDs do not exist
+            'uidsEmails' => [generateUuid(), generateUuid()], // Assuming these IDs do not exist
         ]);
 
         $response->assertStatus(200) // Assuming the method does not throw an error for non-existing IDs
@@ -277,281 +279,5 @@ class AdministrationSuggestionsTest extends TestCase
         $this->assertEquals('b@example.com', $data[1]['email']);
     }
 
-    /**
-     *  @test  Guardar Redirección */
-    public function testSaveRedirection()
-    {
-        // Simular un usuario autenticado
-        $user = UsersModel::factory()->create();
-        $this->actingAs($user);
-       
-        $educational_type = EducationalProgramTypesModel::factory()->create();
 
-        $data = [            
-            'educational_program_type_uid' => $educational_type->uid,
-            'type' => 'web',
-            'contact' => 'https://test.com'
-        ];
-        // Enviar la solicitud POST
-        $response = $this->postJson('/administration/redirection_queries_educational_program_types/save_redirection_query', $data);
-
-        // Verificar la respuesta
-        $response->assertStatus(200)
-            ->assertJson(['message' => 'Redirección guardada correctamente']);
-    }
-
-    /**
-     *  @test Actualizar Redirección */
-    public function testUpdateRedirection()
-    {
-        // Simular un usuario autenticado
-        $user = UsersModel::factory()->create();
-        $this->actingAs($user);
-
-        $redirec = RedirectionQueriesEducationalProgramTypesModel::factory()->create()->first();
-
-        $educational_type = EducationalProgramTypesModel::factory()->create();
-
-        $data = [
-            'redirection_query_uid' =>$redirec->uid,
-            'educational_program_type_uid' => $educational_type->uid,
-            'type' => 'web',
-            'contact' => 'https://test.com'
-        ];
-        // Enviar la solicitud POST
-        $response = $this->postJson('/administration/redirection_queries_educational_program_types/save_redirection_query', $data);
-
-        // Verificar la respuesta
-        $response->assertStatus(200)
-            ->assertJson(['message' => 'Redirección guardada correctamente']);
-    }
-
-
-    /**
-     *  @test  Redirección consulta Error*/
-    public function testSaveRedirectionQueryError()
-    {
-        // Simular un usuario autenticado
-        $user = UsersModel::factory()->create();
-        $this->actingAs($user);
-
-        // Datos de prueba válidos
-        $redirec = RedirectionQueriesEducationalProgramTypesModel::factory()->create()->first();
-        $this->assertDatabaseHas('redirection_queries_educational_program_types', ['uid' => $redirec->uid]);
-
-        // Enviar la solicitud POST
-        $response = $this->postJson('/administration/redirection_queries_educational_program_types/save_redirection_query', [
-            'uids' => [$redirec->uid,]
-        ]);
-
-        // Verificar la respuesta
-        $response->assertStatus(422)
-            ->assertJson(['message' => 'Hay campos incorrectos']);
-    }
-
-
-    /**
-     *  @test  Redirección consulta Error*/
-    public function testSaveRedirectionQueryValidationErrors()
-    {
-        // Simular un usuario autenticado
-        $user = UsersModel::factory()->create();
-        $this->actingAs($user);
-
-        // Datos de prueba inválidos (sin educational_program_type_uid)
-        $data = [
-            'type' => 'web',
-            'contact' => 'not-a-url',
-        ];
-
-        // Enviar la solicitud POST
-        $response = $this->postJson('/administration/redirection_queries_educational_program_types/save_redirection_query', $data);
-
-        // Verificar la respuesta de error
-        $response->assertStatus(422)
-            ->assertJson([
-                'message' => 'Hay campos incorrectos',
-                'errors' => [
-                    'educational_program_type_uid' => ['El tipo de programa formativo es obligatorio'],
-                    'contact' => ['El contacto debe ser una URL válida.'],
-                ],
-            ]);
-    }
-
-    /**
-     *  @test  Redirección consulta email invalido*/
-    public function testSaveRedirectionQueryInvalidEmail()
-    {
-        // Simular un usuario autenticado
-        $user = UsersModel::factory()->create();
-        $this->actingAs($user);
-
-        // Datos de prueba inválidos (tipo email pero contacto no es un email válido)
-        $data = [
-            'educational_program_type_uid' => 'valid-uid',
-            'type' => 'email',
-            'contact' => 'not-an-email',
-        ];
-
-        // Enviar la solicitud POST
-        $response = $this->postJson('/administration/redirection_queries_educational_program_types/save_redirection_query', $data);
-
-        // Verificar la respuesta de error
-        $response->assertStatus(422)
-            ->assertJson([
-                'message' => 'Hay campos incorrectos',
-                'errors' => [
-                    'contact' => ['El contacto debe ser un correo electrónico válido.'],
-                ],
-            ]);
-    }
-
-    /**
-     *  @test  Borrar Redirección consulta */
-    public function testDeleteRedirectionQuery()
-    {
-
-        $user = UsersModel::factory()->create();
-        $this->actingAs($user);
-
-        // Datos de prueba válidos
-        $data = [
-            'uid' => 'uid-id',
-            'educational_program_type_uid' => 'validate-uid',
-            'type' => 'email',
-            'contact' => 'example@example.com',
-        ];
-
-        // Envia la solicitud DELETE para eliminar las redirecciones
-        $response = $this->deleteJson('/administration/redirection_queries_educational_program_types/delete_redirections_queries', $data);
-
-        // Verifica la respuesta
-        $response->assertStatus(200)
-            ->assertJson(['message' => 'Redirección eliminada correctamente']);
-    }
-
-
-    /**
-     *  @test  Obtener page redirección consulta Programa Educacional con paginación*/
-    public function testGetRedirectionsQueriesWithPagination()
-    {
-        // Crear tipos de programas educativos
-        $educationalProgram = EducationalProgramTypesModel::factory()->create()->first();
-
-        // Crear redirecciones en la base de datos
-        RedirectionQueriesEducationalProgramTypesModel::factory()->create([
-            'uid' => generate_uuid(),
-            'educational_program_type_uid' => $educationalProgram->uid,
-            'type' => 'email',
-            'contact' => 'email@example.com',
-
-        ]);
-
-        // Hacer una solicitud GET a la ruta
-        $response = $this->get('/administration/redirection_queries_educational_program_types/get_redirections_queries');
-
-        // Comprobar que la respuesta es correcta
-        $response->assertStatus(200);
-
-        // Comprobar que la respuesta contiene los datos paginados
-        $response->assertJsonStructure([
-            'current_page',
-            'data' => [
-                '*' => [
-                    'uid',
-                    'contact',
-                    'educational_program_type_uid',
-                    'type',
-                    'contact',
-                ],
-            ],
-            'last_page',
-            'per_page',
-            'total',
-        ]);
-    }
-
-    /**
-     *  @test  Obtener page redirección consulta Programa Educacional por búsqueda*/
-    public function testSearchRedirectionsQueries()
-    {
-        // Crear tipos de programas educativos
-        $programType = EducationalProgramTypesModel::factory()->create(['name' => 'Programa A'])->first();
-
-        // Crear redirecciones en la base de datos
-        RedirectionQueriesEducationalProgramTypesModel::factory()->create([
-            'educational_program_type_uid' => $programType->uid,
-            'contact' => 'contact@example.com'
-        ]);
-        RedirectionQueriesEducationalProgramTypesModel::factory()->create([
-            'educational_program_type_uid' => $programType->uid,
-            'contact' => 'another_contact@example.com'
-        ]);
-
-        // Hacer una solicitud GET a la ruta con un parámetro de búsqueda
-        $response = $this->get('/administration/redirection_queries_educational_program_types/get_redirections_queries?search=contact');
-
-        // Comprueba que la respuesta es correcta
-        $response->assertStatus(200);
-    }
-
-    /** @test  verifica el orden de las redirecciones de las conultas programas educativos*/
-    public function testSortRedirectionsQueries()
-    {
-        // Crear tipos de programas educativos
-        $programType = EducationalProgramTypesModel::factory()->create(['name' => 'Programa A'])->first();
-
-        // Crear redirecciones en la base de datos
-        RedirectionQueriesEducationalProgramTypesModel::factory()->create([
-            'educational_program_type_uid' => $programType->uid,
-            'contact' => 'B_contact@example.com'
-        ]);
-        RedirectionQueriesEducationalProgramTypesModel::factory()->create([
-            'educational_program_type_uid' => $programType->uid,
-            'contact' => 'A_contact@example.com'
-        ]);
-
-        // Hacer una solicitud GET a la ruta con parámetros de ordenación
-        $response = $this->get('/administration/redirection_queries_educational_program_types/get_redirections_queries?sort[0][field]=contact&sort[0][dir]=asc&size=10');
-
-        // Comprobar que la respuesta es correcta
-        $response->assertStatus(200);
-
-        // Comprobar que los registros devueltos están ordenados correctamente
-        $data = $response->json('data');
-        // Verificar que hay al menos 2 registros
-        $this->assertCount(2, $data);
-
-        // Comprobar el orden de los registros
-        $this->assertEquals('A_contact@example.com', $data[0]['contact']);
-        $this->assertEquals('B_contact@example.com', $data[1]['contact']);
-    }
-
-    /** @test  Obtiene Redirección por uid*/
-    public function testGetRedirectionQueryByUid()
-    {
-        // Crear un tipo de programa educativo
-        $programType1 = EducationalProgramTypesModel::factory()->create()->first();
-
-        // Crear una redirección en la base de datos
-        $redirectionQuery = RedirectionQueriesEducationalProgramTypesModel::factory()->create([
-            'uid' => generate_uuid(),
-            'educational_program_type_uid' => $programType1->uid,
-            'contact' => 'contact@example.com'
-        ])->first();
-
-        // Hacer una solicitud GET a la ruta
-        $response = $this->get('/administration/redirection_queries_educational_program_types/get_redirection_query/' . $redirectionQuery->uid);
-
-        // Comprobar que la respuesta es correcta
-        $response->assertStatus(200);
-
-
-        $data = $response->json();
-
-        $this->assertEquals($redirectionQuery->uid, $data['uid']);
-        $this->assertEquals($redirectionQuery->contact, $data['contact']);
-        $this->assertEquals($programType1->uid, $data['educational_program_type']['uid']);
-        $this->assertEquals($programType1->name, $data['educational_program_type']['name']);
-    }
 }

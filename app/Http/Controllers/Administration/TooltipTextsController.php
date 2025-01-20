@@ -74,13 +74,13 @@ class TooltipTextsController extends BaseController
     /**
      * Obtiene una licencia específico basada en su UID.
      *
-     * @param  string $center_uid El UID del centro.
+     * @param  string $centerUid El UID del centro.
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getTooltipText($tooltip_text_uid)
+    public function getTooltipText($tooltipTextUid)
     {
-        $tooltip_text = TooltipTextsModel::where('uid', $tooltip_text_uid)->first()->toArray();
-        return response()->json($tooltip_text);
+        $tooltipText = TooltipTextsModel::where('uid', $tooltipTextUid)->first()->toArray();
+        return response()->json($tooltipText);
     }
 
     /**
@@ -108,27 +108,27 @@ class TooltipTextsController extends BaseController
             return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validator->errors()], 422);
         }
 
-        $tooltip_text_uid = $request->input("tooltip_text_uid");
+        $tooltipTextUid = $request->input("tooltip_text_uid");
 
-        return DB::transaction(function () use ($request, $tooltip_text_uid) {
+        return DB::transaction(function () use ($request, $tooltipTextUid) {
 
-            if (!$tooltip_text_uid) {
-                $tooltip_text = new TooltipTextsModel();
-                $tooltip_uid = generate_uuid();
-                $tooltip_text->uid = $tooltip_uid;
+            if (!$tooltipTextUid) {
+                $tooltipText = new TooltipTextsModel();
+                $tooltipUid = generateUuid();
+                $tooltipText->uid = $tooltipUid;
                 $isNew = true;
             } else {
-                $tooltip_text = TooltipTextsModel::find($tooltip_text_uid);
+                $tooltipText = TooltipTextsModel::find($tooltipTextUid);
                 $isNew = false;
             }
 
-            $tooltip_text->fill($request->only([
+            $tooltipText->fill($request->only([
                 'form_id',
                 'input_id',
                 'description'
             ]));
 
-            $tooltip_text->save();
+            $tooltipText->save();
 
             LogsController::createLog('Añadir texto de tooltip', 'Configuración General', auth()->user()->uid);
 

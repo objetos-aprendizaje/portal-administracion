@@ -80,7 +80,7 @@ class EducationalProgramsModel extends Model
                     ]);
             } else {
                 $this->EducationalProgramDocuments()->create([
-                    'uid' => generate_uuid(),
+                    'uid' => generateUuid(),
                     'educational_program_uid' => $this->uid,
                     'document_name' => $document['document_name'],
                 ]);

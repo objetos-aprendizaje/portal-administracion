@@ -36,8 +36,8 @@ class CenterControllerTest extends TestCase
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -176,10 +176,10 @@ class CenterControllerTest extends TestCase
 
         CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
             'center_uid'=> $center1->uid
-        ]);       
+        ]);
         // Asegúrate de que los centros existen antes de la eliminación
         $this->assertDatabaseHas('centers', ['uid' => $center1->uid]);
-       
+
 
         // Enviar la solicitud DELETE para eliminar los centros
         $response = $this->deleteJson('/administration/centers/delete_centers', [

@@ -17,7 +17,7 @@ class HeaderPagesModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'order' => 1,
             'name' => 'nombre pagina header',
             'content' => 'Contenido',

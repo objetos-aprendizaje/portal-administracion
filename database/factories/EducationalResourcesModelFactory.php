@@ -27,7 +27,7 @@ class EducationalResourcesModelFactory extends Factory
         $identifier = 'REC-' . str_pad($educationalResourcesCount + 1, 4, '0', STR_PAD_LEFT);
 
         return [
-            'uid'                           => generate_uuid(),
+            'uid'                           => generateUuid(),
             'identifier'                    => $identifier,
             'title'                         => $this->faker->sentence(3),
             'description'                   => $this->faker->sentence,
@@ -39,21 +39,21 @@ class EducationalResourcesModelFactory extends Factory
 
     public function withStatus(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn() => [
             'status_uid'                    => EducationalResourceStatusesModel::factory()->create()->first(),
         ]);
     }
 
     public function withEducationalResourceType(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn() => [
             'educational_resource_type_uid' => EducationalResourceTypesModel::factory()->create()->first(),
         ]);
     }
 
     public function withCreatorUser(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn() => [
             'creator_user_uid' => UsersModel::factory()->create()->first(),
         ]);
     }

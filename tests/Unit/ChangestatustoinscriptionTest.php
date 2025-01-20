@@ -31,9 +31,9 @@ class ChangestatustoinscriptionTest extends TestCase
 
     public function testGetAcceptedPublicationCourses()
     {
-        // Buscar un estado de curso 'ACCEPTED_PUBLICATION'       
+        // Buscar un estado de curso 'ACCEPTED_PUBLICATION'
 
-        $acceptedStatus = CourseStatusesModel::where('code','ACCEPTED_PUBLICATION')->first();     
+        $acceptedStatus = CourseStatusesModel::where('code','ACCEPTED_PUBLICATION')->first();
 
         // Crear cursos con diferentes fechas y estados
          CoursesModel::factory()->withCourseType()->create([
@@ -61,26 +61,26 @@ class ChangestatustoinscriptionTest extends TestCase
         $generalautomatictype = AutomaticNotificationTypesModel::where('code', 'NEW_COURSES_NOTIFICATIONS')->first();
 
         $generalautomatic = GeneralNotificationsAutomaticModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'automatic_notification_type_uid' => $generalautomatictype->uid
         ]);
 
         GeneralNotificationsAutomaticUsersModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'user_uid' => $student1->uid,
             'general_notifications_automatic_uid' => $generalautomatic->uid,
             'is_read' => 0
         ]);
 
         GeneralNotificationsAutomaticUsersModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'user_uid' => $student2->uid,
             'general_notifications_automatic_uid' => $generalautomatic->uid,
             'is_read' => 0
         ]);
 
         // Simula el método getAllStudents
-        $studentsUsers = [$student1, $student2];
+        // $studentsUsers = [$student1, $student2];
 
         // Ejecutar el comando
         $this->artisan('app:change-status-to-inscription')->assertExitCode(0);

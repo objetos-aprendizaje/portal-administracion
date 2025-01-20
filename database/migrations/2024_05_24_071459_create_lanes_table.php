@@ -20,13 +20,13 @@ return new class extends Migration
         });
 
         $records = [
-            ['uid' => generate_uuid(), 'active' => 1, 'code' => 'FEATURED_COURSES'],
-            ['uid' => generate_uuid(), 'active' => 1, 'code' => 'FEATURED_PROGRAMS'],
-            ['uid' => generate_uuid(), 'active' => 1, 'code' => 'FEATURED_RESOURCES'],
+            ['uid' => generateUuid(), 'active' => 1, 'code' => 'FEATURED_COURSES'],
+            ['uid' => generateUuid(), 'active' => 1, 'code' => 'FEATURED_PROGRAMS'],
+            ['uid' => generateUuid(), 'active' => 1, 'code' => 'FEATURED_RESOURCES'],
 
-            ['uid' => generate_uuid(), 'active' => 1, 'code' => 'RECENTS_COURSES'],
-            ['uid' => generate_uuid(), 'active' => 1, 'code' => 'RECENTS_PROGRAMS'],
-            ['uid' => generate_uuid(), 'active' => 1, 'code' => 'RECENTS_RESOURCES'],
+            ['uid' => generateUuid(), 'active' => 1, 'code' => 'RECENTS_COURSES'],
+            ['uid' => generateUuid(), 'active' => 1, 'code' => 'RECENTS_PROGRAMS'],
+            ['uid' => generateUuid(), 'active' => 1, 'code' => 'RECENTS_RESOURCES'],
         ];
 
         DB::table('lanes')->insert($records);

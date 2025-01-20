@@ -23,32 +23,32 @@ class JobsSendEducationalProgramNotificationToManagementsTest extends TestCase
     {
         // Datos
         $educationalProgram = [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Programa Educativo 1'
         ];
 
         // Crear el tipo de notificación si no existe
         AutomaticNotificationTypesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Notificación de nuevos programas educativos para gestión',
             'code' => 'NEW_EDUCATIONAL_PROGRAMS_NOTIFICATIONS_MANAGEMENTS',
         ])->latest()->first();
 
         // Crea el rol si no existe
-        $role = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);
+        $role = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]);
 
         // Crear usuarios gestores
         $manager1 = UsersModel::factory()->create([
             'email' => 'manager1@example.com'
         ])->latest()->first();
         $manager1->roles()->attach($role->uid, [
-            'uid' => generate_uuid()]);
+            'uid' => generateUuid()]);
 
         $manager2 = UsersModel::factory()->create([
             'email' => 'manager2@example.com'
         ]);
         $manager2->roles()->attach($role->uid, [
-            'uid' => generate_uuid()]);
+            'uid' => generateUuid()]);
 
         // Fake the Queue and Notification
         Queue::fake();

@@ -21,9 +21,9 @@ class AnalyticsResourcesController extends BaseController
 
     public function index()
     {
-        $educational_resources_types = EducationalResourceTypesModel::all();
+        $educationalResourcesTypes = EducationalResourceTypesModel::all();
         $categories = CategoriesModel::with('parentCategory')->get();
-        $license_types = LicenseTypesModel::get();
+        $licenseTypes = LicenseTypesModel::get();
 
         return view(
             'analytics.resources.index',
@@ -36,9 +36,9 @@ class AnalyticsResourcesController extends BaseController
                 "tabulator" => true,
                 "submenuselected" => "analytics-poa",
                 "flatpickr" => true,
-                "educational_resources_types" => $educational_resources_types,
+                "educational_resources_types" => $educationalResourcesTypes,
                 "categories" => $categories,
-                "license_types" => $license_types,
+                "license_types" => $licenseTypes,
                 "tabulator" => true,
                 "tomselect" => true,
             ]
@@ -54,7 +54,6 @@ class AnalyticsResourcesController extends BaseController
     public function getPoaAccesses(Request $request)
     {
         $size = $request->get('size', 1);
-        $search = $request->get('search');
         $sort = $request->get('sort');
 
         // Consulta para obtener el primer y último acceso de cada curso
@@ -108,7 +107,9 @@ class AnalyticsResourcesController extends BaseController
             $query->orderBy('accesses_count', 'DESC');
         }
 
-        if($filters) $this->applyFilters($filters, $query);
+        if($filters) {
+            $this->applyFilters($filters, $query);
+        }
 
         // Ahora aplicamos la paginación antes de obtener los resultados.
         $data = $query->paginate($size);
@@ -123,9 +124,13 @@ class AnalyticsResourcesController extends BaseController
                 $query->whereHas('categories', function ($query) use ($filter) {
                     $query->whereIn('categories.uid', $filter['value']);
                 });
-            } else if ($filter['database_field'] == "embeddings") {
-                if ($filter['value'] == 1) $query->whereNotNull('embeddings');
-                else $query->whereNull('embeddings');
+            } elseif ($filter['database_field'] == "embeddings") {
+                if ($filter['value'] == 1) {
+                    $query->whereNotNull('embeddings');
+                }
+                else {
+                    $query->whereNull('embeddings');
+                }
             } else {
                 $query->where($filter['database_field'], $filter['value']);
             }
@@ -138,7 +143,9 @@ class AnalyticsResourcesController extends BaseController
 
         $query = EducationalResourcesModel::withCount('accesses')->orderBy('accesses_count', 'DESC');
 
-        if($filters) $this->applyFilters($filters, $query);
+        if($filters) {
+            $this->applyFilters($filters, $query);
+        }
 
         $data = $query->get();
 

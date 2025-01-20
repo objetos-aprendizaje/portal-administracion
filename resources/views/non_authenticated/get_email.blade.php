@@ -3,7 +3,7 @@
     <section class="md:flex hidden">
 
         <div class="w-1/2">
-            <img id="image-background" src="{{ asset('data/images/background_login.png') }}" class="object-cover w-full h-screen">
+            <img id="image-background" src="{{ asset('data/images/background_login.png') }}" class="object-cover w-full h-screen" alt="imagen fondo">
         </div>
 
         <div class="w-1/2 justify-center flex items-center">
@@ -25,7 +25,7 @@
                             <button type="submit"
                                 class="btn bg-primary text-white hover:bg-secondary w-full h-[60px]">Acceder
 
-                                {{ e_heroicon('arrow-up-right', 'outline') }}</button>
+                                {{ eHeroicon('arrow-up-right', 'outline') }}</button>
 
                         </div>
 
@@ -64,7 +64,7 @@
 
                         <button type="submit"
                             class="btn bg-primary text-white hover:bg-secondary w-full h-[60px]">Acceder
-                            {{ e_heroicon('arrow-up-right', 'outline') }}</button>
+                            {{ eHeroicon('arrow-up-right', 'outline') }}</button>
 
                     </div>
 

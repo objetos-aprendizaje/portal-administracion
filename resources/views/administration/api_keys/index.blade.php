@@ -9,13 +9,13 @@
 
             <div>
                 <button type="button" class="btn-icon" id="new-api-key-btn" title="Añadir clave API">
-                    {{ e_heroicon('plus', 'outline') }}
+                    {{ eHeroicon('plus', 'outline') }}
                 </button>
                 <button type="button" class="btn-icon" id="delete-api-keys-btn" title="Eliminar clave API">
-                    {{ e_heroicon('trash', 'outline') }}
+                    {{ eHeroicon('trash', 'outline') }}
                 </button>
                 <button type="button" class="btn-icon" id="btn-reload-table" title="Actualizar">
-                    {{ e_heroicon('arrow-path', 'outline') }}
+                    {{ eHeroicon('arrow-path', 'outline') }}
                 </button>
             </div>
 

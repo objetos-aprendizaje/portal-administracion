@@ -16,8 +16,7 @@ class CoursesEmbeddingsModelFactory extends Factory
      */
     public function definition(): array
     {
-        // $embeddingVector = '[' . implode(',', array_fill(0, 1536, '0.1')) . ']';
-        $embeddingVector = array_fill(0, 1536, 0.1); 
+        $embeddingVector = array_fill(0, 1536, 0.1);
 
         return [
             'embeddings'=> $embeddingVector

@@ -84,20 +84,22 @@ class LogsController extends BaseController
             }
         }
 
-        if ($filters) $this->applyFilters($filters, $query);
+        if ($filters) {
+            $this->applyFilters($filters, $query);
+        }
 
         $data = $query->paginate($size);
 
         return response()->json($data, 200);
     }
 
-    public static function createLog($info, $entity = null, $user_uid = null)
+    public static function createLog($info, $entity = null, $userUid = null)
     {
         $log = new LogsModel();
-        $log->uid = generate_uuid();
+        $log->uid = generateUuid();
         $log->info = $info;
         $log->entity = $entity;
-        $log->user_uid = $user_uid;
+        $log->user_uid = $userUid;
         $log->save();
     }
 
@@ -114,9 +116,9 @@ class LogsController extends BaseController
                     $query->whereDate('created_at', '<=', $filter['value'])
                         ->whereDate('created_at', '>=', $filter['value']);
                 }
-            } else if ($filter['database_field'] == 'entity') {
+            } elseif ($filter['database_field'] == 'entity') {
                 $query->whereIn('entity', $filter['value']);
-            } else if ($filter['database_field'] == 'users') {
+            } elseif ($filter['database_field'] == 'users') {
                 $query->whereIn('logs.user_uid', $filter['value']);
             } else {
                 $query->where($filter['database_field'], $filter['value']);

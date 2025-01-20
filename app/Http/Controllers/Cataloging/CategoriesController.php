@@ -21,25 +21,27 @@ class CategoriesController extends BaseController
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            $can_access_categories = $this->checkAccessUserCategories();
+            $canAccessCategories = $this->checkAccessUserCategories();
 
-            if (!$can_access_categories) abort(403);
+            if (!$canAccessCategories) {
+                abort(403);
+            }
             return $next($request);
         })->except('index');
     }
 
     public function index()
     {
-        $can_access_categories = $this->checkAccessUserCategories();
+        $canAccessCategories = $this->checkAccessUserCategories();
 
-        if (!$can_access_categories) {
+        if (!$canAccessCategories) {
             return view('access_not_allowed', [
                 'title' => 'No es posible administrar las categorías',
                 'description' => 'El administrador tiene bloqueado la administración de categorías a los gestores.'
             ]);
         }
 
-        $categories_anidated = CategoriesModel::whereNull('parent_category_uid')->with([
+        $categoriesAnidated = CategoriesModel::whereNull('parent_category_uid')->with([
             'subcategories' => function ($query) {
                 $query->withCount('courses');
             },
@@ -58,7 +60,7 @@ class CategoriesController extends BaseController
                     "resources/js/cataloging_module/categories.js"
                 ],
                 "categories" => $categories,
-                "categories_anidated" => $categories_anidated,
+                "categories_anidated" => $categoriesAnidated,
                 "coloris" => true,
                 "submenuselected" => "cataloging-categories",
             ]
@@ -72,15 +74,17 @@ class CategoriesController extends BaseController
         $categories = CategoriesModel::whereNull('parent_category_uid')->with('subcategories')->get()->toArray();
 
         return response()->json($categories, 200);
-        $categories = CategoriesModel::with('parentCategory')->get()->toArray();
 
-        return response()->json($categories, 200);
+        // Se comenta esta linea ya que esta parte es inalcanzable
+        // $categories = CategoriesModel::with('parentCategory')->get()->toArray();
+        // return response()->json($categories, 200);
+        
     }
 
-    public function getCategory($category_uid)
+    public function getCategory($categoryUid)
     {
 
-        $category = CategoriesModel::with('parentCategory')->where('uid', $category_uid)->first()->toArray();
+        $category = CategoriesModel::with('parentCategory')->where('uid', $categoryUid)->first()->toArray();
 
         return response()->json($category, 200);
     }
@@ -147,25 +151,25 @@ class CategoriesController extends BaseController
             return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validator->errors()], 422);
         }
 
-        $category_uid = $request->get('category_uid');
+        $categoryUid = $request->get('category_uid');
         $name = $request->get('name');
         $description = $request->get('description');
         $color = $request->get('color');
 
-        $parent_category_uid = $request->get('parent_category_uid');
+        $parentCategoryUid = $request->get('parent_category_uid');
 
-        if ($category_uid) {
+        if ($categoryUid) {
             $isNew = false;
-            $category = CategoriesModel::find($category_uid);
+            $category = CategoriesModel::find($categoryUid);
         } else {
             $isNew = true;
             $category = new CategoriesModel();
-            $category->uid = generate_uuid();
+            $category->uid = generateUuid();
         }
 
         $category->name = $name;
         $category->description = $description;
-        $category->parent_category_uid = $parent_category_uid;
+        $category->parent_category_uid = $parentCategoryUid;
         $category->color = $color;
 
         $image = $request->file('image_path');
@@ -220,9 +224,9 @@ class CategoriesController extends BaseController
     public function deleteCategories(Request $request)
     {
 
-        $uids_categories = $request->input('uids');
+        $uidsCategories = $request->input('uids');
 
-        $categories = CategoriesModel::whereIn('uid', $uids_categories)->get();
+        $categories = CategoriesModel::whereIn('uid', $uidsCategories)->get();
         DB::transaction(function () use ($categories) {
             foreach ($categories as $category) {
                 $category->delete();
@@ -241,12 +245,14 @@ class CategoriesController extends BaseController
     {
         $user = Auth::user();
 
-        $roles_user = $user->roles->pluck('code')->toArray();
+        $rolesUser = $user->roles->pluck('code')->toArray();
 
-        if (empty(array_diff($roles_user, ['MANAGEMENT']))) {
-            $managers_can_manage_categories = GeneralOptionsModel::where('option_name', 'managers_can_manage_categories')->first()->option_value;
+        if (empty(array_diff($rolesUser, ['MANAGEMENT']))) {
+            $managersCanManageCategories = GeneralOptionsModel::where('option_name', 'managers_can_manage_categories')->first()->option_value;
 
-            if (!$managers_can_manage_categories) return false;
+            if (!$managersCanManageCategories) {
+                return false;
+            }
         }
 
         return true;

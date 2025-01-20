@@ -8,10 +8,10 @@
         @if (Auth::user()->hasAnyRole(['ADMINISTRATOR']))
             <div class="container-menu">
                 <li class="{{ $current_module === 'administration' ? 'menu-element-selected' : '' }}">
-                    {{ e_heroicon('pencil', 'outline') }}
+                    {{ eHeroicon('pencil', 'outline') }}
                     <span>Administración</span>
-                    {{ e_heroicon('chevron-down', 'outline', 'close-sub-menu') }}
-                    {{ e_heroicon('chevron-up', 'outline', 'open-sub-menu hidden') }}
+                    {{ eHeroicon('chevron-down', 'outline', 'close-sub-menu') }}
+                    {{ eHeroicon('chevron-up', 'outline', 'open-sub-menu hidden') }}
                 </li>
                 <div class="sub-menu hidden-opacity transition-all sub-menu-administracion">
                     <ul>
@@ -61,10 +61,10 @@
         @if (Auth::user()->hasAnyRole(['MANAGEMENT']))
             <div class="container-menu">
                 <li class="{{ $current_module === 'management' ? 'menu-element-selected' : '' }}">
-                    {{ e_heroicon('cog-6-tooth', 'outline') }}
+                    {{ eHeroicon('cog-6-tooth', 'outline') }}
                     <span>Gestión</span>
-                    {{ e_heroicon('chevron-down', 'outline', 'close-sub-menu') }}
-                    {{ e_heroicon('chevron-up', 'outline', 'open-sub-menu hidden') }}
+                    {{ eHeroicon('chevron-down', 'outline', 'close-sub-menu') }}
+                    {{ eHeroicon('chevron-up', 'outline', 'open-sub-menu hidden') }}
                 </li>
                 <div class="sub-menu hidden-opacity transition-all">
                     <ul>
@@ -81,10 +81,10 @@
             <div class="container-menu">
                 <li class="{{ $current_module === 'cataloging' ? 'menu-element-selected' : '' }}">
 
-                    {{ e_heroicon('adjustments-vertical', 'outline') }}
+                    {{ eHeroicon('adjustments-vertical', 'outline') }}
                     <span>Catalogación</span>
-                    {{ e_heroicon('chevron-down', 'outline', 'close-sub-menu') }}
-                    {{ e_heroicon('chevron-up', 'outline', 'open-sub-menu hidden') }}
+                    {{ eHeroicon('chevron-down', 'outline', 'close-sub-menu') }}
+                    {{ eHeroicon('chevron-up', 'outline', 'open-sub-menu hidden') }}
                 </li>
                 <div class="sub-menu hidden-opacity transition-all">
                     <ul>
@@ -111,7 +111,7 @@
             <div class="container-menu">
                 <a href="{{ route('list-users') }}">
                     <li class="{{ $current_module === 'users' ? 'menu-element-selected' : '' }}">
-                        {{ e_heroicon('user-group', 'outline') }}
+                        {{ eHeroicon('user-group', 'outline') }}
                         <span>Usuarios</span>
                     </li>
                 </a>
@@ -121,10 +121,10 @@
         @if (Auth::user()->hasAnyRole(['MANAGEMENT', 'TEACHER']))
             <div class="container-menu">
                 <li class="{{ $current_module === 'notifications' ? 'menu-element-selected' : '' }}">
-                    {{ e_heroicon('bell-alert', 'outline') }}
+                    {{ eHeroicon('bell-alert', 'outline') }}
                     <span>Notificaciones</span>
-                    {{ e_heroicon('chevron-down', 'outline', 'close-sub-menu') }}
-                    {{ e_heroicon('chevron-up', 'outline', 'open-sub-menu hidden') }}
+                    {{ eHeroicon('chevron-down', 'outline', 'close-sub-menu') }}
+                    {{ eHeroicon('chevron-up', 'outline', 'open-sub-menu hidden') }}
                 </li>
                 <div class="sub-menu hidden-opacity transition-all">
                     <ul>
@@ -144,10 +144,10 @@
         @if (Auth::user()->hasAnyRole(['MANAGEMENT', 'TEACHER']))
             <div class="container-menu">
                 <li class="{{ $current_module === 'learning_objects' ? 'menu-element-selected' : '' }}">
-                    {{ e_heroicon('academic-cap', 'outline') }}
+                    {{ eHeroicon('academic-cap', 'outline') }}
                     <span>Objetos de aprendizaje</span>
-                    {{ e_heroicon('chevron-down', 'outline', 'close-sub-menu') }}
-                    {{ e_heroicon('chevron-up', 'outline', 'open-sub-menu hidden') }}
+                    {{ eHeroicon('chevron-down', 'outline', 'close-sub-menu') }}
+                    {{ eHeroicon('chevron-up', 'outline', 'open-sub-menu hidden') }}
                 </li>
                 <div class="sub-menu hidden-opacity transition-all">
                     <ul>
@@ -172,7 +172,7 @@
             <div class="container-menu">
                 <a href="{{ route('list-logs') }}">
                     <li class="{{ $current_module === 'logs' ? 'menu-element-selected' : '' }}">
-                        {{ e_heroicon('document-text', 'outline') }}
+                        {{ eHeroicon('document-text', 'outline') }}
                         <span>Logs</span>
                     </li>
                 </a>
@@ -182,10 +182,10 @@
         @if (Auth::user()->hasAnyRole(['MANAGEMENT', 'TEACHER']))
             <div class="container-menu">
                 <li class="{{ $current_module === 'credentials' ? 'menu-element-selected' : '' }}">
-                    {{ e_heroicon('check-badge', 'outline') }}
+                    {{ eHeroicon('check-badge', 'outline') }}
                     <span>Credenciales</span>
-                    {{ e_heroicon('chevron-down', 'outline', 'close-sub-menu') }}
-                    {{ e_heroicon('chevron-up', 'outline', 'open-sub-menu hidden') }}
+                    {{ eHeroicon('chevron-down', 'outline', 'close-sub-menu') }}
+                    {{ eHeroicon('chevron-up', 'outline', 'open-sub-menu hidden') }}
                 </li>
                 <div class="sub-menu hidden-opacity transition-all">
                     <ul>
@@ -203,14 +203,13 @@
         @if (Auth::user()->hasAnyRole(['MANAGEMENT']))
             <div class="container-menu">
                 <li class="{{ $current_module === 'analytics' ? 'menu-element-selected' : '' }}">
-                    {{ e_heroicon('chart-bar', 'outline') }}
+                    {{ eHeroicon('chart-bar', 'outline') }}
                     <span>Analítica</span>
-                    {{ e_heroicon('chevron-down', 'outline', 'close-sub-menu') }}
-                    {{ e_heroicon('chevron-up', 'outline', 'open-sub-menu hidden') }}
+                    {{ eHeroicon('chevron-down', 'outline', 'close-sub-menu') }}
+                    {{ eHeroicon('chevron-up', 'outline', 'open-sub-menu hidden') }}
                 </li>
                 <div class="sub-menu hidden-opacity transition-all">
                     <ul>
-                        <!--<li class="disabled"><a href="javascript:void(0)">Visitas totales</a></li>-->
                         <li><a class="{{ isset($submenuselected) && $submenuselected == 'analytics-poa' ? 'submenu-selected' : '' }}"
                                 href="{{ route('analytics-resources') }}">Visitas por recursos</a></li>
                         <li><a class="{{ isset($submenuselected) && $submenuselected == 'analytics-courses' ? 'submenu-selected' : '' }}"
@@ -231,7 +230,7 @@
         <div class="container-menu">
             <a href="{{ route('my-profile') }}">
                 <li class="{{ $current_module === 'my_profile' ? 'menu-element-selected' : '' }}">
-                    {{ e_heroicon('user', 'outline') }}
+                    {{ eHeroicon('user', 'outline') }}
                     <span>Mi perfil</span>
                 </li>
             </a>
@@ -239,10 +238,10 @@
 
         <li id="collapse-expand-menu-btn" class="hidden-collapse-expand-menu-btn">
             <div id="arrow-right">
-                {{ e_heroicon('arrow-right-circle', 'outline') }}
+                {{ eHeroicon('arrow-right-circle', 'outline') }}
             </div>
             <div id="arrow-left" class="hidden">
-                {{ e_heroicon('arrow-left-circle', 'outline') }}
+                {{ eHeroicon('arrow-left-circle', 'outline') }}
             </div>
             <span>Contraer</span>
         </li>

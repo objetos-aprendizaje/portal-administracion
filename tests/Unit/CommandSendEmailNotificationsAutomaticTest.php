@@ -25,15 +25,14 @@ class CommandSendEmailNotificationsAutomaticTest extends TestCase
         ]);
 
         // Crear una notificación automática pendiente
-        $notification = EmailNotificationsAutomaticModel::factory()->create([
-            'uid' => generate_uuid(),
+        EmailNotificationsAutomaticModel::factory()->create([
+            'uid' => generateUuid(),
             'sent' => false,
             'user_uid' => $user->uid,
             'subject' => 'Test Subject',
             'parameters' => json_encode(['key' => 'value']), // Ejemplo de parámetros
             'template' => 'notification_template',
         ])->first();
-
 
          // Simular que hay trabajos en la cola
         Queue::fake();

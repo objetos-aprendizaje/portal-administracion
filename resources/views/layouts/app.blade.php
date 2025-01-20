@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -29,7 +29,7 @@
         window.tooltiptexts = @json($tooltip_texts);
     </script>
 
-    @vite(['resources/css/app.css', 'resources/scss/app.scss', 'resources/css/toastify.css', 'resources/js/cookie_handler.js', 'resources/js/app.js', 'resources/js/menu.js', 'resources/js/modal_handler.js', 'resources/js/loading_handler.js', 'resources/js/notifications_handler.js', 'resources/js/refresh_csrf_token.js'])
+    @vite(['resources/css/app.css', 'resources/scss/app.scss', 'resources/css/toastify.css', 'resources/js/cookie_handler.js', 'resources/js/app.js', 'resources/js/menu.js', 'resources/js/modal_handler.js', 'resources/js/loading_handler.js', 'resources/js/notifications_handler.js'])
 
     @if (isset($variables_js))
         <script>

@@ -7,7 +7,7 @@
 
             <div>
                 <button data-modal-id="enroll-educational-program-csv-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
         </div>
@@ -28,7 +28,7 @@
                         <div class="flex-none">
                             <input type="file" id="attachment" class="hidden" name="attachment">
                             <label for="attachment" class="btn btn-rectangular btn-input-file">
-                                Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                             </label>
                         </div>
                         <div id="file-name" class="file-name text-[14px]">
@@ -37,13 +37,13 @@
                     </div>
 
                     <a id="attachment-download" class=" text-[14px]" target="new_blank"
-                        href="javascript:void(0)"></a>
+                        href="javascript:void(0)">Descargar fichero</a>
 
                 </div>
 
                 <div class="flex justify-center mt-8">
                     <button id="enroll-educational-program-csv-btn" type="button" class="btn btn-primary">
-                        Subir {{ e_heroicon('arrow-up-tray', 'outline') }}</button>
+                        Subir {{ eHeroicon('arrow-up-tray', 'outline') }}</button>
                 </div>
             </div>
 

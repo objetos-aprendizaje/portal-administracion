@@ -14,7 +14,7 @@
                     <div class="content-container">
 
                         <div class="poa-input-image">
-                            <img id="photo_path_preview" src="{{ $user->photo_path ?? env('NO_IMAGE_SELECTED_PATH') }}" />
+                            <img id="photo_path_preview" src="{{ $user->photo_path ?? env('NO_IMAGE_SELECTED_PATH') }}" alt="foto de perfil" />
 
                             <span class="dimensions">*Se recomienda imagen con aspecto cuadrado con una resolución mínima
                                 de: 400px x 400px.
@@ -24,11 +24,11 @@
                                 <input accept="image/*" type="file" id="photo_path" name="photo_path" class="hidden" />
 
                                 <button type="button" class="btn btn-rectangular min-w-[110px]" id="delete-photo">
-                                    Eliminar {{ e_heroicon('x-mark', 'outline') }}
+                                    Eliminar {{ eHeroicon('x-mark', 'outline') }}
                                 </button>
 
                                 <label for="photo_path" class="btn btn-rectangular min-w-[110px]">
-                                    Subir {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                    Subir {{ eHeroicon('arrow-up-tray', 'outline') }}
                                 </label>
 
                                 <span id="image-name" class="image-name text-[14px]">Ningún archivo seleccionado</span>
@@ -233,7 +233,7 @@
                 </div>
 
                 <button type="submit" class="btn btn-primary">Guardar
-                    {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                    {{ eHeroicon('paper-airplane', 'outline') }}</button>
 
             </div>
         </form>

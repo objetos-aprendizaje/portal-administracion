@@ -37,12 +37,12 @@ class AnalyticsCoursesControllerTest extends TestCase
         $user->roles()->attach(
             $adminRole->uid,
             [
-                'uid' => generate_uuid()
+                'uid' => generateUuid()
             ]
         );
 
         $this->actingAs($user);
-        // Simular datos en la base de datos        
+        // Simular datos en la base de datos
         CourseStatusesModel::all();
         CallsModel::factory()->count(2)->create();
         EducationalProgramTypesModel::factory()->count(4)->create();
@@ -60,13 +60,13 @@ class AnalyticsCoursesControllerTest extends TestCase
         $teacher->roles()->attach(
             $teacherRole->uid,
             [
-                'uid' => generate_uuid()
+                'uid' => generateUuid()
             ]
         );
         $student->roles()->attach(
             $studentRole->uid,
             [
-                'uid' => generate_uuid()
+                'uid' => generateUuid()
             ]
         );
 
@@ -83,7 +83,7 @@ class AnalyticsCoursesControllerTest extends TestCase
         // Verificar que los datos necesarios estén presentes en la vista
         $response->assertViewHas('courses_statuses');
         $response->assertViewHas('calls');
-        $response->assertViewHas('educationals_programs_types');
+
         $response->assertViewHas('courses_types');
         $response->assertViewHas('categories');
         $response->assertViewHas('teachers');
@@ -103,7 +103,7 @@ class AnalyticsCoursesControllerTest extends TestCase
         $user->roles()->attach(
             $adminRole->uid,
             [
-                'uid' => generate_uuid()
+                'uid' => generateUuid()
             ]
         );
 
@@ -149,7 +149,7 @@ class AnalyticsCoursesControllerTest extends TestCase
         $user->roles()->attach(
             $adminRole->uid,
             [
-                'uid' => generate_uuid()
+                'uid' => generateUuid()
             ]
         );
         $this->actingAs($user);
@@ -189,11 +189,11 @@ class AnalyticsCoursesControllerTest extends TestCase
         ]);
 
         $course1->teachers()->attach($user->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
         ]);
 
         $course2->teachers()->attach($user->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
         ]);
 
         // Crear un filtro de ejemplo
@@ -220,7 +220,7 @@ class AnalyticsCoursesControllerTest extends TestCase
             ],
             [
                 'database_field' => 'categories',
-                'value' => [generate_uuid()]
+                'value' => [generateUuid()]
             ],
             [
                 'database_field' => 'course_statuses',
@@ -228,11 +228,7 @@ class AnalyticsCoursesControllerTest extends TestCase
             ],
             [
                 'database_field' => 'calls',
-                'value' => [generate_uuid()]
-            ],
-            [
-                'database_field' => 'educational_programs',
-                'value' => [generate_uuid()]
+                'value' => [generateUuid()]
             ],
             [
                 'database_field' => 'course_types',
@@ -264,7 +260,7 @@ class AnalyticsCoursesControllerTest extends TestCase
             ],
             [
                 'database_field' => 'learning_results',
-                'value' => [generate_uuid()]
+                'value' => [generateUuid()]
             ],
             [
                 'database_field' => 'title',
@@ -295,7 +291,7 @@ class AnalyticsCoursesControllerTest extends TestCase
         $user->roles()->attach(
             $adminRole->uid,
             [
-                'uid' => generate_uuid()
+                'uid' => generateUuid()
             ]
         );
         $this->actingAs($user);
@@ -322,7 +318,7 @@ class AnalyticsCoursesControllerTest extends TestCase
             ]
         );
         $course->students()->attach($user->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
         ]);
 
         // Datos de la solicitud con filtro de fecha
@@ -366,7 +362,7 @@ class AnalyticsCoursesControllerTest extends TestCase
         $user->roles()->attach(
             $adminRole->uid,
             [
-                'uid' => generate_uuid()
+                'uid' => generateUuid()
             ]
         );
         $this->actingAs($user);
@@ -393,7 +389,7 @@ class AnalyticsCoursesControllerTest extends TestCase
             ]
         );
         $course->students()->attach($user->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
         ]);
 
         // Datos de la solicitud sin especificar filtro de tipo o fecha
@@ -430,8 +426,6 @@ class AnalyticsCoursesControllerTest extends TestCase
         // Verificar que el número de estudiantes inscritos es correcto
         $this->assertEquals(1, $responseData['inscribed_users']);
 
-        // Verificar que el máximo valor (accesses o visitas) es mayor que 0
-        // $this->assertGreaterThan(0, $responseData['max_value']);
     }
 
     /**
@@ -446,7 +440,7 @@ class AnalyticsCoursesControllerTest extends TestCase
         $user->roles()->attach(
             $adminRole->uid,
             [
-                'uid' => generate_uuid()
+                'uid' => generateUuid()
             ]
         );
         $this->actingAs($user);
@@ -502,7 +496,7 @@ class AnalyticsCoursesControllerTest extends TestCase
         $user->roles()->attach(
             $adminRole->uid,
             [
-                'uid' => generate_uuid()
+                'uid' => generateUuid()
             ]
         );
         $this->actingAs($user);
@@ -529,7 +523,7 @@ class AnalyticsCoursesControllerTest extends TestCase
             ]
         );
         $course->students()->attach($user->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
         ]);
 
         // Datos de la solicitud con filtro de tipo 'YYYY'
@@ -557,8 +551,6 @@ class AnalyticsCoursesControllerTest extends TestCase
         foreach ($responseData['visits'][0] as $visit) {
             $this->assertMatchesRegularExpression('/^\d{4}$/', $visit['access_date_group']);
         }
-        // Verificar que el máximo valor (accesses o visitas) es mayor que 0
-        // $this->assertGreaterThan(0, $responseData['max_value']);
     }
 
     /**
@@ -574,27 +566,19 @@ class AnalyticsCoursesControllerTest extends TestCase
         $user->roles()->attach(
             $adminRole->uid,
             [
-                'uid' => generate_uuid()
+                'uid' => generateUuid()
             ]
         );
 
         $this->actingAs($user);
 
-        // Crear datos simulados de cursos        
-
+        // Crear datos simulados de cursos
         $course1 = CoursesModel::factory()
             ->withCourseStatus()
             ->withCourseType()
             ->create([
                 'title' => 'Curso de Programación',
             ]);
-
-        // $course2 = CoursesModel::factory()
-        //     ->withCourseStatus()
-        //     ->withCourseType()
-        //     ->create([
-        //         'title' => 'Curso de Diseño',
-        //     ]);
 
         CoursesAccesesModel::factory()->create([
             'course_uid' => $course1->uid,
@@ -611,9 +595,8 @@ class AnalyticsCoursesControllerTest extends TestCase
         );
 
         $course1->students()->attach($user->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
         ]);
-
 
         // Filtros, búsqueda y ordenamiento
         $requestData = [
@@ -639,10 +622,5 @@ class AnalyticsCoursesControllerTest extends TestCase
         // Verificar que la respuesta contiene los cursos filtrados correctamente
         $responseData = $response->json();
         $this->assertCount(0, $responseData['data']);
-        // $this->assertEquals('Curso de Programación', $responseData['data'][0]['title']);
-
-        // // Verificar el ordenamiento por visitas
-        // $this->assertArrayHasKey('visits_count', $responseData['data'][0]);
-        // $this->assertGreaterThanOrEqual(0, $responseData['data'][0]['visits_count']);
     }
 }

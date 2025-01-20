@@ -26,9 +26,9 @@ window.XLSX = XLSX;
 const endPointTable = "/analytics/courses/get";
 
 let analyticsPoaTable;
-let course_uid;
-let filter_date = "";
-let filter_type = "";
+let courseUid;
+let filterDate = "";
+let filterType = "";
 let flatpickrDateFilter;
 
 let tomSelectCategoriesFilter;
@@ -40,7 +40,6 @@ let tomSelectCoordinatorsTeachersFilter;
 let tomSelectCreatorsFilter;
 let tomSelectCourseStatusesFilter;
 let tomSelectCallsFilter;
-let tomSelectEducationalProgramsFilter;
 let tomSelectCourseTypesFilter;
 
 let flatpickrInscriptionDate;
@@ -117,7 +116,6 @@ function resetFilters() {
     tomSelectLearningResultsFilter.clear();
     tomSelectCoordinatorsTeachersFilter.clear();
     tomSelectCategoriesFilter.clear();
-    tomSelectEducationalProgramsFilter.clear();
 
     document.getElementById("filter_min_ects_workload").value = "";
     document.getElementById("filter_max_ects_workload").value = "";
@@ -162,7 +160,7 @@ function drawTable() {
                 const data = cell.getRow().getData();
                 showModal("analytics-course-modal", "Datos del curso");
                 fillDataCourseModal();
-                course_uid = data.uid;
+                courseUid = data.uid;
                 sendData();
                 document.getElementById("last_access").innerHTML = "";
                 document.getElementById("unique_users").innerHTML = "";
@@ -177,10 +175,6 @@ function drawTable() {
     ];
 
     const { ...tabulatorBaseConfigOverrided } = tabulatorBaseConfig;
-
-    //const actualTableConfiguration = getPaginationControls("courses-table");
-    /*     tabulatorBaseConfigOverrided.paginationSize =
-        actualTableConfiguration.paginationSize; */
 
     if (analyticsPoaTable) analyticsPoaTable.destroy();
     analyticsPoaTable = new Tabulator("#analytics-poa", {
@@ -271,22 +265,22 @@ function changePaginationSizeGraph() {
 }
 
 function fillDataCourseModal() {
-    const filter_data_input = document.querySelector("#filter_date_accesses");
-    const filter_type_input = document.querySelector("#filter_type");
+    const filterDataInput = document.querySelector("#filter_date_accesses");
+    const filterTypeInput = document.querySelector("#filter_type");
 
-    filter_data_input.addEventListener("change", function () {
-        filter_date = getFlatpickrDateRangeSql(flatpickrDateFilter);
-        if (filter_date.length > 1) {
-            const startDate = new Date(filter_date[0]);
-            const endDate = new Date(filter_date[1]);
+    filterDataInput.addEventListener("change", function () {
+        filterDate = getFlatpickrDateRangeSql(flatpickrDateFilter);
+        if (filterDate.length > 1) {
+            const startDate = new Date(filterDate[0]);
+            const endDate = new Date(filterDate[1]);
             const diffInMs = endDate - startDate;
             const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
             const days = Math.ceil(diffInDays);
             if (days > 20) {
-                filter_type = "YYYY-MM";
+                filterType = "YYYY-MM";
                 document.getElementById("filter_type").value = "YYYY-MM";
             } else if (days > 365) {
-                filter_type = "YYYY";
+                filterType = "YYYY";
                 document.getElementById("filter_type").value = "YYYY";
             }
 
@@ -294,9 +288,9 @@ function fillDataCourseModal() {
         }
     });
 
-    filter_type_input.addEventListener("change", function () {
-        filter_type = document.getElementById("filter_type").value;
-        if (filter_type != null) {
+    filterTypeInput.addEventListener("change", function () {
+        const filterType = document.getElementById("filter_type").value;
+        if (filterType != null) {
             sendData();
         }
     });
@@ -334,10 +328,6 @@ function initializeTomSelect() {
     );
 
     tomSelectCallsFilter = getMultipleTomSelectInstance("#filter_calls");
-
-    tomSelectEducationalProgramsFilter = getMultipleTomSelectInstance(
-        "#filter_educational_program_types"
-    );
 
     tomSelectCourseTypesFilter = getMultipleTomSelectInstance(
         "#filter_course_types"
@@ -378,7 +368,7 @@ function controlSaveHandlerFilters() {
  */
 function showFilters() {
     // Eliminamos todos los filtros
-    var currentFilters = document.querySelectorAll(".filter");
+    const currentFilters = document.querySelectorAll(".filter");
 
     // Recorre cada elemento y lo elimina
     currentFilters.forEach(function (filter) {
@@ -387,7 +377,7 @@ function showFilters() {
 
     filters.forEach((filter) => {
         // Crea un nuevo div
-        var newDiv = document.createElement("div");
+        const newDiv = document.createElement("div");
 
         // Agrega la clase 'filter' al div
         newDiv.classList.add("filter");
@@ -488,50 +478,50 @@ function collectFiltersCourses() {
         );
     }
 
-    const filter_min_ects_workload = document.getElementById(
+    const filterMinEctsWorkload = document.getElementById(
         "filter_min_ects_workload"
     ).value;
 
-    if (filter_min_ects_workload) {
+    if (filterMinEctsWorkload) {
         addFilter(
             "Mínimo ECTS",
-            filter_min_ects_workload,
-            filter_min_ects_workload,
+            filterMinEctsWorkload,
+            filterMinEctsWorkload,
             "filter_min_ects_workload",
             "min_ects_workload"
         );
     }
 
-    const filter_max_ects_workload = document.getElementById(
+    const filterMaxEctsWorkload = document.getElementById(
         "filter_max_ects_workload"
     ).value;
 
-    if (filter_max_ects_workload) {
+    if (filterMaxEctsWorkload) {
         addFilter(
             "Máximo ECTS",
-            filter_max_ects_workload,
-            filter_max_ects_workload,
+            filterMaxEctsWorkload,
+            filterMaxEctsWorkload,
             "filter_max_ects_workload",
             "max_ects_workload"
         );
     }
 
-    const filter_min_cost = document.getElementById("filter_min_cost").value;
-    if (filter_min_cost)
+    const filterMinCost = document.getElementById("filter_min_cost").value;
+    if (filterMinCost)
         addFilter(
             "Coste mínimo",
-            filter_min_cost,
-            filter_min_cost,
+            filterMinCost,
+            filterMinCost,
             "filter_min_cost",
             "min_cost"
         );
 
-    const filter_max_cost = document.getElementById("filter_max_cost").value;
-    if (filter_max_cost)
+    const filterMaxCost = document.getElementById("filter_max_cost").value;
+    if (filterMaxCost)
         addFilter(
             "Coste máximo",
-            filter_max_cost,
-            filter_max_cost,
+            filterMaxCost,
+            filterMaxCost,
             "filter_max_cost",
             "max_cost"
         );
@@ -664,26 +654,6 @@ function collectFiltersCourses() {
         }
     }
 
-    if (tomSelectEducationalProgramsFilter) {
-        const educationalPrograms =
-            tomSelectEducationalProgramsFilter.getValue();
-
-        const selectedEducationalProgramsLabel =
-            getOptionsSelectedTomSelectInstance(
-                tomSelectEducationalProgramsFilter
-            );
-
-        if (educationalPrograms.length) {
-            addFilter(
-                "Programas formativos",
-                tomSelectEducationalProgramsFilter.getValue(),
-                selectedEducationalProgramsLabel,
-                "educational_programs",
-                "educational_programs"
-            );
-        }
-    }
-
     if (tomSelectCourseTypesFilter) {
         const courseTypes = tomSelectCourseTypesFilter.getValue();
 
@@ -702,29 +672,29 @@ function collectFiltersCourses() {
         }
     }
 
-    const filter_min_required_students = document.getElementById(
+    const filterMinRequiredStudents = document.getElementById(
         "filter_min_required_students"
     ).value;
 
-    if (filter_min_required_students !== "") {
+    if (filterMinRequiredStudents !== "") {
         addFilter(
             "Mínimo estudiantes requeridos",
-            filter_min_required_students,
-            filter_min_required_students,
+            filterMinRequiredStudents,
+            filterMinRequiredStudents,
             "filter_min_required_students",
             "min_required_students"
         );
     }
 
-    const filter_max_required_students = document.getElementById(
+    const filterMaxRequiredStudents = document.getElementById(
         "filter_max_required_students"
     ).value;
 
-    if (filter_max_required_students !== "") {
+    if (filterMaxRequiredStudents !== "") {
         addFilter(
             "Máximo estudiantes requeridos",
-            filter_max_required_students,
-            filter_max_required_students,
+            filterMaxRequiredStudents,
+            filterMaxRequiredStudents,
             "filter_max_required_students",
             "max_required_students"
         );
@@ -771,8 +741,6 @@ function controlDeleteFilters(deleteBtn) {
     if (filterKey == "calls") tomSelectCallsFilter.clear();
     else if (filterKey == "course_statuses")
         tomSelectCourseStatusesFilter.clear();
-    else if (filterKey == "educational_programs")
-        tomSelectEducationalProgramsFilter.clear();
     else if (filterKey == "course_types") tomSelectCourseTypesFilter.clear();
     else if (filterKey == "creators") tomSelectCreatorsFilter.clear();
     else if (filterKey == "filter_inscription_date")
@@ -795,9 +763,9 @@ function controlDeleteFilters(deleteBtn) {
 function sendData() {
     const formData = new FormData();
 
-    formData.append("filter_date", filter_date);
-    formData.append("filter_type", filter_type);
-    formData.append("course_uid", course_uid);
+    formData.append("filter_date", filterDate);
+    formData.append("filter_type", filterType);
+    formData.append("course_uid", courseUid);
 
     const params = {
         url: "/analytics/courses/get_courses_data",
@@ -861,21 +829,21 @@ function drawGraphCourse(datas) {
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
     // Preparar los datos y definir colores
-    let new_data;
+    let newData;
     if (datas["accesses"][0].length == 0) {
-        new_data = datas["visits"][0].map((item1) => ({
+        newData = datas["visits"][0].map((item1) => ({
             group: item1.access_date_group,
             Accesos: 0,
             Visitas: item1.access_count || 0,
         }));
     } else if (datas["visits"][0].length == 0) {
-        new_data = datas["accesses"][0].map((item1) => ({
+        newData = datas["accesses"][0].map((item1) => ({
             group: item1.access_date_group,
             Accesos: item1.access_count || 0,
             Visitas: 0,
         }));
     } else {
-        new_data = datas["accesses"][0].map((item1) => {
+        newData = datas["accesses"][0].map((item1) => {
             const item2 = datas["visits"][0].find(
                 (item) => item.access_date_group === item1.access_date_group
             );
@@ -887,9 +855,9 @@ function drawGraphCourse(datas) {
         });
     }
 
-    new_data.columns = ["group", "Accesos", "Visitas"];
+    newData.columns = ["group", "Accesos", "Visitas"];
     const subgroups = ["Accesos", "Visitas"];
-    const groups = new_data.map((d) => d.group);
+    const groups = newData.map((d) => d.group);
 
     let itemMax = datas.max_value;
 
@@ -922,7 +890,7 @@ function drawGraphCourse(datas) {
     const yAxis = svg.append("g").call(d3.axisLeft(y));
 
     // Dibujar líneas punteadas horizontales
-    const gridlines = svg
+    svg
         .append("g")
         .attr("class", "grid")
         .selectAll("line")
@@ -948,7 +916,7 @@ function drawGraphCourse(datas) {
     // Dibujar barras con animación y tooltip
     svg.append("g")
         .selectAll("g")
-        .data(new_data)
+        .data(newData)
         .enter()
         .append("g")
         .attr("transform", (d) => `translate(${x(d.group)},0)`)
@@ -1053,7 +1021,7 @@ function graficar(data, quantity, d3GraphId, d3GraphXAxis) {
         { count: 0 }  // Valor inicial
     );
 
-    var ancho = d3GraphElement.clientWidth;
+    const ancho = d3GraphElement.clientWidth;
 
     // Obtener el ancho de la ventana para ajustar el gráfico
     let windowWidth = ancho; // Ancho completo de la página
@@ -1161,7 +1129,7 @@ function graficar(data, quantity, d3GraphId, d3GraphXAxis) {
             .attr("width", windowWidth)
             .attr("height", 40);
 
-        const xAxis = xAxisSvg
+        xAxisSvg
             .append("g")
             .attr("transform", `translate(${margin.left}, 20)`)
             .call(d3.axisBottom(x));
@@ -1187,7 +1155,7 @@ function graficarTreeMap(allDatas) {
             })),
         ];
 
-        const color_treemap = d3
+        const colorTreemap = d3
             .scaleOrdinal()
             .domain(data.map((d) => d.name)) // Definir dominio según los nombres
             .range([
@@ -1235,7 +1203,7 @@ function graficarTreeMap(allDatas) {
         d3.treemap().size([width, height]).padding(4)(root);
 
         // Define a color scale
-        const color = d3.scaleOrdinal(d3.schemeCategory10); // Usar una escala de colores predefinida o personalizada
+        d3.scaleOrdinal(d3.schemeCategory10); // Usar una escala de colores predefinida o personalizada
 
         // Use this information to add rectangles:
         svg.selectAll("rect")
@@ -1255,7 +1223,7 @@ function graficarTreeMap(allDatas) {
             })
             .style("stroke", "black")
             .style("fill", function (d) {
-                return color_treemap(d.data.name);
+                return colorTreemap(d.data.name);
             }) // Apply the color scale here
             .on("mouseover", function (event, d) {
                 const tooltip = d3.select("#tooltip");
@@ -1322,7 +1290,6 @@ function graficarTreeMap(allDatas) {
 }
 
 function convertirFechas(date) {
-    const regex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
     const fecha = new Date(date);
     const dia = String(fecha.getDate()).padStart(2, "0"); // Obtener día con dos dígitos
     const mes = String(fecha.getMonth() + 1).padStart(2, "0"); // Obtener mes (0-11) + 1

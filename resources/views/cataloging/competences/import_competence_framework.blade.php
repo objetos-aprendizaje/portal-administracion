@@ -4,12 +4,12 @@
 
         <div class="modal-header">
             <div>
-                <h2 class="modal-title"></h2>
+                <h2 class="modal-title">Importar marco de competencias</h2>
             </div>
 
             <div>
                 <button data-modal-id="import_competence_framework-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
         </div>

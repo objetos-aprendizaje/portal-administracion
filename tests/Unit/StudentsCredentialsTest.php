@@ -44,8 +44,8 @@ class StudentsCredentialsTest extends TestCase
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -90,7 +90,7 @@ class StudentsCredentialsTest extends TestCase
         // Asigna el rol 'STUDENT' a los usuarios creados
         foreach ($students as $student) {
             $student->roles()->attach(UserRolesModel::where('code', 'STUDENT')->first()->uid, [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -135,7 +135,7 @@ class StudentsCredentialsTest extends TestCase
 
         foreach ($courses as $course) {
             $pivot_data[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'course_uid' => $course->uid,
                 'user_uid' => $student->uid,
             ];
@@ -180,12 +180,12 @@ class StudentsCredentialsTest extends TestCase
         // Crea los datos de la relación con uid
         $pivotData = [
             [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'course_uid' => $course1->uid,
                 'user_uid' => $student->uid,
             ],
             [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'course_uid' => $course2->uid,
                 'user_uid' => $student->uid,
             ],
@@ -208,8 +208,8 @@ class StudentsCredentialsTest extends TestCase
     public function testSearchCredentialsStudents()
     {
         // Crea un estudiante en la base de datos
-        UsersModel::factory()->create(['uid' => generate_uuid(), 'first_name' => 'Ana', 'last_name' => 'Doe', 'email' => 'john@example.com']);
-        UsersModel::factory()->create(['uid' => generate_uuid(), 'first_name' => 'Jane', 'last_name' => 'Doe', 'email' => 'jane@example.com']);
+        UsersModel::factory()->create(['uid' => generateUuid(), 'first_name' => 'Ana', 'last_name' => 'Doe', 'email' => 'john@example.com']);
+        UsersModel::factory()->create(['uid' => generateUuid(), 'first_name' => 'Jane', 'last_name' => 'Doe', 'email' => 'jane@example.com']);
 
         // Act: Realiza una solicitud GET con el parámetro de búsqueda
         $response = $this->get('/credentials/students/get_students?search=John');
@@ -223,12 +223,12 @@ class StudentsCredentialsTest extends TestCase
     public function testSortCredentialsStudents()
     {
         // Crea estudiantes en la base de datos
-        $student1 = UsersModel::factory()->create(['uid' => generate_uuid(), 'first_name' => 'John', 'last_name' => 'Perez', 'email' => 'john@example.com']);
-        $roles = UserRolesModel::firstOrCreate(['code' => 'STUDENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $student1->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $student1 = UsersModel::factory()->create(['uid' => generateUuid(), 'first_name' => 'John', 'last_name' => 'Perez', 'email' => 'john@example.com']);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'STUDENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $student1->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
-        $student2 = UsersModel::factory()->create(['uid' => generate_uuid(), 'first_name' => 'Smith', 'last_name' => 'Alvarez', 'email' => 'smith@example.com']);
-        $student2->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $student2 = UsersModel::factory()->create(['uid' => generateUuid(), 'first_name' => 'Smith', 'last_name' => 'Alvarez', 'email' => 'smith@example.com']);
+        $student2->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Act: Realiza una solicitud GET con parámetros de ordenación
         $response = $this->get('/credentials/students/get_students?sort[0][field]=last_name&sort[0][dir]=asc&size=2');
@@ -243,12 +243,12 @@ class StudentsCredentialsTest extends TestCase
         // Arrange: Crea un estudiante y cursos en la base de datos
         $student = UsersModel::factory()->create();
 
-        $course1 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['uid' => generate_uuid(), 'title' => 'Course 1']);
-        $course2 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['uid' => generate_uuid(), 'title' => 'Course 2']);
+        $course1 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['uid' => generateUuid(), 'title' => 'Course 1']);
+        $course2 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create(['uid' => generateUuid(), 'title' => 'Course 2']);
 
         // Asocia los cursos al estudiante con diferentes credeciales
-        $student->coursesStudents()->attach($course1->uid, ['uid' => generate_uuid(), 'credential' => 'Certificate']);
-        $student->coursesStudents()->attach($course2->uid, ['uid' => generate_uuid(), 'credential' => 'Diploma']);
+        $student->coursesStudents()->attach($course1->uid, ['uid' => generateUuid(), 'credential' => 'Certificate']);
+        $student->coursesStudents()->attach($course2->uid, ['uid' => generateUuid(), 'credential' => 'Diploma']);
 
         // Act: Realiza una solicitud GET con parámetros de ordenación
         $response = $this->get("/credentials/students/get_courses_student/{$student->uid}?sort[0][field]=title&sort[0][dir]=asc&size=2");
@@ -259,195 +259,7 @@ class StudentsCredentialsTest extends TestCase
 
         // Verifica que haya datos en la respuesta
         $this->assertNotEmpty($data['data'], 'No se encontraron cursos del estudiante en la respuesta');
-
-        // Asegúrate de que los cursos estén ordenados por credencial
-        // $this->assertEquals('Certificate', $data['data'][0]['pivot']['title']);
-        // $this->assertEquals('Diploma', $data['data'][1]['pivot']['title']);
     }
-
-    // Todo: Este test esta dando error por credenciales   return $student->email === $emission['address'];  Linea 769 de CertidigitalService
-    public function testEmitCredentialsSuccessfullyAndManager()
-    {
-        $user = UsersModel::factory()->create();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
-
-        Auth::login($user);
-
-        // Crear un mock para general_options
-        $generalOptionsMock = [
-            'operation_by_calls' => false, // O false, según lo que necesites para la prueba
-            'necessary_approval_editions' => true,
-            'some_option_array' => [], // Asegúrate de que esto sea un array'
-            'certidigital_url'              => env('CERTIDIGITAL_URL'),
-            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
-            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
-            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
-            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
-            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
-            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
-            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
-        ];
-        app()->instance('general_options', $generalOptionsMock);
-
-        $certidCredencial = CertidigitalCredentialsModel::factory()->create();
-
-        $courseUids = [];
-
-        $type = EducationalProgramTypesModel::factory()->create(
-            [
-                'managers_can_emit_credentials' => 1,
-                'teachers_can_emit_credentials' => 0,
-            ]
-        );
-
-        $courses = CoursesModel::factory()->withCourseStatus()->count(3)->withCourseType()->create(
-            [
-                'certidigital_credential_uid' => $certidCredencial->uid,
-                'educational_program_type_uid' => $type->uid
-            ]
-        );
-
-        foreach ($courses as $course) {
-            CoursesStudentsModel::factory()->create([
-                'user_uid' => $user->uid,
-                'course_uid' => $course->uid,
-            ]);
-            CertidigitalAssesmentsModel::factory()->create([
-                'course_uid' => $course->uid,
-            ]);
-
-            $courseUids[] = [
-                $course->uid
-            ];
-        }
-        // Realizar la solicitud
-        $response = $this->postJson(route('emit-credentials'), [
-            'courses' => [$courses[0]->uid, $courses[1]->uid, $courses[2]->uid],
-            'user_uid' => $user->uid,
-        ]);
-        // Verificar respuesta
-        $response->assertStatus(200);
-        $response->assertJson(['message' => 'Credenciales generadas correctamente']);
-
-    }
-
-    /**
-     * @test Credenciales emitidas correctamente
-     */
-    // Todo: Este test esta dando error por credenciales   return $student->email === $emission['address'];  Linea 769 de CertidigitalService
-    public function testEmitCredentialsSuccessfully()
-    {
-        $user = UsersModel::factory()->create();       
-        $roles = UserRolesModel::firstOrCreate(['code' => 'TEACHER'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
-
-        Auth::login($user);
-
-        // Crear un mock para general_options
-        $generalOptionsMock = [
-            'operation_by_calls' => false, // O false, según lo que necesites para la prueba
-            'necessary_approval_editions' => true,
-            'some_option_array' => [], // Asegúrate de que esto sea un array'
-            'certidigital_url'              => env('CERTIDIGITAL_URL'),
-            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
-            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
-            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
-            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
-            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
-            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
-            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
-        ];
-        app()->instance('general_options', $generalOptionsMock);
-
-        $certidCredencial = CertidigitalCredentialsModel::factory()->create();
-
-        $courseUids = [];
-
-        $type = EducationalProgramTypesModel::factory()->create(
-            [
-                // 'managers_can_emit_credentials'=> true,                
-                'managers_can_emit_credentials' => 0,
-                'teachers_can_emit_credentials' => 1,
-            ]
-        );
-
-        $courses = CoursesModel::factory()->withCourseStatus()->count(3)->withCourseType()->create(
-            [
-                'certidigital_credential_uid' => $certidCredencial->uid,
-                'educational_program_type_uid' => $type->uid
-            ]
-        );
-
-        foreach ($courses as $course) {
-            CoursesStudentsModel::factory()->create([
-                'user_uid' => $user->uid,
-                'course_uid' => $course->uid,
-            ]);
-            CertidigitalAssesmentsModel::factory()->create([
-                'course_uid' => $course->uid,
-            ]);
-
-            $courseUids[] = [
-                $course->uid
-            ];
-        }
-        // Realizar la solicitud
-        $response = $this->postJson(route('emit-credentials'), [
-            'courses' => [$courses[0]->uid, $courses[1]->uid, $courses[2]->uid],
-            'user_uid' => $user->uid,
-        ]);
-        // Verificar respuesta
-        $response->assertStatus(200);
-        $response->assertJson(['message' => 'Credenciales generadas correctamente']);
-
-    }
-
-    /**
-     * @test No se pueden emitir credenciales por no cumplir con el tipo de Rol
-     */
-    public function testEmitCredentialsFailsWithoutPermission()
-    {
-        $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
-
-        Auth::login($user);
-
-        $type = EducationalProgramTypesModel::factory()->create(
-            [                      
-                'managers_can_emit_credentials' => 0,
-                'teachers_can_emit_credentials' => 1,
-            ]
-        );
-
-        $courses = CoursesModel::factory()->withCourseStatus()->count(2)->withCourseType()->create(
-            [
-                'educational_program_type_uid' => $type->uid
-            ]
-        );
-
-        foreach ($courses as $course) {
-            CoursesStudentsModel::factory()->create([
-                'user_uid' => $user->uid,
-                'course_uid' => $course->uid,                
-            ]);
-        }
-
-        // Realizar la solicitud
-        $response = $this->postJson(route('emit-credentials'), [
-            'courses' => [$courses[0]->uid, $courses[1]->uid],
-            'user_uid' => $user
-        ]);
-
-        // Verificar respuesta
-        $response->assertStatus(406);
-        $response->assertJson([
-            'message' => 'No tienes permisos para emitir credenciales en alguno de los cursos',
-        ]);
-    }
-
-    
 
     /**
      * @test No se pueden emitir credenciales para cursos ya procesados
@@ -455,8 +267,8 @@ class StudentsCredentialsTest extends TestCase
     public function testEmitCredentialsFailsForAlreadyEmittedCourses()
     {
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         Auth::login($user);
 
@@ -466,14 +278,14 @@ class StudentsCredentialsTest extends TestCase
             CoursesStudentsModel::factory()->create([
                 'user_uid' => $user->uid,
                 'course_uid' => $course->uid,
-                'emissions_block_uuid' => generate_uuid(),
+                'emissions_block_uuid' => generateUuid(),
             ]);
         }
 
         // Realizar la solicitud
         $response = $this->postJson(route('emit-credentials'), [
             'courses' => [$courses[0]->uid, $courses[1]->uid],
-            'user_uid' => $user
+            'user_uid' => $user->uid
         ]);
 
         // Verificar respuesta
@@ -489,8 +301,8 @@ class StudentsCredentialsTest extends TestCase
     public function testEmitCredentialsFailsForNotEmittedCourses()
     {
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         Auth::login($user);
 
@@ -499,14 +311,14 @@ class StudentsCredentialsTest extends TestCase
         foreach ($courses as $course) {
             CoursesStudentsModel::factory()->create([
                 'user_uid' => $user->uid,
-                'course_uid' => $course->uid,               
+                'course_uid' => $course->uid,
             ]);
         }
 
         // Realizar la solicitud
         $response = $this->postJson(route('emit-credentials'), [
             'courses' => [$courses[0]->uid, $courses[1]->uid],
-            'user_uid' => $user
+            'user_uid' => $user->uid
         ]);
 
         // Verificar respuesta
@@ -524,7 +336,7 @@ class StudentsCredentialsTest extends TestCase
         $user = UsersModel::where('email', 'admin@admin.com')->first();
         $roles = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
 
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         Auth::login($user);
 
@@ -544,7 +356,6 @@ class StudentsCredentialsTest extends TestCase
 
         app()->instance('general_options', $generalOptionsMock);
 
-        // $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create();
         $certidCredencial = CertidigitalCredentialsModel::factory()->create()->first();
 
         $courses = CoursesModel::factory()->withCourseStatus()->withCourseType()->count(2)->create();
@@ -581,14 +392,14 @@ class StudentsCredentialsTest extends TestCase
     }
 
     /**
-     * @test No se pueden enviar sino existe credencial emitida 
+     * @test No se pueden enviar sino existe credencial emitida
      */
     public function testSendCredentialsFails()
     {
         $user = UsersModel::where('email', 'admin@admin.com')->first();
         $roles = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
 
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         Auth::login($user);
 
@@ -626,71 +437,6 @@ class StudentsCredentialsTest extends TestCase
         ]);
     }
 
-    /**
-     * @test enviar SealCredentials exitoso
-     */
-    //Todo: Este test esta dando error por credenciales  Linea 1126 de CertidigitalService
-    public function testSealCredentialsSuccessfully()
-    {
-        $user = UsersModel::where('email', 'admin@admin.com')->first();
-        $roles = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
-
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
-
-        Auth::login($user);
-
-        $generalOptionsMock = [
-            'operation_by_calls' => false, // O false, según lo que necesites para la prueba
-            'necessary_approval_editions' => true,
-            'some_option_array' => [], // Asegúrate de que esto sea un array'
-            'certidigital_url'              => env('CERTIDIGITAL_URL'),
-            'certidigital_client_id'        => env('CERTIDIGITAL_CLIENT_ID'),
-            'certidigital_client_secret'    => env('CERTIDIGITAL_CLIENT_SECRET'),
-            'certidigital_username'         => env('CERTIDIGITAL_USERNAME'),
-            'certidigital_password'         => env('CERTIDIGITAL_PASSWORD'),
-            'certidigital_url_token'        => env('CERTIDIGITAL_URL_TOKEN'),
-            'certidigital_center_id'        => env('CERTIDIGITAL_CENTER_ID'),
-            'certidigital_organization_oid' => env('CERTIDIGITAL_ORGANIZATION_OID'),
-        ];
-
-        app()->instance('general_options', $generalOptionsMock);
-
-        // $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create();
-        $certidCredencial = CertidigitalCredentialsModel::factory()->create()->first();
-
-        $courses = CoursesModel::factory()->withCourseStatus()->withCourseType()->count(2)->create();
-
-        foreach ($courses as $course) {
-
-            CoursesStudentsModel::factory()->create([
-                'user_uid' => $user->uid,
-                'course_uid' => $course->uid,
-                'emissions_block_uuid' => $certidCredencial->uid
-            ]);
-        }
-
-        $educationalPrograms = EducationalProgramsModel::factory()->count(2)->withEducationalProgramType()->create();
-
-        foreach( $educationalPrograms as  $educationalProgram){
-            $educationalProgram->students()->attach($user->uid,[
-                'uid'=> generate_uuid(),
-                'emissions_block_uuid' => $certidCredencial->uid,
-                'acceptance_status' => 'PENDING',
-            ]);
-        }        
-
-        $response = $this->postJson(route('seal-credentials'), [
-            'courses' => [$courses[0]->uid, $courses[1]->uid],
-            'user_uid' => $user->uid,
-            'educational_programs' => [$educationalPrograms[0]->uid, $educationalPrograms[1]->uid]
-        ]);
-
-        $response->assertStatus(200);
-        $response->assertJson([
-            'message' => 'Credenciales selladas correctamente',
-        ]);
-
-    }
 
     /**
      * @test No se puede Sellar Credenciales por error 406
@@ -700,7 +446,7 @@ class StudentsCredentialsTest extends TestCase
         $user = UsersModel::where('email', 'admin@admin.com')->first();
         $roles = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
 
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         Auth::login($user);
 
@@ -718,7 +464,7 @@ class StudentsCredentialsTest extends TestCase
 
         foreach ($educationalPrograms as  $educationalProgram) {
             $educationalProgram->students()->attach($user->uid, [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'acceptance_status' => 'PENDING',
             ]);
         }

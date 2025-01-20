@@ -243,27 +243,17 @@ function reloadCoursesStudentsTable() {
 }
 
 function updateSelectedLearningObjects(checkbox, rowData) {
+    const isCourse = rowData.learning_object_type == "course";
+    const selectedArray = isCourse ? selectedCourses : selectedEducationalPrograms;
+
     if (checkbox.checked) {
-        if (rowData.learning_object_type == "course") {
-            selectedCourses.push(rowData.uid);
-        } else {
-            selectedEducationalPrograms.push(rowData.uid);
-        }
+        selectedArray.push(rowData.uid);
     } else {
-        if (rowData.learning_object_type == "course") {
-            const index = selectedCourses.findIndex(
-                (course) => course === rowData.uid
-            );
-            if (index > -1) {
-                selectedCourses.splice(index, 1);
-            }
-        } else {
-            const index = selectedEducationalPrograms.findIndex(
-                (program) => program === rowData.uid
-            );
-            if (index > -1) {
-                selectedEducationalPrograms.splice(index, 1);
-            }
+        const index = selectedArray.findIndex((item) => item === rowData.uid);
+        if (index > -1) {
+            selectedArray.splice(index, 1);
         }
     }
+
+    console.log(selectedArray)
 }

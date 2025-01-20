@@ -34,7 +34,7 @@ class ChangeStatusToDevelopmentEducationalProgramCommandTest extends TestCase
 
         // Crear un programa educativo en estado de inscripción que no cumple con el mínimo requerido de estudiantes
         $statusInscription = EducationalProgramStatusesModel::where('code', 'INSCRIPTION')->first();
-        $statusPendingDecision = EducationalProgramStatusesModel::where('code', 'PENDING_DECISION')->first();
+        EducationalProgramStatusesModel::where('code', 'PENDING_DECISION')->first();
 
         $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
             'realization_start_date' => Carbon::now()->format('Y-m-d\TH:i'),
@@ -48,7 +48,7 @@ class ChangeStatusToDevelopmentEducationalProgramCommandTest extends TestCase
 
         foreach ($students as $student) {
             $educationalProgram->students()->attach($student, [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'status' => 'ENROLLED',
                 'acceptance_status' => 'ACCEPTED'
             ]);
@@ -72,8 +72,8 @@ class ChangeStatusToDevelopmentEducationalProgramCommandTest extends TestCase
     public function testChangesStatusoftheeducationalprogramToDevelopmentIfMinStudentsComplied()
     {
         // Crear un programa educativo en estado de inscripción que cumple con el mínimo requerido de estudiantes
-        $statusInscription = EducationalProgramStatusesModel::where('code', 'INSCRIPTION')->first();
-        $statusdevelopment = EducationalProgramStatusesModel::where('code', 'DEVELOPMENT')->first();
+        EducationalProgramStatusesModel::where('code', 'INSCRIPTION')->first();
+        EducationalProgramStatusesModel::where('code', 'DEVELOPMENT')->first();
 
         $statusEnrolling = EducationalProgramStatusesModel::where('code', 'ENROLLING')->first();
 
@@ -92,7 +92,7 @@ class ChangeStatusToDevelopmentEducationalProgramCommandTest extends TestCase
 
         foreach ($students as $student) {
             $educationalProgram->students()->attach($student, [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'status' => 'ENROLLED',
                 'acceptance_status' => 'ACCEPTED'
             ]);

@@ -15,7 +15,7 @@ class NotificationsTypesController extends BaseController
 {
     public function index()
     {
-        $notifications_types = NotificationsTypesModel::get()->toArray();
+        $notificationsTypes = NotificationsTypesModel::get()->toArray();
 
         return view(
             'notifications.notifications_types.index',
@@ -25,7 +25,7 @@ class NotificationsTypesController extends BaseController
                 "resources" => [
                     "resources/js/notifications_module/notifications_types.js"
                 ],
-                "notifications_types" => $notifications_types,
+                "notifications_types" => $notificationsTypes,
                 "tabulator" => true,
                 "submenuselected" => "notifications-types",
             ]
@@ -63,20 +63,20 @@ class NotificationsTypesController extends BaseController
     /**
      * Obtiene un tipo de notificación por uid
      */
-    public function getNotificationType($notification_type_uid)
+    public function getNotificationType($notificationTypeUid)
     {
 
-        if (!$notification_type_uid) {
+        if (!$notificationTypeUid) {
             return response()->json(['message' => env('ERROR_MESSAGE')], 400);
         }
 
-        $notification_type = NotificationsTypesModel::where('uid', $notification_type_uid)->first();
+        $notificationType = NotificationsTypesModel::where('uid', $notificationTypeUid)->first();
 
-        if (!$notification_type) {
+        if (!$notificationType) {
             return response()->json(['message' => 'El tipo de curso no existe'], 406);
         }
 
-        return response()->json($notification_type, 200);
+        return response()->json($notificationType, 200);
     }
 
     /**
@@ -108,34 +108,34 @@ class NotificationsTypesController extends BaseController
 
         $isNew = true;
 
-        $notification_type_uid = $request->get('notification_type_uid');
+        $notificationTypeUid = $request->get('notification_type_uid');
         $name = $request->get('name');
         $description = $request->get('description');
 
-        if ($notification_type_uid) {
-            $notification_type = NotificationsTypesModel::find($notification_type_uid);
+        if ($notificationTypeUid) {
+            $notificationType = NotificationsTypesModel::find($notificationTypeUid);
             $isNew = false;
         } else {
-            $notification_type = new NotificationsTypesModel();
-            $notification_type->uid = generate_uuid();
+            $notificationType = new NotificationsTypesModel();
+            $notificationType->uid = generateUuid();
             $isNew = true;
         }
 
-        $notification_type->name = $name;
-        $notification_type->description = $description;
+        $notificationType->name = $name;
+        $notificationType->description = $description;
 
-        $notification_type->save();
+        $notificationType->save();
 
         // Obtenemos todas los tipos
-        $notifications_types = NotificationsTypesModel::get()->toArray();
+        $notificationsTypes = NotificationsTypesModel::get()->toArray();
 
         $messageLog = $isNew ? 'Creación tipo de notificación: ' : 'Tipo de notificación actualizada: ';
-        $messageLog .= $notification_type->name;
+        $messageLog .= $notificationType->name;
         LogsController::createLog($messageLog, 'Tipos de notificaciones', auth()->user()->uid);
 
         return response()->json([
             'message' => ($isNew) ? 'Tipo de notificación añadida correctamente' : 'Tipo de notificación actualizada correctamente',
-            'notifications_types' => $notifications_types
+            'notifications_types' => $notificationsTypes
         ], 200);
     }
 
@@ -160,8 +160,8 @@ class NotificationsTypesController extends BaseController
         });
 
 
-        $notifications_types = NotificationsTypesModel::get()->toArray();
+        $notificationsTypes = NotificationsTypesModel::get()->toArray();
 
-        return response()->json(['message' => 'Tipos de notificación eliminados correctamente', 'notifications_types' => $notifications_types], 200);
+        return response()->json(['message' => 'Tipos de notificación eliminados correctamente', 'notifications_types' => $notificationsTypes], 200);
     }
 }

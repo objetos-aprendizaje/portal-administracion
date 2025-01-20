@@ -35,8 +35,8 @@ class AnalyticsResourcesControllerTest extends TestCase
         $this->withoutMiddleware();
         $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -88,14 +88,14 @@ class AnalyticsResourcesControllerTest extends TestCase
 
         // Arrange: Create mock data for courses, accesses, and students
         $course = CoursesModel::factory()->withCourseType()->withCourseStatus()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'realization_start_date' => now(),
             'lms_url' => 'http://example.com/course',
         ]);
 
         $course->accesses()->createMany([
-            ['uid' => generate_uuid(), 'user_uid' => $student1->uid, 'course_uid' => $course->uid, 'access_date' => now()->subDays(31)],
-            ['uid' => generate_uuid(), 'user_uid' => $student2->uid, 'course_uid' => $course->uid, 'access_date' => now()->subDays(10)],
+            ['uid' => generateUuid(), 'user_uid' => $student1->uid, 'course_uid' => $course->uid, 'access_date' => now()->subDays(31)],
+            ['uid' => generateUuid(), 'user_uid' => $student2->uid, 'course_uid' => $course->uid, 'access_date' => now()->subDays(10)],
         ]);
         // Realizar la solicitud a la ruta
         $response = $this->getJson(route('analytics-poa-accesses', [
@@ -130,14 +130,14 @@ class AnalyticsResourcesControllerTest extends TestCase
 
         // Arrange: Create mock data for courses, accesses, and students
         $course = CoursesModel::factory()->withCourseType()->withCourseStatus()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'realization_start_date' => now(),
             'lms_url' => 'http://example.com/course',
         ]);
 
         $course->accesses()->createMany([
-            ['uid' => generate_uuid(), 'user_uid' => $student1->uid, 'course_uid' => $course->uid, 'access_date' => now()->subDays(31)],
-            ['uid' => generate_uuid(), 'user_uid' => $student2->uid, 'course_uid' => $course->uid, 'access_date' => now()->subDays(10)],
+            ['uid' => generateUuid(), 'user_uid' => $student1->uid, 'course_uid' => $course->uid, 'access_date' => now()->subDays(31)],
+            ['uid' => generateUuid(), 'user_uid' => $student2->uid, 'course_uid' => $course->uid, 'access_date' => now()->subDays(10)],
         ]);
         // Realizar la solicitud a la ruta
         $response = $this->getJson(route('analytics-poa-accesses', [
@@ -164,26 +164,26 @@ class AnalyticsResourcesControllerTest extends TestCase
 
         // Crear recursos educativos simulados con accesos
         $resource1 = EducationalResourcesModel::factory()->withStatus()->withEducationalResourceType()->withCreatorUser()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'title' => 'Recurso 1'
         ]);
         $resource2 = EducationalResourcesModel::factory()->withStatus()->withEducationalResourceType()->withCreatorUser()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'title' => 'Recurso 2'
         ]);
         $resource3 = EducationalResourcesModel::factory()->withStatus()->withEducationalResourceType()->withCreatorUser()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'title' => 'Recurso 3'
         ]);
 
 
         // Simular accesos a los recursos
         DB::table('educational_resource_access')->insert([
-            ['uid' => generate_uuid(), 'educational_resource_uid' => $resource1->uid, 'date' => now()],
-            ['uid' => generate_uuid(), 'educational_resource_uid' => $resource1->uid, 'date' => now()->subDays(1)],
-            ['uid' => generate_uuid(), 'educational_resource_uid' => $resource2->uid, 'date' => now()->subDays(2)],
-            ['uid' => generate_uuid(), 'educational_resource_uid' => $resource3->uid, 'date' => now()->subDays(3)],
-            ['uid' => generate_uuid(), 'educational_resource_uid' => $resource3->uid, 'date' => now()->subDays(4)],
+            ['uid' => generateUuid(), 'educational_resource_uid' => $resource1->uid, 'date' => now()],
+            ['uid' => generateUuid(), 'educational_resource_uid' => $resource1->uid, 'date' => now()->subDays(1)],
+            ['uid' => generateUuid(), 'educational_resource_uid' => $resource2->uid, 'date' => now()->subDays(2)],
+            ['uid' => generateUuid(), 'educational_resource_uid' => $resource3->uid, 'date' => now()->subDays(3)],
+            ['uid' => generateUuid(), 'educational_resource_uid' => $resource3->uid, 'date' => now()->subDays(4)],
         ]);
 
         // Realizar la solicitud a la ruta
@@ -214,26 +214,26 @@ class AnalyticsResourcesControllerTest extends TestCase
 
         // Crear recursos educativos simulados con accesos
         $resource1 = EducationalResourcesModel::factory()->withStatus()->withEducationalResourceType()->withCreatorUser()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'title' => 'Recurso 1'
         ]);
         $resource2 = EducationalResourcesModel::factory()->withStatus()->withEducationalResourceType()->withCreatorUser()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'title' => 'Recurso 2'
         ]);
         $resource3 = EducationalResourcesModel::factory()->withStatus()->withEducationalResourceType()->withCreatorUser()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'title' => 'Recurso 3'
         ]);
 
 
         // Simular accesos a los recursos
         DB::table('educational_resource_access')->insert([
-            ['uid' => generate_uuid(), 'educational_resource_uid' => $resource1->uid, 'date' => now()],
-            ['uid' => generate_uuid(), 'educational_resource_uid' => $resource1->uid, 'date' => now()->subDays(1)],
-            ['uid' => generate_uuid(), 'educational_resource_uid' => $resource2->uid, 'date' => now()->subDays(2)],
-            ['uid' => generate_uuid(), 'educational_resource_uid' => $resource3->uid, 'date' => now()->subDays(3)],
-            ['uid' => generate_uuid(), 'educational_resource_uid' => $resource3->uid, 'date' => now()->subDays(4)],
+            ['uid' => generateUuid(), 'educational_resource_uid' => $resource1->uid, 'date' => now()],
+            ['uid' => generateUuid(), 'educational_resource_uid' => $resource1->uid, 'date' => now()->subDays(1)],
+            ['uid' => generateUuid(), 'educational_resource_uid' => $resource2->uid, 'date' => now()->subDays(2)],
+            ['uid' => generateUuid(), 'educational_resource_uid' => $resource3->uid, 'date' => now()->subDays(3)],
+            ['uid' => generateUuid(), 'educational_resource_uid' => $resource3->uid, 'date' => now()->subDays(4)],
         ]);
 
         // Realizar la solicitud a la ruta con paginación
@@ -255,26 +255,26 @@ class AnalyticsResourcesControllerTest extends TestCase
 
         // Crear recursos educativos simulados con accesos
         $resource1 = EducationalResourcesModel::factory()->withStatus()->withEducationalResourceType()->withCreatorUser()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'title' => 'Recurso 1'
         ]);
         $resource2 = EducationalResourcesModel::factory()->withStatus()->withEducationalResourceType()->withCreatorUser()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'title' => 'Recurso 2'
         ]);
         $resource3 = EducationalResourcesModel::factory()->withStatus()->withEducationalResourceType()->withCreatorUser()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'title' => 'Recurso 3'
         ]);
 
 
         // Simular accesos a los recursos
         DB::table('educational_resource_access')->insert([
-            ['uid' => generate_uuid(), 'educational_resource_uid' => $resource1->uid, 'date' => now()],
-            ['uid' => generate_uuid(), 'educational_resource_uid' => $resource1->uid, 'date' => now()->subDays(1)],
-            ['uid' => generate_uuid(), 'educational_resource_uid' => $resource2->uid, 'date' => now()->subDays(2)],
-            ['uid' => generate_uuid(), 'educational_resource_uid' => $resource3->uid, 'date' => now()->subDays(3)],
-            ['uid' => generate_uuid(), 'educational_resource_uid' => $resource3->uid, 'date' => now()->subDays(4)],
+            ['uid' => generateUuid(), 'educational_resource_uid' => $resource1->uid, 'date' => now()],
+            ['uid' => generateUuid(), 'educational_resource_uid' => $resource1->uid, 'date' => now()->subDays(1)],
+            ['uid' => generateUuid(), 'educational_resource_uid' => $resource2->uid, 'date' => now()->subDays(2)],
+            ['uid' => generateUuid(), 'educational_resource_uid' => $resource3->uid, 'date' => now()->subDays(3)],
+            ['uid' => generateUuid(), 'educational_resource_uid' => $resource3->uid, 'date' => now()->subDays(4)],
         ]);
 
         // Realizar la solicitud a la ruta sin parámetros de ordenamiento
@@ -302,7 +302,7 @@ class AnalyticsResourcesControllerTest extends TestCase
 
         // Crear accesos simulados para el recurso educativo
         DB::table('educational_resource_access')->insert([
-            'uid'                      => generate_uuid(),
+            'uid'                      => generateUuid(),
             'educational_resource_uid' => $resource->uid,
             'date'                     => now()->subDays(5),
             'user_uid'                 => UsersModel::factory()->create()->first()->uid,
@@ -310,7 +310,7 @@ class AnalyticsResourcesControllerTest extends TestCase
 
         // Crear visitas simuladas para el recurso educativo
         DB::table('educational_resource_access')->insert([
-            'uid'                      => generate_uuid(),
+            'uid'                      => generateUuid(),
             'educational_resource_uid' => $resource->uid,
             'date'                     => now()->subDays(3),
             'user_uid'                 => null, // Para visitas anónimas
@@ -370,7 +370,7 @@ class AnalyticsResourcesControllerTest extends TestCase
 
         // Crear accesos simulados para el recurso educativo
         DB::table('educational_resource_access')->insert([
-            'uid'                      => generate_uuid(),
+            'uid'                      => generateUuid(),
             'educational_resource_uid' => $resource->uid,
             'date' => now()->subDays(5),
             'user_uid' => UsersModel::factory()->create()->uid,
@@ -409,7 +409,7 @@ class AnalyticsResourcesControllerTest extends TestCase
 
         // Crear accesos simulados para el recurso educativo
         DB::table('educational_resource_access')->insert([
-            'uid'                      => generate_uuid(),
+            'uid'                      => generateUuid(),
             'educational_resource_uid' => $resource->uid,
             'date'                     => now()->subDays(5),
             'user_uid'                 => UsersModel::factory()->create()->uid,
@@ -452,8 +452,8 @@ class AnalyticsResourcesControllerTest extends TestCase
 
         // Insertar accesos simulados
         DB::table('educational_resource_access')->insert([
-            ['uid' => generate_uuid(), 'educational_resource_uid' => $resource->uid, 'date' => now()->subDays(1), 'user_uid' => UsersModel::factory()->create()->uid],
-            ['uid' => generate_uuid(), 'educational_resource_uid' => $resource->uid, 'date' => now(), 'user_uid' => UsersModel::factory()->create()->uid],
+            ['uid' => generateUuid(), 'educational_resource_uid' => $resource->uid, 'date' => now()->subDays(1), 'user_uid' => UsersModel::factory()->create()->uid],
+            ['uid' => generateUuid(), 'educational_resource_uid' => $resource->uid, 'date' => now(), 'user_uid' => UsersModel::factory()->create()->uid],
         ]);
 
         // Preparar los datos de la solicitud
@@ -489,8 +489,8 @@ class AnalyticsResourcesControllerTest extends TestCase
 
         // Insertar accesos simulados
         DB::table('educational_resource_access')->insert([
-            ['uid' => generate_uuid(), 'educational_resource_uid' => $resource->uid, 'date' => now()->subDays(1)],
-            ['uid' => generate_uuid(), 'educational_resource_uid' => $resource->uid, 'date' => now()],
+            ['uid' => generateUuid(), 'educational_resource_uid' => $resource->uid, 'date' => now()->subDays(1)],
+            ['uid' => generateUuid(), 'educational_resource_uid' => $resource->uid, 'date' => now()],
         ]);
 
         // Preparar los datos de la solicitud
@@ -717,8 +717,8 @@ class AnalyticsResourcesControllerTest extends TestCase
 
         // Insertar accesos simulados para que caigan dentro del rango de la semana actual
         DB::table('courses_accesses')->insert([
-            ['uid' => generate_uuid(), 'user_uid' => UsersModel::factory()->create()->uid, 'course_uid' => $course->uid, 'access_date' => now()->subDays(1)], // Acceso ayer
-            ['uid' => generate_uuid(), 'user_uid' => UsersModel::factory()->create()->uid, 'course_uid' => $course->uid, 'access_date' => now()], // Acceso hoy
+            ['uid' => generateUuid(), 'user_uid' => UsersModel::factory()->create()->uid, 'course_uid' => $course->uid, 'access_date' => now()->subDays(1)], // Acceso ayer
+            ['uid' => generateUuid(), 'user_uid' => UsersModel::factory()->create()->uid, 'course_uid' => $course->uid, 'access_date' => now()], // Acceso hoy
         ]);
 
         // Preparar los datos de la solicitud
@@ -754,8 +754,8 @@ class AnalyticsResourcesControllerTest extends TestCase
 
         // Insertar visitas simuladas
         DB::table('courses_visits')->insert([
-            ['uid' => generate_uuid(), 'user_uid' => UsersModel::factory()->create()->uid, 'course_uid' => $course->uid, 'access_date' => now()->subDays(1)],
-            ['uid' => generate_uuid(), 'user_uid' => UsersModel::factory()->create()->uid,  'course_uid' => $course->uid, 'access_date' => now()],
+            ['uid' => generateUuid(), 'user_uid' => UsersModel::factory()->create()->uid, 'course_uid' => $course->uid, 'access_date' => now()->subDays(1)],
+            ['uid' => generateUuid(), 'user_uid' => UsersModel::factory()->create()->uid,  'course_uid' => $course->uid, 'access_date' => now()],
         ]);
 
         // Preparar los datos de la solicitud
@@ -853,10 +853,6 @@ class AnalyticsResourcesControllerTest extends TestCase
         $category1 = CategoriesModel::factory()->create();
         $category2 = CategoriesModel::factory()->create();
 
-        // Crear un array de 1536 dimensiones para embeddings
-
-        $embeddingVector = '[' . implode(',', array_fill(0, 1536, '0.1')) . ']';
-
         // Crear recursos educativos simulados, algunos con embeddings y otros sin embeddings
         $resourceWithEmbeddings = EducationalResourcesModel::factory()
             ->withEducationalResourceType()
@@ -885,10 +881,10 @@ class AnalyticsResourcesControllerTest extends TestCase
 
         // Asignar categorías a los recursos
         $resourceWithEmbeddings->categories()->attach($category1->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
         ]);
         $resourceWithoutEmbeddings->categories()->attach($category2->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
         ]);
 
         // Insertar accesos simulados
@@ -942,7 +938,7 @@ class AnalyticsResourcesControllerTest extends TestCase
         $this->assertCount(1, $data);
         $this->assertEquals($resourceWithEmbeddings->title, $data[0]['title']);
     }
-   
+
 
     /**
      * @test
@@ -968,17 +964,17 @@ class AnalyticsResourcesControllerTest extends TestCase
             ->withStatus()->withEducationalResourceType()->withCreatorUser()
             ->create(['title' => 'Resource 2']);
 
-        $resource3 = EducationalResourcesModel::factory()
+        EducationalResourcesModel::factory()
             // ->withAccesses(20)
             // ->withVisits(7)
             ->withStatus()->withEducationalResourceType()->withCreatorUser()
             ->create(['title' => 'Resource 3']);
 
         $resource1->categories()->attach($category1->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
         ]);
         $resource2->categories()->attach($category2->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
         ]);
 
         // Preparar los filtros simulados, por ejemplo, filtrar por categoría

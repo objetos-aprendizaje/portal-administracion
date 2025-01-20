@@ -21,7 +21,7 @@ class CertificationTypesController extends BaseController
 
     public function index()
     {
-        $certification_types = CertificationTypesModel::get()->toArray();
+        $certificationTypes = CertificationTypesModel::get()->toArray();
 
         $categories = CategoriesModel::whereNull('parent_category_uid')->with('subcategories')->get()->toArray();
 
@@ -33,7 +33,7 @@ class CertificationTypesController extends BaseController
                 "resources" => [
                     "resources/js/cataloging_module/certification_types.js"
                 ],
-                "certification_types" => $certification_types,
+                "certification_types" => $certificationTypes,
                 "tabulator" => true,
                 "categories" => $categories,
                 "tomselect" => true,
@@ -74,20 +74,20 @@ class CertificationTypesController extends BaseController
     /**
      * Obtiene un tipo de certificación por uid
      */
-    public function getCertificationType($certification_type_uid)
+    public function getCertificationType($certificationTypeUid)
     {
 
-        // if (!$certification_type_uid) {
+        // if (!$certificationTypeUid) {
         //     return response()->json(['message' => env('ERROR_MESSAGE')], 400);
         // }  Se ha quitado por error en pruebas unitaras ya que la misma ruta evalua si existe parametro o no
 
-        $certification_type = CertificationTypesModel::where('uid', $certification_type_uid)->first();
+        $certificationType = CertificationTypesModel::where('uid', $certificationTypeUid)->first();
 
-        if (!$certification_type) {
+        if (!$certificationType) {
             return response()->json(['message' => 'El tipo de certificación no existe'], 406);
         }
 
-        return response()->json($certification_type, 200);
+        return response()->json($certificationType, 200);
     }
 
     /**
@@ -121,36 +121,36 @@ class CertificationTypesController extends BaseController
 
         $isNew = true;
 
-        $certification_type_uid = $request->get('certification_type_uid');
+        $certificationTypeUid = $request->get('certification_type_uid');
         $name = $request->get('name');
         $description = $request->get('description');
-        $category_uid = $request->get('category_uid');
+        $categoryUid = $request->get('category_uid');
 
-        if ($certification_type_uid) {
-            $certification_type = CertificationTypesModel::find($certification_type_uid);
+        if ($certificationTypeUid) {
+            $certificationType = CertificationTypesModel::find($certificationTypeUid);
             $isNew = false;
         } else {
-            $certification_type = new CertificationTypesModel();
-            $certification_type->uid = generate_uuid();
+            $certificationType = new CertificationTypesModel();
+            $certificationType->uid = generateUuid();
             $isNew = true;
         }
 
 
-        $certification_type->name = $name;
-        $certification_type->description = $description;
-        $certification_type->category_uid = $category_uid;
+        $certificationType->name = $name;
+        $certificationType->description = $description;
+        $certificationType->category_uid = $categoryUid;
 
-        DB::transaction(function () use ($certification_type) {
-            $certification_type->save();
-            LogsController::createLog("Crear tipo de certificado: " . $certification_type->name, 'Tipos de certificados', auth()->user()->uid);
+        DB::transaction(function () use ($certificationType) {
+            $certificationType->save();
+            LogsController::createLog("Crear tipo de certificado: " . $certificationType->name, 'Tipos de certificados', auth()->user()->uid);
         });
 
         // Obtenemos todas los tipos
-        $certification_types = CertificationTypesModel::get()->toArray();
+        $certificationTypes = CertificationTypesModel::get()->toArray();
 
         return response()->json([
             'message' => ($isNew) ? 'Tipo de certificación añadida correctamente' : 'Tipo de certificación actualizada correctamente',
-            'certification_types' => $certification_types
+            'certification_types' => $certificationTypes
         ], 200);
     }
 
@@ -173,8 +173,8 @@ class CertificationTypesController extends BaseController
             }
         });
 
-        $certification_types = CertificationTypesModel::get()->toArray();
+        $certificationTypes = CertificationTypesModel::get()->toArray();
 
-        return response()->json(['message' => 'Tipos de certificaciones eliminados correctamente', 'certification_types' => $certification_types], 200);
+        return response()->json(['message' => 'Tipos de certificaciones eliminados correctamente', 'certification_types' => $certificationTypes], 200);
     }
 }

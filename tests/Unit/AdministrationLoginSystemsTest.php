@@ -37,9 +37,9 @@ class AdministrationLoginSystemsTest extends TestCase
     public function testIndexViewLoginSystems()
     {
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]);
         // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -59,7 +59,7 @@ class AdministrationLoginSystemsTest extends TestCase
         View::share('unread_notifications', $unread_notifications);
 
         // Crear datos de ejemplo para Saml2TenantsModel
-        $cas = Saml2TenantsModel::factory()->create(['key' => 'cas', 'uuid' => generate_uuid()])->first();
+        $cas = Saml2TenantsModel::factory()->create(['key' => 'cas', 'uuid' => generateUuid()])->first();
 
 
         // Crear datos de ejemplo para GeneralOptionsModel
@@ -88,9 +88,9 @@ class AdministrationLoginSystemsTest extends TestCase
     public function testIndexViewLoginSystemsWithRedirisActive()
     {
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]);
         // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -110,9 +110,7 @@ class AdministrationLoginSystemsTest extends TestCase
         View::share('unread_notifications', $unread_notifications);
 
         // Crear datos de ejemplo para Saml2TenantsModel
-        // $cas = Saml2TenantsModel::factory()->create(['key' => 'cas', 'uuid' => generate_uuid()])->first();
-
-        $rediris = Saml2TenantsModel::factory()->create(['key' => 'rediris', 'uuid' => generate_uuid()])->first();
+        $rediris = Saml2TenantsModel::factory()->create(['key' => 'rediris', 'uuid' => generateUuid()])->first();
 
 
         // Crear datos de ejemplo para GeneralOptionsModel
@@ -129,11 +127,13 @@ class AdministrationLoginSystemsTest extends TestCase
 
         // Verificar que los datos de la vista sean los correctos
         $response->assertViewHas('page_name', 'Sistemas de inicio de sesión');
+
         $response->assertViewHas('page_title', 'Sistemas de inicio de sesión');
+        
         $response->assertViewHas('resources', [
             "resources/js/administration_module/login_systems.js"
         ]);
-        // $response->assertViewHas('cas', $cas);
+
         $response->assertViewHas('rediris', $rediris);
         $response->assertViewHas('submenuselected', 'login-systems');
     }
@@ -178,7 +178,7 @@ class AdministrationLoginSystemsTest extends TestCase
         $this->actingAs($admin);
 
         $response = $this->postJson(route('google-login'), [
-            
+
         ]);
 
         $response->assertStatus(422)
@@ -199,7 +199,6 @@ class AdministrationLoginSystemsTest extends TestCase
         ]);
 
         $response->assertStatus(200);
-            // ->assertJsonStructure(['message', 'Login de Facebook guardado correctamente']);
     }
 
     /** @test  Submit Facebook Invalido*/
@@ -410,7 +409,7 @@ class AdministrationLoginSystemsTest extends TestCase
 
         // First, create a CAS entry to update
         Saml2TenantsModel::create([
-            'uuid' => generate_uuid(),
+            'uuid' => generateUuid(),
             'key' => 'cas',
             'idp_entity_id' => 'existing-entity-id',
             'idp_login_url' => 'https://example.com/cas/login',
@@ -535,7 +534,7 @@ class AdministrationLoginSystemsTest extends TestCase
 
         // First, create a REDIRIS entry to update
         Saml2TenantsModel::create([
-            'uuid' => generate_uuid(),
+            'uuid' => generateUuid(),
             'key' => 'rediris',
             'idp_entity_id' => 'existing-entity-id',
             'idp_login_url' => 'https://example.com/rediris/login',
@@ -579,7 +578,7 @@ class AdministrationLoginSystemsTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -591,7 +590,7 @@ class AdministrationLoginSystemsTest extends TestCase
         if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
 
             // Datos de prueba
-            $openAiKey = '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';
+            $openAiKey = '';
 
             // Enviar la solicitud POST
             $response = $this->postJson('/administration/save_openai_form', [

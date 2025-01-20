@@ -13,7 +13,7 @@ class EducationalResourcesPerUsersController extends BaseController
     public function index()
     {
 
-        $educational_resources_per_users = NotificationsPerUsersModel::get()->toArray();
+        $educationalResourcesPerUsers = NotificationsPerUsersModel::get()->toArray();
 
         return view(
             'learning_objects.educational_resources_per_users.index',
@@ -25,7 +25,7 @@ class EducationalResourcesPerUsersController extends BaseController
                 ],
                 "tabulator" => true,
                 "tomselect" => true,
-                "notifications_per_users" => $educational_resources_per_users,
+                "notifications_per_users" => $educationalResourcesPerUsers,
                 "submenuselected" => "learning-objects-educational-resources-per-users",
             ]
         );
@@ -50,7 +50,7 @@ class EducationalResourcesPerUsersController extends BaseController
             }
         }
 
-        $data = $query->paginate($size);     
+        $data = $query->paginate($size);
 
         if (!$data || $data->isEmpty()) { // Se modificó esta linea para cubir prueba unitarias
             return response()->json(['message' => 'No hay usuarios en base de datos'], 406);
@@ -60,14 +60,14 @@ class EducationalResourcesPerUsersController extends BaseController
 
     }
 
-    public function getEducationalResourcesPerUser($user_uid, Request $request)
+    public function getEducationalResourcesPerUser($userUid, Request $request)
     {
 
         $size = $request->get('size', 1);
         $search = $request->get('search');
         $sort = $request->get('sort');
 
-        $query = UsersModel::where('users.uid', $user_uid)
+        $query = UsersModel::where('users.uid', $userUid)
             ->with(['educationalResources']);
 
         $query = $query->first();

@@ -11,6 +11,8 @@ use App\Models\Saml2TenantsModel;
 use App\Models\TooltipTextsModel;
 use Illuminate\Support\MessageBag;
 use App\Models\GeneralOptionsModel;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\View;
 use App\Models\ResetPasswordTokensModel;
@@ -45,8 +47,8 @@ class LoginControllerTest extends TestCase
         $user = UsersModel::factory()->create([
             'password' => Hash::make('1234')
         ]);
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Realiza una solicitud POST a la ruta de autenticación
         $response = $this->post('/login/authenticate', [
@@ -177,7 +179,7 @@ class LoginControllerTest extends TestCase
 
         // Simular la creación de un token de restablecimiento
         $resetToken = ResetPasswordTokensModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'uid_user' => $user->uid,
             'email' => $user->email,
             'token' => 'valid-token',
@@ -228,10 +230,10 @@ class LoginControllerTest extends TestCase
         // Crear un usuario y un token de restablecimiento de contraseña
         $user = UsersModel::factory()->create();
         $token = ResetPasswordTokensModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'uid_user' => $user->uid,
             'expiration_date' => date('Y-m-d H:i:s', strtotime('+1 hour')),
-            'token' => generate_uuid()
+            'token' => generateUuid()
         ]);
 
         // Datos de prueba
@@ -282,7 +284,7 @@ class LoginControllerTest extends TestCase
         // Crear un usuario y un token de restablecimiento de contraseña expirado
         $user = UsersModel::factory()->create();
         $token = ResetPasswordTokensModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'uid_user' => $user->uid,
             'expiration_date' => date('Y-m-d H:i:s', strtotime('-1 hour')),
         ]);
@@ -306,7 +308,7 @@ class LoginControllerTest extends TestCase
         // Crear un usuario y un token de restablecimiento de contraseña
         $user = UsersModel::factory()->create();
         $token = ResetPasswordTokensModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'uid_user' => $user->uid,
             'expiration_date' => date('Y-m-d H:i:s', strtotime('+1 hour')),
         ]);
@@ -375,7 +377,7 @@ class LoginControllerTest extends TestCase
         // Asignar un rol específico al usuario (por ejemplo, el rol 'ADMINISTRATOR')
         $role = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         // Autenticar al usuario
@@ -409,14 +411,14 @@ class LoginControllerTest extends TestCase
         ]);
 
         // Simulamos los valores en la base de datos para `Saml2TenantsModel` (CAS y RedIRIS)
-        $casTenant = Saml2TenantsModel::factory()->create([
+        Saml2TenantsModel::factory()->create([
             'key' => 'cas',
-            'uuid' => generate_uuid(),
+            'uuid' => generateUuid(),
         ]);
 
-        $redirisTenant = Saml2TenantsModel::factory()->create([
+        Saml2TenantsModel::factory()->create([
             'key' => 'rediris',
-            'uuid' => generate_uuid(),
+            'uuid' => generateUuid(),
         ]);
 
         $general_options = GeneralOptionsModel::all()->pluck('option_value', 'option_name')->toArray();
@@ -592,7 +594,7 @@ class LoginControllerTest extends TestCase
         ]);
 
         // Simulamos la entrada en Saml2TenantsModel
-        $saml2Tenant = Saml2TenantsModel::factory()->create([
+        Saml2TenantsModel::factory()->create([
             'key' => 'rediris',
         ]);
 

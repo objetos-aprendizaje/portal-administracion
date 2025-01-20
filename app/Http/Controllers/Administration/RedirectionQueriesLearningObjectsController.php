@@ -7,20 +7,22 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
 use App\Models\EducationalProgramTypesModel;
-use App\Models\RedirectionQueriesEducationalProgramTypesModel;
-use Illuminate\Support\Facades\View;
+use App\Models\RedirectionQueriesLearningObjectsModel;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Logs\LogsController;
+use App\Models\CourseTypesModel;
 
-class RedirectionQueriesEducationalProgramTypesController extends BaseController
+class RedirectionQueriesLearningObjectsController extends BaseController
 {
     use AuthorizesRequests, ValidatesRequests;
 
     public function index()
     {
 
-        $educational_program_types = EducationalProgramTypesModel::all()->toArray();
+        $educationalProgramTypes = EducationalProgramTypesModel::all()->toArray();
+
+        $courseTypes = CourseTypesModel::all()->toArray();
 
         return view(
             'administration.redirection_queries_educational_program_types.index',
@@ -32,22 +34,23 @@ class RedirectionQueriesEducationalProgramTypesController extends BaseController
                     "resources/js/modal_handler.js"
                 ],
                 "tabulator" => true,
-                "educational_program_types" => $educational_program_types,
+                "educational_program_types" => $educationalProgramTypes,
+                "courseTypes" => $courseTypes,
                 "submenuselected" => "redirection-queries-educational-program-types",
             ]
         );
     }
 
-    public function getRedirectionQuery($uid_redirection_query)
+    public function getRedirectionQuery($uidRedirectionQuery)
     {
 
-        $redirection_query = RedirectionQueriesEducationalProgramTypesModel::where('uid', $uid_redirection_query)->with('educational_program_type')->first();
+        $redirectionQuery = RedirectionQueriesLearningObjectsModel::where('uid', $uidRedirectionQuery)->with('educational_program_type')->first();
 
-        return response()->json($redirection_query, 200);
+        return response()->json($redirectionQuery, 200);
     }
 
     /**
-     * @param {*} string $program_type_uid UID del tipo de programa educativo.
+     * @param {*} string $programTypeUid UID del tipo de programa educativo.
      * Obtiene el html del listado de redirecciones de consulta
      */
     public function getRedirectionsQueries(Request $request)
@@ -56,17 +59,7 @@ class RedirectionQueriesEducationalProgramTypesController extends BaseController
         $search = $request->get('search');
         $sort = $request->get('sort');
 
-        $query = RedirectionQueriesEducationalProgramTypesModel::query()
-            ->join(
-                'educational_program_types as edu_pro_types',
-                'redirection_queries_educational_program_types.educational_program_type_uid',
-                '=',
-                'edu_pro_types.uid'
-            )
-            ->select([
-                'redirection_queries_educational_program_types.*',
-                'edu_pro_types.name as educational_program_type_name'
-            ]);
+        $query = RedirectionQueriesLearningObjectsModel::query();
 
         if ($search) {
             $query->where('contact', 'ILIKE', "%{$search}%");
@@ -92,7 +85,9 @@ class RedirectionQueriesEducationalProgramTypesController extends BaseController
     {
 
         $messages = [
-            'educational_program_type_uid.required' => 'El tipo de programa formativo es obligatorio',
+            'educational_program_type_uid.required_if' => 'El tipo de programa formativo es obligatorio',
+            'course_type_uid.required_if' => 'El tipo de curso es obligatorio',
+            'learning_object_type.required' => 'El tipo de objeto es obligatorio',
             'type' => 'required|string|in:web,email',
             'contact.required' => 'El contacto es obligatorio',
             'contact.max' => 'El contacto es demasiado largo',
@@ -101,7 +96,9 @@ class RedirectionQueriesEducationalProgramTypesController extends BaseController
         ];
 
         $validator = Validator::make($request->all(), [
-            'educational_program_type_uid' => 'required|string',
+            'learning_object_type' => 'required|string',
+            'educational_program_type_uid' => 'required_if:learning_object_type,EDUCATIONAL_PROGRAM',
+            'course_type_uid' => 'required_if:learning_object_type,COURSE',
             'type' => 'required|string',
             'contact' => 'required|max:200'
         ], $messages);
@@ -119,21 +116,32 @@ class RedirectionQueriesEducationalProgramTypesController extends BaseController
             return response()->json(['message' => 'Hay campos incorrectos', 'errors' => $validator->errors()], 422);
         }
 
-        $uid_redirection_query = $request->input('redirection_query_uid');
+        $uidRedirectionQuery = $request->input('redirection_query_uid');
 
-        if ($uid_redirection_query) {
-            $redirection_query = RedirectionQueriesEducationalProgramTypesModel::where('uid', $uid_redirection_query)->first();
+        if ($uidRedirectionQuery) {
+            $redirectionQuery = RedirectionQueriesLearningObjectsModel::where('uid', $uidRedirectionQuery)->first();
         } else {
-            $redirection_query = new RedirectionQueriesEducationalProgramTypesModel();
-            $redirection_query->uid = generate_uuid();
+            $redirectionQuery = new RedirectionQueriesLearningObjectsModel();
+            $redirectionQuery->uid = generateUuid();
         }
 
-        $redirection_query->fill($request->only([
-            'educational_program_type_uid', 'type', 'contact'
+        $redirectionQuery->fill($request->only([
+            'educational_program_type_uid', 'type', 'contact', 'learning_object_type'
         ]));
 
-        DB::transaction(function () use ($redirection_query) {
-            $redirection_query->save();
+        $redirectionQueryType = $request->input('learning_object_type');
+
+        if($redirectionQueryType == "COURSE") {
+            $redirectionQuery->course_type_uid = $request->input('course_type_uid');
+            $redirectionQuery->educational_program_type_uid = null;
+        }
+        else {
+            $redirectionQuery->educational_program_type_uid = $request->input('educational_program_type_uid');
+            $redirectionQuery->course_type_uid = null;
+        }
+
+        DB::transaction(function () use ($redirectionQuery) {
+            $redirectionQuery->save();
             LogsController::createLog('Añadir redirección de consulta:', 'Redirección de consultas', auth()->user()->uid);
         });
 
@@ -146,14 +154,13 @@ class RedirectionQueriesEducationalProgramTypesController extends BaseController
      */
     public function deleteRedirectionsQueries(Request $request)
     {
-        $uids_redirection_queries = $request->input('uids');
+        $uidsRedirectionQueries = $request->input('uids');
 
-
-        DB::transaction(function () use ($uids_redirection_queries) {
-            RedirectionQueriesEducationalProgramTypesModel::destroy($uids_redirection_queries);
+        DB::transaction(function () use ($uidsRedirectionQueries) {
+            RedirectionQueriesLearningObjectsModel::destroy($uidsRedirectionQueries);
             LogsController::createLog('Eliminar redirección de consulta', 'Redirección de consultas', auth()->user()->uid);
         });
 
-        return response()->json(['message' => 'Redirección eliminada correctamente']);
+        return response()->json(['message' => 'Redirecciones eliminadas correctamente']);
     }
 }

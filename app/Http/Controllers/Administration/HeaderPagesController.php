@@ -38,19 +38,6 @@ class HeaderPagesController extends BaseController
         );
     }
 
-    // public function saveHeaderPages(Request $request)
-    // {
-    //     $updateData = [
-    //         'legal_advice' => $request->input('legalAdvice'),
-    //     ];
-
-    //     foreach ($updateData as $key => $value) {
-    //         GeneralOptionsModel::where('option_name', $key)->update(['option_value' => $value]);
-    //     }
-
-    //     return response()->json(['message' => 'Textos guardados correctamente']);
-    // }
-
     public function getHeaderPages(Request $request)
     {
         $size = $request->get('size', 1);
@@ -74,16 +61,16 @@ class HeaderPagesController extends BaseController
             }
         }
 
-        $header_pages = $query->paginate($size);
+        $headerPages = $query->paginate($size);
 
-        return response()->json($header_pages, 200);
+        return response()->json($headerPages, 200);
     }
 
-    public function getHeaderPage(Request $request, $header_page_uid)
+    public function getHeaderPage(Request $request, $headerPageUid)
     {
-        $header_page = HeaderPagesModel::where('uid', $header_page_uid)->first();
+        $headerPage = HeaderPagesModel::where('uid', $headerPageUid)->first();
 
-        return response()->json($header_page, 200);
+        return response()->json($headerPage, 200);
     }
 
     public function saveHeaderPage(Request $request)
@@ -98,14 +85,14 @@ class HeaderPagesController extends BaseController
             'content.required' => 'El campo contenido es obligatorio',
         ];
 
-        $validator_rules = [
+        $validatorRules = [
             'name' => 'required',
             'order' => 'required|numeric',
             'slug' => ['required', 'regex:/^[a-z0-9_-]+$/i', 'max:255'],
             'content' => 'required',
         ];
 
-        $validator = Validator::make($request->all(), $validator_rules, $messages);
+        $validator = Validator::make($request->all(), $validatorRules, $messages);
 
 
         if ($validator->fails()) {
@@ -113,20 +100,20 @@ class HeaderPagesController extends BaseController
         }
 
 
-        $header_page_uid = $request->input('header_page_uid');
+        $headerPageUid = $request->input('header_page_uid');
         $exist = false;
 
-        if (!$header_page_uid) {
+        if (!$headerPageUid) {
             $isNew = true;
-            $header_page = new HeaderPagesModel();
-            $header_page->uid = generate_uuid();
+            $headerPage = new HeaderPagesModel();
+            $headerPage->uid = generateUuid();
             if (HeaderPagesModel::where('slug', $request->input('slug'))->first()){
                 $exist = true;
             }
         } else {
             $isNew = false;
-            $header_page = HeaderPagesModel::where('uid', $header_page_uid)->first();
-            if (HeaderPagesModel::where('slug', $request->input('slug'))->where('uid', '!=', $header_page_uid)->first()){
+            $headerPage = HeaderPagesModel::where('uid', $headerPageUid)->first();
+            if (HeaderPagesModel::where('slug', $request->input('slug'))->where('uid', '!=', $headerPageUid)->first()){
                 $exist = true;
             }
         }
@@ -139,13 +126,13 @@ class HeaderPagesController extends BaseController
             throw new OperationFailedException("El slug intriducido ya existe", 406);
         }
 
-        $header_page->name = $request->input('name');
-        $header_page->content = $request->input('content');
-        $header_page->slug = $request->input('slug');
-        $header_page->order = $request->input('order');
-        $header_page->header_page_uid = $request->input('parent_page_uid');
+        $headerPage->name = $request->input('name');
+        $headerPage->content = $request->input('content');
+        $headerPage->slug = $request->input('slug');
+        $headerPage->order = $request->input('order');
+        $headerPage->header_page_uid = $request->input('parent_page_uid');
 
-        $header_page->save();
+        $headerPage->save();
 
         return response()->json(['message' => $isNew ? 'Página de header creada correctamente' : 'Página de header actualizada correctamente']);
     }

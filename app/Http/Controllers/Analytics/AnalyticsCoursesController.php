@@ -26,8 +26,7 @@ class AnalyticsCoursesController extends BaseController
     {
         $coursesStatuses = CourseStatusesModel::all();
         $calls = CallsModel::all();
-        $educationals_programs_types = EducationalProgramTypesModel::all();
-        $courses_types = CourseTypesModel::all();
+        $coursesTypes = CourseTypesModel::all();
         $categories = CategoriesModel::with('parentCategory')->get();
         $teachers = UsersModel::whereHas('roles', function ($query) {
             $query->where('code', 'TEACHER');
@@ -52,8 +51,7 @@ class AnalyticsCoursesController extends BaseController
                 "flatpickr" => true,
                 "courses_statuses" => $coursesStatuses,
                 "calls" => $calls,
-                "educationals_programs_types" => $educationals_programs_types,
-                "courses_types" => $courses_types,
+                "courses_types" => $coursesTypes,
                 "categories" => $categories,
                 "teachers" => $teachers,
                 "students" => $students,
@@ -66,14 +64,12 @@ class AnalyticsCoursesController extends BaseController
 
     public function getCoursesStatusesGraph()
     {
-        $coursesStatusesCount = CourseStatusesModel::select("uid", "name", "code")
+        return CourseStatusesModel::select("uid", "name", "code")
             ->selectSub(function ($query) {
                 $query->selectRaw('COUNT(courses.uid)')
                     ->from('courses')
                     ->whereColumn('course_status_uid', 'course_statuses.uid');
             }, 'courses_count')->get();
-
-        return $coursesStatusesCount;
     }
 
     public function getPoaGraph(Request $request)
@@ -81,18 +77,20 @@ class AnalyticsCoursesController extends BaseController
         $filters = $request->filters;
 
         $query = CoursesModel::select("courses.uid", "courses.title")
-            ->selectSub(function ($query) use ($filters) {
+            ->selectSub(function ($query) {
                 $query->selectRaw('COUNT(courses_accesses.uid)')
                     ->from('courses_accesses')
                     ->whereColumn('courses.uid', 'courses_accesses.course_uid');
             }, 'count')
             ->orderBy('count', 'DESC');
 
-        if ($filters) $this->applyFilters($filters, $query);
+        if ($filters) {
+            $this->applyFilters($filters, $query);
+        }
 
         $data = $query->get();
 
-        if(empty($data->toArray())){
+        if (empty($data->toArray())) {
             $query = CoursesModel::select("courses.uid", "courses.title");
             $data = $query->get();
             foreach ($data as $item) {
@@ -312,53 +310,54 @@ class AnalyticsCoursesController extends BaseController
                         ->whereDate('realization_finish_date', '>=', $filter['value']);
                 }
             } elseif ($filter['database_field'] == "coordinators_teachers") {
-                $teachers_uids = $filter['value'];
-                $query->whereHas('teachers', function ($query) use ($teachers_uids) {
-                    $query->whereIn('users.uid', $teachers_uids)
+                $teachersUids = $filter['value'];
+                $query->whereHas('teachers', function ($query) use ($teachersUids) {
+                    $query->whereIn('users.uid', $teachersUids)
                         ->where('type', 'COORDINATOR');
                 });
             } elseif ($filter['database_field'] == "no_coordinators_teachers") {
-                $teachers_uids = $filter['value'];
-                $query->whereHas('teachers', function ($query) use ($teachers_uids) {
-                    $query->whereIn('users.uid', $teachers_uids)
+                $teachersUids = $filter['value'];
+                $query->whereHas('teachers', function ($query) use ($teachersUids) {
+                    $query->whereIn('users.uid', $teachersUids)
                         ->where('type', 'NO_COORDINATOR');
                 });
             } elseif ($filter['database_field'] == 'creator_user_uid') {
                 $query->whereIn('creator_user_uid', $filter['value']);
             } elseif ($filter['database_field'] == 'categories') {
-                $categories_uids = $filter['value'];
-                $query->whereHas('categories', function ($query) use ($categories_uids) {
-                    $query->whereIn('categories.uid', $categories_uids);
+                $categoriesUids = $filter['value'];
+                $query->whereHas('categories', function ($query) use ($categoriesUids) {
+                    $query->whereIn('categories.uid', $categoriesUids);
                 });
-            } else if ($filter['database_field'] == 'course_statuses') {
+            } elseif ($filter['database_field'] == 'course_statuses') {
                 $query->whereIn('course_status_uid', $filter['value']);
-            } else if ($filter['database_field'] == 'calls') {
+            } elseif ($filter['database_field'] == 'calls') {
                 $query->whereIn('call_uid', $filter['value']);
-            } else if ($filter['database_field'] == 'educational_programs') {
-                $query->whereIn('educational_program_type_uid', $filter['value']);
-            } else if ($filter['database_field'] == 'course_types') {
+            } elseif ($filter['database_field'] == 'course_types') {
                 $query->whereIn('course_type_uid', $filter['value']);
-            } else if ($filter['database_field'] == 'min_ects_workload') {
+            } elseif ($filter['database_field'] == 'min_ects_workload') {
                 $query->where('ects_workload', '>=', $filter['value']);
-            } else if ($filter['database_field'] == 'max_ects_workload') {
+            } elseif ($filter['database_field'] == 'max_ects_workload') {
                 $query->where('ects_workload', '<=', $filter['value']);
-            } else if ($filter['database_field'] == 'min_cost') {
+            } elseif ($filter['database_field'] == 'min_cost') {
                 $query->where('cost', '>=', $filter['value']);
-            } else if ($filter['database_field'] == 'max_cost') {
+            } elseif ($filter['database_field'] == 'max_cost') {
                 $query->where('cost', '<=', $filter['value']);
-            } else if ($filter['database_field'] == 'min_required_students') {
+            } elseif ($filter['database_field'] == 'min_required_students') {
                 $query->where('min_required_students', '>=', $filter['value']);
-            } else if ($filter['database_field'] == 'max_required_students') {
+            } elseif ($filter['database_field'] == 'max_required_students') {
                 $query->where('min_required_students', '<=', $filter['value']);
-            } else if ($filter['database_field'] == 'learning_results') {
+            } elseif ($filter['database_field'] == 'learning_results') {
                 $query->with([
                     'blocks.learningResults'
                 ])->whereHas('blocks.learningResults', function ($query) use ($filter) {
                     $query->whereIn('learning_results.uid', $filter['value']);
                 });
-            } else if ($filter['database_field'] == "embeddings") {
-                if ($filter['value'] == 1) $query->whereNotNull('embeddings');
-                else $query->whereNull('embeddings');
+            } elseif ($filter['database_field'] == "embeddings") {
+                if ($filter['value'] == 1) {
+                    $query->whereNotNull('embeddings');
+                } else {
+                    $query->whereNull('embeddings');
+                }
             } else {
                 $query->where($filter['database_field'], $filter['value']);
             }

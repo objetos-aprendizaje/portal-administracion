@@ -15,7 +15,7 @@
         <div class="poa-container w-full mb-8">
             <div class="title-filter flex items-center mb-[26px]">
                 <span>Listado de usuarios</span>
-                <button id="filter-users-btn" class="btn-filter">{{ e_heroicon('adjustments-horizontal', 'outline') }}</button>
+                <button id="filter-users-btn" class="btn-filter">{{ eHeroicon('adjustments-horizontal', 'outline') }}</button>
             </div>
 
             <div class="table-control-header">

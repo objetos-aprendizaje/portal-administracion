@@ -57,11 +57,11 @@ class CombinedAuthMiddleware
         $notifications = $this->getNotifications($user);
 
         // Comprobamos si tiene alguna notificación sin leer para mostrarlo en el icono de notificaciones
-        $is_read_values = array_column($notifications, 'is_read');
-        $unread_notifications = in_array(0, $is_read_values);
+        $isReadValues = array_column($notifications, 'is_read');
+        $unreadNotifications = in_array(0, $isReadValues);
 
         View::share('notifications', $notifications);
-        View::share('unread_notifications', $unread_notifications);
+        View::share('unread_notifications', $unreadNotifications);
         View::share('roles', $user['roles']->toArray());
     }
 
@@ -80,32 +80,32 @@ class CombinedAuthMiddleware
 
     private function getGeneralNotifications($user)
     {
-        $user_array = $user->toArray();
+        $userArray = $user->toArray();
 
-        $uids_roles = array_map(function ($item) {
+        $uidsRoles = array_map(function ($item) {
             return $item['uid'];
-        }, $user_array['roles']);
+        }, $userArray['roles']);
 
-        $user_uid = $user['uid'];
+        $userUid = $user['uid'];
 
-        $generalNotificationsQuery = GeneralNotificationsModel::query()
-            ->where(function ($query) use ($user_uid, $uids_roles) {
-                $query->where(function ($q) use ($user_uid) {
+        return GeneralNotificationsModel::query()
+            ->where(function ($query) use ($userUid, $uidsRoles) {
+                $query->where(function ($q) use ($userUid) {
                     $q->where('type', 'USERS')
-                        ->whereExists(function ($query) use ($user_uid) {
+                        ->whereExists(function ($query) use ($userUid) {
                             $query->select(DB::raw(1))
                                 ->from('destinations_general_notifications_users')
                                 ->whereColumn('destinations_general_notifications_users.general_notification_uid', 'general_notifications.uid')
-                                ->where('destinations_general_notifications_users.user_uid', $user_uid);
+                                ->where('destinations_general_notifications_users.user_uid', $userUid);
                         });
                 })
-                    ->orWhere(function ($q) use ($uids_roles) {
+                    ->orWhere(function ($q) use ($uidsRoles) {
                         $q->where('type', 'ROLES')
-                            ->whereExists(function ($query) use ($uids_roles) {
+                            ->whereExists(function ($query) use ($uidsRoles) {
                                 $query->select(DB::raw(1))
                                     ->from('destinations_general_notifications_roles')
                                     ->whereColumn('destinations_general_notifications_roles.general_notification_uid', 'general_notifications.uid')
-                                    ->whereIn('destinations_general_notifications_roles.rol_uid', $uids_roles);
+                                    ->whereIn('destinations_general_notifications_roles.rol_uid', $uidsRoles);
                             });
                     })
                     ->orWhere('type', 'ALL_USERS');
@@ -113,10 +113,10 @@ class CombinedAuthMiddleware
             ->where('start_date', '<=', now())
             ->where('end_date', '>=', now())
             // Exclusión de notificaciones deshabilitadas por el usuario
-            ->whereNotIn('notification_type_uid', function ($query) use ($user_uid) {
+            ->whereNotIn('notification_type_uid', function ($query) use ($userUid) {
                 $query->select('notification_type_uid')
                     ->from('user_general_notification_types_disabled')
-                    ->where('user_general_notification_types_disabled.user_uid', $user_uid);
+                    ->where('user_general_notification_types_disabled.user_uid', $userUid);
             })
             ->select([
                 'general_notifications.uid as uid',
@@ -127,20 +127,16 @@ class CombinedAuthMiddleware
                 // Subconsulta para determinar si la notificación ha sido leída por el usuario
                 'is_read' => UserGeneralNotificationsModel::select(DB::raw('CAST(CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END AS INTEGER)'))
                     ->whereColumn('user_general_notifications.general_notification_uid', 'general_notifications.uid')
-                    ->where('user_general_notifications.user_uid', $user_uid)
+                    ->where('user_general_notifications.user_uid', $userUid)
                     ->limit(1),
             ]);
-
-        return $generalNotificationsQuery;
     }
 
     private function getGeneralNotificationsAutomatic($user)
     {
-        $generalNotificationsAutomaticQuery = GeneralNotificationsAutomaticModel::leftJoin('automatic_notification_types', 'automatic_notification_types.uid', '=', 'general_notifications_automatic.automatic_notification_type_uid')
+        return GeneralNotificationsAutomaticModel::leftJoin('automatic_notification_types', 'automatic_notification_types.uid', '=', 'general_notifications_automatic.automatic_notification_type_uid')
             ->leftJoin('general_notifications_automatic_users', 'general_notifications_automatic_users.general_notifications_automatic_uid', '=', 'general_notifications_automatic.uid')
             ->select('general_notifications_automatic.uid', 'general_notifications_automatic.title', 'general_notifications_automatic.description', 'general_notifications_automatic.created_at as date', DB::raw("'automatic' as type"), DB::raw('CAST(general_notifications_automatic_users.is_read AS INTEGER) as is_read'))
             ->where('general_notifications_automatic_users.user_uid', $user->uid);
-
-        return $generalNotificationsAutomaticQuery;
     }
 }

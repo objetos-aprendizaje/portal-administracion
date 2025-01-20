@@ -17,11 +17,11 @@ class Saml2TenantsModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uuid' => generate_uuid(),
-            'idp_entity_id' => generate_uuid(),
-            'idp_login_url' => generate_uuid(),
-            'idp_logout_url' => generate_uuid(),
-            'idp_x509_cert' => generate_uuid(),
+            'uuid' => generateUuid(),
+            'idp_entity_id' => generateUuid(),
+            'idp_login_url' => generateUuid(),
+            'idp_logout_url' => generateUuid(),
+            'idp_x509_cert' => generateUuid(),
             'metadata' =>  json_encode([
                 'key1' => $this->faker->word,
                 'key2' => $this->faker->numberBetween(1, 100),

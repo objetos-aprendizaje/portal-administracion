@@ -14,7 +14,7 @@
                     <div class="checkbox mb-2">
                         <label for="learning-objects-appraisals-checkbox" class="inline-flex relative items-center cursor-pointer">
                             <input {{ $general_options['learning_objects_appraisals'] ? 'checked' : '' }} type="checkbox"
-                                id="learning-objects-appraisals-checkbox" class="sr-only peer">
+                                id="learning-objects-appraisals-checkbox" class="peer">
                             <div
                                 class="checkbox-switch peer-checked:bg-primary peer-checked:after:border-white peer-checked:after:translate-x-full">
                             </div>
@@ -56,7 +56,7 @@
             </div>
 
             <button type="submit" class="btn btn-primary" id="save-rrss-btn">Guardar
-                {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                {{ eHeroicon('paper-airplane', 'outline') }}</button>
         </div>
     </div>
 
@@ -116,7 +116,7 @@
             </div>
 
             <button type="submit" class="btn btn-primary" id="save-rrss-btn">Guardar
-                {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                {{ eHeroicon('paper-airplane', 'outline') }}</button>
         </div>
     </div>
 
@@ -166,7 +166,7 @@
             </div>
 
             <button type="submit" class="btn btn-primary" id="save-rrss-btn">Guardar
-                {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                {{ eHeroicon('paper-airplane', 'outline') }}</button>
         </div>
     </div>
 
@@ -216,7 +216,7 @@
             </div>
 
             <button type="submit" class="btn btn-primary" id="save-rrss-btn">Guardar
-                {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                {{ eHeroicon('paper-airplane', 'outline') }}</button>
         </div>
     </div>
 
@@ -266,7 +266,7 @@
             </div>
 
             <button type="submit" class="btn btn-primary" id="save-rrss-btn">Guardar
-                {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                {{ eHeroicon('paper-airplane', 'outline') }}</button>
         </div>
     </div>
 
@@ -316,7 +316,7 @@
             </div>
 
             <button type="submit" class="btn btn-primary" id="save-rrss-btn">Guardar
-                {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                {{ eHeroicon('paper-airplane', 'outline') }}</button>
         </div>
     </div>
 

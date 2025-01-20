@@ -10,11 +10,11 @@
                 <div class="grow overflow-auto h-full">
 
                     <div class="accordion">
-                        <div tabindex="1">
+                        <div>
                             <div
                                 class="accordion-header cursor-pointer px-[20px] py-[8px] bg-[#F5F6F4] rounded-[6px] flex justify-between items-center mb-[8px]">
                                 <h4 class="m-0">Logo 1</h4>
-                                <div class="w-[16px] rotate-icon">{{ e_heroicon('chevron-up', 'outline') }}</div>
+                                <div class="w-[16px] rotate-icon">{{ eHeroicon('chevron-up', 'outline') }}</div>
                             </div>
 
                             <div class="accordion-uncollapsed container-logo-general">
@@ -22,11 +22,11 @@
                                     <div class="flex gap-[32px] mb-[8px]">
                                         <div class="w-1/2" id="logo_container_poa_logo_1">
                                             @if ($general_options['poa_logo_1'])
-                                                <img src="{{ asset($general_options['poa_logo_1']) }}" />
+                                                <img src="{{ asset($general_options['poa_logo_1']) }}" alt="logo menú" />
                                             @else
                                                 <div class="bg-[#F5F6F4] flex items-center justify-center h-full">
                                                     <img
-                                                        src="{{ asset('data/images/default_images/no_logo_attached.svg') }}" />
+                                                        src="{{ asset('data/images/default_images/no_logo_attached.svg') }}" alt="logo menú"/>
                                                 </div>
                                             @endif
 
@@ -35,10 +35,10 @@
                                         <div class="w-1/2">
                                             <button class="btn btn-primary mb-[14px] min-w-0 restore_poa_logo"
                                                 data-field="poa_logo_1">Eliminar
-                                                {{ e_heroicon('trash', 'outline') }}</button>
+                                                {{ eHeroicon('trash', 'outline') }}</button>
 
                                             <label for="poa_logo_1" class="btn btn-primary min-w-0">Subir
-                                                {{ e_heroicon('arrow-up-tray', 'outline') }}</label>
+                                                {{ eHeroicon('arrow-up-tray', 'outline') }}</label>
 
                                             <input type="file" accept="image/*" name="poa_logo_1" id="poa_logo_1"
                                                 hidden />
@@ -54,11 +54,11 @@
                             </div>
                         </div>
 
-                        <div tabindex="2">
+                        <div>
                             <div
                                 class="accordion-header cursor-pointer px-[20px] py-[8px] bg-[#F5F6F4] rounded-[6px] flex justify-between items-center mb-[8px]">
                                 <h4 class="m-0">Logo 2</h4>
-                                <div class="w-[16px] rotate-icon">{{ e_heroicon('chevron-down', 'outline') }}</div>
+                                <div class="w-[16px] rotate-icon">{{ eHeroicon('chevron-down', 'outline') }}</div>
                             </div>
 
                             <div class="accordion-collapsed container-logo-general">
@@ -66,11 +66,11 @@
                                     <div class="flex gap-[32px] mb-[8px]">
                                         <div class="w-1/2" id="logo_container_poa_logo_2">
                                             @if ($general_options['poa_logo_2'])
-                                                <img src="{{ asset($general_options['poa_logo_2']) }}" />
+                                                <img src="{{ asset($general_options['poa_logo_2']) }}" alt="logo menú" />
                                             @else
                                                 <div class="bg-[#F5F6F4] flex items-center justify-center h-full">
                                                     <img
-                                                        src="{{ asset('data/images/default_images/no_logo_attached.svg') }}" />
+                                                        src="{{ asset('data/images/default_images/no_logo_attached.svg') }}" alt="no_logo_attached" />
                                                 </div>
                                             @endif
                                         </div>
@@ -78,10 +78,10 @@
                                         <div class="w-1/2">
                                             <button class="btn btn-primary mb-[14px] min-w-0 restore_poa_logo"
                                                 data-field="poa_logo_2">Eliminar
-                                                {{ e_heroicon('trash', 'outline') }}</button>
+                                                {{ eHeroicon('trash', 'outline') }}</button>
 
                                             <label for="poa_logo_2" class="btn btn-primary min-w-0">Subir
-                                                {{ e_heroicon('arrow-up-tray', 'outline') }}</label>
+                                                {{ eHeroicon('arrow-up-tray', 'outline') }}</label>
 
                                             <input type="file" accept="image/*" name="poa_logo_2" id="poa_logo_2"
                                                 hidden />
@@ -96,11 +96,11 @@
                             </div>
                         </div>
 
-                        <div tabindex="3">
+                        <div>
                             <div
                                 class="accordion-header cursor-pointer px-[20px] py-[8px] bg-[#F5F6F4] rounded-[6px] flex justify-between items-center mb-[8px]">
                                 <h4 class="m-0">Logo 3</h4>
-                                <div class="w-[16px] rotate-icon">{{ e_heroicon('chevron-down', 'outline') }}</div>
+                                <div class="w-[16px] rotate-icon">{{ eHeroicon('chevron-down', 'outline') }}</div>
                             </div>
 
                             <div class="accordion-collapsed container-logo-general">
@@ -108,11 +108,11 @@
                                     <div class="flex gap-[32px] mb-[8px]">
                                         <div class="w-1/2" id="logo_container_poa_logo_3">
                                             @if ($general_options['poa_logo_3'])
-                                                <img src="{{ asset($general_options['poa_logo_3']) }}" />
+                                                <img src="{{ asset($general_options['poa_logo_3']) }}" alt="logo menú" />
                                             @else
                                                 <div class="bg-[#F5F6F4] flex items-center justify-center h-full">
                                                     <img
-                                                        src="{{ asset('data/images/default_images/no_logo_attached.svg') }}" />
+                                                        src="{{ asset('data/images/default_images/no_logo_attached.svg') }}" alt="no_logo_attached" />
                                                 </div>
                                             @endif
                                         </div>
@@ -120,10 +120,10 @@
                                         <div class="w-1/2">
                                             <button class="btn btn-primary mb-[14px] min-w-0 restore_poa_logo"
                                                 data-field="poa_logo_3">Eliminar
-                                                {{ e_heroicon('trash', 'outline') }}</button>
+                                                {{ eHeroicon('trash', 'outline') }}</button>
 
                                             <label for="poa_logo_3" class="btn btn-primary min-w-0">Subir
-                                                {{ e_heroicon('arrow-up-tray', 'outline') }}</label>
+                                                {{ eHeroicon('arrow-up-tray', 'outline') }}</label>
 
                                             <input type="file" accept="image/*" name="poa_logo_3" id="poa_logo_3"
                                                 hidden />
@@ -146,7 +146,7 @@
 
             <template id="no-logo-attached">
                 <div class="bg-[#F5F6F4] flex items-center justify-center h-full">
-                    <img src="{{ asset('data/images/default_images/no_logo_attached.svg') }}" />
+                    <img src="{{ asset('data/images/default_images/no_logo_attached.svg') }}" alt="logo" />
                 </div>
             </template>
         </div>
@@ -214,7 +214,7 @@
 
             <div class="flex justify-center">
                 <button id="update-colors-btn" class="btn btn-primary w-48">Guardar
-                    {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                    {{ eHeroicon('paper-airplane', 'outline') }}</button>
             </div>
 
 
@@ -261,7 +261,7 @@
             </div>
 
             <button type="submit" class="btn btn-primary mt-4">Guardar
-                {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                {{ eHeroicon('paper-airplane', 'outline') }}</button>
 
         </form>
 
@@ -277,7 +277,7 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="company_name">Razón social</label>
+                        <label for="company_name">Nombre de la empresa</label>
                     </div>
                     <div class="content-container little">
                         <input value="{{ $general_options['company_name'] }}" placeholder="Universidad de Madrid"
@@ -287,11 +287,11 @@
 
                 <div class="field">
                     <div class="label-container label-center">
-                        <label for="commercial_name">Nombre comercial</label>
+                        <label for="phone_number">Teléfono</label>
                     </div>
                     <div class="content-container little">
-                        <input value="{{ $general_options['commercial_name'] }}" placeholder="Universidad de Madrid"
-                            type="text" id="commercial_name" name="commercial_name" class="poa-input" />
+                        <input value="{{ $general_options['phone_number'] }}" placeholder="693810382" type="text"
+                            id="phone_number" class="poa-input" name="phone_number" />
                     </div>
                 </div>
 
@@ -315,21 +315,8 @@
                     </div>
                 </div>
 
-                <div class="field">
-                    <div class="label-container label-center">
-                        <label for="work_center_address">Domicilio centro de trabajo</label>
-                    </div>
-
-                    <div class="content-container little">
-                        <input value="{{ $general_options['work_center_address'] }}"
-                            placeholder="Paseo de la Castellana, 1" type="text" id="work_center_address"
-                            name="work_center_address" class="poa-input" />
-                    </div>
-
-                </div>
-
                 <button type="submit" class="btn btn-primary">Guardar
-                    {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                    {{ eHeroicon('paper-airplane', 'outline') }}</button>
 
             </div>
         </form>
@@ -419,7 +406,7 @@
                 </div>
 
                 <button type="submit" class="btn btn-primary">Guardar
-                    {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                    {{ eHeroicon('paper-airplane', 'outline') }}</button>
 
             </div>
 
@@ -440,7 +427,7 @@
         <textarea maxlength="1000" rows="7" id="scripts-input" class="poa-input">{{ $general_options['scripts'] }}</textarea>
 
         <button type="button" class="btn btn-primary" id="save-scripts-btn">Guardar
-            {{ e_heroicon('paper-airplane', 'outline') }}</button>
+            {{ eHeroicon('paper-airplane', 'outline') }}</button>
     </div>
 
     <div class="poa-container mb-8">
@@ -512,7 +499,7 @@
             </div>
 
             <button type="submit" class="btn btn-primary" id="save-rrss-btn">Guardar
-                {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                {{ eHeroicon('paper-airplane', 'outline') }}</button>
 
         </form>
     </div>
@@ -535,7 +522,7 @@
                     <div class="content-container little">
                         <div class="poa-input-image">
                             <img id="carrousel_image_path"
-                                src="{{ $general_options['carrousel_image_path'] ? asset($general_options['carrousel_image_path']) : env('NO_IMAGE_SELECTED_PATH') }}" />
+                                src="{{ $general_options['carrousel_image_path'] ? asset($general_options['carrousel_image_path']) : env('NO_IMAGE_SELECTED_PATH') }}" alt="imagen por defecto carrousel" />
 
 
                             <div class="select-file-container">
@@ -544,7 +531,7 @@
 
                                 <div class="flex items-center gap-[20px]">
                                     <label for="carrousel_image_input_file" class="btn btn-rectangular">
-                                        Subir {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                        Subir {{ eHeroicon('arrow-up-tray', 'outline') }}
                                     </label>
 
                                     <span class="image-name link-label">Ningún archivo seleccionado</span>
@@ -592,7 +579,7 @@
             </div>
 
             <button type="submit" class="btn btn-primary" id="save-carrousel-form-btn">Guardar
-                {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                {{ eHeroicon('paper-airplane', 'outline') }}</button>
         </form>
     </div>
 
@@ -614,11 +601,11 @@
         <div class="poa-form">
             <div class="accordion">
 
-                <div class="accordion-item group" tabindex="1">
+                <div class="accordion-item group">
                     <div class="accordion-header">
                         <h3>Tipografía regular</h3>
                         <div class="rotate-icon">
-                            {{ e_heroicon('chevron-down', 'outline') }}
+                            {{ eHeroicon('chevron-down', 'outline') }}
                         </div>
                     </div>
 
@@ -637,7 +624,7 @@
                                                 name="truetype_regular_file_path" accept=".ttf">
                                             <label for="truetype_regular_file_path"
                                                 class="btn btn-rectangular btn-input-file">
-                                                Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                             </label>
                                         </div>
                                         <div class="file-name truetype_regular_file_path link-label">
@@ -672,7 +659,7 @@
                                                 accept=".woff">
                                             <label for="woff_regular_file_path"
                                                 class="btn btn-rectangular btn-input-file">
-                                                Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                             </label>
                                         </div>
                                         <div class="file-name woff_regular_file_path link-label">
@@ -708,7 +695,7 @@
                                                 data-font="woff2_regular_file_path">
                                             <label for="woff2_regular_file_path"
                                                 class="btn btn-rectangular btn-input-file">
-                                                Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                             </label>
                                         </div>
                                         <div class="file-name woff2_regular_file_path link-label">
@@ -742,7 +729,7 @@
                                                 data-font="embedded_opentype_regular_file_path" accept=".eot">
                                             <label for="embedded_opentype_regular_file_path"
                                                 class="btn btn-rectangular btn-input-file">
-                                                Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                             </label>
                                         </div>
                                         <div class="file-name link-label embedded_opentype_regular_file_path">
@@ -777,7 +764,7 @@
                                                 accept=".otf" data-font="opentype_regular_input_file">
                                             <label for="opentype_regular_input_file"
                                                 class="btn btn-rectangular btn-input-file">
-                                                Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                             </label>
                                         </div>
                                         <div class="file-name link-label opentype_regular_input_file">
@@ -812,7 +799,7 @@
                                                 name="svg_regular_file_path" accept=".svg"
                                                 data-font="svg_regular_file_path">
                                             <label for="svg_regular_file_path" class="btn btn-rectangular btn-input-file">
-                                                Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                             </label>
                                         </div>
                                         <div class="file-name link-label svg_regular_file_path">
@@ -839,11 +826,11 @@
 
                 </div>
 
-                <div class="accordion-item group" tabindex="1">
+                <div class="accordion-item group">
                     <div class="accordion-header">
                         <h3>Tipografía medium</h3>
                         <div class="rotate-icon">
-                            {{ e_heroicon('chevron-down', 'outline') }}
+                            {{ eHeroicon('chevron-down', 'outline') }}
                         </div>
                     </div>
 
@@ -861,7 +848,7 @@
                                                 data-font="truetype_medium_file_path">
                                             <label for="truetype_medium_file_path"
                                                 class="btn btn-rectangular btn-input-file">
-                                                Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                             </label>
                                         </div>
                                         <div class="file-name link-label">
@@ -895,7 +882,7 @@
                                                 name="woff_medium_file_path" accept=".woff"
                                                 data-font="woff_medium_file_path">
                                             <label for="woff_medium_file_path" class="btn btn-rectangular btn-input-file">
-                                                Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                             </label>
                                         </div>
                                         <div class="file-name link-label">
@@ -930,7 +917,7 @@
                                                 data-font="woff2_medium_file_path">
                                             <label for="woff2_medium_file_path"
                                                 class="btn btn-rectangular btn-input-file">
-                                                Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                             </label>
                                         </div>
                                         <div class="file-name link-label">
@@ -964,7 +951,7 @@
                                                 accept=".eot" data-font="embedded_opentype_medium_file_path">
                                             <label for="embedded_opentype_medium_file_path"
                                                 class="btn btn-rectangular btn-input-file">
-                                                Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                             </label>
                                         </div>
                                         <div class="file-name link-label">
@@ -999,7 +986,7 @@
                                                 data-font="opentype_medium_file_path">
                                             <label for="opentype_medium_file_path"
                                                 class="btn btn-rectangular btn-input-file">
-                                                Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                             </label>
                                         </div>
                                         <div class="file-name opentype_medium_file_path link-label">
@@ -1032,7 +1019,7 @@
                                                 name="svg_medium_file_path" accept=".svg"
                                                 data-font="svg_medium_file_path">
                                             <label for="svg_medium_file_path" class="btn btn-rectangular btn-input-file">
-                                                Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                             </label>
                                         </div>
                                         <div class="file-name svg_medium_file_path link-label">
@@ -1059,11 +1046,11 @@
 
                 </div>
 
-                <div class="accordion-item group" tabindex="1">
+                <div class="accordion-item group">
                     <div class="accordion-header">
                         <h3>Tipografía bold</h3>
                         <div class="rotate-icon">
-                            {{ e_heroicon('chevron-down', 'outline') }}
+                            {{ eHeroicon('chevron-down', 'outline') }}
                         </div>
                     </div>
 
@@ -1082,7 +1069,7 @@
                                                 data-font="truetype_bold_file_path">
                                             <label for="truetype_bold_file_path"
                                                 class="btn btn-rectangular btn-input-file">
-                                                Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                             </label>
                                         </div>
                                         <div class="file-name truetype_bold_file_path link-label">
@@ -1116,7 +1103,7 @@
                                                 name="woff_bold_file_path" accept=".woff"
                                                 data-font="woff_bold_file_path">
                                             <label for="woff_bold_file_path" class="btn btn-rectangular btn-input-file">
-                                                Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                             </label>
                                         </div>
                                         <div class="file-name woff_bold_file_path link-label">
@@ -1150,7 +1137,7 @@
                                                 name="woff2_bold_file_path" accept=".woff2"
                                                 data-font="woff2_bold_file_path">
                                             <label for="woff2_bold_file_path" class="btn btn-rectangular btn-input-file">
-                                                Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                             </label>
                                         </div>
                                         <div class="file-name woff2_bold_file_path link-label">
@@ -1184,7 +1171,7 @@
                                                 accept=".eot" data-font="embedded_opentype_bold_file_path">
                                             <label for="embedded_opentype_bold_file_path"
                                                 class="btn btn-rectangular btn-input-file">
-                                                Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                             </label>
                                         </div>
                                         <div class="file-name link-label">
@@ -1219,7 +1206,7 @@
                                                 data-font="opentype_bold_file_path">
                                             <label for="opentype_bold_file_path"
                                                 class="btn btn-rectangular btn-input-file">
-                                                Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                             </label>
                                         </div>
                                         <div class="file-name opentype_bold_file_path link-label">
@@ -1252,7 +1239,7 @@
                                             <input type="file" id="svg_bold_file_path" class="hidden input-font"
                                                 name="svg_bold_file_path" accept=".svg" data-font="svg_bold_file_path">
                                             <label for="svg_bold_file_path" class="btn btn-rectangular btn-input-file">
-                                                Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                             </label>
                                         </div>
                                         <div class="file-name svg_bold_file_path link-label">
@@ -1336,10 +1323,16 @@
 
             <div class="flex gap-2">
                 <button type="submit" class="btn btn-primary" id="save-openai-btn">Guardar
-                    {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                    {{ eHeroicon('paper-airplane', 'outline') }}</button>
 
-                <button type="button" class="btn btn-secondary" id="regenerate-embeddings-btn">Regenerar embeddings
-                    {{ e_heroicon('arrow-path', 'outline') }}</button>
+                @if ($isPendingJobRegenerateEmbeddingsRunning)
+                    <button type="button" class="btn btn-secondary" id="regenerate-embeddings-btn">Embeddings regenerándose
+                        {{ eHeroicon('exclamation-circle', 'outline') }}</button>
+                @else
+                    <button type="button" class="btn btn-secondary" id="regenerate-embeddings-btn">Regenerar embeddings
+                        {{ eHeroicon('arrow-path', 'outline') }}</button>
+                @endif
+
             </div>
         </form>
 
@@ -1361,8 +1354,7 @@
                         <label for="footer_text_1">Texto 1</label>
                     </div>
                     <div class="content-container little">
-                        <textarea class="poa-input" type="text" id="footer_text_1"
-                            name="footer_text_1">{{ $general_options['footer_text_1'] }}</textarea>
+                        <textarea class="poa-input" type="text" id="footer_text_1" name="footer_text_1">{{ $general_options['footer_text_1'] }}</textarea>
                     </div>
                 </div>
 
@@ -1371,14 +1363,13 @@
                         <label for="footer_text_2">Texto 2</label>
                     </div>
                     <div class="content-container little">
-                        <textarea class="poa-input" type="text" id="footer_text_2"
-                            name="footer_text_2">{{ $general_options['footer_text_2'] }}</textarea>
+                        <textarea class="poa-input" type="text" id="footer_text_2" name="footer_text_2">{{ $general_options['footer_text_2'] }}</textarea>
                     </div>
                 </div>
 
                 <div class="flex gap-2">
                     <button type="submit" class="btn btn-primary">Guardar
-                        {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                        {{ eHeroicon('paper-airplane', 'outline') }}</button>
                 </div>
             </form>
         </div>

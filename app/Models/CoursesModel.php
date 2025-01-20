@@ -25,7 +25,6 @@ class CoursesModel extends Model
         'description',
         'contact_information',
         'course_type_uid',
-        'educational_program_type_uid',
         'call_uid',
         'course_status_uid',
         'min_required_students',
@@ -38,7 +37,6 @@ class CoursesModel extends Model
         'presentation_video_url',
         'objectives',
         'ects_workload',
-        'educational_program_uid',
         'validate_student_registrations',
         'lms_url',
         'lms_system_uid',
@@ -129,7 +127,7 @@ class CoursesModel extends Model
                     ]);
             } else {
                 $this->courseDocuments()->create([
-                    'uid' => generate_uuid(),
+                    'uid' => generateUuid(),
                     'course_uid' => $this->uid,
                     'document_name' => $document['document_name'],
                 ]);
@@ -184,15 +182,6 @@ class CoursesModel extends Model
         return $this->belongsTo(
             EducationalProgramsModel::class,
             'educational_program_uid',
-            'uid'
-        );
-    }
-
-    public function educational_program_type()
-    {
-        return $this->belongsTo(
-            EducationalProgramTypesModel::class,
-            'educational_program_type_uid',
             'uid'
         );
     }

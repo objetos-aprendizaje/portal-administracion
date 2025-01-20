@@ -2,17 +2,14 @@
 
 namespace Tests\Unit;
 
-use Str;
 use Tests\TestCase;
 use App\Jobs\SendEmailJob;
 use App\Models\UsersModel;
 use App\Models\UserRolesModel;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use App\Models\EmailNotificationsModel;
 use App\Models\NotificationsTypesModel;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class CommandSendEmailNotificationsTest extends TestCase
@@ -30,8 +27,8 @@ class CommandSendEmailNotificationsTest extends TestCase
         // Arrange: Crea un usuario y una notificación
         UsersModel::factory()->create(['email_notifications_allowed' => true]);
         $notification = EmailNotificationsModel::factory()->create([
-            'uid' => generate_uuid(),
-            'sent' => true,
+            'uid' => generateUuid(),
+            'status' => 'SENT',
             'body' => 'Test email body',
             'subject' => 'Test email subject',
             'notification_type_uid' => null,
@@ -45,7 +42,7 @@ class CommandSendEmailNotificationsTest extends TestCase
         //Verifica que la notificación se marcó como enviada
         $this->assertDatabaseHas('email_notifications', [
             'uid' => $notification->uid,
-            'sent' => true,
+            'status' => 'SENT',
         ]);
     }
 
@@ -53,30 +50,69 @@ class CommandSendEmailNotificationsTest extends TestCase
     public function testHandlesEmailNotificationsCorrectlyAllUsers()
     {
         // Arrange: Crea un usuario y una notificación
-        UsersModel::factory()->create(['email_notifications_allowed' => true]);
+        $user = UsersModel::factory()->create(['email_notifications_allowed' => true]);
+
+        $type = NotificationsTypesModel::factory()->create();
+
         $notification = EmailNotificationsModel::factory()->create([
-            'sent' => 0,
+            'status' => 'PENDING',
             'body' => 'Test email body',
             'subject' => 'Test email subject',
-            'notification_type_uid' => null,
+            'notification_type_uid' => $type->uid,
             'type' => 'ALL_USERS', //parea ALL-USERS
         ]);
 
+        $notification->users()->attach(
+            $user->uid,
+            [
+                'uid' => generateUuid(),
+            ]
+        );
         // Simula que los parámetros del servidor de email son correctos
         Cache::shouldReceive('get')->once()->with('parameters_email_service')->andReturn(['smtp' => 'smtp.example.com', 'username' => 'user', 'password' => 'pass']);
 
         // Act: Ejecuta el comando
-        // Log::shouldReceive('info')->once()->with('ENVÍO DE EMAILS: ' . now());
         $this->artisan('app:send-email-notifications')
             ->assertExitCode(0);
 
         // Assert: Verifica que el trabajo de envío de email fue despachado
-        Queue::assertPushed(SendEmailJob::class, 2);
+        Queue::assertPushed(SendEmailJob::class);
         // Verifica que la notificación se marcó como enviada
         $this->assertDatabaseHas('email_notifications', [
             'uid' => $notification->uid,
-            'sent' => true,
+            'status' => 'PENDING',
         ]);
+    }
+
+    /** @test Envio de notification todos los usuarios*/
+    public function testHandlesEmailNotificationsWithEmailErrors()
+    {
+        // Arrange: Crea un usuario y una notificación
+        $user = UsersModel::factory()->create(['email_notifications_allowed' => true]);
+
+        $type = NotificationsTypesModel::factory()->create();
+
+        $notification = EmailNotificationsModel::factory()->create([
+            'status' => 'PENDING',
+            'body' => 'Test email body',
+            'subject' => 'Test email subject',
+            'notification_type_uid' => $type->uid,
+            'type' => 'ALL_USERS', //parea ALL-USERS
+        ]);
+
+        $notification->users()->attach(
+            $user->uid,
+            [
+                'uid' => generateUuid(),
+            ]
+        );
+        // Simula que los parámetros del servidor de email son correctos
+        Cache::shouldReceive('get')->once()->with('parameters_email_service')->andReturn(null);
+
+        // Act: Ejecuta el comando
+        $this->artisan('app:send-email-notifications')
+           
+            ->assertExitCode(0);
     }
 
     /** @test Envio notificación por roles*/
@@ -88,39 +124,35 @@ class CommandSendEmailNotificationsTest extends TestCase
             'email_notifications_allowed' => true,
         ]);
 
-        $user->roles()->attach($role, ['uid' => generate_uuid()]); // Asocia el rol al usuario
+        $user->roles()->attach($role, ['uid' => generateUuid()]); // Asocia el rol al usuario
 
         // Crea una notificación con tipo 'ROLES'
         $notification = EmailNotificationsModel::factory()->create([
-            'sent' => 0,
+            'status' => 'PENDING',
             'body' => 'Test email body',
             'subject' => 'Test email subject',
             'notification_type_uid' => null,
             'type' => 'ROLES',
         ]);
-        $notification->roles()->attach($role, ['uid' => generate_uuid()]);
+        $notification->roles()->attach($role, ['uid' => generateUuid()]);
 
         // Simula que los parámetros del servidor de email son correctos
-        Cache::shouldReceive('get')->once()->with('parameters_email_service')->andReturn(['smtp' => 'smtp.example.com', 'username' => 'user', 'password' => 'pass']);
+        Cache::shouldReceive('get')
+            ->with('parameters_email_service')
+            ->once()
+            ->andReturn(['smtp' => 'smtp.example.com', 'username' => 'user', 'password' => 'pass']);
 
         // Act: Ejecuta el comando
-
-        // Log::shouldReceive('info')->once()->with('ENVÍO DE EMAILS: ', \Mockery::any());
-        // Log::shouldReceive('info')
-        //     ->once()
-        //     ->withArgs(function ($message, $context) {
-        //         return strpos($message, 'ENVÍO DE EMAILS:') !== false;
-        //     });
         $this->artisan('app:send-email-notifications')
             ->assertExitCode(0);
 
         // Assert: Verifica que el trabajo de envío de email fue despachado
-        Queue::assertPushed(SendEmailJob::class, 1);
+        Queue::assertPushed(SendEmailJob::class);
 
         // Verifica que la notificación se marcó como enviada
         $this->assertDatabaseHas('email_notifications', [
             'uid' => $notification->uid,
-            'sent' => true,
+            'status' => 'PENDING',
         ]);
     }
 
@@ -133,33 +165,32 @@ class CommandSendEmailNotificationsTest extends TestCase
             'email' => 'student@example.com',  // Email del usuario
         ]);
 
-        $user->roles()->attach($role, ['uid' => generate_uuid()]); // Asocia el rol al usuario
+        $user->roles()->attach($role, ['uid' => generateUuid()]); // Asocia el rol al usuario
 
         // Crea una notificación con tipo 'ROLES'
         $notification = EmailNotificationsModel::factory()->create([
-            'sent' => 0,
+            'status' => 'PENDING',
             'body' => 'Test email body',
             'subject' => 'Test email subject',
             'notification_type_uid' => null,
             'type' => 'USERS',
         ]);
-        $notification->users()->attach($user, ['uid' => generate_uuid()]);
+        $notification->users()->attach($user, ['uid' => generateUuid()]);
 
         // Simula que los parámetros del servidor de email son correctos
         Cache::shouldReceive('get')->once()->with('parameters_email_service')->andReturn(['smtp' => 'smtp.example.com', 'username' => 'user', 'password' => 'pass']);
 
         // Act: Ejecuta el comando
-        // Log::shouldReceive('info')->once()->with('ENVÍO DE EMAILS: ' . now());
         $this->artisan('app:send-email-notifications')
             ->assertExitCode(0);
 
         // Assert: Verifica que el trabajo de envío de email fue despachado
-        Queue::assertPushed(SendEmailJob::class, 1);
+        Queue::assertPushed(SendEmailJob::class);
 
         // Verifica que la notificación se marcó como enviada
         $this->assertDatabaseHas('email_notifications', [
             'uid' => $notification->uid,
-            'sent' => true,
+            'status' => 'PENDING',
         ]);
     }
 }

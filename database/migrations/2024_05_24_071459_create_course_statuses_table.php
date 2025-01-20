@@ -22,67 +22,67 @@ return new class extends Migration
 
         $course_statuses = [
             [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "En introducción",
                 "code" => "INTRODUCTION"
             ],
             [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "Pendiente de aprobación",
                 "code" => "PENDING_APPROVAL"
             ],
             [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "Aceptado",
                 "code" => "ACCEPTED"
             ],
             [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "Rechazado",
                 "code" => "REJECTED"
             ],
             [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "En subsanación para aprobación",
                 "code" => "UNDER_CORRECTION_APPROVAL"
             ],
             [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "Pendiente de publicación",
                 "code" => "PENDING_PUBLICATION"
             ],
             [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "Aceptado para publicación",
                 "code" => "ACCEPTED_PUBLICATION"
             ],
             [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "En subsanación para publicación",
                 "code" => "UNDER_CORRECTION_PUBLICATION"
             ],
             [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "En inscripción",
                 "code" => "INSCRIPTION"
             ],
             [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "Pendiente de inscripción",
                 "code" => "PENDING_INSCRIPTION"
             ],
             [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "En desarrollo",
                 "code" => "DEVELOPMENT"
             ],
             [
-                "uid" => generate_uuid(),
+                "uid" => generateUuid(),
                 "name" => "Finalizado",
                 "code" => "FINISHED"
             ],
             [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'name' => 'Retirado',
                 'code' => 'RETIRED',
             ]

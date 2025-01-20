@@ -8,7 +8,7 @@
 
             <div>
                 <button data-modal-id="change-statuses-resources-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
 
@@ -19,8 +19,8 @@
         <div id="resources-list"></div>
 
         <div class="btn-block">
-            <button id="confirm-change-statuses-btn" class="btn btn-primary">Guardar {{ e_heroicon('paper-airplane', 'outline') }}</button>
-            <button data-modal-id="change-statuses-resources-modal" class="btn btn-secondary close-modal-btn">Cancelar {{ e_heroicon('x-mark', 'outline') }}</button>
+            <button id="confirm-change-statuses-btn" class="btn btn-primary">Guardar {{ eHeroicon('paper-airplane', 'outline') }}</button>
+            <button data-modal-id="change-statuses-resources-modal" class="btn btn-secondary close-modal-btn">Cancelar {{ eHeroicon('x-mark', 'outline') }}</button>
         </div>
 
     </div>

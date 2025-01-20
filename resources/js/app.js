@@ -23,17 +23,17 @@ window.addEventListener("resize", function () {
 });
 
 export function accordionControls() {
-    var accordionHeaders = document.querySelectorAll(".accordion-header");
+    const accordionHeaders = document.querySelectorAll(".accordion-header");
 
     accordionHeaders.forEach(function (header) {
         header.addEventListener("click", function () {
-            var content = this.nextElementSibling;
+            const content = this.nextElementSibling;
 
             // Alternar la clase del contenido del acordeón
             content.classList.toggle("accordion-collapsed");
             content.classList.toggle("accordion-uncollapsed");
 
-            var rotateIcon = this.querySelector(".rotate-icon");
+            const rotateIcon = this.querySelector(".rotate-icon");
 
             // Alternar la rotación del ícono
             if (content.classList.contains("accordion-collapsed")) {
@@ -79,14 +79,14 @@ export function hideLoader() {
  * Esto evita que el contenido quede oculto debajo del navbar.
  */
 function adjustPadding() {
-    var navbar = document.getElementById("poa-header");
+    const navbar = document.getElementById("poa-header");
     if (!navbar) return;
-    var body = document.body;
-    var navbarHeight = navbar.offsetHeight;
+    const body = document.body;
+    const navbarHeight = navbar.offsetHeight;
     body.style.paddingTop = navbarHeight + "px";
 
     // Configuramos min-height para el contenido principal con calc, restándole el padding top a 100vh
-    var mainContent = document.getElementById("main-content");
+    const mainContent = document.getElementById("main-content");
     mainContent.style.minHeight = `calc(100vh - ${navbarHeight}px)`;
 }
 
@@ -306,7 +306,7 @@ export function updateInputFile() {
 export function changeColorColoris(element, color) {
     element.value = color;
 
-    var event = new Event("input", {
+    const event = new Event("input", {
         bubbles: true,
         cancelable: true,
     });
@@ -638,7 +638,6 @@ export function instanceFlatpickrNoHour(idElement) {
     const flatpickrInstance = flatpickr("#" + idElement, {
         mode: "range",
         dateFormat: "d-m-Y",
-        enableTime: true,
         locale: Spanish,
         enableTime: false,
         onClose(selectedDates, dateStr, instance) {
@@ -813,16 +812,16 @@ export function apiFetch(params) {
                 if (params.loader) hideLoader();
                 if (params.download) {
                     return response.blob().then((blob) => {
-                        var url = window.URL.createObjectURL(blob);
-                        var a = document.createElement("a");
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement("a");
                         a.href = url;
                         a.download = params.filename || "download";
                         a.style.display = "none";
                         document.body.appendChild(a);
-                        var contentDisposition = response.headers.get(
+                        const contentDisposition = response.headers.get(
                             "Content-Disposition"
                         );
-                        var filename = contentDisposition
+                        const filename = contentDisposition
                             ? contentDisposition.split("=")[1]
                             : "download";
                         a.download = filename;
@@ -882,17 +881,13 @@ export function resetFormFields(formId) {
     const inputs = form.querySelectorAll("input, select, textarea");
 
     inputs.forEach(function (input) {
-        if (input.type === "hidden") {
-            input.value = "";
-        } else {
-            input.value = "";
-        }
+        input.value = "";
     });
 }
 
 export function downloadFile(data) {
     const route = "/download_file/" + data;
-    var a = document.createElement("a");
+    const a = document.createElement("a");
     a.href = route;
     a.download = data;
     document.body.appendChild(a);
@@ -1022,7 +1017,7 @@ function getAllLabelsOfPage() {
                 formId
             );
             if (findElement) {
-                const div_tooltp_i = tag(
+                const divTooltpI = tag(
                     "div",
                     {
                         class: "tooltip-i",
@@ -1030,7 +1025,7 @@ function getAllLabelsOfPage() {
                     },
                     `${heroicon("tooltip-i", "outline")}`
                 );
-                const div_tooltip_text = tag(
+                const divTooltipText = tag(
                     "div",
                     {
                         class: "tooltip-texts hidden",
@@ -1040,7 +1035,7 @@ function getAllLabelsOfPage() {
                 );
                 label.insertAdjacentHTML(
                     "afterend",
-                    div_tooltp_i + div_tooltip_text
+                    divTooltpI + divTooltipText
                 );
             }
         }

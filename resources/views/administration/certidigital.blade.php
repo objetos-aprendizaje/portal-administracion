@@ -91,7 +91,7 @@
                 </div>
 
                 <button type="submit" class="btn btn-primary">Guardar
-                    {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                    {{ eHeroicon('paper-airplane', 'outline') }}</button>
 
             </div>
         </form>

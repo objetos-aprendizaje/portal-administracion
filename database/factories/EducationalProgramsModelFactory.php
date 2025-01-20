@@ -50,7 +50,7 @@ class EducationalProgramsModelFactory extends Factory
 
     public function withEducationalProgramType(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn() => [
             'educational_program_type_uid' => EducationalProgramTypesModel::factory()->create()->first(),
         ]);
     }

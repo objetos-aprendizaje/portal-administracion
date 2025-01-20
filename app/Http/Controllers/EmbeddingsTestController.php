@@ -44,12 +44,6 @@ class EmbeddingsTestController extends Controller {
 
     // Get similar courses based on a list of provided course UIDs
     public function getSimilarCourses(Request $request) {
-        // $courseUids = $request->input('course_uids', []);
-        // if (empty($courseUids)) {
-        //     return response()->json(['error' => 'No courses provided.'], 400);
-        // }
-
-        // $courses = CoursesModel::whereIn('uid', $courseUids)->get();
         $courses = CoursesModel::whereIn('uid', ['779b17fc-b0e5-46e7-a41a-27d91611cc06'])->get();
 
         if ($courses->isEmpty()) {

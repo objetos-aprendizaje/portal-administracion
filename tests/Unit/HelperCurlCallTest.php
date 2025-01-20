@@ -19,7 +19,7 @@ class HelperCurlCallTest extends TestCase
         $expectedResponse = '{"userId":1,"id":1,"title":"sunt aut facere repellat provident occaecati excepturi optio reprehenderit","body":"quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"}';
 
         // Llamamos al helper
-        $response = curl_call($url);
+        $response = curlCall($url);
 
         // Verificamos que la respuesta sea la esperada
         $this->assertJsonStringEqualsJsonString($expectedResponse, $response);
@@ -35,7 +35,7 @@ class HelperCurlCallTest extends TestCase
         $this->expectExceptionMessageMatches('/Error en la petición cURL: \d+/');
 
         // Llamamos al helper
-        curl_call($url);
+        curlCall($url);
     }
 
     public function testGuzzleCallReturnsResponse()

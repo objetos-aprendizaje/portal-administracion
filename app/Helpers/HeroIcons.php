@@ -1,6 +1,6 @@
 <?php
 
-function e_heroicon($icon, $type = "outline", $class = null)
+function eHeroicon($icon, $type = "outline", $class = null)
 {
 
     echo heroicon($icon, $type, $class);
@@ -10,19 +10,19 @@ function heroicon($icon, $type = "outline", $class = null)
 {
 
     if ($type == "outline") {
-        $d = get_heroicon_d_outline($icon);
-        $heroicon = heroicon_outline($d, $class);
+        $d = getHeroiconDOutline($icon);
+        $heroicon = heroiconOutline($d, $class);
     } elseif ($type == "solid") {
-        $d = get_heroicon_d_solid($icon);
-        $heroicon = heroicon_solid($d);
+        $d = getHeroiconDSolid($icon);
+        $heroicon = heroiconSolid($d);
     } else {
-        $heroicon = heroicon_solid(false); // Error
+        $heroicon = heroiconSolid(false); // Error
     }
 
     return $heroicon;
 }
 
-function heroicon_outline($icons, $class)
+function heroiconOutline($icons, $class)
 {
 
     $svg = "<svg xmlns='http://www.w3.org/2000/svg' class='" . $class . "' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='currentColor'>";
@@ -40,7 +40,7 @@ function heroicon_outline($icons, $class)
     return $svg;
 }
 
-function heroicon_solid($icons)
+function heroiconSolid($icons)
 {
 
     $svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'>";
@@ -58,7 +58,7 @@ function heroicon_solid($icons)
     return $svg;
 }
 
-function get_heroicon_d_outline($icon)
+function getHeroiconDOutline($icon)
 {
 
     switch ($icon) {
@@ -166,7 +166,7 @@ function get_heroicon_d_outline($icon)
     }
 }
 
-function get_heroicon_d_solid($icon)
+function getHeroiconDSolid($icon)
 {
     switch ($icon) {
         case "paint-brush":
@@ -223,9 +223,6 @@ function get_heroicon_d_solid($icon)
             return "M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z";
         case "plus":
             return "M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z";
-        case "x-mark":
-            return "M6 18 18 6M6 6l12 12";
-
         default: // Error icon
             return "M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z";
     }

@@ -2,58 +2,39 @@
 
 namespace Tests\Unit;
 
-
-
-use Mockery;
-use Exception;
 use Tests\TestCase;
-use RdKafka\Producer;
 use App\Models\CallsModel;
 use App\Models\UsersModel;
 use App\Models\BlocksModel;
-use App\Models\CentersModel;
 use App\Models\CoursesModel;
 use Illuminate\Http\Request;
 use App\Models\ElementsModel;
 use App\Models\SubblocksModel;
 use App\Models\UserRolesModel;
-use App\Services\KafkaService;
 use Illuminate\Support\Carbon;
 use App\Models\CategoriesModel;
 use App\Models\LmsSystemsModel;
 use App\Models\CompetencesModel;
 use App\Models\CoursesTagsModel;
-use App\Models\CourseTypesModel;
 use App\Models\SubelementsModel;
-use App\Models\TooltipTextsModel;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
 use App\Models\CourseStatusesModel;
-use App\Models\GeneralOptionsModel;
 use App\Services\EmbeddingsService;
 use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
 use App\Models\CourseDocumentsModel;
 use App\Models\CoursesStudentsModel;
 use App\Models\LearningResultsModel;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\View;
 use App\Services\CertidigitalService;
 use Illuminate\Support\Facades\Queue;
-use App\Models\CoursesEmbeddingsModel;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use App\Models\CoursesPaymentTermsModel;
 use App\Models\EducationalProgramsModel;
-use App\Exceptions\OperationFailedException;
 use App\Models\CoursesStudentDocumentsModel;
-use App\Models\EducationalProgramTypesModel;
-use App\Models\AutomaticNotificationTypesModel;
 use App\Models\EducationalProgramStatusesModel;
-use App\Jobs\SendChangeStatusCourseNotification;
-use App\Jobs\SendCourseNotificationToManagements;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Http\Controllers\LearningObjects\CoursesController;
 use App\Http\Controllers\Management\ManagementCoursesController;
 
 
@@ -81,7 +62,7 @@ class LearningObjectCoursesTest extends TestCase
         $user = UsersModel::factory()->create();
         $roles = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $roles->uid => ['uid' => generate_uuid()]
+            $roles->uid => ['uid' => generateUuid()]
         ]);
         $this->actingAs($user);
 
@@ -106,7 +87,7 @@ class LearningObjectCoursesTest extends TestCase
 
         // Crear curso original
         $originalCourse = CoursesModel::factory()->withCourseType()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'course_status_uid' => $editableStatus->uid,
             'call_uid' => $call->uid,
             'lms_system_uid' => $lmsSystems->uid,
@@ -126,8 +107,8 @@ class LearningObjectCoursesTest extends TestCase
             'title' => 'Test Course Title', // Campo requerido
             'description' => 'Test Description',
             'contact_information' => 'Contact Info',
-            'course_type_uid' => generate_uuid(),
-            'educational_program_type_uid' => generate_uuid(),
+            'course_type_uid' => generateUuid(),
+            'educational_program_type_uid' => generateUuid(),
             'min_required_students' => 10,
             'realization_start_date' => Carbon::now()->addDays(62)->format('Y-m-d'),
             'realization_finish_date' => Carbon::now()->addDays(90)->format('Y-m-d'),
@@ -152,11 +133,6 @@ class LearningObjectCoursesTest extends TestCase
 
             // Emails de contacto válidos
             'contact_emails' => json_encode(['email1@example.com', 'email2@example.com']),
-
-            // Otros campos opcionales según sea necesario
-            // Ejemplo:
-            //'payment_mode' => "SINGLE_PAYMENT",
-            //'cost' => 100,
         ];
 
         $request = new Request($requestData);
@@ -168,7 +144,7 @@ class LearningObjectCoursesTest extends TestCase
         $mockEmbeddingsService = $this->createMock(EmbeddingsService::class);
 
         // Instantiate ManagementCoursesController with the mocked service
-        $controller = new ManagementCoursesController($mockEmbeddingsService, $certidigitalServiceMock);
+        $controller = new CoursesController($mockEmbeddingsService, $certidigitalServiceMock);
 
         // Ejecutar el método del controlador como una solicitud JSON para obtener un código de estado 422 si hay errores de validación.
         $response = $controller->saveCourse($request);
@@ -194,7 +170,7 @@ class LearningObjectCoursesTest extends TestCase
         // Verificar el código de estado y mensaje esperado
         $response->assertStatus(200);
     }
-    
+
     /**
      * @test Método getCourseStudents cuando no hay estudiantes.
      */
@@ -225,7 +201,7 @@ class LearningObjectCoursesTest extends TestCase
         ])->first();
 
         $course->students()->attach($student->uid, [
-            'uid' => generate_uuid(),  // Generar un UID para la relación en la tabla pivot
+            'uid' => generateUuid(),  // Generar un UID para la relación en la tabla pivot
             'acceptance_status' => 'PENDING',
         ]);
 
@@ -247,8 +223,8 @@ class LearningObjectCoursesTest extends TestCase
         UsersModel::factory()->create(['first_name' => 'Alice', 'last_name' => 'Johnson']);
         $users = UsersModel::where('email', '!=', 'admin@admin.com')->get();
 
-        foreach ($users as $key => $user) {
-            $course->students()->attach($user->uid, ['uid' => generate_uuid()]);
+        foreach ($users as $user) {
+            $course->students()->attach($user->uid, ['uid' => generateUuid()]);
         }
         // Realizar la solicitud a la ruta correspondiente pasando los parámetros de consulta como un array
         $response = $this->get('/learning_objects/courses/get_course_students/' . $course->uid . '?sort[0][field]=first_name&sort[0][dir]=asc&size=3');
@@ -279,7 +255,6 @@ class LearningObjectCoursesTest extends TestCase
                 'uid' => \Illuminate\Support\Str::uuid(),
             ]);
         });
-        // $course->students()->attach($students->pluck('id')->toArray());
 
         $response = $this->get('/learning_objects/courses/get_course_students/' . $course->uid . '?size=5');
 
@@ -339,7 +314,6 @@ class LearningObjectCoursesTest extends TestCase
         ])->first();
 
         $studentLast = CoursesStudentsModel::query()->latest()->first();
-        // dd($studentLast);
 
         $user = UsersModel::factory()->create();
         Auth::shouldReceive('user')->andReturn($user);
@@ -405,13 +379,13 @@ class LearningObjectCoursesTest extends TestCase
         ])->latest()->first();
 
         $courseBd->teachers()->attach($user->uid,[
-            'uid'=>generate_uuid(),
+            'uid'=>generateUuid(),
         ]);
 
         $category = CategoriesModel::factory()->create();
 
         $courseBd->categories()->attach($category->uid,[
-            'uid'=> generate_uuid(),
+            'uid'=> generateUuid(),
         ]);
 
         CoursesPaymentTermsModel::factory()->create(
@@ -444,12 +418,12 @@ class LearningObjectCoursesTest extends TestCase
         foreach($blocks as $block ){
 
             $block->competences()->attach($competence->uid,[
-                'uid'=> generate_uuid(),
-            ]);   
+                'uid'=> generateUuid(),
+            ]);
 
             $block->learningResults()->attach($learning->uid,[
-                'uid'=> generate_uuid(),
-            ]); 
+                'uid'=> generateUuid(),
+            ]);
 
             $subblock = SubblocksModel::factory()->create(
                 [
@@ -462,13 +436,13 @@ class LearningObjectCoursesTest extends TestCase
                     'subblock_uid'=> $subblock->uid,
                     'order' => 1
                 ]
-            ); 
+            );
             SubelementsModel::factory()->create(
                 [
                     'element_uid'=> $element->uid,
                     'order'=> 3
                 ]
-            );                              
+            );
         }
 
         // Simular la solicitud
@@ -495,7 +469,7 @@ class LearningObjectCoursesTest extends TestCase
             'title' => 'Curso de prueba',
             'course_status_uid' => $introductionStatus->uid,
             'belongs_to_educational_program' => true,
-        ]);  
+        ]);
         // Simular la solicitud
         $response = $this->postJson('/learning_objects/courses/create_edition', [
             'course_uid' => $courseBd->uid,
@@ -511,14 +485,14 @@ class LearningObjectCoursesTest extends TestCase
             'title' => 'Curso de prueba',
             'course_status_uid' => $introductionStatus->uid,
             'belongs_to_educational_program' => false,
-        ]); 
+        ]);
 
-        // 406  Ya existe una edición activa de este curso  
+        // 406  Ya existe una edición activa de este curso
         CoursesModel::factory()->withCourseType()->create([
             'title' => 'Curso de prueba',
             'course_status_uid' => $introductionStatus->uid,
             'course_origin_uid' =>  $courseBd->uid,
-            'belongs_to_educational_program' => false,            
+            'belongs_to_educational_program' => false,
         ]);
         // Simular la solicitud
         $response = $this->postJson('/learning_objects/courses/create_edition', [
@@ -614,7 +588,7 @@ class LearningObjectCoursesTest extends TestCase
 
         // Inscribe previamente a un usuario
         CoursesStudentsModel::create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'course_uid' => $courseUid,
             'user_uid' => $userAlreadyEnrolled->uid,
             'acceptance_status' => 'ACCEPTED',
@@ -646,23 +620,20 @@ class LearningObjectCoursesTest extends TestCase
         $this->assertEquals(1, CoursesStudentsModel::where('course_uid', $courseUid)
             ->where('user_uid', $userAlreadyEnrolled->uid)
             ->count());
-        
+
 
         // Datos de solicitud con datos faltante para arrojar error 406 "No se han seleccionado alumnos"
          $requestData = [
-            'courseUid' => $courseUid,            
+            'courseUid' => $courseUid,
         ];
 
         // Realiza la solicitud POST a la ruta
         $response = $this->postJson('/learning_objects/courses/enroll_students', $requestData);
 
         $response->assertStatus(406);
-        $response->assertJson(['message' => 'No se han seleccionado alumnos']);    
+        $response->assertJson(['message' => 'No se han seleccionado alumnos']);
 
-    } 
-
-    
-
+    }
 
     /** @test puede descargar un documento de estudiante*/
     public function testCanDownloadAStudentDocument()

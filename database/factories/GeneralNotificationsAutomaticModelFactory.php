@@ -19,9 +19,9 @@ class GeneralNotificationsAutomaticModelFactory extends Factory
      */
     public function definition(): array
     {
-        
+
         return [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'title' => $this->faker->unique()->sentence(3),
             'description' => $this->faker->unique()->paragraph(2),
             'created_at' => Carbon::now()->format('Y-m-d\TH:i'),

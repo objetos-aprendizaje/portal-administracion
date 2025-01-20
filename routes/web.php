@@ -10,7 +10,7 @@ use App\Http\Controllers\Administration\GeneralAdministrationController;
 use App\Http\Controllers\Administration\HeaderPagesController;
 use App\Http\Controllers\Administration\ManagementPermissionsController;
 use App\Http\Controllers\Administration\SuggestionsImprovementsController;
-use App\Http\Controllers\Administration\RedirectionQueriesEducationalProgramTypesController;
+use App\Http\Controllers\Administration\RedirectionQueriesLearningObjectsController;
 use App\Http\Controllers\Administration\LanesShowController;
 use App\Http\Controllers\Administration\LmsSystemsController;
 use App\Http\Controllers\Administration\LoginSystemsController;
@@ -87,7 +87,7 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/administration/header_pages', [HeaderPagesController::class, 'index'])->name('header-pages');
 
         Route::get('/administration/suggestions_improvements', [SuggestionsImprovementsController::class, 'index'])->name('suggestions-improvements');
-        Route::get('/administration/redirection_queries_educational_program_types', [RedirectionQueriesEducationalProgramTypesController::class, 'index'])->name('redirection-queries-educational-program-types');
+        Route::get('/administration/redirection_queries_learning_objects', [RedirectionQueriesLearningObjectsController::class, 'index'])->name('redirection-queries-educational-program-types');
         Route::get('/administration/lanes_show', [LanesShowController::class, 'index'])->name('lanes-show');
         Route::get('/administration/payments', [PaymentsController::class, 'index'])->name('administration-payments');
         Route::get('/administration/login_systems', [LoginSystemsController::class, 'index'])->name('login-systems');
@@ -134,12 +134,10 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::get('/administration/suggestions_improvements/get_emails', [SuggestionsImprovementsController::class, 'getEmails']);
         Route::post('/administration/suggestions_improvements/delete_emails', [SuggestionsImprovementsController::class, 'deleteEmails']);
 
-        Route::get('/administration/redirection_queries_educational_program_types/get_redirections_queries', [RedirectionQueriesEducationalProgramTypesController::class, 'getRedirectionsQueries']);
-        Route::get('/administration/redirection_queries_educational_program_types/get_redirection_query/{redirection_query_uid}', [RedirectionQueriesEducationalProgramTypesController::class, 'getRedirectionQuery']);
-
-
-        Route::post('/administration/redirection_queries_educational_program_types/save_redirection_query', [RedirectionQueriesEducationalProgramTypesController::class, 'saveRedirectionQuery']);
-        Route::delete('/administration/redirection_queries_educational_program_types/delete_redirections_queries', [RedirectionQueriesEducationalProgramTypesController::class, 'deleteRedirectionsQueries']);
+        Route::get('/administration/redirection_queries_learning_objects/get_redirections_queries', [RedirectionQueriesLearningObjectsController::class, 'getRedirectionsQueries']);
+        Route::get('/administration/redirection_queries_learning_objects/get_redirection_queries/{redirection_query_uid}', [RedirectionQueriesLearningObjectsController::class, 'getRedirectionQuery']);
+        Route::post('/administration/redirection_queries_learning_objects/save_redirection_query', [RedirectionQueriesLearningObjectsController::class, 'saveRedirectionQuery']);
+        Route::delete('/administration/redirection_queries_learning_objects/delete_redirections_queries', [RedirectionQueriesLearningObjectsController::class, 'deleteRedirectionsQueries']);
 
         Route::post('/administration/lanes_show/save_lanes_show', [LanesShowController::class, 'saveLanesShow']);
         Route::post('/administration/payments/save_payments_form', [PaymentsController::class, 'savePaymentsForm']);
@@ -161,8 +159,8 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::delete('/administration/licenses/delete_licenses', [LicensesController::class, 'deleteLicenses']);
 
         Route::get('/administration/carrousels', [CarrouselsController::class, 'index'])->name('carrousels');
-        Route::post('/administration/carrousels/save_big_carrousels_approvals', [CarrouselsController::class, 'save_big_carrousels_approvals']);
-        Route::post('/administration/carrousels/save_small_carrousels_approvals', [CarrouselsController::class, 'save_small_carrousels_approvals']);
+        Route::post('/administration/carrousels/save_big_carrousels_approvals', [CarrouselsController::class, 'saveBigCarrouselsApprovals']);
+        Route::post('/administration/carrousels/save_small_carrousels_approvals', [CarrouselsController::class, 'saveSmallCarrouselsApprovals']);
 
         Route::post('/administration/save_openai_form', [GeneralAdministrationController::class, 'saveOpenai']);
         Route::post('/administration/regenerate_embeddings', [GeneralAdministrationController::class, 'regenerateEmbeddings']);

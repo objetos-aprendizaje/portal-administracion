@@ -4,13 +4,13 @@
 
         <div class="modal-header">
             <div>
-                <h2 class="modal-title"></h2>
+                <h2 class="modal-title">Página header</h2>
             </div>
 
             <div>
                 <button data-modal-id="header-page-modal" class="modal-close-modal-btn close-modal-btn">
 
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
 
@@ -78,11 +78,11 @@
                 <div class="flex justify-center mt-8 gap-4">
 
                     <button type="submit" value="submit" id="submit-button" class="btn btn-primary">
-                        Guardar {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                        Guardar {{ eHeroicon('paper-airplane', 'outline') }}</button>
 
                     <button data-modal-id="header-page-modal" type="button"
                         class="btn btn-secondary close-modal-btn">Cancelar
-                        {{ e_heroicon('x-mark', 'outline') }}</button>
+                        {{ eHeroicon('x-mark', 'outline') }}</button>
                 </div>
 
             </div>

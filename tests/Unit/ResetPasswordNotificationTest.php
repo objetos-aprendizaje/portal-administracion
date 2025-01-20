@@ -64,7 +64,7 @@ class ResetPasswordNotificationTest extends TestCase
 
         // Crea un objeto notifiable simulado
         $notifiable = new class {
-            public function routeNotificationFor($driver)
+            public function routeNotificationFor()
             {
                 return 'user@example.com';
             }
@@ -98,7 +98,7 @@ class ResetPasswordNotificationTest extends TestCase
 
         // Crea un objeto notifiable simulado
         $notifiable = new class {
-            public function routeNotificationFor($driver)
+            public function routeNotificationFor()
             {
                 return 'user@example.com';
             }

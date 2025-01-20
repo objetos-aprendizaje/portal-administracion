@@ -9,7 +9,7 @@
 
             <div>
                 <button data-modal-id="educational-program-type-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
         </div>
@@ -78,10 +78,10 @@
                     value="" />
 
                 <div class="btn-block">
-                    <button type="submit" class="btn btn-primary">Guardar {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                    <button type="submit" class="btn btn-primary">Guardar {{ eHeroicon('paper-airplane', 'outline') }}</button>
 
                     <button data-modal-id="educational-program-type-modal" type="button"
-                        class="btn btn-secondary close-modal-btn">Cancelar {{ e_heroicon('x-mark', 'outline') }}</button>
+                        class="btn btn-secondary close-modal-btn">Cancelar {{ eHeroicon('x-mark', 'outline') }}</button>
                 </div>
 
             </div>

@@ -4,13 +4,13 @@
 
         <div class="modal-header">
             <div>
-                <h2 class="modal-title"></h2>
+                <h2 class="modal-title">Título convocatoria</h2>
             </div>
 
             <div>
                 <button data-modal-id="call-modal" class="modal-close-modal-btn close-modal-btn">
 
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
 
@@ -51,7 +51,7 @@
                             <div class="flex-none">
                                 <input type="file" id="attachment" class="hidden" name="attachment">
                                 <label for="attachment" class="btn btn-rectangular btn-input-file">
-                                    Seleccionar archivo {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                    Seleccionar archivo {{ eHeroicon('arrow-up-tray', 'outline') }}
                                 </label>
                             </div>
                             <div id="file-name" class="file-name text-[14px]">
@@ -105,10 +105,10 @@
 
                 <div class="btn-block">
                     <button type="submit" class="btn btn-primary">
-                        Guardar {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                        Guardar {{ eHeroicon('paper-airplane', 'outline') }}</button>
 
                     <button data-modal-id="call-modal" type="button"
-                        class="btn btn-secondary close-modal-btn">Cancelar {{ e_heroicon('x-mark', 'outline') }}</button>
+                        class="btn btn-secondary close-modal-btn">Cancelar {{ eHeroicon('x-mark', 'outline') }}</button>
                 </div>
             </div>
 

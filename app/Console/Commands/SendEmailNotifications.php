@@ -32,37 +32,39 @@ class SendEmailNotifications extends Command
     {
         Log::info('ENVÍO DE EMAILS: ' . now());
 
-        $email_notifications = $this->getEmailNotifications();
+        $emailNotifications = $this->getEmailNotifications();
 
-        if (!$email_notifications->count()) return;
+        if (!$emailNotifications->count()) {
+            return;
+        }
 
         if ($this->checkParametersEmailServerIncorrect()) {
             Log::error('Error en los parámetros de configuración del servidor de correo electrónico');
             return;
         }
 
-        $all_users = UsersModel::with('roles')->with("emailNotificationsTypesDisabled")->get();
+        $allUsers = UsersModel::with('roles')->with("emailNotificationsTypesDisabled")->get();
 
-        foreach ($email_notifications as $notification) {
-            $this->processNotification($notification, $all_users);
+        foreach ($emailNotifications as $notification) {
+            $this->processNotification($notification, $allUsers);
         }
     }
 
-    private function processNotification($notification, $all_users)
+    private function processNotification($notification, $allUsers)
     {
         if ($notification->type == 'ALL_USERS') {
-            $this->processAllUsersNotification($notification, $all_users);
-        } else if ($notification->type == 'ROLES') {
-            $this->processRolesNotification($notification, $all_users);
-        } else if ($notification->type == 'USERS') {
+            $this->processAllUsersNotification($notification, $allUsers);
+        } elseif ($notification->type == 'ROLES') {
+            $this->processRolesNotification($notification, $allUsers);
+        } elseif ($notification->type == 'USERS') {
             $this->processUsersNotification($notification);
         }
     }
 
-    private function processAllUsersNotification($notification, $all_users)
+    private function processAllUsersNotification($notification, $allUsers)
     {
         // Excluímos los usuarios que tienen deshabilitado el tipo de notificación
-        $usersInterested = $this->filterUsersNotInterestedNotificationType($all_users, $notification);
+        $usersInterested = $this->filterUsersNotInterestedNotificationType($allUsers, $notification);
 
         $userChunks = array_chunk($usersInterested->toArray(), 200);
         foreach ($userChunks as $usersChunk) {
@@ -80,10 +82,10 @@ class SendEmailNotifications extends Command
         }
     }
 
-    private function processRolesNotification($notification, $all_users)
+    private function processRolesNotification($notification, $allUsers)
     {
         // Excluímos los usuarios que tienen deshabilitado el tipo de notificación
-        $usersInterested = $this->filterUsersNotInterestedNotificationType($all_users, $notification);
+        $usersInterested = $this->filterUsersNotInterestedNotificationType($allUsers, $notification);
 
         // Tipo de notificación de roles
         foreach ($notification->roles as $role) {
@@ -129,20 +131,16 @@ class SendEmailNotifications extends Command
 
     private function getEmailNotifications()
     {
-        $email_notifications = EmailNotificationsModel::where('status', 'PENDING')->with(["emailNotificationType", "users"])->get();
-
-        return $email_notifications;
+        return EmailNotificationsModel::where('status', 'PENDING')->with(["emailNotificationType", "users"])->get();
     }
 
     private function checkParametersEmailServerIncorrect()
     {
-        $parameters_email_server = Cache::get('parameters_email_service');
+        $parametersEmailServer = Cache::get('parameters_email_service');
 
-        $allNull = collect($parameters_email_server)->every(function ($value) {
+        return collect($parametersEmailServer)->every(function ($value) {
             return is_null($value);
         });
-
-        return $allNull;
     }
 
     /**

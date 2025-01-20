@@ -66,7 +66,7 @@ class CarrouselsController extends BaseController
         $imagePath = $this->getPrevisualizationImage($request);
 
         $previsualizationSlider = new SlidersPrevisualizationsModel();
-        $previsualizationSlider->uid = generate_uuid();
+        $previsualizationSlider->uid = generateUuid();
         $previsualizationSlider->fill($request->all());
         $previsualizationSlider->image_path = $imagePath;
 
@@ -87,7 +87,7 @@ class CarrouselsController extends BaseController
             if ($learningObjectType == "course") {
                 $course = CoursesModel::where('uid', $request->input('course_uid'))->first();
                 $imagePath = $course->featured_big_carrousel_image_path;
-            } else if ($learningObjectType == "educational_program") {
+            } elseif ($learningObjectType == "educational_program") {
                 $educationalProgram = EducationalProgramsModel::where('uid', $request->input('educational_program_uid'))->first();
                 $imagePath = $educationalProgram->featured_slider_image_path;
             }
@@ -133,7 +133,7 @@ class CarrouselsController extends BaseController
         }
     }
 
-    public function save_big_carrousels_approvals(Request $request)
+    public function saveBigCarrouselsApprovals(Request $request)
     {
         $courses = $request->input('courses');
         $educationalPrograms = $request->input('educationalPrograms');
@@ -161,7 +161,7 @@ class CarrouselsController extends BaseController
         ]);
     }
 
-    public function save_small_carrousels_approvals(Request $request)
+    public function saveSmallCarrouselsApprovals(Request $request)
     {
         $courses = $request->input('courses');
         $educationalPrograms = $request->input('educationalPrograms');

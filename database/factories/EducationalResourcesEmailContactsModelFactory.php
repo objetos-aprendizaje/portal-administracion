@@ -17,7 +17,7 @@ class EducationalResourcesEmailContactsModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid'=> generate_uuid(),
+            'uid'=> generateUuid(),
             'email' => fake()->unique()->safeEmail(),
         ];
     }

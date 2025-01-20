@@ -4,7 +4,7 @@
         <div class="title-filter flex items-center mb-[26px]">
             <span>Listado de recursos educativos</span>
             <button id="filter-educational-resources-btn"
-                class="btn-filter" title="Filtrar">{{ e_heroicon('adjustments-horizontal', 'outline') }}</button>
+                class="btn-filter" title="Filtrar">{{ eHeroicon('adjustments-horizontal', 'outline') }}</button>
         </div>
 
         <div class="table-control-header">
@@ -14,20 +14,20 @@
             <div class="flex gap-1">
                 <div>
                     <button type="button" class="btn-icon" id="btn-add-resource" title="Añadir recurso educativo">
-                        {{ e_heroicon('plus', 'outline') }}
+                        {{ eHeroicon('plus', 'outline') }}
                     </button>
                 </div>
 
                 <div>
                     <button type="button" class="btn-icon" id="btn-delete-resources" title="Eliminar recurso educativo">
-                        {{ e_heroicon('trash', 'outline') }}
+                        {{ eHeroicon('trash', 'outline') }}
                     </button>
                 </div>
 
                 @if ($general_options['enabled_recommendation_module'])
                     <div>
                         <button type="button" class="btn-icon" id="btn-regenerate-embeddings" title="Regenerar embeddings">
-                            {{ e_heroicon('arrow-path-rounded-square', 'outline') }}
+                            {{ eHeroicon('arrow-path-rounded-square', 'outline') }}
                         </button>
                     </div>
                 @endif
@@ -35,14 +35,14 @@
                 @if (auth()->user()->hasAnyRole(['ADMINISTRATOR', 'MANAGEMENT']))
                     <div>
                         <button type="button" class="btn-icon" id="change-statuses-btn" title="Cambiar estados de recursos educativos">
-                            {{ e_heroicon('arrows-right-left', 'outline') }}
+                            {{ eHeroicon('arrows-right-left', 'outline') }}
                         </button>
                     </div>
                 @endif
 
                 <div>
                     <button type="button" class="btn-icon" id="btn-reload-table" title="Recargar listado">
-                        {{ e_heroicon('arrow-path', 'outline') }}
+                        {{ eHeroicon('arrow-path', 'outline') }}
                     </button>
                 </div>
             </div>

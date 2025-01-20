@@ -29,7 +29,7 @@ class ApiConfirmaCourseCreationControllerTest extends TestCase
 
         // Crear un curso en la base de datos
         $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'course_lms_uid' => null,
             'lms_url' => null,
         ]);
@@ -40,7 +40,7 @@ class ApiConfirmaCourseCreationControllerTest extends TestCase
             'lms_uid' => $lmsUid,
             'poa_uid' => $course->uid,
             'lms_url' => 'https://example.com/course',
-            'course_lms_id' => generate_uuid(),
+            'course_lms_id' => generateUuid(),
         ];
 
         // Realizar la solicitud POST con los datos del curso
@@ -59,42 +59,6 @@ class ApiConfirmaCourseCreationControllerTest extends TestCase
             'lms_url' => 'https://example.com/course',
         ]);
     }
-
-    /**
-     * @test  Verifica que la validación falla cuando los datos son incorrectos.
-     */
-    // public function testValidationFailsWithInvalidData()
-    // {
-    //     // Crea un usuario y actúa como él
-    //     $admin = UsersModel::factory()->create();
-    //     $this->actingAs($admin);
-
-    //     // Datos de para genera la key de la api
-    //     $apikey = ApiKeysModel::factory()->create()->first();
-
-    //     $this->assertDatabaseHas('api_keys', ['uid' => $apikey->uid]);
-
-    //     // Crear un curso en la base de datos
-    //     $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create();
-
-    //     // Datos de la solicitud con campos faltantes o incorrectos
-    //     $courseConfirm = [
-    //         'lms_uid' => '', // Campo lms_uid vacío
-    //         'poa_uid' => $course->uid,
-    //         'lms_url' => 'invalid-url', // URL inválida
-    //     ];
-
-    //     // Realizar la solicitud POST con los datos del curso
-    //     $response = $this->postJson('/api/confirm_course_creation', $courseConfirm,[
-    //         'API-KEY' => $apikey->api_key
-    //     ]);
-
-    //     // Verificar que la respuesta sea 400 (Bad Request)
-    //     $response->assertStatus(400);
-
-    //     // Verificar que la respuesta contiene los mensajes de error esperados
-    //     $response->assertJsonValidationErrors(['lms_uid', 'lms_url']);
-    // }
 
     /**
      * @test  Verifica que la validación falla cuando el poa_uid no existe.

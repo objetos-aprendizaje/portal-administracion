@@ -10,17 +10,17 @@
             <div class="flex gap-1">
                 <div>
                     <button type="button" id="new-department-btn" class="btn-icon" title="Añadir departamento">
-                        {{ e_heroicon('plus', 'outline') }}
+                        {{ eHeroicon('plus', 'outline') }}
                     </button>
                 </div>
                 <div>
                     <button type="button" class="btn-icon" id="btn-delete-department" title="Eliminar departamentos">
-                        {{ e_heroicon('trash', 'outline') }}
+                        {{ eHeroicon('trash', 'outline') }}
                     </button>
                 </div>
                 <div>
                     <button type="button" class="btn-icon" id="btn-reload-table" title="Actualizar">
-                        {{ e_heroicon('arrow-path', 'outline') }}
+                        {{ eHeroicon('arrow-path', 'outline') }}
                     </button>
                 </div>
             </div>

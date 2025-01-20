@@ -7,7 +7,7 @@
 
             <div>
                 <button data-modal-id="enroll-course-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
         </div>
@@ -34,7 +34,7 @@
             </div>
             <div class="flex justify-center mt-8">
                 <button id="enroll-btn" type="button" class="btn btn-primary">
-                    Añadir {{ e_heroicon('plus', 'outline') }}</button>
+                    Añadir {{ eHeroicon('plus', 'outline') }}</button>
             </div>
 
         </div>

@@ -26,7 +26,7 @@ class JobsSendChangeStatusEducationalProgramNotificationTest extends TestCase
 
         // Datos de prueba
         $educationalProgram = [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Programa Formativo 1',
             'status' => ['name' => 'Activo'],
             'status_reason' => 'Razón del cambio',
@@ -55,7 +55,7 @@ class JobsSendChangeStatusEducationalProgramNotificationTest extends TestCase
         $jobs = Queue::pushed(SendEmailJob::class);
         $this->assertCount(1, $jobs, 'El trabajo SendEmailJob no fue encolado.');
 
-        $jobInstance = $jobs[0];
+        $jobs[0];
 
     }
 }

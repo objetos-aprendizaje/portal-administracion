@@ -36,7 +36,7 @@ class EducationalResourcesPerUsersControllerTest extends TestCase
         // Asignar un rol específico al usuario (por ejemplo, el rol 'ADMINISTRATOR')
         $role = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
         // Autenticar al usuario
         Auth::login($user);
@@ -200,7 +200,7 @@ class EducationalResourcesPerUsersControllerTest extends TestCase
 
         $response->assertStatus(406)
         ->assertJson(['message' => 'No hay usuarios en base de datos']);
-           
+
     }
 
     /**
@@ -219,7 +219,7 @@ class EducationalResourcesPerUsersControllerTest extends TestCase
 
         // Generar un UID manualmente para la tabla intermedia
         $user->educationalResources()->attach($resource->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'date' => now(),
         ]);
 
@@ -251,11 +251,11 @@ class EducationalResourcesPerUsersControllerTest extends TestCase
 
         // Asociar los recursos educativos al usuario mediante la tabla intermedia
         $user->educationalResources()->attach($resource1->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'date' => now()
         ]);
         $user->educationalResources()->attach($resource2->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'date' => now()
         ]);
 
@@ -284,15 +284,13 @@ class EducationalResourcesPerUsersControllerTest extends TestCase
 
         // Asociar los recursos educativos al usuario mediante la tabla intermedia
         $user->educationalResources()->attach($resource1->uid, [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'date' => now()
         ]);
         // Definir el parámetro de ordenamiento
         // Convertir el parámetro de ordenamiento en una cadena JSON
         // Definir el parámetro de ordenamiento como un array directamente
-        $sort = [
-            ['field' => 'title', 'dir' => 'asc']
-        ];
+        
 
 
         $sortParams = [

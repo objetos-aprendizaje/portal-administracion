@@ -10,6 +10,9 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * Envía notificación de cambio de estado de programa formativo
+ */
 class SendChangeStatusEducationalProgramNotification implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
@@ -41,7 +44,7 @@ class SendChangeStatusEducationalProgramNotification implements ShouldQueue
     private function saveGeneralNotificationChangeStatusEducationalProgram($educationalProgram)
     {
         $generalNotificationAutomatic = new GeneralNotificationsAutomaticModel();
-        $generalNotificationAutomaticUid = generate_uuid();
+        $generalNotificationAutomaticUid = generateUuid();
         $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
         $generalNotificationAutomatic->title = "Cambio de estado de programa formativo";
         $generalNotificationAutomatic->description = "<p>El estado del programa formativo "
@@ -59,7 +62,7 @@ class SendChangeStatusEducationalProgramNotification implements ShouldQueue
         $generalNotificationAutomatic->automatic_notification_type_uid = $automaticNotificationType->uid;
 
         $userToSync[] = [
-            "uid" => generate_uuid(),
+            "uid" => generateUuid(),
             "user_uid" => $educationalProgram['creator_user_uid'],
             "general_notifications_automatic_uid" => $generalNotificationAutomaticUid,
             "is_read" => 0

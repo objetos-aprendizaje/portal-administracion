@@ -8,7 +8,7 @@
 
             <div>
                 <button data-modal-id="change-statuses-courses-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
 
@@ -43,9 +43,9 @@
 
         <div class="btn-block">
             <button id="confirm-change-statuses-btn" class="btn btn-primary">Guardar
-                {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                {{ eHeroicon('paper-airplane', 'outline') }}</button>
             <button data-modal-id="change-statuses-courses-modal" class="btn btn-secondary close-modal-btn">Cancelar
-                {{ e_heroicon('x-mark', 'outline') }}</button>
+                {{ eHeroicon('x-mark', 'outline') }}</button>
         </div>
 
     </div>
@@ -56,7 +56,7 @@
 <!-- Plantilla para cambiar el estado de un curso -->
 <template id="change-status-course-template">
     <div class="mb-5 bg-gray-100 p-4 rounded-xl change-status-course">
-        <h4 class="course-name"></h4>
+        <h4 class="course-name">Nombre de curso</h4>
 
         <div class="course px-4" data-uid="">
             <select class="status-course poa-select mb-2 min-w-[250px]">

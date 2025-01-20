@@ -78,7 +78,7 @@ class ChangeStatusToEnrolling extends Command
     private function sendGeneralAutomaticNotification($course) {
         $automaticNotificationType = AutomaticNotificationTypesModel::where('code', 'COURSE_ENROLLMENT_COMMUNICATIONS')->first();
 
-        $generalNotificationAutomaticUid = generate_uuid();
+        $generalNotificationAutomaticUid = generateUuid();
         $generalNotificationAutomatic = new GeneralNotificationsAutomaticModel();
         $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
         $generalNotificationAutomatic->title = "Curso en matriculación";
@@ -92,7 +92,7 @@ class ChangeStatusToEnrolling extends Command
 
         foreach ($studentsFiltered as $student) {
             $generalNotificationAutomaticUser = new GeneralNotificationsAutomaticUsersModel();
-            $generalNotificationAutomaticUser->uid = generate_uuid();
+            $generalNotificationAutomaticUser->uid = generateUuid();
             $generalNotificationAutomaticUser->general_notifications_automatic_uid = $generalNotificationAutomaticUid;
             $generalNotificationAutomaticUser->user_uid = $student->uid;
             $generalNotificationAutomaticUser->save();

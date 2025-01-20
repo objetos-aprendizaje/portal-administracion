@@ -11,6 +11,9 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
+/**
+ * Envía notificación de cambio de estado de curso
+ */
 class SendChangeStatusCourseNotification implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
@@ -41,7 +44,7 @@ class SendChangeStatusCourseNotification implements ShouldQueue
     private function saveNotificationChangeStatusCourse($course)
     {
         $generalNotificationAutomatic = new GeneralNotificationsAutomaticModel();
-        $generalNotificationAutomaticUid = generate_uuid();
+        $generalNotificationAutomaticUid = generateUuid();
         $generalNotificationAutomatic->uid = $generalNotificationAutomaticUid;
         $generalNotificationAutomatic->title = "Cambio de estado de curso";
         $generalNotificationAutomatic->description = "<p>El estado del curso "
@@ -59,7 +62,7 @@ class SendChangeStatusCourseNotification implements ShouldQueue
         $generalNotificationAutomatic->automatic_notification_type_uid = $automaticNotificationType->uid;
 
         $userToSync[] = [
-            "uid" => generate_uuid(),
+            "uid" => generateUuid(),
             "user_uid" => $course->creator_user_uid,
             "general_notifications_automatic_uid" => $generalNotificationAutomaticUid,
             "is_read" => 0

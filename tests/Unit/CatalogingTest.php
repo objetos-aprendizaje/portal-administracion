@@ -50,7 +50,7 @@ class CatalogingTest extends TestCase
         $roles = UserRolesModel::where('code', 'MANAGEMENT')->first();
 
         // Adjuntamos el rol con un uid generado
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         Auth::login($user);
         View::share('roles', $roles);
@@ -119,7 +119,7 @@ class CatalogingTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -154,7 +154,7 @@ class CatalogingTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -193,7 +193,7 @@ class CatalogingTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -245,7 +245,7 @@ class CatalogingTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -284,8 +284,8 @@ class CatalogingTest extends TestCase
     public function testDeleteCategories()
     {
         // Crear categorías de prueba
-        $category1 = CategoriesModel::factory()->create(['name' => 'Categoría 1', 'uid' => generate_uuid()]);
-        $category2 = CategoriesModel::factory()->create(['name' => 'Categoría 2', 'uid' => generate_uuid()]);
+        $category1 = CategoriesModel::factory()->create(['name' => 'Categoría 1', 'uid' => generateUuid()]);
+        $category2 = CategoriesModel::factory()->create(['name' => 'Categoría 2', 'uid' => generateUuid()]);
 
         // Simular la autenticación del usuario
         $this->actingAs(UsersModel::factory()->create());
@@ -330,8 +330,8 @@ class CatalogingTest extends TestCase
     {
         // Crear un usuario con el rol 'MANAGEMENT'
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -373,8 +373,8 @@ class CatalogingTest extends TestCase
     public function testIndexWithAccessDenied()
     {
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -433,8 +433,8 @@ class CatalogingTest extends TestCase
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -461,21 +461,21 @@ class CatalogingTest extends TestCase
 
         // Crear categorías anidadas
         $parentCategory = CategoriesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => 'Parent Category',
             'parent_category_uid' => null
         ])->first();
 
 
-        $childCategory1 = CategoriesModel::factory()->create([
-            'uid' => generate_uuid(),
+        CategoriesModel::factory()->create([
+            'uid' => generateUuid(),
             'name' => 'Child Category 1',
             'parent_category_uid' => $parentCategory->uid
         ])->latest()->first();
 
 
-        $childCategory2 = CategoriesModel::factory()->create([
-            'uid' => generate_uuid(),
+        CategoriesModel::factory()->create([
+            'uid' => generateUuid(),
             'name' => 'Child Category 9',
             'parent_category_uid' => $parentCategory->uid
         ])->latest()->first();
@@ -519,7 +519,7 @@ class CatalogingTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -550,13 +550,13 @@ class CatalogingTest extends TestCase
                 'description' => 'Descripción del curso de prueba',
             ]);
         }
-        // Presentar error 422 
+        // Presentar error 422
         $data = [
             'description' => 'Descripción del curso de prueba',
         ];
 
         $response = $this->postJson('/cataloging/course_types/save_course_type', $data);
-        
+
 
         $response->assertStatus(422)
             ->assertJson([
@@ -574,7 +574,7 @@ class CatalogingTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -590,7 +590,7 @@ class CatalogingTest extends TestCase
             'course_type_uid' => $courseType->uid,
             'name' => 'Editar tipo de course',
             'description' => 'Descripción del tipo de curso',
-        ];        
+        ];
 
         if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
             $response = $this->postJson('/cataloging/course_types/save_course_type', $data
@@ -600,7 +600,7 @@ class CatalogingTest extends TestCase
             $response->assertStatus(200)
                 ->assertJson(['message' => 'Tipo de curso actualizado correctamente']);
 
-          
+
         }
     }
 
@@ -613,7 +613,7 @@ class CatalogingTest extends TestCase
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -624,7 +624,7 @@ class CatalogingTest extends TestCase
 
         if ($admin->hasAnyRole(['ADMINISTRATOR'])) {
 
-            $uid = generate_uuid();
+            $uid = generateUuid();
             $response = $this->postJson('/cataloging/course_types/save_course_type', [
                 'uid' => $uid,
                 'name' => 'Tipo de curso',
@@ -670,12 +670,12 @@ class CatalogingTest extends TestCase
     public function testDeleteCourseTypeWithError406()
     {
         $admin = UsersModel::factory()->create();
-        
+
         $roles_bd = UserRolesModel::get()->pluck('uid');
         $roles_to_sync = [];
         foreach ($roles_bd as $rol_uid) {
             $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+                'uid' => generateUuid(),
                 'user_uid' => $admin->uid,
                 'user_role_uid' => $rol_uid
             ];
@@ -704,5 +704,5 @@ class CatalogingTest extends TestCase
         }
     }
 
-    
+
 }

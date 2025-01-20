@@ -17,7 +17,7 @@ class CourseGlobalCalificationsModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid'=> generate_uuid(),
+            'uid'=> generateUuid(),
             'calification_info'=>'A'
         ];
     }

@@ -15,7 +15,7 @@ class CoursesVisitsModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
         ];
     }
 }

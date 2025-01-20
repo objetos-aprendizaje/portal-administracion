@@ -47,7 +47,7 @@ class ListUsersController extends BaseController
 
     public function getUserRoles()
     {
-        $user_roles = UserRolesModel::orderByRaw("
+        $userRoles = UserRolesModel::orderByRaw("
             CASE
                 WHEN code = 'ADMINISTRATOR' THEN 1
                 WHEN code = 'MANAGEMENT' THEN 2
@@ -57,7 +57,7 @@ class ListUsersController extends BaseController
             END
         ")->get()->toArray();
 
-        return response()->json($user_roles, 200);
+        return response()->json($userRoles, 200);
     }
     public function getDepartments()
     {
@@ -68,10 +68,10 @@ class ListUsersController extends BaseController
 
     public function searchUsers($search)
     {
-        $users_query = UsersModel::query();
+        $usersQuery = UsersModel::query();
 
         if ($search) {
-            $users_query->where(function ($query) use ($search) {
+            $usersQuery->where(function ($query) use ($search) {
                 $query->where('first_name', 'ILIKE', "%{$search}%")
                     ->orWhere('last_name', 'ILIKE', "%{$search}%")
                     ->orWhere('email', 'ILIKE', "%{$search}%")
@@ -79,7 +79,7 @@ class ListUsersController extends BaseController
             });
         }
 
-        $users = $users_query->limit(5)->get()->toArray();
+        $users = $usersQuery->limit(5)->get()->toArray();
 
         return response()->json($users, 200);
     }
@@ -121,7 +121,7 @@ class ListUsersController extends BaseController
                     if (count($filter['value']) == 2) {
                         $query->whereBetween('created_at', [$filter['value'][0], $filter['value'][1]]);
                     }
-                } else if ($filter['database_field'] == "roles") {
+                } elseif ($filter['database_field'] == "roles") {
                     $query->whereHas('roles', function ($query) use ($filter) {
                         $query->whereIn('user_roles.uid', $filter['value']);
                     });
@@ -137,10 +137,10 @@ class ListUsersController extends BaseController
     /**
      * Obtiene un usuario por uid
      */
-    public function getUser($user_uid)
+    public function getUser($userUid)
     {
 
-        $user = UsersModel::where('uid', $user_uid)->with('roles', 'department')->first();
+        $user = UsersModel::where('uid', $userUid)->with('roles', 'department')->first();
 
         if (!$user) {
             return response()->json(['message' => 'El usuario no existe'], 406);
@@ -158,15 +158,15 @@ class ListUsersController extends BaseController
             return response()->json(['errors' => $validateErrors], 400);
         }
 
-        $user_uid = $request->input('user_uid');
+        $userUid = $request->input('user_uid');
 
-        if ($user_uid) {
+        if ($userUid) {
             $isNew = false;
-            $user = UsersModel::where('uid', $user_uid)->first();
+            $user = UsersModel::where('uid', $userUid)->first();
         } else {
             $isNew = true;
             $user = new UsersModel();
-            $user->uid = generate_uuid();
+            $user->uid = generateUuid();
         }
 
         $user->fill($request->only([
@@ -179,7 +179,9 @@ class ListUsersController extends BaseController
         ]));
 
         $photoFile = $request->file('photo_path');
-        if ($photoFile) $this->savePhotoUser($request->file('photo_path'), $user);
+        if ($photoFile) {
+            $this->savePhotoUser($request->file('photo_path'), $user);
+        }
 
         DB::transaction(function () use ($request, $user, $isNew) {
 
@@ -227,11 +229,11 @@ class ListUsersController extends BaseController
             'photo_path' => 'max:6144', // Tamaño máximo de 2MB
         ];
 
-        $user_uid = $request->input('user_uid');
+        $userUid = $request->input('user_uid');
 
-        if ($user_uid) {
-            $rules['email'] = 'required|email|unique:users,email,' . $user_uid . ',uid';
-            $rules['nif'] = 'unique:users,nif,' . $user_uid . ',uid';
+        if ($userUid) {
+            $rules['email'] = 'required|email|unique:users,email,' . $userUid . ',uid';
+            $rules['nif'] = 'unique:users,nif,' . $userUid . ',uid';
         } else {
             $rules['email'] = 'required|email|unique:users,email';
         }
@@ -246,19 +248,19 @@ class ListUsersController extends BaseController
         $roles = $request->input('roles');
         $roles = json_decode($roles, true);
 
-        $roles_bd = UserRolesModel::whereIn('uid', $roles)->get()->pluck('uid');
+        $rolesBd = UserRolesModel::whereIn('uid', $roles)->get()->pluck('uid');
 
-        $roles_to_sync = [];
+        $rolesToSync = [];
 
-        foreach ($roles_bd as $rol_uid) {
-            $roles_to_sync[] = [
-                'uid' => generate_uuid(),
+        foreach ($rolesBd as $rolUid) {
+            $rolesToSync[] = [
+                'uid' => generateUuid(),
                 'user_uid' => $user->uid,
-                'user_role_uid' => $rol_uid
+                'user_role_uid' => $rolUid
             ];
         }
 
-        $user->roles()->sync($roles_to_sync);
+        $user->roles()->sync($rolesToSync);
     }
 
     private function savePhotoUser($file, $user)
@@ -280,17 +282,17 @@ class ListUsersController extends BaseController
     {
         // Generar el token de restablecimiento de contraseña
         $token = md5(uniqid(rand(), true));
-        $minutes_expiration_token = env('PWRES_TOKEN_EXPIRATION_MIN', 60);
-        $expiration_date = date("Y-m-d H:i:s", strtotime("+$minutes_expiration_token minutes"));
+        $minutesExpirationToken = env('PWRES_TOKEN_EXPIRATION_MIN', 60);
+        $expirationDate = date("Y-m-d H:i:s", strtotime("+$minutesExpirationToken minutes"));
 
         // Insertar el token en la tabla password_reset_tokens
         DB::table('reset_password_tokens')->insert([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'uid_user' => $user->uid,
             'email' => $user->email,
             'token' => $token,
             'created_at' => now(),
-            'expiration_date' => $expiration_date,
+            'expiration_date' => $expirationDate,
         ]);
 
         $isStudent = $user->hasAnyRole(['STUDENT']);
@@ -367,14 +369,14 @@ class ListUsersController extends BaseController
     public function deleteUsers(Request $request)
     {
 
-        $users_uids = $request->input('usersUids');
+        $usersUids = $request->input('usersUids');
 
-        DB::transaction(function () use ($users_uids) {
-            foreach($users_uids as $user_uid) {
-                UsersModel::where('uid', $user_uid)->update([
+        DB::transaction(function () use ($usersUids) {
+            foreach($usersUids as $userUid) {
+                UsersModel::where('uid', $userUid)->update([
                     'first_name' => 'deleted',
                     'last_name' => 'deleted',
-                    'email' => 'emaildeleted-' . generate_uuid() . '@deleted.com',
+                    'email' => 'emaildeleted-' . generateUuid() . '@deleted.com',
                     'nif' => null,
                     'photo_path' => null,
                     'password' => null,
@@ -391,13 +393,13 @@ class ListUsersController extends BaseController
 
     public function searchUsersBackend($search)
     {
-        $users_query = UsersModel::query()->with('roles')
+        $usersQuery = UsersModel::query()->with('roles')
             ->whereHas('roles', function ($query) {
                 $query->whereIn('code', ['ADMINISTRATOR', 'MANAGEMENT', 'TEACHER']);
             });
 
         if ($search) {
-            $users_query->where(function ($query) use ($search) {
+            $usersQuery->where(function ($query) use ($search) {
                 $query->where('first_name', 'ILIKE', "%{$search}%")
                     ->orWhere('last_name', 'ILIKE', "%{$search}%")
                     ->orWhere('email', 'ILIKE', "%{$search}%")
@@ -405,7 +407,7 @@ class ListUsersController extends BaseController
             });
         }
 
-        $users = $users_query->limit(5)->get()->toArray();
+        $users = $usersQuery->limit(5)->get()->toArray();
 
         return response()->json($users, 200);
     }
@@ -413,7 +415,7 @@ class ListUsersController extends BaseController
     public function searchUsersNoEnrolled($course, $search)
     {
 
-        $users_query = UsersModel::query()->with('roles')
+        $usersQuery = UsersModel::query()->with('roles')
             ->whereHas('roles', function ($query) {
                 $query->whereIn('code', ['STUDENT']);
             })
@@ -427,7 +429,7 @@ class ListUsersController extends BaseController
                 $query->where('course_uid', $course);
             });
 
-        $users = $users_query->limit(5)->get()->toArray();
+        $users = $usersQuery->limit(5)->get()->toArray();
 
 
         return response()->json($users, 200);
@@ -436,7 +438,7 @@ class ListUsersController extends BaseController
     public function searchUsersNoEnrolledEducationalProgram($course, $search)
     {
 
-        $users_query = UsersModel::query()->with('roles')
+        $usersQuery = UsersModel::query()->with('roles')
             ->whereHas('roles', function ($query) {
                 $query->whereIn('code', ['STUDENT']);
             })
@@ -450,7 +452,7 @@ class ListUsersController extends BaseController
                 $query->where('educational_program_uid', $course);
             });
 
-        $users = $users_query->limit(5)->get()->toArray();
+        $users = $usersQuery->limit(5)->get()->toArray();
 
 
         return response()->json($users, 200);

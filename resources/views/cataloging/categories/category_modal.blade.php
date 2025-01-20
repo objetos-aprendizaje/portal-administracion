@@ -9,7 +9,7 @@
 
             <div>
                 <button data-modal-id="category-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
         </div>
@@ -44,7 +44,7 @@
                     </div>
                     <div class="content-container">
                         <div class="poa-input-image">
-                            <img id="image_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}" />
+                            <img id="image_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}" alt="image_path_preview" />
                             <span class="dimensions">*Se recomienda imagen con aspecto cuadrado con una resolución mínima de: 200px x 200px.
                                 Formato: PNG, JPG. Tam. Máx.: 6MB</span>
 
@@ -53,7 +53,7 @@
                                     class="hidden" />
 
                                 <label for="image_path" class="btn  btn-rectangular">
-                                    Subir <span>{{ e_heroicon('arrow-up-tray', 'outline') }}</span>
+                                    Subir <span>{{ eHeroicon('arrow-up-tray', 'outline') }}</span>
                                 </label>
 
                                 <span id="image-name" class="image-name text-[14px]">Ningún archivo seleccionado</span>
@@ -95,10 +95,10 @@
 
                 <div class="btn-block">
                     <button type="submit" class="btn btn-primary">Guardar
-                        {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                        {{ eHeroicon('paper-airplane', 'outline') }}</button>
 
                     <button data-modal-id="category-modal" type="button" class="btn btn-secondary close-modal-btn">
-                        Cancelar {{ e_heroicon('x-mark', 'outline') }}</button>
+                        Cancelar {{ eHeroicon('x-mark', 'outline') }}</button>
                 </div>
 
                 <input type="hidden" id="category_uid" name="category_uid" value="" />

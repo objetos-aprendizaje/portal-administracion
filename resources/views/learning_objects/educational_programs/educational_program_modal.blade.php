@@ -4,12 +4,12 @@
 
         <div class="modal-header">
             <div>
-                <h2 class="modal-title"></h2>
+                <h2 class="modal-title">Título programa educativo</h2>
             </div>
 
             <div>
                 <button data-modal-id="educational-program-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
         </div>
@@ -186,7 +186,7 @@
                             <div class="flex justify-end">
                                 <div>
                                     <button type="button" class="btn-icon" id="btn-add-document">
-                                        {{ e_heroicon('plus', 'outline') }}
+                                        {{ eHeroicon('plus', 'outline') }}
                                     </button>
                                 </div>
                             </div>
@@ -221,7 +221,7 @@
                             <div class="flex justify-end">
                                 <div>
                                     <button type="button" class="btn-icon" id="btn-add-payment">
-                                        {{ e_heroicon('plus', 'outline') }}
+                                        {{ eHeroicon('plus', 'outline') }}
                                     </button>
                                 </div>
                             </div>
@@ -295,7 +295,7 @@
                     </div>
                     <div class="content-container mt-1">
                         <div class="poa-input-image">
-                            <img id="image_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}" />
+                            <img id="image_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}" alt="imagen programa formativo"/>
 
                             <div class="select-file-container">
                                 <input accept="image/*" type="file" id="image_path" name="image_path"
@@ -303,7 +303,7 @@
 
                                 <div class="flex items-center gap-[20px]">
                                     <label for="image_path" class="btn btn-rectangular">
-                                        Subir {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                        Subir {{ eHeroicon('arrow-up-tray', 'outline') }}
                                     </label>
 
                                     <span class="image-name text-[14px]">Ningún archivo seleccionado</span>
@@ -376,7 +376,7 @@
                             <div class="content-container mt-1">
                                 <div class="poa-input-image mb-2">
                                     <img id="featured_slider_image_path_preview"
-                                        src="{{ env('NO_IMAGE_SELECTED_PATH') }}" />
+                                        src="{{ env('NO_IMAGE_SELECTED_PATH') }}" alt="imagen slider" />
 
                                     <div class="select-file-container">
                                         <input accept="image/*" type="file" id="featured_slider_image_path"
@@ -384,7 +384,7 @@
 
                                         <div class="flex items-center gap-[20px]">
                                             <label for="featured_slider_image_path" class="btn btn-rectangular">
-                                                Subir {{ e_heroicon('arrow-up-tray', 'outline') }}
+                                                Subir {{ eHeroicon('arrow-up-tray', 'outline') }}
                                             </label>
 
                                             <span class="image-name text-[14px]">Ningún archivo seleccionado</span>
@@ -433,11 +433,11 @@
                 <div class="btn-block" id="btns-save">
                     <div id="draft-button-container" class="hidden">
                         <button type="submit" value="draft" id="draft-button" class="btn btn-secondary">
-                            Guardar como borrador {{ e_heroicon('check', 'outline') }}</button>
+                            Guardar como borrador {{ eHeroicon('check', 'outline') }}</button>
                     </div>
 
                     <button type="submit" value="submit" id="submit-button" class="btn btn-primary ">
-                        Guardar {{ e_heroicon('paper-airplane', 'outline') }}</button>
+                        Guardar {{ eHeroicon('paper-airplane', 'outline') }}</button>
                 </div>
 
             </div>
@@ -456,7 +456,7 @@
             <input maxlength="255" type="text" class="poa-input document-name" placeholder="Nombre" />
             <div class="flex-none">
                 <button type="button" class="btn-icon btn-remove-document">
-                    {{ e_heroicon('trash', 'outline') }}
+                    {{ eHeroicon('trash', 'outline') }}
                 </button>
             </div>
         </div>
@@ -485,7 +485,7 @@
             </div>
 
             <button class="w-[32px] h-[32px] btn-icon btn-remove-payment-term" type="button">
-                {{ e_heroicon('trash', 'outline') }}
+                {{ eHeroicon('trash', 'outline') }}
             </button>
         </div>
     </div>

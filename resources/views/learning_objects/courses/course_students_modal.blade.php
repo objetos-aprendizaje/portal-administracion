@@ -7,7 +7,7 @@
 
             <div>
                 <button data-modal-id="course-students-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
 
             </div>
@@ -18,29 +18,29 @@
                 @include('partials.table-search', ['table' => 'course-students-table'])
                 <div class="flex gap-1">
                     <button id="approve-students-btn" type="button" class="btn-icon" title="Aprobar"
-                        data-course-uid="">{{ e_heroicon('check', 'outline') }}</button>
+                        data-course-uid="">{{ eHeroicon('check', 'outline') }}</button>
 
                     <button id="reject-students-btn" type="button" class="btn-icon" title="Rechazar"
-                        data-course-uid="">{{ e_heroicon('x-mark', 'outline') }}</button>
+                        data-course-uid="">{{ eHeroicon('x-mark', 'outline') }}</button>
 
                     <button id="delete-students-btn" type="button" class="btn-icon" data-educational-program-uid=""
-                        title="Eliminar">{{ e_heroicon('trash', 'outline') }}</button>
+                        title="Eliminar">{{ eHeroicon('trash', 'outline') }}</button>
 
                     <button id="enroll-students-btn" type="button" class="btn-icon" title="Añadir estudiante"
-                        data-course-uid="">{{ e_heroicon('plus', 'outline') }}</button>
+                        data-course-uid="">{{ eHeroicon('plus', 'outline') }}</button>
 
                     <button id="enroll-students-csv-btn" type="button" class="btn-icon" title="Importar estudiantes"
-                        data-course-uid="">{{ e_heroicon('arrow-up-tray', 'outline') }}</button>
+                        data-course-uid="">{{ eHeroicon('arrow-up-tray', 'outline') }}</button>
 
                     <button id="emit-credentials-students-btn" type="button" class="btn-icon"
                         title="Emitir credenciales"
-                        data-course-uid="">{{ e_heroicon('academic-cap', 'outline') }}</button>
+                        data-course-uid="">{{ eHeroicon('academic-cap', 'outline') }}</button>
 
                     <button id="send-credentials-btn" type="button" class="btn-icon" title="Enviar credenciales"
-                        data-course-uid="">{{ e_heroicon('paper-airplane', 'outline') }}</button>
+                        data-course-uid="">{{ eHeroicon('paper-airplane', 'outline') }}</button>
 
                     <button id="seal-credentials-btn" type="button" class="btn-icon" title="Sellar credenciales"
-                        data-course-uid="">{{ e_heroicon('check-badge', 'outline') }}</button>
+                        data-course-uid="">{{ eHeroicon('check-badge', 'outline') }}</button>
                 </div>
             </div>
 

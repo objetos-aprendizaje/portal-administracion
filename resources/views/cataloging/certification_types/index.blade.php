@@ -9,8 +9,8 @@
             @include('partials.table-search', ['table' => 'certification-types-table'])
 
             <div>
-                <button id="add-certification-type-btn" type="button" class="btn btn-icon mb-4" title="Añadir tipo de certificación">{{e_heroicon('plus', 'outline')}}</button>
-                <button id="delete-certification-type-btn" type="button" class="btn btn-icon mb-4" title="Eliminar tipo de certificación">{{e_heroicon('trash', 'outline')}}</button>
+                <button id="add-certification-type-btn" type="button" class="btn btn-icon mb-4" title="Añadir tipo de certificación">{{eHeroicon('plus', 'outline')}}</button>
+                <button id="delete-certification-type-btn" type="button" class="btn btn-icon mb-4" title="Eliminar tipo de certificación">{{eHeroicon('trash', 'outline')}}</button>
             </div>
 
         </div>

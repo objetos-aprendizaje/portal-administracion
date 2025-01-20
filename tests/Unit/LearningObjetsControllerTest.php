@@ -31,17 +31,9 @@ class LearningObjetsControllerTest extends TestCase
      */
     public function testGenerateTagsReturnsTagsSuccessfully()
     {
-
-        // Mock del método callOpenAI
-        // $this->partialMock(LearningObjetsController::class, function ($mock) {
-        //     $mock->shouldReceive('callOpenAI')
-        //          ->once()
-        //          ->andReturn(['tag1', 'tag2', 'tag3']);
-        // });
-
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
         // Autenticar al usuario
         Auth::login($user);
 
@@ -65,22 +57,19 @@ class LearningObjetsControllerTest extends TestCase
 
         // Verificar respuesta
         $response->assertStatus(200);
-
-        // $response->assertJson(['tag1', 'tag2', 'tag3']);
     }
 
     public function testGenerateMetadataSuccessfully()
     {
 
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'ADMINISTRATOR'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
         // Autenticar al usuario
         Auth::login($user);
 
         // Se actualiza el modelo GeneralOptionsModel
         $general = GeneralOptionsModel::where('option_name', 'openai_key')->first();
-        $general->option_value = env('OPENAI_KEY ');  "sk-proj-uMcGGl7yYOy124A2CIpaT3BlbkFJjFjCzAbGwoLYT5ThevzM";
         $general->save();
 
         $generalOptionsMock = [

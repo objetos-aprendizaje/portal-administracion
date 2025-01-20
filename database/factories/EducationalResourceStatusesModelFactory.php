@@ -17,7 +17,7 @@ class EducationalResourceStatusesModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'name' => $this->faker->word,
             'code'=>'PUBLISHED',
         ];

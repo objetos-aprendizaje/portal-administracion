@@ -4,7 +4,7 @@
 
         <div class="title-filter flex items-center mb-[26px]">
             <span>Logs</span>
-            <button id="filter-logs-btn" class="btn-filter">{{ e_heroicon('adjustments-horizontal', 'outline') }}</button>
+            <button id="filter-logs-btn" class="btn-filter">{{ eHeroicon('adjustments-horizontal', 'outline') }}</button>
         </div>
 
         <div class="table-control-header">
@@ -12,7 +12,7 @@
 
             <div>
                 <button type="button" class="btn btn-icon" id="btn-reload-table" title="Actualizar">
-                    {{ e_heroicon('arrow-path', 'outline') }}
+                    {{ eHeroicon('arrow-path', 'outline') }}
                 </button>
             </div>
 

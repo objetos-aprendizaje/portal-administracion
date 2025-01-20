@@ -136,7 +136,7 @@ class UsersModel extends Authenticatable
      // Relación muchos a muchos con la tabla intermedia educational_resource_access
     public function educationalResources()
     {
-        return $this->belongsToMany(EducationalResourcesModel::class, 'educational_resource_access', 'user_uid', 'educational_resource_uid')->withPivot('date');;
+        return $this->belongsToMany(EducationalResourcesModel::class, 'educational_resource_access', 'user_uid', 'educational_resource_uid')->withPivot('date');
     }
 
     public function EducationalProgramsStudents()

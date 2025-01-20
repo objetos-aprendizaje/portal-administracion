@@ -2,22 +2,14 @@
 
 
 use Tests\TestCase;
-use App\Jobs\SendEmailJob;
+
 use App\Models\UsersModel;
-use App\Models\UserRolesModel;
-use Illuminate\Support\Carbon;
-use App\Mail\PasswordResetMail;
-use App\Models\Saml2TenantsModel;
-use App\Models\TooltipTextsModel;
-use Illuminate\Support\MessageBag;
-use App\Models\GeneralOptionsModel;
+
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\View;
+
 use Illuminate\Support\Facades\Schema;
 use App\Models\ResetPasswordTokensModel;
-use Laravel\Socialite\Facades\Socialite;
-use App\Http\Controllers\LoginController;
-use Laravel\Socialite\Two\User as twouser;
+
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 
@@ -43,12 +35,12 @@ class RecoverPasswordControllerTest extends TestCase
     {
         // Crear un usuario para probar
         $user = UsersModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'email' => 'test@example.com',
         ]);
 
         // Crear un token de restablecimiento de contraseña válido
-        $resetPasswordToken = ResetPasswordTokensModel::factory()->create([
+        ResetPasswordTokensModel::factory()->create([
             'token' => 'valid-token',
             'expiration_date' => now()->addMinutes(30),
             'uid_user' => $user->uid,
@@ -75,7 +67,6 @@ class RecoverPasswordControllerTest extends TestCase
 
         // Verificar que el token y el email se pasan a la vista correctamente
         $response->assertViewHas('token', 'valid-token');
-        // $response->assertViewHas('email', 'example@example.com');
     }
 
     /**
@@ -86,11 +77,11 @@ class RecoverPasswordControllerTest extends TestCase
     {
         // Crear un usuario para probar
         $user = UsersModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'email' => 'test@example.com',
         ]);
 
-        
+
         // Crear un token de restablecimiento de contraseña expirado
         $resetPasswordToken = ResetPasswordTokensModel::factory()->create([
             'token' => 'expired-token',
@@ -119,7 +110,7 @@ class RecoverPasswordControllerTest extends TestCase
 
         // Crear un usuario para probar
         $user = UsersModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'email' => 'test@example.com',
         ]);
 

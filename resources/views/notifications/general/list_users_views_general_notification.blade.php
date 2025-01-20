@@ -9,7 +9,7 @@
             <div>
                 <button data-modal-id="list-users-views-general-notification-modal"
                     class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
         </div>

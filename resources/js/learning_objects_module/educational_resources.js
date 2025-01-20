@@ -259,7 +259,6 @@ function createMetadataElementMetadata(metadata, id) {
 
 function initializeTomSelect() {
     tomSelectTags = getCreateElementsTomSelectInstance("#tags");
-    //tomSelectEmails = getCreateElementsTomSelectInstance("#emails");
     tomSelectCategories = getMultipleTomSelectInstance("#select-categories");
     tomFilterSelectCategories = getMultipleTomSelectInstance(
         "#filter_select_categories"
@@ -375,30 +374,30 @@ function collectFilters() {
             });
         }
     }
-    let filter_resource_way = document.getElementById("filter_resource_way");
+    let filterResourceWay = document.getElementById("filter_resource_way");
 
-    if (filter_resource_way.value) {
+    if (filterResourceWay.value) {
         addFilter(
             "Forma de recurso",
-            filter_resource_way.value,
-            filter_resource_way.value == "FILE" ? "Fichero" : "URL",
+            filterResourceWay.value,
+            filterResourceWay.value == "FILE" ? "Fichero" : "URL",
             "filter_resource_way",
             "resource_way"
         );
     }
 
-    let filter_educational_resource_type_uid = document.getElementById(
+    let filterEducationalResourceTypeUid = document.getElementById(
         "filter_educational_resource_type_uid"
     );
-    if (filter_educational_resource_type_uid.value) {
+    if (filterEducationalResourceTypeUid.value) {
         let selectedFilterOptionText =
-            filter_educational_resource_type_uid.options[
-                filter_educational_resource_type_uid.selectedIndex
+            filterEducationalResourceTypeUid.options[
+                filterEducationalResourceTypeUid.selectedIndex
             ].text;
 
         addFilter(
             "Tipo",
-            filter_educational_resource_type_uid.value,
+            filterEducationalResourceTypeUid.value,
             selectedFilterOptionText,
             "filter_educational_resource_type_uid",
             "educational_resource_type_uid"
@@ -444,7 +443,7 @@ function collectFilters() {
  */
 function showFilters() {
     // Eliminamos todos los filtros
-    var currentFilters = document.querySelectorAll(".filter");
+    const currentFilters = document.querySelectorAll(".filter");
 
     // Recorre cada elemento y lo elimina
     currentFilters.forEach(function (filter) {
@@ -453,7 +452,7 @@ function showFilters() {
 
     filters.forEach((filter) => {
         // Crea un nuevo div
-        var newDiv = document.createElement("div");
+        const newDiv = document.createElement("div");
 
         // Agrega la clase 'filter' al div
         newDiv.classList.add("filter");
@@ -639,7 +638,9 @@ function initializeResourcesTable() {
 }
 
 function regenerateEmbeddingsEducationalResources() {
-    const educationalResourcesSelected = selectedResources.map((resource) => resource.uid);
+    const educationalResourcesSelected = selectedResources.map(
+        (resource) => resource.uid
+    );
     const params = {
         url: `/learning_objects/educational_resources/regenerate_embeddings`,
         method: "POST",
@@ -974,13 +975,7 @@ function changeStatusesResources() {
                     value: "REJECTED",
                 },
             ];
-        } else {
-            optionsStatuses = [];
-        }
-
-        optionsStatuses = [];
-
-        if (
+        } else if (
             [
                 "PUBLISHED",
                 "REJECTED",
@@ -1003,6 +998,8 @@ function changeStatusesResources() {
                 label: "En subsanación para aprobación",
                 value: "UNDER_CORRECTION_APPROVAL",
             });
+        } else {
+            optionsStatuses = [];
         }
 
         // Se podrá retirar un recurso en cualquier estado
@@ -1254,7 +1251,7 @@ function updateSelectedCompetencesAndLearningResults(currentNode) {
     const childLearningResults = getChildNodesLearningResults(currentNode);
 
     // Convertir selectedLearningResults a Set si aún no lo es
-    if (!selectedLearningResults instanceof Set) {
+    if (!(selectedLearningResults instanceof Set)) {
         selectedLearningResults = new Set(selectedLearningResults);
     }
 

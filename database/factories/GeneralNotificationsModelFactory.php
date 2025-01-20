@@ -20,7 +20,7 @@ class GeneralNotificationsModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'title' => $this->faker->unique()->sentence(3),
             'description' => $this->faker->unique()->paragraph(2),
             'notification_type_uid' => NotificationsTypesModel::factory()->create()->first(),

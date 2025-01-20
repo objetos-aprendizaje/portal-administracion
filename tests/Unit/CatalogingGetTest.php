@@ -67,7 +67,7 @@ class CatalogingGetTest extends TestCase
             ]);
 
 
-        $courseTypeUid = generate_uuid();
+        $courseTypeUid = generateUuid();
 
         $response = $this->getJson('/cataloging/course_types/get_course_type/' . $courseTypeUid);
 
@@ -91,7 +91,7 @@ class CatalogingGetTest extends TestCase
 
         // Crear tipos de certificación de prueba
         $certify = CertificationTypesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'category_uid' => $categoria1->uid,
             'name' => 'Certificación de prueba 1',
             'description' => 'Certificación de prueba 1',
@@ -133,7 +133,7 @@ class CatalogingGetTest extends TestCase
 
         // Crear tipos de certificación de prueba
         $certificationType = CertificationTypesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'category_uid' => $categor1->uid,
             'name' => 'Certificación de prueba 1',
             'description' => 'Certificación de prueba 1',
@@ -161,7 +161,7 @@ class CatalogingGetTest extends TestCase
         $user = UsersModel::factory()->create();
         $this->actingAs($user);
         // Simular un request GET a la ruta con un UID que no existe
-        $uid = generate_uuid();
+        $uid = generateUuid();
         $response = $this->getJson('/cataloging/certification_types/get_certification_type/' . $uid);
 
         // Verificar que la respuesta sea un error 406
@@ -169,9 +169,9 @@ class CatalogingGetTest extends TestCase
             ->assertJson([
                 'message' => 'El tipo de certificación no existe',
             ]);
-    }  
+    }
 
-    
+
 
     /**
      * @test Obtener Categorias por Búsqueda
@@ -284,7 +284,7 @@ class CatalogingGetTest extends TestCase
         CompetencesModel::factory()->count($competencesCount)->create()->first();
 
         // Hacer la solicitud GET a la ruta
-        $response = $this->get('/cataloging/competences_learnings_results/get_competences?size=4');;
+        $response = $this->get('/cataloging/competences_learnings_results/get_competences?size=4');
 
         // Verificar que la respuesta sea correcta
         $response->assertStatus(200);
@@ -321,7 +321,7 @@ class CatalogingGetTest extends TestCase
         $this->assertEquals('Mathematics', $response->json('data.0.name'));
 
         // Verificar que los resultados estén ordenados correctamente
-        $response = $this->get('/cataloging/competences_learnings_results/get_competences?search=&sort[0][field]=name&sort[0][dir]=asc');
+        $this->get('/cataloging/competences_learnings_results/get_competences?search=&sort[0][field]=name&sort[0][dir]=asc');
     }
 
 
@@ -376,7 +376,7 @@ class CatalogingGetTest extends TestCase
         // Asignar un rol específico al usuario (por ejemplo, el rol 'ADMINISTRATOR')
         $role = UserRolesModel::where('code', 'ADMINISTRATOR')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         // Autenticar al usuario
@@ -394,7 +394,7 @@ class CatalogingGetTest extends TestCase
 
         // Crear algunas categorías de prueba, incluyendo subcategorías
         $category = CategoriesModel::factory()->create(['parent_category_uid' => null])->first();
-        $subcategory = CategoriesModel::factory()->create(['parent_category_uid' => $category->uid]);
+        CategoriesModel::factory()->create(['parent_category_uid' => $category->uid]);
 
         // Crear algunos tipos de certificación de prueba
         $certificationType1 = CertificationTypesModel::factory()->create(
@@ -419,7 +419,7 @@ class CatalogingGetTest extends TestCase
         });
 
         // Verificar que la vista tiene al menos una categoría con una subcategoría
-        $response->assertViewHas('categories', function ($viewData) use ($category, $subcategory) {
+        $response->assertViewHas('categories', function ($viewData) use ($category) {
             return !empty($viewData) &&
                 $viewData[0]['uid'] === $category->uid &&
                 !empty($viewData[0]['subcategories']) &&
@@ -442,7 +442,7 @@ class CatalogingGetTest extends TestCase
         $user = UsersModel::factory()->create();
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
 
         Auth::login($user);
@@ -483,7 +483,7 @@ class CatalogingGetTest extends TestCase
         $user = UsersModel::factory()->create();
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
         Auth::login($user);
 
@@ -515,9 +515,9 @@ class CatalogingGetTest extends TestCase
         $response->assertViewHas('coloris', true);
         $response->assertViewHas('submenuselected', 'cataloging-competences-learning-results');
         $response->assertViewHas('infiniteTree', true);
-    }    
+    }
 
-    
+
 
     /**
      * @test
@@ -530,7 +530,7 @@ class CatalogingGetTest extends TestCase
         $user = UsersModel::factory()->create();
         $role = UserRolesModel::where('code', 'MANAGEMENT')->first();
         $user->roles()->sync([
-            $role->uid => ['uid' => generate_uuid()]
+            $role->uid => ['uid' => generateUuid()]
         ]);
         Auth::login($user);
 
@@ -574,8 +574,8 @@ class CatalogingGetTest extends TestCase
     public function it_displays_categories_and_nested_categories()
     {
         $user = UsersModel::factory()->create()->latest()->first();
-        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generate_uuid()]); // Crea roles de prueba
-        $user->roles()->attach($roles->uid, ['uid' => generate_uuid()]);
+        $roles = UserRolesModel::firstOrCreate(['code' => 'MANAGEMENT'], ['uid' => generateUuid()]); // Crea roles de prueba
+        $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);
 
         // Autenticar al usuario
         Auth::login($user);
@@ -594,17 +594,13 @@ class CatalogingGetTest extends TestCase
         $unread_notifications = $user->notifications->where('read_at', null);
         View::share('unread_notifications', $unread_notifications);
 
-        // Creamos una instancia del controlador de prueba
-        $controller = new CategoriesController();
-
-
         // Creamos algunas categorías para la prueba
         $parentCategory = CategoriesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'parent_category_uid' => null
         ])->first();
         CategoriesModel::factory()->create([
-            'uid' => generate_uuid(),
+            'uid' => generateUuid(),
             'parent_category_uid' => $parentCategory->uid
         ])->first();
 

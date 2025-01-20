@@ -23,10 +23,10 @@ const endPointTableStudents = "/analytics/users/get_students";
 
 let analyticsStudentsTable;
 let flatpickrDateFilter;
-let user_uid;
+let userUid;
 
-let filter_date = "";
-let filter_type = "";
+let filterDate = "";
+let filterType = "";
 
 let tomSelectRolesFilter;
 let dateUsersFilterFlatpickr;
@@ -34,7 +34,6 @@ let dateUsersFilterFlatpickr;
 let filters = [];
 
 document.addEventListener("DOMContentLoaded", function () {
-    //drawTable();
     drawGraph();
 
     drawTableStudents();
@@ -103,7 +102,7 @@ function graficar(datas) {
     };
 
     // set the color scale
-    const color = d3
+    d3
         .scaleOrdinal()
         .domain(["Estudiante", "Administrador", "Docente", "Gestor"])
         .range(d3.schemeDark2);
@@ -113,7 +112,7 @@ function graficar(datas) {
         .pie()
         .sort(null) // Do not sort group by size
         .value((d) => d[1]);
-    const data_ready = pie(Object.entries(data));
+    const dataReady = pie(Object.entries(data));
 
     // The arc generator
     const arc = d3
@@ -129,7 +128,7 @@ function graficar(datas) {
 
     // Build the pie chart with animation
     svg.selectAll("allSlices")
-        .data(data_ready)
+        .data(dataReady)
         .join("path")
         .attr("d", arc)
         .attr("fill", function (d) {
@@ -150,7 +149,7 @@ function graficar(datas) {
 
     // Add the polylines between chart and labels:
     svg.selectAll("allPolylines")
-        .data(data_ready)
+        .data(dataReady)
         .join("polyline")
         .attr("stroke", "black")
         .style("fill", "none")
@@ -166,7 +165,7 @@ function graficar(datas) {
 
     // Add the labels with animation
     svg.selectAll("allLabels")
-        .data(data_ready)
+        .data(dataReady)
         .join("text")
         .text(function (d) {
             let sufijo = "s";
@@ -238,10 +237,10 @@ function drawTableStudents() {
                 const data = cell.getRow().getData();
                 showModal("analytics-user-modal", "Datos del usuario");
                 fillDataUserModal();
-                user_uid = data.uid;
+                userUid = data.uid;
                 sendData();
-                filter_date = "";
-                filter_type = "";
+                filterDate = "";
+                filterType = "";
             },
             cssClass: "text-center",
             headerSort: false,
@@ -284,22 +283,22 @@ function drawTableStudents() {
     controlsPagination(analyticsStudentsTable, "analytics-students-table");
 }
 function fillDataUserModal() {
-    const filter_data_input = document.querySelector("#filter_date_accesses");
-    const filter_type_input = document.querySelector("#filter_type");
+    const filterDataInput = document.querySelector("#filter_date_accesses");
+    const filterTypeInput = document.querySelector("#filter_type");
 
-    filter_data_input.addEventListener("change", function () {
-        filter_date = getFlatpickrDateRangeSql(flatpickrDateFilter);
-        if (filter_date.length > 1) {
-            const startDate = new Date(filter_date[0]);
-            const endDate = new Date(filter_date[1]);
+    filterDataInput.addEventListener("change", function () {
+        filterDate = getFlatpickrDateRangeSql(flatpickrDateFilter);
+        if (filterDate.length > 1) {
+            const startDate = new Date(filterDate[0]);
+            const endDate = new Date(filterDate[1]);
             const diffInMs = endDate - startDate;
             const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
             const days = Math.ceil(diffInDays);
             if (days > 45) {
-                filter_type = "YYYY-MM";
+                filterType = "YYYY-MM";
                 document.getElementById("filter_type").value = "YYYY-MM";
             } else if (days > 730) {
-                filter_type = "YYYY";
+                filterType = "YYYY";
                 document.getElementById("filter_type").value = "YYYY";
             }
 
@@ -307,9 +306,9 @@ function fillDataUserModal() {
         }
     });
 
-    filter_type_input.addEventListener("change", function () {
-        filter_type = document.getElementById("filter_type").value;
-        if (filter_type != null) {
+    filterTypeInput.addEventListener("change", function () {
+        const filterType = document.getElementById("filter_type").value;
+        if (filterType != null) {
             sendData();
         }
     });
@@ -317,9 +316,9 @@ function fillDataUserModal() {
 function sendData() {
     const formData = new FormData();
 
-    formData.append("filter_date", filter_date);
-    formData.append("filter_type", filter_type);
-    formData.append("user_uid", user_uid);
+    formData.append("filter_date", filterDate);
+    formData.append("filter_type", filterType);
+    formData.append("user_uid", userUid);
 
     const params = {
         url: "/analytics/users/get_students_data",
@@ -365,7 +364,7 @@ function controlSaveHandlerFilters() {
 
 function showFilters() {
     // Eliminamos todos los filtros
-    var currentFilters = document.querySelectorAll(".filter");
+    const currentFilters = document.querySelectorAll(".filter");
 
     // Recorre cada elemento y lo elimina
     currentFilters.forEach(function (filter) {
@@ -374,7 +373,7 @@ function showFilters() {
 
     filters.forEach((filter) => {
         // Crea un nuevo div
-        var newDiv = document.createElement("div");
+        const newDiv = document.createElement("div");
 
         // Agrega la clase 'filter' al div
         newDiv.classList.add("filter");
@@ -576,7 +575,6 @@ function controlDeleteFilters(deleteBtn) {
 }
 
 function convertirFechas(date) {
-    const regex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
     const fecha = new Date(date);
     const dia = String(fecha.getDate()).padStart(2, "0"); // Obtener día con dos dígitos
     const mes = String(fecha.getMonth() + 1).padStart(2, "0"); // Obtener mes (0-11) + 1

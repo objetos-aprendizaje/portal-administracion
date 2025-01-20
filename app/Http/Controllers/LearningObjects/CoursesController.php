@@ -13,7 +13,6 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use App\Models\CoursesModel;
 use App\Models\CallsModel;
-use App\Models\EducationalProgramTypesModel;
 use App\Models\CourseTypesModel;
 use App\Models\UsersModel;
 use App\Models\CategoriesModel;
@@ -69,9 +68,8 @@ class CoursesController extends BaseController
     {
         $courses = CoursesModel::with('status')->get()->toArray();
         $calls = CallsModel::get()->toArray();
-        $courses_statuses = CourseStatusesModel::all()->toArray();
-        $educationals_programs_types = EducationalProgramTypesModel::all()->toArray();
-        $courses_types = CourseTypesModel::all()->toArray();
+        $coursesStatuses = CourseStatusesModel::all()->toArray();
+        $coursesTypes = CourseTypesModel::all()->toArray();
         $centers = CentersModel::all()->toArray();
 
         $teachers = UsersModel::whereHas('roles', function ($query) {
@@ -84,15 +82,17 @@ class CoursesController extends BaseController
 
         $categories = CategoriesModel::with('parentCategory')->get()->toArray();
 
-        $educational_programs = EducationalProgramsModel::all()->toArray();
+        $educationalPrograms = EducationalProgramsModel::all()->toArray();
 
         $lmsSystems = LmsSystemsModel::all();
         $certificationTypes = CertificationTypesModel::all();
 
-        if (!empty($categories)) $categories = $this->buildNestedCategories($categories);
+        if (!empty($categories)) {
+            $categories = $this->buildNestedCategories($categories);
+        }
 
         $rolesUser = Auth::user()['roles']->pluck("code")->toArray();
-        $variables_js = [
+        $variablesJs = [
             "frontUrl" => env('FRONT_URL'),
             "rolesUser" => $rolesUser,
             "enabledRecommendationModule" => app('general_options')['enabled_recommendation_module'],
@@ -108,9 +108,8 @@ class CoursesController extends BaseController
                 ],
                 "courses" => $courses,
                 "calls" => $calls,
-                "courses_statuses" => $courses_statuses,
-                "educationals_programs_types" => $educationals_programs_types,
-                "courses_types" => $courses_types,
+                "courses_statuses" => $coursesStatuses,
+                "courses_types" => $coursesTypes,
                 "teachers" => $teachers,
                 "categories" => $categories,
                 "students" => $students,
@@ -118,8 +117,8 @@ class CoursesController extends BaseController
                 "tabulator" => true,
                 "tomselect" => true,
                 "flatpickr" => true,
-                "educational_programs" => $educational_programs,
-                "variables_js" => $variables_js,
+                "educational_programs" => $educationalPrograms,
+                "variables_js" => $variablesJs,
                 "treeselect" => true,
                 "centers" => $centers,
                 "certificationTypes" => $certificationTypes,
@@ -140,7 +139,7 @@ class CoursesController extends BaseController
      * @param string $indicator El indicador de anidación.
      * @return array El array de categorías anidadas.
      */
-    function buildNestedCategories($categories, $parent = null, $prefix = '', $indicator = '')
+    private function buildNestedCategories($categories, $parent = null, $prefix = '', $indicator = '')
     {
         $nested = []; // Este array contendrá las categorías anidadas.
 
@@ -178,18 +177,18 @@ class CoursesController extends BaseController
         }
 
         // Obtenemos los cursos de la base de datos
-        $courses_bd = CoursesModel::whereIn('uid', array_column($changesCoursesStatuses, "uid"))->with('status', 'lmsSystem')->get()->keyBy('uid');
+        $coursesBd = CoursesModel::whereIn('uid', array_column($changesCoursesStatuses, "uid"))->with('status', 'lmsSystem')->get()->keyBy('uid');
 
         // Excluímos los estados a los que no se pueden cambiar manualmente.
-        $statuses_courses = CourseStatusesModel::whereNotIn('code', ['DEVELOPMENT', 'PENDING_INSCRIPTION', 'FINISHED'])->get()->keyBy('code');
+        $statusesCourses = CourseStatusesModel::whereNotIn('code', ['DEVELOPMENT', 'PENDING_INSCRIPTION', 'FINISHED'])->get()->keyBy('code');
         // Aquí iremos almacenando los datos de los cursos que se van a actualizar
 
-        DB::transaction(function () use ($changesCoursesStatuses, $courses_bd, $statuses_courses) {
+        DB::transaction(function () use ($changesCoursesStatuses, $coursesBd, $statusesCourses) {
             // Recorremos los cursos que nos vienen en el request y los comparamos con los de la base de datos
             foreach ($changesCoursesStatuses as $changeCourseStatus) {
                 // Obtenemos el curso de la base de datos
-                $course = $courses_bd[$changeCourseStatus['uid']] ?? null;
-                $status = $statuses_courses[$changeCourseStatus['status']] ?? null;
+                $course = $coursesBd[$changeCourseStatus['uid']] ?? null;
+                $status = $statusesCourses[$changeCourseStatus['status']] ?? null;
                 $reason = $changeCourseStatus['reason'];
 
                 // Si no existe el curso en la base de datos, devolvemos un error
@@ -220,10 +219,7 @@ class CoursesController extends BaseController
     {
         $courseUid = $request->input('course_uid');
 
-        $course = CoursesModel::where('uid', $courseUid)->with(["educational_program_type", "students"])->first();
-
-        // Comprobación de si el usuario tiene permiso para emitir credenciales para este curso
-        $this->checkPermissionsEmitCredentials($course->educational_program_type);
+        $course = CoursesModel::where('uid', $courseUid)->with("students")->first();
 
         $studentsUids = $course->students->pluck('uid')->toArray();
         $this->certidigitalService->emissionCredentialsCourse($courseUid, $studentsUids);
@@ -237,10 +233,13 @@ class CoursesController extends BaseController
         $courseUid = $request->input('course_uid');
         $studentsUids = $request->input('students_uids');
 
-        $course = CoursesModel::where('uid', $courseUid)->with("educational_program_type")->first();
-
-        // Comprobación de si el usuario tiene permiso para emitir credenciales para este curso
-        $this->checkPermissionsEmitCredentials($course->educational_program_type);
+        $users = UsersModel::whereIn('uid', $studentsUids)->get();
+        // Comprobar si alguno de los alumnos no está verificado
+        foreach ($users as $user) {
+            if (!$user->verified) {
+                throw new OperationFailedException('No se pueden emitir credenciales porque alguno de los alumnos no está verificado', 422);
+            }
+        }
 
         // Comprobación de si alguno de los alumnos ya tiene las credenciales emitidas
         $this->checkCredentialsStudentsEmissionsInCourse($courseUid, $studentsUids);
@@ -284,19 +283,6 @@ class CoursesController extends BaseController
         $this->certidigitalService->createUpdateCourseTeacherCredential($courseUid);
 
         return response()->json(['message' => 'Credencial de docente regenerada correctamente'], 200);
-    }
-
-    private function checkPermissionsEmitCredentials($educationalProgramType)
-    {
-        $userRoles = auth()->user()->roles()->get()->pluck('code')->toArray();
-
-        if ($educationalProgramType->managers_can_emit_credentials && in_array('MANAGEMENT', $userRoles)) {
-            return;
-        } else if ($educationalProgramType->teachers_can_emit_credentials && in_array('TEACHER', $userRoles)) {
-            return;
-        }
-
-        throw new OperationFailedException('No tienes permisos para emitir credenciales en este curso', 422);
     }
 
     private function checkCredentialsStudentsEmissionsInCourse($courseUid, $studentsUids)
@@ -375,7 +361,7 @@ class CoursesController extends BaseController
         // Si es un profesor, solo ve los cursos en los que está asignado
         if (in_array('ADMINISTRATOR', $roles) || in_array('MANAGEMENT', $roles)) {
             $query = $this->buildQueryCoursesBase();
-        } else if (in_array("TEACHER", $roles)) {
+        } elseif (in_array("TEACHER", $roles)) {
             $query = $this->buildQueryForTeacher();
         }
 
@@ -389,7 +375,7 @@ class CoursesController extends BaseController
                 if ($order['field'] == 'certidigital_credential_uid') {
                     $query->orderByRaw('CASE WHEN courses.certidigital_credential_uid IS NULL THEN 0 ELSE 1 END, courses.certidigital_credential_uid ' . $order['dir']);
                 }
-                else if ($order['field'] == 'certidigital_teacher_credential_uid') {
+                elseif ($order['field'] == 'certidigital_teacher_credential_uid') {
                     $query->orderByRaw('CASE WHEN courses.certidigital_teacher_credential_uid IS NULL THEN 0 ELSE 1 END, courses.certidigital_teacher_credential_uid ' . $order['dir']);
                 }
                 else {
@@ -398,7 +384,9 @@ class CoursesController extends BaseController
             }
         }
 
-        if ($filters) $this->applyFilters($filters, $query);
+        if ($filters) {
+            $this->applyFilters($filters, $query);
+        }
 
         $data = $query->paginate($size);
 
@@ -422,7 +410,6 @@ class CoursesController extends BaseController
             ->leftJoin('course_statuses as status', 'courses.course_status_uid', '=', 'status.uid')
             ->leftJoin('calls as calls', 'courses.call_uid', '=', 'calls.uid')
             ->leftJoin('educational_programs as educational_programs', 'courses.educational_program_uid', '=', 'educational_programs.uid')
-            ->leftJoin('educational_program_types as educational_program_types', 'courses.educational_program_type_uid', '=', 'educational_program_types.uid')
             ->leftJoin('course_types as course_types', 'courses.course_type_uid', '=', 'course_types.uid')
             ->leftJoin('centers as centers', 'courses.center_uid', '=', 'centers.uid')
             ->with('tags')
@@ -437,7 +424,6 @@ class CoursesController extends BaseController
                 'status.code as status_code',
                 'calls.name as calls_name',
                 'educational_programs.name as educational_programs_name',
-                'educational_program_types.name as educational_program_types_name',
                 'course_types.name as course_types_name',
                 'centers.name as centers_name',
             )
@@ -450,7 +436,7 @@ class CoursesController extends BaseController
 
         $queryCoursesBase = $this->buildQueryCoursesBase();
 
-        $queryCoursesForTeachers = $queryCoursesBase->where(function ($query) use ($userUid) {
+        return $queryCoursesBase->where(function ($query) use ($userUid) {
             $query->where('courses.creator_user_uid', '=', $userUid)
                 ->orWhereHas('teachers_coordinate', function ($query) use ($userUid) {
                     $query->where('user_uid', '=', $userUid);
@@ -460,7 +446,6 @@ class CoursesController extends BaseController
                 });
         });
 
-        return $queryCoursesForTeachers;
     }
 
     private function applyFilters($filters, &$query)
@@ -489,15 +474,15 @@ class CoursesController extends BaseController
                         ->whereDate('realization_finish_date', '>=', $filter['value']);
                 }
             } elseif ($filter['database_field'] == "coordinators_teachers") {
-                $teachers_uids = $filter['value'];
-                $query->whereHas('teachers', function ($query) use ($teachers_uids) {
-                    $query->whereIn('users.uid', $teachers_uids)
+                $teachersUids = $filter['value'];
+                $query->whereHas('teachers', function ($query) use ($teachersUids) {
+                    $query->whereIn('users.uid', $teachersUids)
                         ->where('type', 'COORDINATOR');
                 });
             } elseif ($filter['database_field'] == "no_coordinators_teachers") {
-                $teachers_uids = $filter['value'];
-                $query->whereHas('teachers', function ($query) use ($teachers_uids) {
-                    $query->whereIn('users.uid', $teachers_uids)
+                $teachersUids = $filter['value'];
+                $query->whereHas('teachers', function ($query) use ($teachersUids) {
+                    $query->whereIn('users.uid', $teachersUids)
                         ->where('type', 'NO_COORDINATOR');
                 });
             } elseif ($filter['database_field'] == 'creator_user_uid') {
@@ -505,39 +490,37 @@ class CoursesController extends BaseController
                 $query->whereIn('creator_user_uid', $filter['value']);
             } elseif ($filter['database_field'] == 'categories') {
 
-                $categories_uids = $filter['value'];
-                $query->whereHas('categories', function ($query) use ($categories_uids) {
-                    $query->whereIn('categories.uid', $categories_uids);
+                $categoriesUids = $filter['value'];
+                $query->whereHas('categories', function ($query) use ($categoriesUids) {
+                    $query->whereIn('categories.uid', $categoriesUids);
                 });
-            } else if ($filter['database_field'] == 'course_statuses') {
+            } elseif ($filter['database_field'] == 'course_statuses') {
                 $query->whereIn('course_status_uid', $filter['value']);
-            } else if ($filter['database_field'] == 'calls') {
+            } elseif ($filter['database_field'] == 'calls') {
                 $query->whereIn('courses.call_uid', $filter['value']);
-            } else if ($filter['database_field'] == 'educational_programs') {
-                $query->whereIn('educational_program_type_uid', $filter['value']);
-            } else if ($filter['database_field'] == 'course_types') {
+            } elseif ($filter['database_field'] == 'course_types') {
                 $query->whereIn('course_type_uid', $filter['value']);
-            } else if ($filter['database_field'] == 'min_ects_workload') {
+            } elseif ($filter['database_field'] == 'min_ects_workload') {
                 $query->where('ects_workload', '>=', $filter['value']);
-            } else if ($filter['database_field'] == 'max_ects_workload') {
+            } elseif ($filter['database_field'] == 'max_ects_workload') {
                 $query->where('ects_workload', '<=', $filter['value']);
-            } else if ($filter['database_field'] == 'min_cost') {
+            } elseif ($filter['database_field'] == 'min_cost') {
                 $query->where('cost', '>=', $filter['value']);
-            } else if ($filter['database_field'] == 'max_cost') {
+            } elseif ($filter['database_field'] == 'max_cost') {
                 $query->where('cost', '<=', $filter['value']);
-            } else if ($filter['database_field'] == 'min_required_students') {
+            } elseif ($filter['database_field'] == 'min_required_students') {
                 $query->where('min_required_students', '>=', $filter['value']);
-            } else if ($filter['database_field'] == 'max_required_students') {
+            } elseif ($filter['database_field'] == 'max_required_students') {
                 $query->where('min_required_students', '<=', $filter['value']);
-            } else if ($filter['database_field'] == 'validate_student_registrations') {
+            } elseif ($filter['database_field'] == 'validate_student_registrations') {
                 $query->where('courses.validate_student_registrations', $filter['value']);
-            } else if ($filter['database_field'] == 'learning_results') {
+            } elseif ($filter['database_field'] == 'learning_results') {
                 $query->with([
                     'blocks.learningResults'
                 ])->whereHas('blocks.learningResults', function ($query) use ($filter) {
                     $query->whereIn('learning_results.uid', $filter['value']);
                 });
-            } else if ($filter['database_field'] == "embeddings") {
+            } elseif ($filter['database_field'] == "embeddings") {
                 $query->where(DB::raw('CASE WHEN courses_embeddings.embeddings IS NULL THEN 0 ELSE 1 END'), '=', $filter['value']);
             } else {
                 $query->where($filter['database_field'], $filter['value']);
@@ -549,14 +532,9 @@ class CoursesController extends BaseController
      * Obtiene un curso por uid
      */
 
-    public function getCourse($course_uid)
+    public function getCourse($courseUid)
     {
-
-        // if (!$course_uid) {
-        //     return response()->json(['message' => env('ERROR_MESSAGE')], 400);
-        // }
-
-        $course = CoursesModel::where('uid', $course_uid)->with([
+        $course = CoursesModel::where('uid', $courseUid)->with([
             'status',
             'teachers',
             'categories',
@@ -610,29 +588,29 @@ class CoursesController extends BaseController
     {
         adaptRequestDatesToUTC($request);
 
-        $course_uid = $request->input('course_uid');
+        $courseUid = $request->input('course_uid');
 
-        if ($course_uid) {
+        if ($courseUid) {
             $isNew = false;
-            $course_bd = CoursesModel::where('uid', $course_uid)->with([
+            $courseBd = CoursesModel::where('uid', $courseUid)->with([
                 "educational_program",
                 "embeddings",
                 'blocks.learningResults',
             ])->first();
-            $this->checkStatusCourse($course_bd);
+            $this->checkStatusCourse($courseBd);
 
             // Si el curso está ya añadido a un programa educativo, validamos las fechas de realización
-            if ($course_bd->status->code == "ADDED_EDUCATIONAL_PROGRAM") {
-                $this->checkRealizationDatesCourseAddEducationalProgram($request, $course_bd);
+            if ($courseBd->status->code == "ADDED_EDUCATIONAL_PROGRAM") {
+                $this->checkRealizationDatesCourseAddEducationalProgram($request, $courseBd);
             }
         } else {
             $isNew = true;
-            $course_bd = new CoursesModel();
-            $course_bd->uid = generate_uuid();
+            $courseBd = new CoursesModel();
+            $courseBd->uid = generateUuid();
 
             // Número de cursos existentes
-            $course_bd->identifier = $this->generateCourseIdentifier();
-            $course_bd->creator_user_uid = Auth::user()['uid'];
+            $courseBd->identifier = $this->generateCourseIdentifier();
+            $courseBd->creator_user_uid = Auth::user()['uid'];
         }
 
         $errors = $this->validateCourseFields($request);
@@ -651,79 +629,85 @@ class CoursesController extends BaseController
 
         // En función de si el curso pertenece o no a un programa formativo, le corresponderá un estado u otro
         if ($belongsEducationalProgram) {
-            $newCourseStatus = $this->statusCourseBelongsEducationalProgram($action, $course_bd);
+            $newCourseStatus = $this->statusCourseBelongsEducationalProgram($action, $courseBd);
         } else {
-            $newCourseStatus = $this->statusCourseNotBelongsEducationalProgram($action, $course_bd);
+            $newCourseStatus = $this->statusCourseNotBelongsEducationalProgram($action, $courseBd);
         }
 
-        DB::transaction(function () use ($request, $course_bd, $belongsEducationalProgram, $isNew, $newCourseStatus) {
+        DB::transaction(function () use ($request, $courseBd, $belongsEducationalProgram, $isNew, $newCourseStatus) {
             // Copia del curso antes de cambios
-            $courseBdCopy = clone $course_bd;
+            $courseBdCopy = clone $courseBd;
 
             $isManagement = Auth::user()->hasAnyRole(['MANAGEMENT']);
 
             // Antes de actualizar el título y descripción del curso, se comprueba si hay cambios y se generan embeddings
-            $embeddings = $this->generateCourseEmbeddings($request, $course_bd);
+            $embeddings = $this->generateCourseEmbeddings($request, $courseBd);
 
             if ($newCourseStatus) {
-                $course_bd->course_status_uid = $newCourseStatus->uid;
+                $courseBd->course_status_uid = $newCourseStatus->uid;
             }
 
             // En función de si el curso pertenece a una nueva edición o no y no es gestor, se actualizarán o no ciertos campos
-            if ($course_bd->course_origin_uid && !$isManagement) {
-                $this->updateCourseFieldsNewEdition($request, $course_bd);
-                $course_bd->save();
+            if ($courseBd->course_origin_uid && !$isManagement) {
+                $this->updateCourseFieldsNewEdition($request, $courseBd);
+                $courseBd->save();
                 // Documentos
                 $validateStudentRegistrations = $request->input('validate_student_registrations');
-                if ($validateStudentRegistrations) $this->updateDocumentsCourse($request, $course_bd);
-                else $course_bd->courseDocuments()->delete();
+                if ($validateStudentRegistrations) {
+                    $this->updateDocumentsCourse($request, $courseBd);
+                }
+                else {
+                    $courseBd->courseDocuments()->delete();
+                }
             } else {
-                $this->updateCourseFields($request, $course_bd, $belongsEducationalProgram);
-                $course_bd->save();
+                $this->updateCourseFields($request, $courseBd, $belongsEducationalProgram);
+                $courseBd->save();
                 // Campos de tablas auxiliares
-                $this->updateAuxiliarDataCourse($course_bd, $request);
+                $this->updateAuxiliarDataCourse($courseBd, $request);
             }
 
             // Notificación a los gestores si el curso está pendiente de aprobación para que lo revisen
             if ($newCourseStatus && $newCourseStatus->code == "PENDING_APPROVAL") {
-                dispatch(new SendCourseNotificationToManagements($course_bd->toArray()));
+                dispatch(new SendCourseNotificationToManagements($courseBd->toArray()));
             }
 
-            $image_file = $request->file('image_input_file');
-            if ($image_file) $this->updateImageField($image_file, $course_bd);
+            $imageFile = $request->file('image_input_file');
+            if ($imageFile) {
+                $this->updateImageField($imageFile, $courseBd);
+            }
 
-            $this->saveLogMessageSaveCourse($isNew, $course_bd->title);
-            $course_bd->save();
+            $this->saveLogMessageSaveCourse($isNew, $courseBd->title);
+            $courseBd->save();
 
             if ($embeddings) {
                 CoursesEmbeddingsModel::updateOrCreate(
-                    ['course_uid' => $course_bd->uid],
+                    ['course_uid' => $courseBd->uid],
                     ['embeddings' => $embeddings]
                 );
             }
 
-            if ($newCourseStatus && $newCourseStatus->code == "ACCEPTED_PUBLICATION" && !$course_bd->lms_url) {
+            if ($newCourseStatus && $newCourseStatus->code == "ACCEPTED_PUBLICATION" && !$courseBd->lms_url) {
                 $lmsSystem = $request->input('lms_system_uid');
                 $lmsSystem = LmsSystemsModel::where('uid', $lmsSystem)->first();
-                $this->sendNotificationCourseAcceptedPublicationToKafka($course_bd, $lmsSystem->identifier);
+                $this->sendNotificationCourseAcceptedPublicationToKafka($courseBd, $lmsSystem->identifier);
             }
 
             // Se comprueba si ha habido cambios en el curso relativos a certidigital para actualizar o no la credencial
-            $changesCourse = $this->detectChangesCredential($courseBdCopy, $course_bd);
+            $changesCourse = $this->detectChangesCredential($courseBdCopy, $courseBd);
 
-            if (!$course_bd->certidigitalCredential || $changesCourse) {
+            if (!$courseBd->certidigitalCredential || $changesCourse) {
                 // Credencial para los docentes
-                $this->certidigitalService->createUpdateCourseTeacherCredential($course_bd->uid);
+                $this->certidigitalService->createUpdateCourseTeacherCredential($courseBd->uid);
 
                 /*
                     Si el curso no pertenece a un programa formativo, se crea la credencial.
                     Si va a pertenecer a un programa formativo, ya lo tiene vinculado y éste tiene credencial, se actualiza la credencial del
                     programa educativo
                 */
-                if (!$course_bd->belongs_to_educational_program) {
-                    $this->certidigitalService->createUpdateCourseCredential($course_bd->uid);
-                } else if ($course_bd->belongs_to_educational_program && $course_bd->educational_program && $course_bd->educational_program->certidigitalCredential) {
-                    $this->certidigitalService->createUpdateEducationalProgramCredential($course_bd->educational_program->uid);
+                if (!$courseBd->belongs_to_educational_program) {
+                    $this->certidigitalService->createUpdateCourseCredential($courseBd->uid);
+                } elseif ($courseBd->belongs_to_educational_program && $courseBd->educational_program && $courseBd->educational_program->certidigitalCredential) {
+                    $this->certidigitalService->createUpdateEducationalProgramCredential($courseBd->educational_program->uid);
                 }
             }
         }, 5);
@@ -734,9 +718,15 @@ class CoursesController extends BaseController
     private function detectChangesCredential($courseBeforeChanges, $courseAfterChanges)
     {
         $courseBeforeChanges->load('blocks.learningResults');
-        if ($courseBeforeChanges->title != $courseAfterChanges->title) return true;
-        else if (json_encode($courseAfterChanges->blocks) != json_encode($courseBeforeChanges->blocks)) return true;
-        else return false;
+        if ($courseBeforeChanges->title != $courseAfterChanges->title) {
+            return true;
+        }
+        elseif (json_encode($courseAfterChanges->blocks) != json_encode($courseBeforeChanges->blocks)) {
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     /**
@@ -745,66 +735,49 @@ class CoursesController extends BaseController
      * Si el título o la descripción han cambiado, se generan nuevos embeddings.
      * Si no se cumplen las condiciones anteriores o falla la API, se devuelven los embeddings actuales.
      */
-    private function generateCourseEmbeddings($request, $course_bd)
+    private function generateCourseEmbeddings($request, $courseBd)
     {
         $title = $request->input('title');
         $description = $request->input('description');
 
-        if (!$course_bd->embeddings || $title != $course_bd->title || $description != $course_bd->description) {
+        if (!$courseBd->embeddings || $title != $courseBd->title || $description != $courseBd->description) {
             $embeddings = $this->embeddingsService->getEmbedding($title . ' ' . $description);
-            return $embeddings ?: $course_bd->embeddings->embeddings ?? null;
+            return $embeddings ?: $courseBd->embeddings->embeddings ?? null;
         }
 
-        return $course_bd->embeddings->embeddings;
+        return $courseBd->embeddings->embeddings;
     }
 
-    private function checkRealizationDatesCourseAddEducationalProgram($request, $course_bd)
+    private function checkRealizationDatesCourseAddEducationalProgram($request, $courseBd)
     {
-        $realization_start_date = $request->input('realization_start_date');
-        $realization_finish_date = $request->input('realization_finish_date');
+        $realizationStartDate = $request->input('realization_start_date');
+        $realizationFinishDate = $request->input('realization_finish_date');
 
-        $educational_program_start_date = $course_bd->educational_program->realization_start_date;
-        $educational_program_finish_date = $course_bd->educational_program->realization_finish_date;
+        $educationalProgramStartDate = $courseBd->educational_program->realization_start_date;
+        $educationalProgramFinishDate = $courseBd->educational_program->realization_finish_date;
 
-        if ($realization_start_date < $educational_program_start_date || $realization_finish_date > $educational_program_finish_date) {
+        if ($realizationStartDate < $educationalProgramStartDate || $realizationFinishDate > $educationalProgramFinishDate) {
             throw new OperationFailedException('Las fechas de realización deben estar dentro del rango del programa formativo', 422);
         }
     }
 
-    private function checkStatusCourse($course_bd)
+    private function checkStatusCourse($courseBd)
     {
         $isUserManagement = Auth::user()->hasAnyRole(['MANAGEMENT']);
 
         // Si es gestor, siempre podrá editar el curso
-        if ($isUserManagement) return;
+        if ($isUserManagement) {
+            return;
+        }
 
         $statusesAllowEdit = ["INTRODUCTION", "UNDER_CORRECTION_APPROVAL", "UNDER_CORRECTION_PUBLICATION"];
-        if (!in_array($course_bd->status->code, $statusesAllowEdit) && !$course_bd->belongs_to_educational_program) {
+        if (!in_array($courseBd->status->code, $statusesAllowEdit) && !$courseBd->belongs_to_educational_program) {
             throw new OperationFailedException('No puedes editar un curso que no esté en estado de introducción o subsanación', 422);
-        } else if ($course_bd->status->code == "ADDED_EDUCATIONAL_PROGRAM" && $course_bd->belongs_to_educational_program) {
-            if (!in_array($course_bd->educational_program->status->code, $statusesAllowEdit)) {
+        } elseif ($courseBd->status->code == "ADDED_EDUCATIONAL_PROGRAM" && $courseBd->belongs_to_educational_program) {
+            if (!in_array($courseBd->educational_program->status->code, $statusesAllowEdit)) {
                 throw new OperationFailedException('No puedes editar un curso cuyo programa formativo no esté en estado de introducción o subsanación', 422);
             }
         }
-    }
-
-    private function statusCourseEdition($action, $course_bd)
-    {
-        $statuses = CourseStatusesModel::whereIn('code', [
-            'INTRODUCTION',
-            'ACCEPTED_PUBLICATION',
-            'PENDING_APPROVAL'
-        ])->get()->keyBy('code');
-
-        $actualStatusCourse = $course_bd->status->code ?? null;
-
-        // Comprobamos si es necesario aprobar o no los cursos en función de la configuración
-        // del gestor
-        if ($action === "draft" && !$actualStatusCourse) return $statuses['INTRODUCTION'];
-        else if ($action === "submit") {
-            $necessaryApprovalEditions = app('general_options')['necessary_approval_editions'];
-            return $necessaryApprovalEditions ? $statuses['PENDING_APPROVAL'] : $statuses['ACCEPTED_PUBLICATION'];
-        } else return null;
     }
 
     public function getCourseCalifications(Request $request, $courseUid)
@@ -892,7 +865,7 @@ class CoursesController extends BaseController
                         "learning_result_uid" => $blockCalification["learningResultUid"],
                     ],
                     [
-                        "uid" => generate_uuid(),
+                        "uid" => generateUuid(),
                         "calification_info" => $blockCalification["calificationInfo"],
                         "competence_framework_level_uid" => $blockCalification["levelUid"]
                     ]
@@ -907,7 +880,7 @@ class CoursesController extends BaseController
                         "course_uid" => $course->uid
                     ],
                     [
-                        "uid" => generate_uuid(),
+                        "uid" => generateUuid(),
                         "calification_info" => $learningResultCalification["calificationInfo"],
                         "competence_framework_level_uid" => $learningResultCalification["levelUid"]
                     ]
@@ -921,7 +894,7 @@ class CoursesController extends BaseController
                         "course_uid" => $course->uid
                     ],
                     [
-                        "uid" => generate_uuid(),
+                        "uid" => generateUuid(),
                         "calification_info" => $globalCalification["calification_info"]
                     ]
                 );
@@ -931,76 +904,77 @@ class CoursesController extends BaseController
         return response()->json(['message' => 'Se han guardado las calificaciones correctamente'], 200);
     }
 
-    private function updateAuxiliarDataCourse($course_bd, $request)
+    private function updateAuxiliarDataCourse($courseBd, $request)
     {
 
         $belongsEducationalProgram = $request->input('belongs_to_educational_program');
         if (!$belongsEducationalProgram) {
             // Tags
-            $this->updateTagsCourse($request, $course_bd);
+            $this->updateTagsCourse($request, $courseBd);
 
             // Categorías
-            $this->updateCategoriesCourse($request, $course_bd);
+            $this->updateCategoriesCourse($request, $courseBd);
 
             // Documentos
             $validateStudentRegistrations = $request->input('validate_student_registrations');
             if ($validateStudentRegistrations) {
-                $this->updateDocumentsCourse($request, $course_bd);
-            } else $course_bd->courseDocuments()->delete();
+                $this->updateDocumentsCourse($request, $courseBd);
+            } else {
+                $courseBd->courseDocuments()->delete();
+            }
 
             // Plazos de pago
             $paymentMode = $request->input('payment_mode');
             if ($paymentMode == "INSTALLMENT_PAYMENT") {
-                $this->updatePaymentTerms($request, $course_bd);
-            } else if ($paymentMode == "SINGLE_PAYMENT") {
-                $course_bd->paymentTerms()->delete();
+                $this->updatePaymentTerms($request, $courseBd);
+            } elseif ($paymentMode == "SINGLE_PAYMENT") {
+                $courseBd->paymentTerms()->delete();
             }
         } else {
-            $course_bd->categories()->detach();
-            $course_bd->tags()->delete();
-            $course_bd->courseDocuments()->delete();
-            $course_bd->paymentTerms()->delete();
+            $courseBd->categories()->detach();
+            $courseBd->tags()->delete();
+            $courseBd->courseDocuments()->delete();
+            $courseBd->paymentTerms()->delete();
         }
 
         // Guardado de profesores
-        $this->updateTeachers($request, $course_bd);
+        $this->updateTeachers($request, $courseBd);
 
         // Estructura
         $structure = $request->input('structure');
         $structure = json_decode($structure, true);
-        $this->syncStructure($structure, $course_bd->uid);
+        $this->syncStructure($structure, $courseBd->uid);
 
         // Emails de contacto
-        $contact_emails = json_decode($request->input('contact_emails'), true);
-        $this->syncItemsCourseEmails($contact_emails, $course_bd->uid);
+        $contactEmails = json_decode($request->input('contact_emails'), true);
+        $this->syncItemsCourseEmails($contactEmails, $courseBd->uid);
     }
 
-    private function updatePaymentTerms($request, $course_bd)
+    private function updatePaymentTerms($request, $courseBd)
     {
         $paymentTerms = $request->input('payment_terms');
         $paymentTerms = json_decode($paymentTerms, true);
-        $this->syncPaymentTerms($paymentTerms, $course_bd);
+        $this->syncPaymentTerms($paymentTerms, $courseBd);
     }
 
-    private function updateTagsCourse($request, $course_bd)
+    private function updateTagsCourse($request, $courseBd)
     {
-        $tags = $request->input('tags');
         $tags = json_decode($request->input('tags'), true);
-        $this->syncItemsTags($tags, $course_bd->uid);
+        $this->syncItemsTags($tags, $courseBd->uid);
     }
 
-    private function updateCategoriesCourse($request, $course_bd)
+    private function updateCategoriesCourse($request, $courseBd)
     {
         $categories = $request->input('categories');
         $categories = json_decode($categories, true);
-        $this->syncCategories($categories, $course_bd);
+        $this->syncCategories($categories, $courseBd);
     }
 
-    private function updateDocumentsCourse($request, $course_bd)
+    private function updateDocumentsCourse($request, $courseBd)
     {
         $documents = $request->input('documents');
         $documents = json_decode($documents, true);
-        $course_bd->updateDocuments($documents);
+        $courseBd->updateDocuments($documents);
     }
 
     private function validateCourseFields(Request $request)
@@ -1012,7 +986,6 @@ class CoursesController extends BaseController
             'description' => 'nullable|string',
             'contact_information' => 'nullable|string',
             'course_type_uid' => 'required|string',
-            'educational_program_type_uid' => 'required|string',
             'min_required_students' => 'nullable|integer',
             'realization_start_date' => 'required',
             'realization_finish_date' => 'required',
@@ -1027,9 +1000,9 @@ class CoursesController extends BaseController
             'featured_big_carrousel_description' => 'required_if:featured_big_carrousel,1',
             'featured_big_carrousel_image_path' => [
                 function ($attribute, $value, $fail) use ($request) {
-                    $featured_big_carrousel = $request->input('featured_big_carrousel');
+                    $featuredBigCarrousel = $request->input('featured_big_carrousel');
                     $courseUid = $request->input('course_uid');
-                    if ($featured_big_carrousel && !$courseUid && !$value) {
+                    if ($featuredBigCarrousel && !$courseUid && !$value) {
                         $fail('Debes subir una imagen destacada para el slider');
                     }
                 },
@@ -1038,9 +1011,9 @@ class CoursesController extends BaseController
             'evaluation_criteria' => 'required_if:validate_student_registrations,1',
             'teacher_no_coordinators' => [
                 function ($attribute, $value, $fail) use ($request) {
-                    $teacher_coordinators = json_decode($request->input('teacher_coordinators'), true);
+                    $teacherCoordinators = json_decode($request->input('teacher_coordinators'), true);
                     $value = json_decode($value, true);
-                    $duplicates = array_intersect($value, $teacher_coordinators);
+                    $duplicates = array_intersect($value, $teacherCoordinators);
                     if (!empty($duplicates)) {
                         $fail('No puede haber profesores que sean a la vez coordinadores y no coordinadores');
                     }
@@ -1093,7 +1066,9 @@ class CoursesController extends BaseController
                 function ($attribute, $value, $fail) {
                     $value = json_decode($value, true);
                     $validation = $this->validatePaymentTerms($value);
-                    if ($validation !== true) $fail($validation);
+                    if ($validation !== true) {
+                        $fail($validation);
+                    }
                 },
             ];
         }
@@ -1123,9 +1098,7 @@ class CoursesController extends BaseController
 
         $studentCounts = $courses->pluck('students_count');
 
-        $median = calculateMedian($studentCounts->toArray());
-
-        return $median;
+        return calculateMedian($studentCounts->toArray());
     }
 
     private function addRulesIfBelongsToEducationalProgram(&$rules)
@@ -1156,10 +1129,9 @@ class CoursesController extends BaseController
     private function getValidatorCourseMessages()
     {
 
-        $messages = [
+        return [
             'title.required' => 'Introduce el título del curso.',
             'course_type_uid.required' => 'Selecciona el tipo de curso.',
-            'educational_program_type_uid.required' => 'Selecciona el tipo de programa formativo.',
             'min_required_students.integer' => 'El número mínimo de estudiantes debe ser un número entero.',
 
             'inscription_start_date.required' => 'La fecha de inicio de inscripción es obligatoria.',
@@ -1192,8 +1164,6 @@ class CoursesController extends BaseController
             'featured_big_carrousel_image_path.required_if' => 'Debes seleccionar una imagen para el carrusel grande',
             'featured_slider_color_font.required_if' => 'Debes especificar un color de fuente para el carrousel'
         ];
-
-        return $messages;
     }
 
     // Validación del bloque de plazos de pago
@@ -1201,18 +1171,28 @@ class CoursesController extends BaseController
     {
         $fields = ['name', 'start_date', 'finish_date', 'cost'];
 
-        if (!count($paymentTerms)) return "Debes especificar al menos un plazo de pago";
+        if (!count($paymentTerms)) {
+            return "Debes especificar al menos un plazo de pago";
+        }
 
         $previousFinishDate = null;
 
         foreach ($paymentTerms as $paymentTerm) {
-            if (!$paymentTerm["cost"]) return "Debes especificar un coste para cada plazo de pago";
-            if ($paymentTerm['cost'] <= 0) return "El coste de los plazos de pago no puede ser negativo";
-            if (!$paymentTerm['name']) return "Debes especificar un nombre para el plazo de pago";
+            if (!$paymentTerm["cost"]) {
+                return "Debes especificar un coste para cada plazo de pago";
+            }
+            if ($paymentTerm['cost'] <= 0) {
+                return "El coste de los plazos de pago no puede ser negativo";
+            }
+            if (!$paymentTerm['name']) {
+                return "Debes especificar un nombre para el plazo de pago";
+            }
 
             // Comprobamos si le falta algún campo
             foreach ($fields as $field) {
-                if (!array_key_exists($field, $paymentTerm)) return "Falta el campo $field en uno de los plazos de pago";
+                if (!array_key_exists($field, $paymentTerm)) {
+                    return "Falta el campo $field en uno de los plazos de pago";
+                }
             }
 
             // Convertimos las fechas a objetos DateTime para compararlas
@@ -1233,10 +1213,12 @@ class CoursesController extends BaseController
         return true;
     }
 
-    private function statusCourseBelongsEducationalProgram($action, $course_bd)
+    private function statusCourseBelongsEducationalProgram($action, $courseBd)
     {
 
-        if ($course_bd->status && $course_bd->status->code == "ADDED_EDUCATIONAL_PROGRAM") return null;
+        if ($courseBd->status && $courseBd->status->code == "ADDED_EDUCATIONAL_PROGRAM") {
+            return null;
+        }
         $statuses = CourseStatusesModel::whereIn('code', [
             'INTRODUCTION',
             'READY_ADD_EDUCATIONAL_PROGRAM'
@@ -1244,7 +1226,7 @@ class CoursesController extends BaseController
 
         if ($action === "submit") {
             return $statuses['READY_ADD_EDUCATIONAL_PROGRAM'];
-        } else if ($action === "draft") {
+        } elseif ($action === "draft") {
             return $statuses['INTRODUCTION'];
         }
     }
@@ -1274,9 +1256,11 @@ class CoursesController extends BaseController
 
         if ($action === "submit" && (!$actualStatusCourse || $actualStatusCourse === "INTRODUCTION")) {
             return $statuses['ACCEPTED_PUBLICATION'];
-        } else if ($action === "draft" && (!$actualStatusCourse || $actualStatusCourse === "INTRODUCTION")) {
+        } elseif ($action === "draft" && (!$actualStatusCourse || $actualStatusCourse === "INTRODUCTION")) {
             return $statuses['INTRODUCTION'];
-        } else return null;
+        } else {
+            return null;
+        }
     }
 
     private function statusCourseNotBelongsEducationalProgramUserTeacher($action, $actualStatusCourse)
@@ -1292,20 +1276,17 @@ class CoursesController extends BaseController
         if ($action === "submit") {
             if (!$actualStatusCourse || $actualStatusCourse === "INTRODUCTION") {
                 return $statuses['PENDING_APPROVAL'];
-            } else if ($actualStatusCourse === "UNDER_CORRECTION_APPROVAL") {
+            } elseif ($actualStatusCourse === "UNDER_CORRECTION_APPROVAL") {
                 return $statuses['PENDING_APPROVAL'];
-            } else if ($actualStatusCourse === "UNDER_CORRECTION_PUBLICATION") {
+            } elseif ($actualStatusCourse === "UNDER_CORRECTION_PUBLICATION") {
                 return $statuses['PENDING_PUBLICATION'];
             }
-        } else if ($action === "draft" && (!$actualStatusCourse || $actualStatusCourse === "INTRODUCTION")) {
+        } elseif ($action === "draft" && (!$actualStatusCourse || $actualStatusCourse === "INTRODUCTION")) {
             return $statuses['INTRODUCTION'];
-        } else return null;
+        } else {
+            return null;
+        }
     }
-
-    // private function checkIsEdition($course_bd)
-    // {
-    //     return $course_bd->course_origin_uid != null;
-    // }
 
     private function updateCourseFieldsNewEdition($request, $courseBd)
     {
@@ -1350,14 +1331,14 @@ class CoursesController extends BaseController
             }
         }
 
-        $image_file_big_carrousel = $request->file('featured_big_carrousel_image_path');
+        $imageFileBigCarrousel = $request->file('featured_big_carrousel_image_path');
 
-        if ($image_file_big_carrousel) {
-            $courseBd->featured_big_carrousel_image_path = saveFile($image_file_big_carrousel, 'images/carrousel-images', null, true);
+        if ($imageFileBigCarrousel) {
+            $courseBd->featured_big_carrousel_image_path = saveFile($imageFileBigCarrousel, 'images/carrousel-images', null, true);
         }
     }
 
-    private function updateCourseFields($request, $course_bd, $belongsToEducationalProgram)
+    private function updateCourseFields($request, $courseBd, $belongsToEducationalProgram)
     {
         // Lista de todos los campos posibles
         $allFields = [
@@ -1365,7 +1346,6 @@ class CoursesController extends BaseController
             'description',
             'contact_information',
             'course_type_uid',
-            'educational_program_type_uid',
             'certification_type_uid',
             'call_uid',
             'center_uid',
@@ -1399,7 +1379,6 @@ class CoursesController extends BaseController
                 'description',
                 'contact_information',
                 'course_type_uid',
-                'educational_program_type_uid',
                 'certification_type_uid',
                 'call_uid',
                 'center_uid',
@@ -1432,7 +1411,6 @@ class CoursesController extends BaseController
                 'description',
                 'contact_information',
                 'course_type_uid',
-                'educational_program_type_uid',
                 'certification_type_uid',
                 'call_uid',
                 'min_required_students',
@@ -1458,82 +1436,39 @@ class CoursesController extends BaseController
                 array_push($fields, 'enrolling_start_date', 'enrolling_finish_date');
             }
 
-            $image_file_big_carrousel = $request->file('featured_big_carrousel_image_path');
+            $imageFileBigCarrousel = $request->file('featured_big_carrousel_image_path');
 
-            if ($image_file_big_carrousel) {
-                $course_bd->featured_big_carrousel_image_path = saveFile($image_file_big_carrousel, 'images/carrousel-images', null, true);
+            if ($imageFileBigCarrousel) {
+                $courseBd->featured_big_carrousel_image_path = saveFile($imageFileBigCarrousel, 'images/carrousel-images', null, true);
             }
         }
 
-        $course_bd->fill($request->only($fields));
+        $courseBd->fill($request->only($fields));
 
         // Establecer a null los campos que no están en la lista de campos a actualizar
         foreach ($allFields as $field) {
             if (!in_array($field, $fields)) {
-                $course_bd->$field = null;
+                $courseBd->$field = null;
             }
         }
     }
 
-    private function updateCarrouselFields($request, $course_bd)
-    {
-
-        $belongsToEducationalProgram = $request->input('belongs_to_educational_program');
-
-        // Si el programa formativo no es modular, reseteamos los campos del carrusel
-        if ($belongsToEducationalProgram) {
-            $this->resetCarrouselFields($course_bd);
-        } else {
-            $this->updateBigCarrouselFields($request, $course_bd);
-            $course_bd->featured_small_carrousel = $request->input('featured_small_carrousel');
-        }
-    }
-
-    private function resetCarrouselFields($course_bd)
-    {
-        $course_bd->featured_big_carrousel_title = null;
-        $course_bd->featured_big_carrousel_description = null;
-        $course_bd->featured_big_carrousel_image_path = null;
-        $course_bd->featured_big_carrousel = null;
-        $course_bd->featured_small_carrousel = null;
-    }
-
-    private function updateBigCarrouselFields($request, $course_bd)
-    {
-        $featured_big_carrousel = $request->input('featured_big_carrousel');
-
-        if ($featured_big_carrousel) {
-            $course_bd->featured_big_carrousel_title = $request->input('featured_big_carrousel_title');
-            $course_bd->featured_big_carrousel_description =  $request->input('featured_big_carrousel_description');
-
-            $image_file_big_carrousel = $request->file('featured_big_carrousel_image_path');
-
-            if ($image_file_big_carrousel) {
-                $course_bd->featured_big_carrousel_image_path = saveFile($image_file_big_carrousel, 'images/carrousel-images', null, true);
-            }
-        } else {
-            $course_bd->featured_big_carrousel_title = null;
-            $course_bd->featured_big_carrousel_description = null;
-            $course_bd->featured_big_carrousel_image_path = null;
-        }
-    }
-
-    private function updateImageField($image_file, $course_bd)
+    private function updateImageField($imageFile, $courseBd)
     {
         $path = 'images/courses-images';
         $destinationPath = public_path($path);
-        $originalName = pathinfo($image_file->getClientOriginalName(), PATHINFO_FILENAME);
-        $extension = $image_file->getClientOriginalExtension();
+        $originalName = pathinfo($imageFile->getClientOriginalName(), PATHINFO_FILENAME);
+        $extension = $imageFile->getClientOriginalExtension();
         $timestamp = time();
 
         $filename = "{$originalName}-{$timestamp}.{$extension}";
 
-        $image_file->move($destinationPath, $filename);
+        $imageFile->move($destinationPath, $filename);
 
-        $course_bd->image_path = $path . "/" . $filename;
+        $courseBd->image_path = $path . "/" . $filename;
     }
 
-    private function updateTeachers($request, $course_bd)
+    private function updateTeachers($request, $courseBd)
     {
         $teachersNoCoordinators = json_decode($request->input('teacher_no_coordinators'));
         $teachersCoordinators = json_decode($request->input('teacher_coordinators'));
@@ -1554,57 +1489,57 @@ class CoursesController extends BaseController
         }
 
         // Get current teachers of the course
-        $teachers_bd = UsersModel::whereIn('uid', array_keys($teachers))->get()->pluck('uid');
+        $teachersBd = UsersModel::whereIn('uid', array_keys($teachers))->get()->pluck('uid');
 
         // Prepare the array for teacher synchronization
-        $teachers_to_sync = [];
-        foreach ($teachers_bd as $teacher_uid) {
-            $teachers_to_sync[$teacher_uid] = [
-                'uid' => generate_uuid(),
-                'course_uid' => $course_bd->uid,
-                'user_uid' => $teacher_uid,
-                'type' => $teachers[$teacher_uid]
+        $teachersToSync = [];
+        foreach ($teachersBd as $teacherUid) {
+            $teachersToSync[$teacherUid] = [
+                'uid' => generateUuid(),
+                'course_uid' => $courseBd->uid,
+                'user_uid' => $teacherUid,
+                'type' => $teachers[$teacherUid]
             ];
         }
 
-        $course_bd->teachers()->sync($teachers_to_sync);
+        $courseBd->teachers()->sync($teachersToSync);
     }
 
-    private function syncCategories($categories, $course_bd)
+    private function syncCategories($categories, $courseBd)
     {
-        $categories_bd = CategoriesModel::whereIn('uid', $categories)->get()->pluck('uid');
+        $categoriesBd = CategoriesModel::whereIn('uid', $categories)->get()->pluck('uid');
 
-        CourseCategoriesModel::where('course_uid', $course_bd->uid)->delete();
-        $categories_to_sync = [];
+        CourseCategoriesModel::where('course_uid', $courseBd->uid)->delete();
+        $categoriesToSync = [];
 
-        foreach ($categories_bd as $category_uid) {
-            $categories_to_sync[] = [
-                'uid' => generate_uuid(),
-                'course_uid' => $course_bd->uid,
-                'category_uid' => $category_uid
+        foreach ($categoriesBd as $categoryUid) {
+            $categoriesToSync[] = [
+                'uid' => generateUuid(),
+                'course_uid' => $courseBd->uid,
+                'category_uid' => $categoryUid
             ];
         }
 
-        $course_bd->categories()->sync($categories_to_sync);
+        $courseBd->categories()->sync($categoriesToSync);
     }
 
-    private function syncItemsTags($items, $course_uid)
+    private function syncItemsTags($items, $courseUid)
     {
-        $current_tags = CoursesTagsModel::where('course_uid', $course_uid)->pluck('tag')->toArray();
+        $currentTags = CoursesTagsModel::where('course_uid', $courseUid)->pluck('tag')->toArray();
 
         // Identificar qué items son nuevos y cuáles deben ser eliminados
-        $items_to_add = array_diff($items, $current_tags);
-        $items_to_delete = array_diff($current_tags, $items);
+        $itemsToAdd = array_diff($items, $currentTags);
+        $itemsToDelete = array_diff($currentTags, $items);
 
         // Eliminar los items que ya no son necesarios
-        CoursesTagsModel::where('course_uid', $course_uid)->whereIn('tag', $items_to_delete)->delete();
+        CoursesTagsModel::where('course_uid', $courseUid)->whereIn('tag', $itemsToDelete)->delete();
 
         // Preparar el array para la inserción masiva de nuevos items
         $insertData = [];
-        foreach ($items_to_add as $item) {
+        foreach ($itemsToAdd as $item) {
             $insertData[] = [
-                'uid' => generate_uuid(),
-                'course_uid' => $course_uid,
+                'uid' => generateUuid(),
+                'course_uid' => $courseUid,
                 'tag' => $item
             ];
         }
@@ -1630,7 +1565,7 @@ class CoursesController extends BaseController
                 ]);
             } else {
                 $courseBd->paymentTerms()->create([
-                    'uid' => generate_uuid(),
+                    'uid' => generateUuid(),
                     'course_uid' => $courseBd->uid,
                     'name' => $paymentTerm['name'],
                     'start_date' => $paymentTerm['start_date'],
@@ -1646,23 +1581,23 @@ class CoursesController extends BaseController
         }
     }
 
-    private function syncItemsCourseEmails($items, $course_uid)
+    private function syncItemsCourseEmails($items, $courseUid)
     {
-        $current_emails = CoursesEmailsContactsModel::where('course_uid', $course_uid)->pluck('email')->toArray();
+        $currentEmails = CoursesEmailsContactsModel::where('course_uid', $courseUid)->pluck('email')->toArray();
 
         // Identificar qué items son nuevos y cuáles deben ser eliminados
-        $items_to_add = array_diff($items, $current_emails);
-        $items_to_delete = array_diff($current_emails, $items);
+        $itemsToAdd = array_diff($items, $currentEmails);
+        $itemsToDelete = array_diff($currentEmails, $items);
 
         // Eliminar los items que ya no son necesarios
-        CoursesEmailsContactsModel::where('course_uid', $course_uid)->whereIn('email', $items_to_delete)->delete();
+        CoursesEmailsContactsModel::where('course_uid', $courseUid)->whereIn('email', $itemsToDelete)->delete();
 
         // Preparar el array para la inserción masiva de nuevos items
         $insertData = [];
-        foreach ($items_to_add as $item) {
+        foreach ($itemsToAdd as $item) {
             $insertData[] = [
-                'uid' => generate_uuid(),
-                'course_uid' => $course_uid,
+                'uid' => generateUuid(),
+                'course_uid' => $courseUid,
                 'email' => $item
             ];
         }
@@ -1671,71 +1606,19 @@ class CoursesController extends BaseController
         CoursesEmailsContactsModel::insert($insertData);
     }
 
-    /**
-     * Comprueba si las competencias seleccionadas son correctas.
-     * Se comprueba que no se seleccionen dos competencias con el mismo padre si el padre tiene is_multi_select a 0 y
-     * que no se seleccione una competencia si no se ha seleccionado su padre.
-     */
-    private function checkCompetences($allCompetences, $selectedUids)
-    {
-        // Crea un mapa de competencias para un acceso más rápido
-        $competencesMap = [];
-        foreach ($allCompetences as $competence) {
-            $competencesMap[$competence['uid']] = $competence;
-        }
-
-        // Crea un mapa para contar las competencias seleccionadas por padre
-        $selectedByParent = [];
-
-        // Verifica cada competencia seleccionada
-        foreach ($selectedUids as $uid) {
-            $currentCompetence = $competencesMap[$uid];
-
-            // Si la competencia tiene un padre
-            if (isset($currentCompetence['parent_competence_uid'])) {
-                $parentUid = $currentCompetence['parent_competence_uid'];
-
-                // Si el padre tiene is_multi_select a 0
-                if ($competencesMap[$parentUid]['is_multi_select'] == 0) {
-                    // Si ya se ha seleccionado otra competencia con el mismo padre, retorna false
-                    if (isset($selectedByParent[$parentUid])) {
-                        return false;
-                    }
-
-                    // Marca que se ha seleccionado una competencia con este padre
-                    $selectedByParent[$parentUid] = true;
-                }
-
-                // Recorre la jerarquía de competencias padre
-                while ($currentCompetence && isset($currentCompetence['parent_competence_uid'])) {
-                    // Si la competencia padre no está en la lista de competencias seleccionadas, retorna false
-                    if (!in_array($currentCompetence['parent_competence_uid'], $selectedUids)) {
-                        return false;
-                    }
-
-                    // Avanza a la competencia padre
-                    $currentCompetence = $competencesMap[$currentCompetence['parent_competence_uid']];
-                }
-            }
-        }
-
-        // Si todas las competencias seleccionadas pasan la verificación, retorna true
-        return true;
-    }
-
-    public function getCourseStudents(Request $request, $course_uid)
+    public function getCourseStudents(Request $request, $courseUid)
     {
         $size = $request->get('size', 1);
         $search = $request->get('search');
         $sort = $request->get('sort');
 
-        $course = CoursesModel::where('uid', $course_uid)->first();
+        $course = CoursesModel::where('uid', $courseUid)->first();
 
         $query = $course->students()->with(
             [
-                'courseStudentDocuments' => function ($query) use ($course_uid) {
-                    $query->whereHas('courseDocument', function ($query) use ($course_uid) {
-                        $query->where('course_uid', $course_uid);
+                'courseStudentDocuments' => function ($query) use ($courseUid) {
+                    $query->whereHas('courseDocument', function ($query) use ($courseUid) {
+                        $query->where('course_uid', $courseUid);
                     });
                 },
                 'courseStudentDocuments.courseDocument'
@@ -1863,25 +1746,25 @@ class CoursesController extends BaseController
         foreach ($courseBd->blocks as $block) {
             $newBlock = $block->replicate();
             $newBlock->course_uid = $newCourse->uid;
-            $newBlock->uid = generate_uuid();
+            $newBlock->uid = generateUuid();
             $newBlock->push();
 
             // Asignamos las competencias al bloque
-            $competences_to_sync = [];
+            $competencesToSync = [];
             foreach ($block->competences as $competence) {
-                $competences_to_sync[$competence->uid] = [
-                    'uid' => generate_uuid(),
+                $competencesToSync[$competence->uid] = [
+                    'uid' => generateUuid(),
                     'course_block_uid' => $newBlock->uid,
                     'competence_uid' => $competence->uid
                 ];
             }
 
-            $newBlock->competences()->sync($competences_to_sync);
+            $newBlock->competences()->sync($competencesToSync);
 
             $learningResultsToSync = [];
             foreach ($block->learningResults as $learningResult) {
                 $learningResultsToSync[$learningResult->uid] = [
-                    'uid' => generate_uuid(),
+                    'uid' => generateUuid(),
                     'course_block_uid' => $newBlock->uid,
                     'learning_result_uid' => $learningResult->uid
                 ];
@@ -1890,19 +1773,19 @@ class CoursesController extends BaseController
 
             foreach ($block->subBlocks as $subBlock) {
                 $newSubBlock = $subBlock->replicate();
-                $newSubBlock->uid = generate_uuid();
+                $newSubBlock->uid = generateUuid();
                 $newSubBlock->block_uid = $newBlock->uid;
                 $newSubBlock->push();
 
                 foreach ($subBlock->elements as $element) {
                     $newElement = $element->replicate();
-                    $newElement->uid = generate_uuid();
+                    $newElement->uid = generateUuid();
                     $newElement->subblock_uid = $newSubBlock->uid;
                     $newElement->push();
 
                     foreach ($element->subElements as $subElement) {
                         $newSubElement = $subElement->replicate();
-                        $newSubElement->uid = generate_uuid();
+                        $newSubElement->uid = generateUuid();
                         $newSubElement->element_uid = $newElement->uid;
                         $newSubElement->push();
                     }
@@ -1911,53 +1794,53 @@ class CoursesController extends BaseController
         }
     }
 
-    private function duplicateCourseTeachers($course_bd, $new_course)
+    private function duplicateCourseTeachers($courseBd, $newCourse)
     {
-        $teachers = $course_bd->teachers->pluck('uid')->toArray();
-        $teachers_to_sync = [];
+        $teachers = $courseBd->teachers->pluck('uid')->toArray();
+        $teachersToSync = [];
 
-        foreach ($teachers as $teacher_uid) {
-            $teachers_to_sync[$teacher_uid] = [
-                'uid' => generate_uuid(),
-                'course_uid' => $new_course->uid,
-                'user_uid' => $teacher_uid
+        foreach ($teachers as $teacherUid) {
+            $teachersToSync[$teacherUid] = [
+                'uid' => generateUuid(),
+                'course_uid' => $newCourse->uid,
+                'user_uid' => $teacherUid
             ];
         }
-        $new_course->teachers()->sync($teachers_to_sync);
+        $newCourse->teachers()->sync($teachersToSync);
     }
 
-    private function duplicateCourseTags($course_bd, $new_course)
+    private function duplicateCourseTags($courseBd, $newCourse)
     {
-        $tags = $course_bd->tags->pluck('tag')->toArray();
-        $tags_to_add = [];
+        $tags = $courseBd->tags->pluck('tag')->toArray();
+        $tagsToAdd = [];
         foreach ($tags as $tag) {
-            $tags_to_add[] = [
-                'uid' => generate_uuid(),
-                'course_uid' => $new_course->uid,
+            $tagsToAdd[] = [
+                'uid' => generateUuid(),
+                'course_uid' => $newCourse->uid,
                 'tag' => $tag,
                 'created_at' => date('Y-m-d H:i:s')
             ];
         }
-        CoursesTagsModel::insert($tags_to_add);
+        CoursesTagsModel::insert($tagsToAdd);
     }
 
-    private function duplicateCourseCategories($course_bd, $new_course)
+    private function duplicateCourseCategories($courseBd, $newCourse)
     {
-        $categories = $course_bd->categories->pluck('uid')->toArray();
-        $categories_to_sync = [];
-        foreach ($categories as $category_uid) {
-            $categories_to_sync[] = [
-                'uid' => generate_uuid(),
-                'course_uid' => $new_course->uid,
-                'category_uid' => $category_uid
+        $categories = $courseBd->categories->pluck('uid')->toArray();
+        $categoriesToSync = [];
+        foreach ($categories as $categoryUid) {
+            $categoriesToSync[] = [
+                'uid' => generateUuid(),
+                'course_uid' => $newCourse->uid,
+                'category_uid' => $categoryUid
             ];
         }
-        $new_course->categories()->sync($categories_to_sync);
+        $newCourse->categories()->sync($categoriesToSync);
     }
 
     private function getCourseInfo($courseUid)
     {
-        $course = CoursesModel::where('uid', $courseUid)->with([
+        return CoursesModel::where('uid', $courseUid)->with([
             'teachers',
             'tags',
             'categories',
@@ -1969,14 +1852,12 @@ class CoursesController extends BaseController
             'blocks.subBlocks.elements',
             'blocks.subBlocks.elements.subElements',
         ])->first();
-
-        return $course;
     }
 
     private function getQueryCopyBaseCourse($courseOrigin)
     {
         $newCourse = $courseOrigin->replicate();
-        $newCourse->uid = generate_uuid();
+        $newCourse->uid = generateUuid();
         $newCourse->identifier = $this->generateCourseIdentifier();
         $newCourse->creator_user_uid = Auth::user()['uid'];
 
@@ -2003,7 +1884,7 @@ class CoursesController extends BaseController
 
         foreach ($paymentTerms as $paymentTerm) {
             $newPaymentTerm = $paymentTerm->replicate();
-            $newPaymentTerm->uid = generate_uuid();
+            $newPaymentTerm->uid = generateUuid();
             $newPaymentTerm->course_uid = $newCourse->uid;
             $newPaymentTerm->save();
         }
@@ -2015,21 +1896,21 @@ class CoursesController extends BaseController
 
         foreach ($documents as $document) {
             $newDocument = $document->replicate();
-            $newDocument->uid = generate_uuid();
+            $newDocument->uid = generateUuid();
             $newDocument->course_uid = $newCourse->uid;
             $newDocument->save();
         }
     }
 
     // Se comprueba que no hubiera creada una edición de ese curso
-    private function validateNewEdition($course_bd)
+    private function validateNewEdition($courseBd)
     {
         // Comprobar que no sea un curso de programa
-        if ($course_bd->belongs_to_educational_program) {
+        if ($courseBd->belongs_to_educational_program) {
             throw new OperationFailedException('No se puede crear una edición de un curso de programa');
         }
 
-        $existingEdition = CoursesModel::where('course_origin_uid', $course_bd->uid)
+        $existingEdition = CoursesModel::where('course_origin_uid', $courseBd->uid)
             ->whereHas('status', function ($query) {
                 $query->where('code', '!=', 'RETIRED');
             })
@@ -2039,20 +1920,20 @@ class CoursesController extends BaseController
         }
     }
 
-    private function syncStructure($structure, $course_uid)
+    private function syncStructure($structure, $courseUid)
     {
 
-        $this->syncDeletedCompositionCourseStructure($course_uid, $structure);
+        $this->syncDeletedCompositionCourseStructure($courseUid, $structure);
 
         // Iterar a través de los bloques
         foreach ($structure as $blockData) {
 
             // Crear o actualizar el bloque
-            $block_uid = $blockData['uid'] ?: generate_uuid();
+            $blockUid = $blockData['uid'] ?: generateUuid();
             BlocksModel::updateOrCreate(
-                ['uid' => $block_uid],
+                ['uid' => $blockUid],
                 [
-                    'course_uid' => $course_uid,
+                    'course_uid' => $courseUid,
                     'type' => $blockData['type'],
                     'name' => $blockData['name'],
                     'description' => $blockData['description'],
@@ -2060,15 +1941,15 @@ class CoursesController extends BaseController
                 ]
             );
 
-            $blockModel = BlocksModel::where('uid', $block_uid)->first();
+            $blockModel = BlocksModel::where('uid', $blockUid)->first();
 
 
 
             $learningResultsToSync = [];
             foreach ($blockData['learningResults'] as $learningResultUid) {
                 $learningResultsToSync[$learningResultUid] = [
-                    'uid' => generate_uuid(),
-                    'course_block_uid' => $block_uid,
+                    'uid' => generateUuid(),
+                    'course_block_uid' => $blockUid,
                     'learning_result_uid' => $learningResultUid
                 ];
             }
@@ -2079,7 +1960,7 @@ class CoursesController extends BaseController
                 foreach ($blockData['subBlocks'] as $subBlockData) {
                     // Crear o actualizar el subbloque
                     $subBlock = SubBlocksModel::updateOrCreate(
-                        ['uid' => $subBlockData['uid'] ?: generate_uuid()],
+                        ['uid' => $subBlockData['uid'] ?: generateUuid()],
                         [
                             'block_uid' => $blockModel['uid'],
                             'name' => $subBlockData['name'],
@@ -2093,7 +1974,7 @@ class CoursesController extends BaseController
                         foreach ($subBlockData['elements'] as $elementData) {
                             // Crear o actualizar el elemento
                             $element = ElementsModel::updateOrCreate(
-                                ['uid' => $elementData['uid'] ?: generate_uuid()],
+                                ['uid' => $elementData['uid'] ?: generateUuid()],
                                 [
                                     'subblock_uid' => $subBlock->uid,
                                     'name' => $elementData['name'],
@@ -2107,7 +1988,7 @@ class CoursesController extends BaseController
                                 foreach ($elementData['subElements'] as $subElementData) {
                                     // Crear o actualizar el subelemento
                                     SubElementsModel::updateOrCreate(
-                                        ['uid' => $subElementData['uid'] ?: generate_uuid()],
+                                        ['uid' => $subElementData['uid'] ?: generateUuid()],
                                         [
                                             'element_uid' => $element->uid,
                                             'name' => $subElementData['name'],
@@ -2124,41 +2005,40 @@ class CoursesController extends BaseController
         }
     }
 
-    private function syncDeletedCompositionCourseStructure($course_uid, $structure)
+    private function syncDeletedCompositionCourseStructure($courseUid, $structure)
     {
         // Eliminar cualquier bloque, subbloque, elemento o subelemento que no esté en la lista de uid
-        $blocks_uids = collect($structure)->pluck('uid');
-        BlocksModel::where('course_uid', $course_uid)->whereNotIn('uid', $blocks_uids)->delete();
+        $blocksUids = collect($structure)->pluck('uid');
+        BlocksModel::where('course_uid', $courseUid)->whereNotIn('uid', $blocksUids)->delete();
 
-        $subblocks_uids = collect($structure)->pluck('subBlocks.*.uid')->flatten();
+        $subblocksUids = collect($structure)->pluck('subBlocks.*.uid')->flatten();
 
-        if (!$subblocks_uids->contains(null)) {
-            SubblocksModel::whereIn('block_uid', $blocks_uids)->whereNotIn('uid', $subblocks_uids)->delete();
+        if (!$subblocksUids->contains(null)) {
+            SubblocksModel::whereIn('block_uid', $blocksUids)->whereNotIn('uid', $subblocksUids)->delete();
         } else {
-            SubblocksModel::whereIn('block_uid', $blocks_uids)->delete();
+            SubblocksModel::whereIn('block_uid', $blocksUids)->delete();
         }
 
-        $elements_uids = collect($structure)->pluck('subBlocks.*.elements.*.uid')->flatten();
+        $elementsUids = collect($structure)->pluck('subBlocks.*.elements.*.uid')->flatten();
 
-        if ($elements_uids->contains(null)) {
-            ElementsModel::whereIn('subblock_uid', $subblocks_uids)->whereNotIn('uid', $elements_uids)->delete();
+        if ($elementsUids->contains(null)) {
+            ElementsModel::whereIn('subblock_uid', $subblocksUids)->whereNotIn('uid', $elementsUids)->delete();
         } else {
-            ElementsModel::whereIn('subblock_uid', $subblocks_uids)->delete();
+            ElementsModel::whereIn('subblock_uid', $subblocksUids)->delete();
         }
 
-        $subelements_uids = collect($structure)->pluck('subBlocks.*.elements.*.subElements.*.uid')->flatten();
+        $subelementsUids = collect($structure)->pluck('subBlocks.*.elements.*.subElements.*.uid')->flatten();
 
-        if ($subelements_uids->contains(null)) {
-            SubelementsModel::whereIn('element_uid', $elements_uids)->whereNotIn('uid', $subelements_uids)->delete();
+        if ($subelementsUids->contains(null)) {
+            SubelementsModel::whereIn('element_uid', $elementsUids)->whereNotIn('uid', $subelementsUids)->delete();
         } else {
-            SubelementsModel::whereIn('element_uid', $elements_uids)->delete();
+            SubelementsModel::whereIn('element_uid', $elementsUids)->delete();
         }
     }
 
     public function getAllCompetences()
     {
-
-        $competenceFrameworks = CompetenceFrameworksModel::with([
+        return CompetenceFrameworksModel::with([
             'levels',
             'allSubcompetences',
             'allSubcompetences.learningResults',
@@ -2166,7 +2046,6 @@ class CoursesController extends BaseController
             'allSubcompetences.allSubcompetences.learningResults'
         ])->get();
 
-        return $competenceFrameworks;
     }
     public function enrollStudents(Request $request)
     {
@@ -2191,7 +2070,7 @@ class CoursesController extends BaseController
             }
 
             $enroll = new CoursesStudentsModel();
-            $enroll->uid = generate_uuid();
+            $enroll->uid = generateUuid();
             $enroll->course_uid = $request->get('courseUid');
             $enroll->user_uid = $user;
             $enroll->acceptance_status = 'ACCEPTED';
@@ -2205,7 +2084,7 @@ class CoursesController extends BaseController
 
         $message = "Alumnos añadidos al curso";
 
-        if ($usersenrolled == true) {
+        if ($usersenrolled) {
             $message = "Alumnos añadidos al curso. Los ya registrados no se han añadido.";
         }
 
@@ -2224,7 +2103,7 @@ class CoursesController extends BaseController
     {
 
         $file = $request->file('attachment');
-        $course_uid = $request->get('course_uid');
+        $courseUid = $request->get('course_uid');
 
         $reader = Reader::createFromPath($file->path());
 
@@ -2236,10 +2115,10 @@ class CoursesController extends BaseController
                     ->first();
 
                 if ($existingUser) {
-                    $this->enrollUserCsv($row, $existingUser->uid, $course_uid);
+                    $this->enrollUserCsv($row, $existingUser->uid, $courseUid);
                 } else {
                     $this->validateUserCsv($row, $key);
-                    $this->singUpUser($row, $course_uid);
+                    $this->singUpUser($row, $courseUid);
                 }
             }
         }
@@ -2271,10 +2150,10 @@ class CoursesController extends BaseController
         }
     }
 
-    public function singUpUser($row, $course_uid)
+    public function singUpUser($row, $courseUid)
     {
 
-        $newUserUid = generate_uuid();
+        $newUserUid = generateUuid();
 
         $newUser = new UsersModel();
         $newUser->uid = $newUserUid;
@@ -2291,21 +2170,21 @@ class CoursesController extends BaseController
             LogsController::createLog($messageLog, 'Cursos', auth()->user()->uid);
         });
 
-        $this->enrollUserCsv($row, $newUserUid, $course_uid);
+        $this->enrollUserCsv($row, $newUserUid, $courseUid);
     }
-    public function enrollUserCsv($row, $user_uid, $course_uid)
+    public function enrollUserCsv($row, $userUid, $courseUid)
     {
 
-        $existingEnrollment = CoursesStudentsModel::where('course_uid', $course_uid)
-            ->where('user_uid', $user_uid)
+        $existingEnrollment = CoursesStudentsModel::where('course_uid', $courseUid)
+            ->where('user_uid', $userUid)
             ->first();
 
         if (!$existingEnrollment) {
 
             $enroll = new CoursesStudentsModel();
-            $enroll->uid = generate_uuid();
-            $enroll->course_uid = $course_uid;
-            $enroll->user_uid = $user_uid;
+            $enroll->uid = generateUuid();
+            $enroll->course_uid = $courseUid;
+            $enroll->user_uid = $userUid;
             $enroll->acceptance_status = 'ACCEPTED';
             $messageLog = "Alumno añadido a curso";
 
@@ -2319,7 +2198,6 @@ class CoursesController extends BaseController
     private function generateCourseIdentifier()
     {
         $coursesCount = CoursesModel::count();
-        $identifier = 'CUR-' . str_pad($coursesCount + 1, 4, '0', STR_PAD_LEFT);
-        return $identifier;
+        return 'CUR-' . str_pad($coursesCount + 1, 4, '0', STR_PAD_LEFT);
     }
 }

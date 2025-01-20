@@ -64,12 +64,12 @@ class LicensesController extends BaseController
     /**
      * Obtiene una licencia específico basada en su UID.
      *
-     * @param  string $center_uid El UID del centro.
+     * @param  string $centerUid El UID del centro.
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getLicense($license_uid)
+    public function getLicense($licenseUid)
     {
-        $license = LicenseTypesModel::where('uid', $license_uid)->first()->toArray();
+        $license = LicenseTypesModel::where('uid', $licenseUid)->first()->toArray();
         return response()->json($license);
     }
 
@@ -94,17 +94,17 @@ class LicensesController extends BaseController
             return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $validator->errors()], 422);
         }
 
-        $license_uid = $request->input("license_uid");
+        $licenseUid = $request->input("license_uid");
 
-        return DB::transaction(function () use ($request, $license_uid) {
+        return DB::transaction(function () use ($request, $licenseUid) {
 
-            if (!$license_uid) {
+            if (!$licenseUid) {
                 $license = new LicenseTypesModel();
-                $license_uid = generate_uuid();
-                $license->uid = $license_uid;
+                $licenseUid = generateUuid();
+                $license->uid = $licenseUid;
                 $isNew = true;
             } else {
-                $license = LicenseTypesModel::find($license_uid);
+                $license = LicenseTypesModel::find($licenseUid);
                 $isNew = false;
             }
 

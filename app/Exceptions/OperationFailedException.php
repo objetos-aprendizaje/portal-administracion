@@ -14,7 +14,7 @@ class OperationFailedException extends Exception
         $this->errorCode = $errorCode;
     }
 
-    public function render($request)
+    public function render()
     {
         return response()->json([
             'message' => $this->getMessage(),

@@ -11,7 +11,9 @@ class KafkaService
     {
         $kafkaBroker = env('KAFKA_ENDPOINT');
 
-        if (!$kafkaBroker) return;
+        if (!$kafkaBroker) {
+            return;
+        }
 
         $producer = new \RdKafka\Producer();
         $producer->setLogLevel(LOG_DEBUG);
@@ -46,7 +48,9 @@ class KafkaService
     {
         $kafkaBroker = env('KAFKA_ENDPOINT');
 
-        if (!$kafkaBroker) return;
+        if (!$kafkaBroker) {
+            return;
+        }
 
         $producer = new \RdKafka\Producer();
         $producer->setLogLevel(LOG_DEBUG);

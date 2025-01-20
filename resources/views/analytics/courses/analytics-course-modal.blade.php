@@ -4,11 +4,11 @@
 
         <div class="modal-header">
             <div>
-                <h2 id="analytics-course-modal-title" class="modal-title"></h2>
+                <h2 id="analytics-course-modal-title" class="modal-title">Analítica de curso</h2>
             </div>
             <div>
                 <button data-modal-id="analytics-course-modal" class="modal-close-modal-btn close-modal-btn">
-                    <?php e_heroicon('x-mark', 'solid'); ?>
+                    <?php eHeroicon('x-mark', 'solid'); ?>
                 </button>
             </div>
         </div>

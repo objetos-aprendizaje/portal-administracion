@@ -35,11 +35,11 @@ class ChangeStatusToEnrollingTest extends TestCase
             'course_status_uid' => $statusInscription->uid,
         ]);
 
-        $students = UsersModel::factory()->count(2)->create();
+        UsersModel::factory()->count(2)->create();
         $students = UsersModel::where('email', '!=', 'admin@admin.com')->get();
         foreach ($students as $student) {
             // Asocia a cada estudiante con el curso
-            $course->students()->attach($student->uid, ['uid' => generate_uuid()]);
+            $course->students()->attach($student->uid, ['uid' => generateUuid()]);
         }
 
         // Verificar que el curso esté en estado INSCRIPTION antes de ejecutar el método

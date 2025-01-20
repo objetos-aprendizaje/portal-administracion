@@ -17,7 +17,7 @@ class SuggestionsImprovementsController extends BaseController
     public function index()
     {
 
-        $emails_suggestions = SuggestionSubmissionEmailsModel::orderBy('created_at', 'desc')->get()->toArray();
+        $emailsSuggestions = SuggestionSubmissionEmailsModel::orderBy('created_at', 'desc')->get()->toArray();
 
         return view(
             'administration.suggestions_improvements',
@@ -27,7 +27,7 @@ class SuggestionsImprovementsController extends BaseController
                 "resources" => [
                     "resources/js/administration_module/suggestions_improvements.js",
                 ],
-                "emails_suggestions" => $emails_suggestions,
+                "emails_suggestions" => $emailsSuggestions,
                 "tabulator" => true,
                 "submenuselected" => "suggestions-improvements",
             ]
@@ -41,20 +41,22 @@ class SuggestionsImprovementsController extends BaseController
         $email = $request->input('email');
 
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) return response()->json(['message' => 'El email es inválido'], 406);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return response()->json(['message' => 'El email es inválido'], 406);
+        }
 
-        $exist_email = SuggestionSubmissionEmailsModel::where('email', $email)->first();
+        $existEmail = SuggestionSubmissionEmailsModel::where('email', $email)->first();
 
-        if ($exist_email) return response()->json(['message' => 'El email ya existe'], 406);
+        if ($existEmail) return response()->json(['message' => 'El email ya existe'], 406);
 
-        $email_envio_sugerencias = new SuggestionSubmissionEmailsModel();
-        $uid = generate_uuid();
-        $email_envio_sugerencias->uid = $uid;
-        $email_envio_sugerencias->email = $email;
+        $emailEnvioSugerencias = new SuggestionSubmissionEmailsModel();
+        $uid = generateUuid();
+        $emailEnvioSugerencias->uid = $uid;
+        $emailEnvioSugerencias->email = $email;
 
-        DB::transaction(function () use ($email_envio_sugerencias) {
-            $email_envio_sugerencias->save();
-            LogsController::createLog('Añadido de email de sugerencias: ' . $email_envio_sugerencias->email, 'Sugerencias y mejoras', auth()->user()->uid);
+        DB::transaction(function () use ($emailEnvioSugerencias) {
+            $emailEnvioSugerencias->save();
+            LogsController::createLog('Añadido de email de sugerencias: ' . $emailEnvioSugerencias->email, 'Sugerencias y mejoras', auth()->user()->uid);
         });
 
         return response()->json(['message' => 'Email añadido correctamente', 'uid_email_inserted' => $uid]);
@@ -89,9 +91,9 @@ class SuggestionsImprovementsController extends BaseController
      */
     public function deleteEmails(Request $request)
     {
-        $uids_emails = $request->input('uidsEmails');
+        $uidsEmails = $request->input('uidsEmails');
 
-        $suggestionsSubmissionEmails = SuggestionSubmissionEmailsModel::whereIn('uid', $uids_emails)->get();
+        $suggestionsSubmissionEmails = SuggestionSubmissionEmailsModel::whereIn('uid', $uidsEmails)->get();
         DB::transaction(function () use ($suggestionsSubmissionEmails) {
             foreach($suggestionsSubmissionEmails as $suggestionEmail) {
                 $suggestionEmail->delete();

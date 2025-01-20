@@ -18,7 +18,7 @@ class BlocksModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid'        => generate_uuid(),
+            'uid'        => generateUuid(),
             'name'       => $this->faker->word,
             'description' => $this->faker->sentence,
             'order'      => $this->faker->randomNumber,
@@ -28,7 +28,7 @@ class BlocksModelFactory extends Factory
 
     public function withCourse(): Factory
     {
-        return $this->state(function (array $attributes) {
+        return $this->state(function () {
             return [
                 'course_uid' => CoursesModel::factory()->create()->first(),
             ];

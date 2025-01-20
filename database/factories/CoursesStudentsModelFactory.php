@@ -19,7 +19,7 @@ class CoursesStudentsModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'uid'               => generate_uuid(),
+            'uid'               => generateUuid(),
             'status'            => 'INSCRIBED',
             'acceptance_status' => 'PENDING',
         ];
@@ -27,7 +27,7 @@ class CoursesStudentsModelFactory extends Factory
 
     public function withCourse(): Factory
     {
-        return $this->state(function (array $attributes) {
+        return $this->state(function () {
             return [
                 'course_uid'        => CoursesModel::factory()
                 ->withCourseStatus()
@@ -40,7 +40,7 @@ class CoursesStudentsModelFactory extends Factory
 
     public function withUser(): Factory
     {
-        return $this->state(function (array $attributes) {
+        return $this->state(function () {
             return [
                 'user_uid'          => UsersModel::factory()->create()->first(),
             ];
