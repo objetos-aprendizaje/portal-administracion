@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="poa-container">
-        <h2>Redirección de consultas por tipos de programas formativos</h2>
+        <h2>Redirección de consultas por tipos de cursos/programas formativos</h2>
 
         <div class="table-control-header">
             @include('partials.table-search', ['table' => 'redirection-queries-table'])

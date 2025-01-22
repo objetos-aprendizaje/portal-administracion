@@ -186,7 +186,7 @@
 
                 <div class="field">
                     <div class="label-container">
-                        <label>Metadatos</label>
+                        <label for="matadata-container">Metadatos</label>
                     </div>
 
                     <div class="content-container">

@@ -175,7 +175,7 @@
                 <section id="documents-container">
                     <div class="field mt-2">
                         <div class="label-container">
-                            <label>Documentos necesarios para el programa formativo</label>
+                            <label for="document-list">Documentos necesarios para el programa formativo</label>
                         </div>
 
                         <div class="content-container" id="document-container">

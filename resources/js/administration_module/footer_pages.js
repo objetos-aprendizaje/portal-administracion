@@ -1,4 +1,4 @@
-import { apiFetch } from "../app.js";
+import { getCsrfToken, showFormErrors, resetFormErrors, apiFetch } from "../app.js";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
 import {
     controlsPagination,
@@ -9,7 +9,6 @@ import {
     formatDateTime,
 } from "../tabulator_handler.js";
 import { heroicon } from "../heroicons.js";
-import { getCsrfToken, showFormErrors, resetFormErrors } from "../app.js";
 import { showToast } from "../toast.js";
 import {
     hideModal,

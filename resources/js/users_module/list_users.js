@@ -1,7 +1,6 @@
 import { heroicon } from "../heroicons.js";
 import { hideModal, showModal, showModalConfirmation } from "../modal_handler";
 import {
-    getCsrfToken,
     showFormErrors,
     resetFormErrors,
     updateInputImage,
@@ -10,7 +9,6 @@ import {
     apiFetch,
     getFlatpickrDateRangeSql,
     getFlatpickrDateRange,
-    getFilterHtml,
     getOptionsSelectedTomSelectInstance,
 } from "../app.js";
 import {

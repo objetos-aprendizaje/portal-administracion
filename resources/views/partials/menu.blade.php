@@ -32,7 +32,7 @@
                         <li><a class="{{ isset($submenuselected) && $submenuselected == 'redirection-queries-educational-program-types' ? 'submenu-selected' : '' }}"
                                 href="{{ route('redirection-queries-educational-program-types') }}">Redirección de
                                 consultas
-                                de tipos de programas formativos</a></li>
+                                de tipos de cursos/programas formativos</a></li>
                         <li><a class="{{ isset($submenuselected) && $submenuselected == 'lanes-show' ? 'submenu-selected' : '' }}"
                                 href="{{ route('lanes-show') }}">Carriles a mostrar</a></li>
                         <li><a class="{{ isset($submenuselected) && $submenuselected == 'login-systems' ? 'submenu-selected' : '' }}"

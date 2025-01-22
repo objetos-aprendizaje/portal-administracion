@@ -115,10 +115,8 @@ class AnalyticsUsersController extends BaseController
 
         if ($filters) {
             foreach ($filters as $filter) {
-                if ($filter['database_field'] == 'creation_date') {
-                    if (count($filter['value']) == 2) {
-                        $query->whereBetween('created_at', [$filter['value'][0], $filter['value'][1]]);
-                    }
+                if ($filter['database_field'] == 'creation_date' && count($filter['value']) == 2) {
+                    $query->whereBetween('created_at', [$filter['value'][0], $filter['value'][1]]);
                 } elseif ($filter['database_field'] == "roles") {
                     $query->whereHas('roles', function ($query) use ($filter) {
                         $query->whereIn('user_roles.uid', $filter['value']);

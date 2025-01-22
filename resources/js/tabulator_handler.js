@@ -139,7 +139,6 @@ export function controlsPagination(table, tableId) {
 
             if (pageNumber < 1) {
                 this.value = 1;
-                return;
             } else if (pageNumber <= maxPage) {
                 table.setPage(pageNumber);
             } else {

@@ -182,9 +182,10 @@ class EducationalProgramsController extends BaseController
     {
         $userRoles = auth()->user()->roles()->get()->pluck('code')->toArray();
 
-        if ($educationalProgramType->managers_can_emit_credentials && in_array('MANAGEMENT', $userRoles)) {
-            return;
-        } elseif ($educationalProgramType->teachers_can_emit_credentials && in_array('TEACHER', $userRoles)) {
+        if (
+            ($educationalProgramType->managers_can_emit_credentials && in_array('MANAGEMENT', $userRoles)) ||
+            ($educationalProgramType->teachers_can_emit_credentials && in_array('TEACHER', $userRoles))
+        ) {
             return;
         }
 
@@ -271,21 +272,10 @@ class EducationalProgramsController extends BaseController
         adaptRequestDatesToUTC($request);
 
         $educationalProgramUid = $request->input("educational_program_uid");
-
-        if ($educationalProgramUid) {
-            $educationalProgram = EducationalProgramsModel::find($educationalProgramUid);
-            $isNew = false;
-        } else {
-            $educationalProgram = new EducationalProgramsModel();
-            $educationalProgramUid = generateUuid();
-            $educationalProgram->uid = $educationalProgramUid;
-            $educationalProgram->identifier = $this->generateIdentificerEducationalProgram();
-            $educationalProgram->creator_user_uid = auth()->user()->uid;
-            $isNew = true;
-        }
+        $educationalProgram = $this->getOrCreateEducationalProgram($educationalProgramUid);
+        $isNew = !$educationalProgramUid;
 
         $errors = $this->validateEducationalProgram($request);
-
         if ($errors->any()) {
             return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $errors], 400);
         }
@@ -297,70 +287,101 @@ class EducationalProgramsController extends BaseController
         $this->validateCoursesAddedEducationalProgram($request, $educationalProgram);
 
         $action = $request->input('action');
-
         $newStatus = $this->getStatusEducationalProgram($action, $educationalProgram);
 
         DB::transaction(function () use ($request, &$isNew, $educationalProgram, $newStatus) {
-
-            // Copia para detectar cambios en el programa formativo
-            $educationalProgramCopy = clone $educationalProgram;
-
-            $isManagement = auth()->user()->hasAnyRole(["MANAGEMENT"]);
-
-            if ($educationalProgram->educational_program_origin_uid && !$isManagement) {
-                $this->fillEducationalProgramEdition($request, $educationalProgram);
-            } else {
-                $this->fillEducationalProgram($request, $educationalProgram);
-            }
-
-            $this->handleImageUpload($request, $educationalProgram);
-
-            if ($newStatus) {
-                $educationalProgram->educational_program_status_uid = $newStatus->uid;
-
-                if ($newStatus->code === 'PENDING_APPROVAL') {
-                    dispatch(new SendEducationalProgramNotificationToManagements($educationalProgram->toArray()));
-                }
-            }
-
-            $educationalProgram->save();
-
-            $this->handleEmails($request, $educationalProgram);
-
-            $validateStudentsRegistrations = $request->input("validate_student_registrations");
-
-            if ($validateStudentsRegistrations) {
-                $this->syncDocuments($request, $educationalProgram);
-            } else {
-                $educationalProgram->deleteDocuments();
-            }
-
-            $paymentMode = $request->input('payment_mode');
-            if ($paymentMode == "INSTALLMENT_PAYMENT") {
-                $this->updatePaymentTerms($request, $educationalProgram);
-            } elseif ($paymentMode == "SINGLE_PAYMENT") {
-                $educationalProgram->paymentTerms()->delete();
-            }
-
-            if ($newStatus && $newStatus->code === 'ACCEPTED_PUBLICATION') {
-                $courses = $request->input('courses');
-                $courses = CoursesModel::whereIn('uid', $courses)
-                    ->has('lmsSystem')
-                    ->with('lmsSystem')
-                    ->get();
-
-                $this->sendNotificationCoursesAcceptedPublicationToKafka($courses);
-            }
-
-            $changesEducationalProgram = $this->detectChangesCredential($educationalProgram, $educationalProgramCopy);
-            if($changesEducationalProgram || !$educationalProgram->certidigitalCredential) {
-                $this->certidigitalService->createUpdateEducationalProgramCredential($educationalProgram->uid);
-            }
-
-            $this->logAction($isNew, $educationalProgram->name);
+            $this->processEducationalProgramTransaction($request, $isNew, $educationalProgram, $newStatus);
         });
 
         return response()->json(['message' => $isNew ? 'Programa formativo añadido correctamente' : 'Programa formativo actualizado correctamente']);
+    }
+
+    private function getOrCreateEducationalProgram($educationalProgramUid)
+    {
+        if ($educationalProgramUid) {
+            return EducationalProgramsModel::find($educationalProgramUid);
+        } else {
+            $educationalProgram = new EducationalProgramsModel();
+            $educationalProgram->uid = generateUuid();
+            $educationalProgram->identifier = $this->generateIdentificerEducationalProgram();
+            $educationalProgram->creator_user_uid = auth()->user()->uid;
+            return $educationalProgram;
+        }
+    }
+
+    private function processEducationalProgramTransaction($request, &$isNew, $educationalProgram, $newStatus)
+    {
+        $educationalProgramCopy = clone $educationalProgram;
+        $isManagement = auth()->user()->hasAnyRole(["MANAGEMENT"]);
+
+        if ($educationalProgram->educational_program_origin_uid && !$isManagement) {
+            $this->fillEducationalProgramEdition($request, $educationalProgram);
+        } else {
+            $this->fillEducationalProgram($request, $educationalProgram);
+        }
+
+        $this->handleImageUpload($request, $educationalProgram);
+
+        if ($newStatus) {
+            $educationalProgram->educational_program_status_uid = $newStatus->uid;
+            $this->notifyManagementIfPendingApproval($newStatus, $educationalProgram);
+        }
+
+        $educationalProgram->save();
+        $this->handleEmails($request, $educationalProgram);
+        $this->handleDocuments($request, $educationalProgram);
+        $this->handlePaymentTerms($request, $educationalProgram);
+        $this->handleCoursePublication($request, $newStatus);
+        $this->updateCertidigitalCredentials($educationalProgram, $educationalProgramCopy);
+        $this->logAction($isNew, $educationalProgram->name);
+    }
+
+    private function notifyManagementIfPendingApproval($newStatus, $educationalProgram)
+    {
+        if ($newStatus->code === 'PENDING_APPROVAL') {
+            dispatch(new SendEducationalProgramNotificationToManagements($educationalProgram->toArray()));
+        }
+    }
+
+    private function handleDocuments($request, $educationalProgram)
+    {
+        $validateStudentsRegistrations = $request->input("validate_student_registrations");
+        if ($validateStudentsRegistrations) {
+            $this->syncDocuments($request, $educationalProgram);
+        } else {
+            $educationalProgram->deleteDocuments();
+        }
+    }
+
+    private function handlePaymentTerms($request, $educationalProgram)
+    {
+        $paymentMode = $request->input('payment_mode');
+        if ($paymentMode == "INSTALLMENT_PAYMENT") {
+            $this->updatePaymentTerms($request, $educationalProgram);
+        } elseif ($paymentMode == "SINGLE_PAYMENT") {
+            $educationalProgram->paymentTerms()->delete();
+        }
+    }
+
+    private function handleCoursePublication($request, $newStatus)
+    {
+        if ($newStatus && $newStatus->code === 'ACCEPTED_PUBLICATION') {
+            $courses = $request->input('courses');
+            $courses = CoursesModel::whereIn('uid', $courses)
+                ->has('lmsSystem')
+                ->with('lmsSystem')
+                ->get();
+
+            $this->sendNotificationCoursesAcceptedPublicationToKafka($courses);
+        }
+    }
+
+    private function updateCertidigitalCredentials($educationalProgram, $educationalProgramCopy)
+    {
+        $changesEducationalProgram = $this->detectChangesCredential($educationalProgram, $educationalProgramCopy);
+        if ($changesEducationalProgram || !$educationalProgram->certidigitalCredential) {
+            $this->certidigitalService->createUpdateEducationalProgramCredential($educationalProgram->uid);
+        }
     }
 
     private function detectChangesCredential($educationalProgramAfterChanges, $educationalProgramBeforeChanges)
@@ -794,8 +815,7 @@ class EducationalProgramsController extends BaseController
         foreach ($paymentTerms as $paymentTerm) {
             if ($paymentTerm['cost'] <= 0) {
                 return "El coste de los plazos de pago no puede ser negativo";
-            }
-            elseif (!$paymentTerm['name']) {
+            } elseif (!$paymentTerm['name']) {
                 return "Debes especificar un nombre para el plazo de pago";
             }
 
@@ -1345,8 +1365,7 @@ class EducationalProgramsController extends BaseController
 
             if ($action === "edition") {
                 $logMessage = 'Creación de edición de programa formativo';
-            }
-            else {
+            } else {
                 $logMessage = 'Duplicación de programa formativo';
             }
 

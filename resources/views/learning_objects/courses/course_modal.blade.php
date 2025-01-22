@@ -452,7 +452,7 @@
                             <section class="hidden" id="documents-container">
                                 <div class="field">
                                     <div class="label-container">
-                                        <label>Documentos necesarios para la inscripción</label>
+                                        <label for="document-list">Documentos necesarios para la inscripción</label>
                                     </div>
 
                                     <div class="content-container" id="document-container">

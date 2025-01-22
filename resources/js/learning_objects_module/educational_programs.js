@@ -9,8 +9,9 @@ import {
     dropdownMenu,
 } from "../tabulator_handler";
 import { showModal, hideModal, showModalConfirmation } from "../modal_handler";
-import { apiFetch, showElement } from "../app";
 import {
+    apiFetch,
+    showElement,
     showFormErrors,
     resetFormErrors,
     getLiveSearchTomSelectInstance,

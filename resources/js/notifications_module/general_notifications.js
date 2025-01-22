@@ -6,7 +6,6 @@ import {
     getMultipleTomSelectInstance,
     getLiveSearchTomSelectInstance,
     apiFetch,
-    getFilterHtml,
     getOptionsSelectedTomSelectInstance,
 } from "../app.js";
 import {
@@ -445,7 +444,7 @@ function switchSelectorDestination(type) {
 }
 
 function newGeneralNotification() {
-    resetModal("notification-general-form");
+    resetModal();
     showModal(
         "notification-general-modal",
         "Añade un nueva notificación general"
@@ -696,7 +695,7 @@ async function loadGeneralNotificationModal(uid) {
 }
 
 function fillFormGeneralNotificationModal(general_notification) {
-    resetModal("notification-general-form");
+    resetModal();
     switchSelectorDestination(general_notification.type);
 
     if (general_notification.roles) {

@@ -47,7 +47,9 @@ class SuggestionsImprovementsController extends BaseController
 
         $existEmail = SuggestionSubmissionEmailsModel::where('email', $email)->first();
 
-        if ($existEmail) return response()->json(['message' => 'El email ya existe'], 406);
+        if ($existEmail) {
+            return response()->json(['message' => 'El email ya existe'], 406);
+        }
 
         $emailEnvioSugerencias = new SuggestionSubmissionEmailsModel();
         $uid = generateUuid();

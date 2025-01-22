@@ -85,7 +85,6 @@ function drawTable() {
     controlsPagination(analyticsAbandonedTable, "analytics-abandoned");
 }
 function drawGraph() {
-    let datas;
     const params = {
         url: "/analytics/users/get_abandoned_graph",
         method: "GET",
@@ -126,7 +125,6 @@ function graficar(datas) {
     const ancho = div.clientWidth;
 
     // Establecer altura fija y habilitar scroll
-    const barWidthFactor = 2;
     const fixedHeight = 600; // Altura fija
     const margin = { top: 10, right: 50, bottom: 50, left: 300 },
         width = ancho - margin.left - margin.right - 60,
@@ -241,14 +239,14 @@ function graficar(datas) {
         let abandonedUsers;
         let abandonedUsersFormated = [];
         if (d.data["abandoned_users"] != undefined) {
-            abandoned_users = d.data["abandoned_users"];
+            abandonedUsers = d.data["abandoned_users"];
             let temp;
-            abandoned_users.forEach((element) => {
+            abandonedUsers.forEach((element) => {
                 temp = {
                     nombre: element.first_name + " " + element.last_name,
                     email: element.email,
                 };
-                abandoned_users_formated.push(temp);
+                abandonedUsersFormated.push(temp);
             });
         }
         document.getElementById("bnt-exportar-csv").classList.remove("hidden");
@@ -259,7 +257,7 @@ function graficar(datas) {
         analyticsAbandonedTableFromGraph = new Tabulator(
             "#analytics-abandoned-table-from-graph",
             {
-                data: abandoned_users_formated, // Los datos a mostrar en la tabla
+                data: abandonedUsersFormated, // Los datos a mostrar en la tabla
                 layout: "fitColumns", // Ajusta las columnas al tamaño del contenedor
                 columns: [
                     // Define las columnas de la tabla

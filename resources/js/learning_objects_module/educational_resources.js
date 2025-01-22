@@ -1160,15 +1160,12 @@ function instanceTreeCompetencesLearningResults() {
             ).value === "1";
 
         // Si el bloque está deshabilitado, deshabilitamos todos los checkboxes
-        for (let i = 0; i < checkboxes.length; ++i) {
-            const checkbox = checkboxes[i];
-            if (checkbox.hasAttribute("data-indeterminate")) {
-                checkbox.indeterminate = true;
-            } else {
-                checkbox.indeterminate = false;
-            }
+        for (const checkbox of checkboxes) {
+            checkbox.indeterminate = checkbox.hasAttribute("data-indeterminate");
 
-            if (treeDisabled) checkbox.disabled = true;
+            if (treeDisabled) {
+                checkbox.disabled = true;
+            }
         }
     };
 

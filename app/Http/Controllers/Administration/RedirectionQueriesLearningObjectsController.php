@@ -104,7 +104,7 @@ class RedirectionQueriesLearningObjectsController extends BaseController
         ], $messages);
 
         $validator->after(function ($validator) use ($request) {
-            if ($request->input('type') === 'web' && !preg_match("/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/", $request->input('contact'))) {
+            if ($request->input('type') === 'web' && !preg_match("/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)+\/?$/", $request->input('contact'))) {
                 $validator->errors()->add('contact', 'El contacto debe ser una URL válida.');
             }
             if ($request->input('type') === 'email' && !preg_match("/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/", $request->input('contact'))) {
@@ -126,16 +126,18 @@ class RedirectionQueriesLearningObjectsController extends BaseController
         }
 
         $redirectionQuery->fill($request->only([
-            'educational_program_type_uid', 'type', 'contact', 'learning_object_type'
+            'educational_program_type_uid',
+            'type',
+            'contact',
+            'learning_object_type'
         ]));
 
         $redirectionQueryType = $request->input('learning_object_type');
 
-        if($redirectionQueryType == "COURSE") {
+        if ($redirectionQueryType == "COURSE") {
             $redirectionQuery->course_type_uid = $request->input('course_type_uid');
             $redirectionQuery->educational_program_type_uid = null;
-        }
-        else {
+        } else {
             $redirectionQuery->educational_program_type_uid = $request->input('educational_program_type_uid');
             $redirectionQuery->course_type_uid = null;
         }

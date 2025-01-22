@@ -103,7 +103,22 @@ class CertidigitalService
     {
         $uidsCoursesEducationalProgram = CoursesModel::where('educational_program_uid', $educationalProgramUid)->pluck('uid')->toArray();
 
-        $educationalProgram = EducationalProgramsModel::where('uid', $educationalProgramUid)->with([
+        $educationalProgram = $this->getEducationalProgramWithRelations($educationalProgramUid, $uidsCoursesEducationalProgram, $studentsUids);
+
+        $allLearningResults = $this->getAllLearningResults($educationalProgram);
+
+        $recipients = $this->prepareRecipients($educationalProgram, $allLearningResults);
+
+        $finalStructure = [
+            "recipients" => $recipients
+        ];
+
+        $this->emitCredentialsEducationalProgram($educationalProgram, $finalStructure);
+    }
+
+    private function getEducationalProgramWithRelations($educationalProgramUid, $uidsCoursesEducationalProgram, $studentsUids)
+    {
+        return EducationalProgramsModel::where('uid', $educationalProgramUid)->with([
             'certidigitalCredential',
             'courses',
             'courses.certidigitalAssesments',
@@ -133,110 +148,119 @@ class CertidigitalService
                 $query->whereIn('course_uid', $uidsCoursesEducationalProgram);
             }
         ])->first();
+    }
 
-        $allLearningResults = $educationalProgram->courses->flatMap(function ($course) {
+    private function getAllLearningResults($educationalProgram)
+    {
+        return $educationalProgram->courses->flatMap(function ($course) {
             return $course->blocks->flatMap(function ($block) {
                 return $block->learningResults;
             })->unique("uid");
         });
+    }
 
+    private function prepareRecipients($educationalProgram, $allLearningResults)
+    {
         $recipients = [];
-        $entities = [];
         foreach ($educationalProgram->students as $student) {
-
-            $basicDataStudent = $this->getBasicDataEmissionCredential($student, $educationalProgram->certidigitalCredential->uid);
-
-            $fields = [];
-            $fields = array_merge($fields, $basicDataStudent);
-
-            foreach ($educationalProgram->courses as $course) {
-                foreach ($course->blocks as $block) {
-                    foreach ($block->learningResults as $learningResult) {
-                        // Calificación correspondiente al bloque y al resultado
-                        $calification = $student->courseBlocksLearningResultsCalifications->filter(function ($calification) use ($learningResult, $block) {
-                            return $calification->course_block_uid === $block->uid && $calification->learning_result_uid === $learningResult->uid;
-                        })->first();
-
-                        if (!$calification) {
-                            continue;
-                        }
-
-                        $certidigitalAssesment = $course->certidigitalAssesments->filter(function ($assesment) use ($learningResult, $block) {
-                            return $assesment->learning_result_uid === $learningResult->uid && $assesment->course_block_uid === $block->uid;
-                        })->first();
-
-                        $calificationData = [
-                            [
-                                'fieldPathIdentifier' => "{#{$educationalProgram->certidigitalCredential->uid}}.ASM{{$certidigitalAssesment->uid}}.grade.noteLiteral(es)",
-                                'value' => $calification->calification_info,
-                            ]
-                        ];
-
-                        $fields = array_merge($fields, $calificationData);
-                    }
-
-                    // Nota por cada resultado de aprendizaje global
-                    foreach ($allLearningResults as $learningResult) {
-                        $calification = $student->courseLearningResultCalifications->filter(function ($calification) use ($learningResult, $course) {
-                            return $calification->learning_result_uid === $learningResult->uid && $calification->course_uid === $course->uid;
-                        })->first();
-
-                        if (!$calification) {
-                            continue;
-                        }
-
-                        $assesmentLearningResult = $course->certidigitalAssesments->filter(function ($assesment) use ($learningResult, $course) {
-                            return $assesment->learning_result_uid === $learningResult->uid && !$assesment->course_block_uid && $assesment->course_uid === $course->uid;
-                        })->first();
-
-                        $calificationData = [
-                            [
-                                'fieldPathIdentifier' => "{#{$educationalProgram->certidigitalCredential->uid}}.ASM{{$assesmentLearningResult->uid}}.grade.noteLiteral(es)",
-                                'value' => $calification->calification_info,
-                            ]
-                        ];
-
-                        $fields = array_merge($fields, $calificationData);
-                    }
-                }
-
-                // Incluir la calificación global
-                $assesmentGlobal = $course->certidigitalAssesments->filter(function ($assesment) use ($course) {
-                    return !$assesment->learning_result_uid && !$assesment->course_block_uid && $assesment->course_uid === $course->uid;
-                })->first();
-
-                $studentCourseGlobalCalifications = $student->courseGlobalCalifications->filter(function ($calification) use ($course) {
-                    return $calification->course_uid === $course->uid;
-                })->first();
-
-                $calificationData = [
-                    [
-                        'fieldPathIdentifier' => "{#{$educationalProgram->certidigitalCredential->uid}}.ASM{{$assesmentGlobal->uid}}.grade.noteLiteral(es)",
-                        'value' => $studentCourseGlobalCalifications->calification_info,
-                    ]
-                ];
-
-                $fields = array_merge($fields, $calificationData);
-            }
-            $entities[] = [
-                "fields" => $fields
-            ];
-
+            $fields = $this->prepareFieldsForStudent($student, $educationalProgram, $allLearningResults);
             $recipients[] = [
-                "entities" => $entities
+                "entities" => [
+                    [
+                        "fields" => $fields
+                    ]
+                ]
             ];
         }
+        return $recipients;
+    }
+
+    private function prepareFieldsForStudent($student, $educationalProgram, $allLearningResults)
+    {
+        $fields = $this->getBasicDataEmissionCredential($student, $educationalProgram->certidigitalCredential->uid);
+
+        foreach ($educationalProgram->courses as $course) {
+            $fields = array_merge($fields, $this->getCourseFields($student, $course, $educationalProgram, $allLearningResults));
+        }
+
+        return $fields;
+    }
+
+    private function getCourseFields($student, $course, $educationalProgram, $allLearningResults)
+    {
+        $fields = [];
+
+        foreach ($course->blocks as $block) {
+            foreach ($block->learningResults as $learningResult) {
+                $calification = $student->courseBlocksLearningResultsCalifications->filter(function ($calification) use ($learningResult, $block) {
+                    return $calification->course_block_uid === $block->uid && $calification->learning_result_uid === $learningResult->uid;
+                })->first();
+
+                if ($calification) {
+                    $certidigitalAssesment = $course->certidigitalAssesments->filter(function ($assesment) use ($learningResult, $block) {
+                        return $assesment->learning_result_uid === $learningResult->uid && $assesment->course_block_uid === $block->uid;
+                    })->first();
+
+                    $fields[] = [
+                        'fieldPathIdentifier' => "{#{$educationalProgram->certidigitalCredential->uid}}.ASM{{$certidigitalAssesment->uid}}.grade.noteLiteral(es)",
+                        'value' => $calification->calification_info,
+                    ];
+                }
+            }
+        }
+
+        foreach ($allLearningResults as $learningResult) {
+            $calification = $student->courseLearningResultCalifications->filter(function ($calification) use ($learningResult, $course) {
+                return $calification->learning_result_uid === $learningResult->uid && $calification->course_uid === $course->uid;
+            })->first();
+
+            if ($calification) {
+                $assesmentLearningResult = $course->certidigitalAssesments->filter(function ($assesment) use ($learningResult, $course) {
+                    return $assesment->learning_result_uid === $learningResult->uid && !$assesment->course_block_uid && $assesment->course_uid === $course->uid;
+                })->first();
+
+                $fields[] = [
+                    'fieldPathIdentifier' => "{#{$educationalProgram->certidigitalCredential->uid}}.ASM{{$assesmentLearningResult->uid}}.grade.noteLiteral(es)",
+                    'value' => $calification->calification_info,
+                ];
+            }
+        }
+
+        $assesmentGlobal = $course->certidigitalAssesments->filter(function ($assesment) use ($course) {
+            return !$assesment->learning_result_uid && !$assesment->course_block_uid && $assesment->course_uid === $course->uid;
+        })->first();
+
+        $studentCourseGlobalCalifications = $student->courseGlobalCalifications->filter(function ($calification) use ($course) {
+            return $calification->course_uid === $course->uid;
+        })->first();
+
+        $fields[] = [
+            'fieldPathIdentifier' => "{#{$educationalProgram->certidigitalCredential->uid}}.ASM{{$assesmentGlobal->uid}}.grade.noteLiteral(es)",
+            'value' => $studentCourseGlobalCalifications->calification_info,
+        ];
+
+        return $fields;
+    }
+
+    public function emissionCredentialsCourse($courseUid, $studentsUids = null)
+    {
+        $course = $this->getCourseWithRelations($courseUid, $studentsUids);
+
+        $allLearningResults = $this->getAllLearningResultsFromCourse($course);
+
+        $recipients = $this->prepareRecipientsForCourse($course, $allLearningResults);
 
         $finalStructure = [
             "recipients" => $recipients
         ];
 
-        $this->emitCredentialsEducationalProgram($educationalProgram, $finalStructure);
+        // Todo: Enviar a Certidigital
+        $this->emitCredentialsCourse($course, $finalStructure);
     }
 
-    public function emissionCredentialsCourse($courseUid, $studentsUids = null)
+    private function getCourseWithRelations($courseUid, $studentsUids)
     {
-        $course = CoursesModel::where('uid', $courseUid)->with([
+        return CoursesModel::where('uid', $courseUid)->with([
             'certidigitalCredential',
             'certidigitalAssesments',
             'blocks.learningResults.certidigitalAssesments' => function ($query) use ($courseUid) {
@@ -250,7 +274,6 @@ class CertidigitalService
                 if ($studentsUids) {
                     $query->whereIn('user_uid', $studentsUids);
                 }
-                // Añadir una subconsulta para obtener la calificación de cada estudiante
                 $query->addSelect([
                     'global_calification_info' => CourseGlobalCalificationsModel::selectRaw('calification_info')
                         ->whereColumn('user_uid', 'users.uid')
@@ -268,101 +291,103 @@ class CertidigitalService
                 $query->where('course_uid', $courseUid);
             }
         ])->first();
+    }
 
-        // Sacamos todos los resultados de aprendizaje de todos los bloques
-        $allLearningResults = $course->blocks->map(function ($block) {
+    private function getAllLearningResultsFromCourse($course)
+    {
+        return $course->blocks->flatMap(function ($block) {
             return $block->learningResults;
-        })->flatten()->unique("uid");
+        })->unique("uid");
+    }
 
+    private function prepareRecipientsForCourse($course, $allLearningResults)
+    {
         $recipients = [];
         foreach ($course->students as $student) {
-
-            $entities = [];
-            $basicDataStudent = $this->getBasicDataEmissionCredential($student, $course->certidigitalCredential->uid);
-
-            $fields = [];
-            $fields = array_merge($fields, $basicDataStudent);
-
-            // Poner nota por cada resultado de aprendizaje de cada bloque
-            foreach ($course->blocks as $block) {
-                foreach ($block->learningResults as $learningResult) {
-                    // Calificación correspondiente al bloque y al resultado
-                    $calification = $student->courseBlocksLearningResultsCalifications->filter(function ($calification) use ($learningResult, $block) {
-                        return $calification->course_block_uid === $block->uid && $calification->learning_result_uid === $learningResult->uid;
-                    })->first();
-
-                    if (!$calification) {
-                        continue;
-                    }
-
-                    $certidigitalAssesment = $course->certidigitalAssesments->filter(function ($assesment) use ($learningResult, $block) {
-                        return $assesment->learning_result_uid === $learningResult->uid && $assesment->course_block_uid === $block->uid;
-                    })->first();
-
-                    $calificationData = [
-                        [
-                            'fieldPathIdentifier' => "{#{$course->certidigitalCredential->uid}}.ASM{{$certidigitalAssesment->uid}}.grade.noteLiteral(es)",
-                            'value' => $calification->calification_info,
-                        ]
-                    ];
-
-                    $fields = array_merge($fields, $calificationData);
-                }
-            }
-
-            // Nota por cada resultado de aprendizaje global
-            foreach ($allLearningResults as $learningResult) {
-                $calification = $student->courseLearningResultCalifications->filter(function ($calification) use ($learningResult) {
-                    return $calification->learning_result_uid === $learningResult->uid;
-                })->first();
-
-                if (!$calification) {
-                    continue;
-                }
-
-                $assesmentLearningResult = $course->certidigitalAssesments->filter(function ($assesment) use ($learningResult) {
-                    return $assesment->learning_result_uid === $learningResult->uid && !$assesment->course_block_uid;
-                })->first();
-
-                $calificationData = [
+            $fields = $this->prepareFieldsForStudentInCourse($student, $course, $allLearningResults);
+            $recipients[] = [
+                "entities" => [
                     [
-                        'fieldPathIdentifier' => "{#{$course->certidigitalCredential->uid}}.ASM{{$assesmentLearningResult->uid}}.grade.noteLiteral(es)",
-                        'value' => $calification->calification_info,
+                        "fields" => $fields
                     ]
-                ];
-
-                $fields = array_merge($fields, $calificationData);
-            }
-
-            // Incluir la calificación global
-            $assesmentGlobal = $course->certidigitalAssesments->filter(function ($assesment) {
-                return !$assesment->learning_result_uid && !$assesment->course_block_uid;
-            })->first();
-
-            $calificationData = [
-                [
-                    'fieldPathIdentifier' => "{#{$course->certidigitalCredential->uid}}.ASM{{$assesmentGlobal->uid}}.grade.noteLiteral(es)",
-                    'value' => $student->global_calification_info,
                 ]
             ];
+        }
+        return $recipients;
+    }
 
-            $fields = array_merge($fields, $calificationData);
+    private function prepareFieldsForStudentInCourse($student, $course, $allLearningResults)
+    {
+        $fields = $this->getBasicDataEmissionCredential($student, $course->certidigitalCredential->uid);
 
-            $entities[] = [
-                "fields" => $fields
-            ];
-
-            $recipients[] = [
-                "entities" => $entities
-            ];
+        foreach ($course->blocks as $block) {
+            $fields = array_merge($fields, $this->getBlockFields($student, $block, $course));
         }
 
-        $finalStructure = [
-            "recipients" => $recipients
+        foreach ($allLearningResults as $learningResult) {
+            $fields = array_merge($fields, $this->getLearningResultFields($student, $learningResult, $course));
+        }
+
+        $fields = array_merge($fields, $this->getGlobalCalificationFields($student, $course));
+
+        return $fields;
+    }
+
+    private function getBlockFields($student, $block, $course)
+    {
+        $fields = [];
+        foreach ($block->learningResults as $learningResult) {
+            $calification = $student->courseBlocksLearningResultsCalifications->filter(function ($calification) use ($learningResult, $block) {
+                return $calification->course_block_uid === $block->uid && $calification->learning_result_uid === $learningResult->uid;
+            })->first();
+
+            if ($calification) {
+                $certidigitalAssesment = $course->certidigitalAssesments->filter(function ($assesment) use ($learningResult, $block) {
+                    return $assesment->learning_result_uid === $learningResult->uid && $assesment->course_block_uid === $block->uid;
+                })->first();
+
+                $fields[] = [
+                    'fieldPathIdentifier' => "{#{$course->certidigitalCredential->uid}}.ASM{{$certidigitalAssesment->uid}}.grade.noteLiteral(es)",
+                    'value' => $calification->calification_info,
+                ];
+            }
+        }
+        return $fields;
+    }
+
+    private function getLearningResultFields($student, $learningResult, $course)
+    {
+        $fields = [];
+        $calification = $student->courseLearningResultCalifications->filter(function ($calification) use ($learningResult) {
+            return $calification->learning_result_uid === $learningResult->uid;
+        })->first();
+
+        if ($calification) {
+            $assesmentLearningResult = $course->certidigitalAssesments->filter(function ($assesment) use ($learningResult) {
+                return $assesment->learning_result_uid === $learningResult->uid && !$assesment->course_block_uid;
+            })->first();
+
+            $fields[] = [
+                'fieldPathIdentifier' => "{#{$course->certidigitalCredential->uid}}.ASM{{$assesmentLearningResult->uid}}.grade.noteLiteral(es)",
+                'value' => $calification->calification_info,
+            ];
+        }
+        return $fields;
+    }
+
+    private function getGlobalCalificationFields($student, $course)
+    {
+        $fields = [];
+        $assesmentGlobal = $course->certidigitalAssesments->filter(function ($assesment) {
+            return !$assesment->learning_result_uid && !$assesment->course_block_uid;
+        })->first();
+
+        $fields[] = [
+            'fieldPathIdentifier' => "{#{$course->certidigitalCredential->uid}}.ASM{{$assesmentGlobal->uid}}.grade.noteLiteral(es)",
+            'value' => $student->global_calification_info,
         ];
 
-        //Todo: Enviar a Certidigital
-        $this->emitCredentialsCourse($course, $finalStructure);
+        return $fields;
     }
 
     public function emissionCredentialsTeacherCourse($courseUid, $teacherUids)
@@ -579,50 +604,17 @@ class CertidigitalService
         $achievementsCourses = [];
 
         foreach ($courses as $course) {
-            // Recargar el curso
-            $course = CoursesModel::where('uid', $course->uid)->with([
-                "educational_program",
-                "embeddings",
-                "blocks.learningResults",
-                "blocks.subBlocks.elements.subElements",
-                "certidigitalCredential",
-            ])->first();
+            $course = $this->reloadCourseWithRelations($course->uid);
 
-            // Si ya tiene una credencial, se vacía todo lo que hay en ella
             if ($certidigitalCredential) {
                 $this->cleanCredential($certidigitalCredential);
             }
 
-            // Todos los resultados de aprendizaje GLOBALES para incluir SUBLOGROS
             $learningResults = $this->getAllLearningResultsCourse($course);
             $assesmentCourse = $this->createAssesment($course->title, $course->uid);
-            $achievementsLearningResults = [];
-            foreach ($learningResults as $learningResult) {
-                $learningOutcome = $this->createLearningOutcome($learningResult['name'], null);
-                $assesment = $this->createAssesment($learningResult['name'], $course->uid, null, $learningResult['uid']);
+            $achievementsLearningResults = $this->createAchievementsForLearningResults($learningResults, $course);
 
-                // Buscamos los bloques que contienen el resultado de aprendizaje
-                $achievementsBlocks = [];
-                foreach ($course->blocks as $block) {
-                    foreach ($block->learningResults as $learningResultBlock) {
-                        if ($learningResultBlock->uid == $learningResult['uid']) {
-                            $assesmentLearningResultBlock = $this->createAssesment($learningResultBlock->name, $course->uid, $block->uid, $learningResultBlock->uid);
-                            $achievementLearningResultBlock = $this->createAchievement($learningResultBlock->name . ' B:' . $block->name, null, null, [$assesmentLearningResultBlock]);
-                            $achievementsBlocks[] = $achievementLearningResultBlock;
-                        }
-                    }
-                }
-
-                // Creación de los logros globales
-                $achievementGlobal =  $this->createAchievement($learningResult['name'], $achievementsBlocks, [$learningOutcome], [$assesment]);
-                $achievementsLearningResults[] = $achievementGlobal;
-            }
-
-            // Actividades
-            $activities = [];
-            foreach ($course->blocks as $block) {
-                $activities[] = $this->createActivity($block->name);
-            }
+            $activities = $this->createActivitiesForCourse($course);
 
             $achievementsCourses[] = $this->createAchievement($course->title, $achievementsLearningResults, null, [$assesmentCourse], $activities);
         }
@@ -633,8 +625,57 @@ class CertidigitalService
         } else {
             $this->vinculateAchievementsToCredential($achievementsCourses, $certidigitalCredential);
             return null;
-            // TODO Actualizar la credencial
         }
+    }
+
+    private function reloadCourseWithRelations($courseUid)
+    {
+        return CoursesModel::where('uid', $courseUid)->with([
+            "educational_program",
+            "embeddings",
+            "blocks.learningResults",
+            "blocks.subBlocks.elements.subElements",
+            "certidigitalCredential",
+        ])->first();
+    }
+
+    private function createAchievementsForLearningResults($learningResults, $course)
+    {
+        $achievementsLearningResults = [];
+        foreach ($learningResults as $learningResult) {
+            $learningOutcome = $this->createLearningOutcome($learningResult['name'], null);
+            $assesment = $this->createAssesment($learningResult['name'], $course->uid, null, $learningResult['uid']);
+
+            $achievementsBlocks = $this->createAchievementsForBlocks($course, $learningResult);
+
+            $achievementGlobal = $this->createAchievement($learningResult['name'], $achievementsBlocks, [$learningOutcome], [$assesment]);
+            $achievementsLearningResults[] = $achievementGlobal;
+        }
+        return $achievementsLearningResults;
+    }
+
+    private function createAchievementsForBlocks($course, $learningResult)
+    {
+        $achievementsBlocks = [];
+        foreach ($course->blocks as $block) {
+            foreach ($block->learningResults as $learningResultBlock) {
+                if ($learningResultBlock->uid == $learningResult['uid']) {
+                    $assesmentLearningResultBlock = $this->createAssesment($learningResultBlock->name, $course->uid, $block->uid, $learningResultBlock->uid);
+                    $achievementLearningResultBlock = $this->createAchievement($learningResultBlock->name . ' B:' . $block->name, null, null, [$assesmentLearningResultBlock]);
+                    $achievementsBlocks[] = $achievementLearningResultBlock;
+                }
+            }
+        }
+        return $achievementsBlocks;
+    }
+
+    private function createActivitiesForCourse($course)
+    {
+        $activities = [];
+        foreach ($course->blocks as $block) {
+            $activities[] = $this->createActivity($block->name);
+        }
+        return $activities;
     }
 
     private function createCredential($name, $description = null, $achievements = null, $activities = null)

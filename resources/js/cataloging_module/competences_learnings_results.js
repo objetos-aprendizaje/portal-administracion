@@ -321,13 +321,10 @@ function instanceTreeCompetences() {
             );
 
         // Si el bloque está deshabilitado, deshabilitamos todos los checkboxes
-        for (let i = 0; i < checkboxes.length; ++i) {
-            const checkbox = checkboxes[i];
-            if (checkbox.hasAttribute("data-indeterminate")) {
-                checkbox.indeterminate = true;
-            } else {
-                checkbox.indeterminate = false;
-            }
+        for (const checkbox of checkboxes) {
+            checkbox.indeterminate = checkbox.hasAttribute("data-indeterminate")
+                ? true
+                : false;
         }
     };
 
@@ -349,14 +346,14 @@ function instanceTreeCompetences() {
             event.clientY
         );
 
-        if (!currentNode || !event.target.className.includes("checkbox")) return;
+        if (!currentNode || !event.target.className.includes("checkbox"))
+            return;
 
         event.stopPropagation();
         treeCompetencesLearningResults.checkNode(currentNode);
 
         // Llamada a la función con el nodo actual
         updateSelectedCompetencesAndLearningResults(currentNode);
-
     });
 
     treeCompetencesLearningResults.on("contentDidUpdate", () => {
@@ -417,35 +414,36 @@ function updateSelectedCompetencesAndLearningResults(currentNode) {
     const isCompetence = type === "competence";
     const isLearningResult = type === "learning_result";
 
-    // Función para agregar o eliminar competencias/learningResults
-    function updateArray(array, items, add) {
-        if (add) {
-            array.push(id);
-            return array.concat(items);
-        } else {
-            return array.filter((item) => item !== id && !items.includes(item));
-        }
-    }
-
     // Obtener los nodos hijos según el tipo
     const childCompetences = getChildNodesCompetences(currentNode);
     const childLearningResults = getChildNodesLearningResults(currentNode);
 
-    if(type == "competence_framework"){
-        if(isSelected) selectedCompetencesLearningResults.competencesFrameworks.add(id);
-        else selectedCompetencesLearningResults.competencesFrameworks.delete(id);
-    }
-    else if (isCompetence) {
-        if(isSelected) {
+    if (type == "competence_framework") {
+        if (isSelected)
+            selectedCompetencesLearningResults.competencesFrameworks.add(id);
+        else
+            selectedCompetencesLearningResults.competencesFrameworks.delete(id);
+    } else if (isCompetence) {
+        if (isSelected) {
             selectedCompetencesLearningResults.competences.add(id);
-            selectedCompetencesLearningResults.learningResults.add(...childCompetences);
+            selectedCompetencesLearningResults.learningResults.add(
+                ...childCompetences
+            );
         } else {
             selectedCompetencesLearningResults.competences.delete(id);
-            selectedCompetencesLearningResults.learningResults.delete(...childCompetences);
+            selectedCompetencesLearningResults.learningResults.delete(
+                ...childCompetences
+            );
         }
     } else if (isLearningResult) {
-        if(isSelected) selectedCompetencesLearningResults.learningResults.add(...childLearningResults);
-        else selectedCompetencesLearningResults.learningResults.delete(...childLearningResults);
+        if (isSelected)
+            selectedCompetencesLearningResults.learningResults.add(
+                ...childLearningResults
+            );
+        else
+            selectedCompetencesLearningResults.learningResults.delete(
+                ...childLearningResults
+            );
     }
 }
 
@@ -584,8 +582,6 @@ function submitFormCompetence() {
     const opennedNodes = treeCompetencesLearningResults.getOpenNodes();
     resetFormErrors("competence-form");
 
-
-
     apiFetch(params)
         .then(() => {
             hideModal("competence-modal");
@@ -661,11 +657,11 @@ function loadCompetenceFrameworkModal(competenceFrameworkUid) {
 
     apiFetch(params).then((data) => {
         document.getElementById("has_levels").checked = data.has_levels;
-        document.getElementById("competence_framework_modal_uid").value = data.uid;
-
+        document.getElementById("competence_framework_modal_uid").value =
+            data.uid;
 
         fillFormWithObject(data, "competence-framework-form");
-        loadLevels(data['levels'], data['uid']);
+        loadLevels(data["levels"], data["uid"]);
         showModal("competence-framework-modal", "Editar marco de competencias");
     });
 }
@@ -702,9 +698,15 @@ async function deleteSelectedCompetences() {
  */
 async function deleteCompetencesLearningResults() {
     // Convertir los sets a arrays
-    const competencesFrameworksArray = Array.from(selectedCompetencesLearningResults.competencesFrameworks);
-    const competencesArray = Array.from(selectedCompetencesLearningResults.competences);
-    const learningResultsArray = Array.from(selectedCompetencesLearningResults.learningResults);
+    const competencesFrameworksArray = Array.from(
+        selectedCompetencesLearningResults.competencesFrameworks
+    );
+    const competencesArray = Array.from(
+        selectedCompetencesLearningResults.competences
+    );
+    const learningResultsArray = Array.from(
+        selectedCompetencesLearningResults.learningResults
+    );
 
     // Crear el objeto que se enviará en el cuerpo de la solicitud
     const body = {
@@ -778,16 +780,15 @@ function submitImportFrameworkForm() {
         });
 }
 
-function addTemplate(){
-
+function addTemplate() {
     const hasLevel = document.getElementById("has_levels").checked;
-    if (hasLevel == true){
+    if (hasLevel) {
         const levelList = document.getElementById("level-list").innerHTML;
-        if (levelList == ""){
+        if (levelList == "") {
             addLevel();
         }
         document.getElementById("level").classList.remove("hidden");
-    }else{
+    } else {
         document.getElementById("level").classList.add("hidden");
     }
 }
@@ -800,11 +801,10 @@ function addLevel() {
 }
 
 function removeLevel(event) {
-
-    const elements = document.getElementsByClassName('level');
+    const elements = document.getElementsByClassName("level");
     const count = elements.length;
 
-    if (count > 1){
+    if (count > 1) {
         let target = event.target;
 
         if (!target.classList.contains(".btn-remove-level")) {
@@ -817,8 +817,7 @@ function removeLevel(event) {
     }
 }
 
-function getLevels(){
-
+function getLevels() {
     const levels = document
         .getElementById("level-list")
         .querySelectorAll(".level");
@@ -835,27 +834,23 @@ function getLevels(){
     });
 
     return levelsData;
-
 }
 
-function loadLevels(levels, uid){
+function loadLevels(levels, uid) {
+    const containerLevels = document.getElementById("level-list");
+    containerLevels.innerHTML = "";
 
-        const containerLevels = document.getElementById("level-list");
-        containerLevels.innerHTML = "";
+    levels.forEach((level) => {
+        const levelTemplate = document
+            .getElementById("level-template")
+            .content.cloneNode(true);
 
+        levelTemplate.querySelector(".level").dataset.levelUid = level.uid;
 
-        levels.forEach((level) => {
-            const levelTemplate = document
-                .getElementById("level-template")
-                .content.cloneNode(true);
+        levelTemplate.querySelector(".level-name").value = level.name;
 
-            levelTemplate.querySelector(".level").dataset.levelUid = level.uid;
+        containerLevels.appendChild(levelTemplate);
 
-            levelTemplate.querySelector(".level-name").value = level.name;
-
-            containerLevels.appendChild(levelTemplate);
-
-            document.getElementById("level").classList.remove("hidden");
-
-        });
+        document.getElementById("level").classList.remove("hidden");
+    });
 }
