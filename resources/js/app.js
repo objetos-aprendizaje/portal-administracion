@@ -205,6 +205,12 @@ export function showFormErrors(errors, formId = null) {
                     tomSelectContainer.parentNode.appendChild(errorContainer);
                 }
             }
+
+            // Comprobar si está dentro de un accordion
+            const accordionContent = element.closest(".accordion-element");
+            if(accordionContent) {
+                accordionContent.classList.add("accordion-element-error");
+            }
         });
     });
 }
@@ -224,6 +230,12 @@ export function resetFormErrors(formId) {
     const errorMessages = form.querySelectorAll("small.error-label");
     errorMessages.forEach((small) => {
         small.remove();
+    });
+
+    // Quitar marcos de error de los acordeones
+    const accordionElements = form.querySelectorAll(".accordion-element");
+    accordionElements.forEach((accordion) => {
+        accordion.classList.remove("accordion-element-error");
     });
 }
 
@@ -1007,6 +1019,10 @@ export function debounce(func, wait) {
 }
 
 function getAllLabelsOfPage() {
+    if (typeof tooltiptexts === 'undefined' || !tooltiptexts) {
+        return;
+    }
+
     const labels = document.querySelectorAll("label");
     labels.forEach((label, index) => {
         if (label.htmlFor != "") {
@@ -1102,4 +1118,23 @@ export function instanceAccordion(accordionId) {
             icon.textContent = content.classList.contains("hidden") ? "+" : "−";
         }
     });
+}
+
+export function instanceTinymce(id) {
+    let editorInstance = null;
+
+    tinymce.init({
+        base_url: "/dist/tinymce",
+        selector: id,
+        promotion: false,
+        branding: false,
+        language: "es",
+        language_url: "../langs/tinymce_lang_spanish.js",
+        setup: function (editor) {
+            editorInstance = editor;
+        },
+    });
+
+    return editorInstance;
+
 }

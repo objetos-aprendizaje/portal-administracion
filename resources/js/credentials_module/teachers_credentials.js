@@ -6,7 +6,11 @@ import {
     controlsSearch,
 } from "../tabulator_handler.js";
 import { heroicon } from "../heroicons.js";
-import { hideModal, showModal } from "../modal_handler.js";
+import {
+    hideModal,
+    showModal,
+    showModalConfirmation,
+} from "../modal_handler.js";
 import { apiFetch } from "../app.js";
 import { showToast } from "../toast.js";
 
@@ -106,10 +110,24 @@ function loadListCoursesTeacherTable(teacherUid) {
         },
         { title: "Título", field: "title", widthGrow: 5 },
         {
+            title: "Generación de credencial",
+            field: "courses.certidigital_teacher_credential_uid",
+            formatter: function (cell, formatterParams, onRendered) {
+                const credential = cell
+                    .getRow()
+                    .getData().certidigital_teacher_credential_uid;
+                return credential ? "Generada" : "No generada";
+            },
+            cellClick: function (e, cell) {},
+            widthGrow: 3,
+            resizable: false,
+        },
+        {
             title: "Estado de la credencial",
             field: "courses_teachers.emissions_block_uuid",
             formatter: function (cell, formatterParams, onRendered) {
-                const credential = cell.getRow().getData().courses_teachers.emissions_block_uuid;
+                const credential = cell.getRow().getData()
+                    .courses_teachers.emissions_block_uuid;
                 return credential ? "Emitida" : "No emitida";
             },
             cellClick: function (e, cell) {},
@@ -120,7 +138,8 @@ function loadListCoursesTeacherTable(teacherUid) {
             title: "Credencial enviada",
             field: "courses_teachers.credential_sent",
             formatter: function (cell, formatterParams, onRendered) {
-                const credentialSent = cell.getRow().getData().courses_teachers.credential_sent;
+                const credentialSent = cell.getRow().getData()
+                    .courses_teachers.credential_sent;
                 return credentialSent ? "Sí" : "No";
             },
             cellClick: function (e, cell) {},
@@ -131,9 +150,8 @@ function loadListCoursesTeacherTable(teacherUid) {
             title: "Credencial sellada",
             field: "courses_teachers.credential_sealed",
             formatter: function (cell, formatterParams, onRendered) {
-                const credentialSealed = cell
-                    .getRow()
-                    .getData().courses_teachers.credential_sealed;
+                const credentialSealed = cell.getRow().getData()
+                    .courses_teachers.credential_sealed;
                 return credentialSealed ? "Sí" : "No";
             },
             cellClick: function (e, cell) {},
@@ -176,6 +194,7 @@ function loadListCoursesTeacherTable(teacherUid) {
 
 function initHandlers() {
     const buttons = [
+        { id: "generate-credentials-btn", action: "generate" },
         { id: "emit-credentials-btn", action: "emit" },
         { id: "send-credentials-btn", action: "send" },
         { id: "seal-credentials-btn", action: "seal" },
@@ -184,7 +203,10 @@ function initHandlers() {
     buttons.forEach((button) => {
         document.getElementById(button.id).addEventListener("click", () => {
             if (!selectedCourses.length) {
-                showToast("No has seleccionado ningún objeto de aprendizaje", "error");
+                showToast(
+                    "No has seleccionado ningún objeto de aprendizaje",
+                    "error"
+                );
                 return;
             }
 
@@ -195,26 +217,51 @@ function initHandlers() {
 
 async function actionCredentials(action) {
     let url = "";
+    let title = "";
+    let message = "";
 
-    if (action == "emit") url = "/credentials/teachers/emit_credentials";
-    else if (action == "send") url = "/credentials/teachers/send_credentials";
-    else if (action == "seal") url = "/credentials/teachers/seal_credentials";
-    else return;
+    if (action == "generate") {
+        url = "/credentials/teachers/generate_credentials";
+        title = "Generar credenciales";
+        message =
+            "¿Está seguro que desea generar las credenciales seleccionadas?";
+    } else if (action == "emit") {
+        url = "/credentials/teachers/emit_credentials";
+        title = "Emitir credenciales";
+        message =
+            "¿Está seguro que desea emitir las credenciales seleccionadas?";
+    } else if (action == "send") {
+        url = "/credentials/teachers/send_credentials";
+        title = "Enviar credenciales";
+        message =
+            "¿Está seguro que desea enviar las credenciales seleccionadas?";
+    } else if (action == "seal") {
+        url = "/credentials/teachers/seal_credentials";
+        title = "Sellar credenciales";
+        message =
+            "¿Está seguro que desea sellar las credenciales seleccionadas?";
+    }
 
-    const params = {
-        url,
-        method: "POST",
-        loader: true,
-        body: {
-            courses: selectedCourses,
-            user_uid: document.getElementById("user-uid").value,
-        },
-        stringify: true,
-        toast: true,
-    };
+    showModalConfirmation(title, message).then((result) => {
+        if (!result) {
+            return;
+        }
 
-    await apiFetch(params).then(() => {
-        reloadCoursesTeacherTable();
+        const params = {
+            url,
+            method: "POST",
+            loader: true,
+            body: {
+                courses: selectedCourses,
+                user_uid: document.getElementById("user-uid").value,
+            },
+            stringify: true,
+            toast: true,
+        };
+
+        apiFetch(params).then(() => {
+            reloadCoursesTeacherTable();
+        });
     });
 }
 

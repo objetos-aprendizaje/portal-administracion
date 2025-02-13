@@ -35,13 +35,14 @@ use App\Models\CertidigitalCredentialsModel;
 use App\Models\EducationalProgramTypesModel;
 use Illuminate\Support\Facades\Notification;
 use App\Models\CourseGlobalCalificationsModel;
-use App\Models\CourseLearningResultCalificationsModel;
+use App\Models\AutomaticNotificationTypesModel;
 use App\Models\EducationalProgramStatusesModel;
 use App\Models\EducationalProgramsStudentsModel;
 use App\Models\EducationalProgramsDocumentsModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\EducationalProgramEmailContactsModel;
 use App\Models\EducationalProgramsPaymentTermsModel;
+use App\Models\CourseLearningResultCalificationsModel;
 use App\Models\EducationalProgramsStudentsDocumentsModel;
 use App\Models\CoursesBlocksLearningResultsCalificationsModel;
 
@@ -508,6 +509,12 @@ class EducationalProgramsControllerTest extends TestCase
             $role->uid => ['uid' => generateUuid()]
         ]);
         Auth::login($user);
+
+        AutomaticNotificationTypesModel::factory()->create(
+            [
+               'code' => 'NEW_EDUCATIONAL_PROGRAMS_NOTIFICATIONS_MANAGEMENTS',
+            ]
+        );
 
 
         app()->instance('general_options', [
@@ -1380,6 +1387,12 @@ class EducationalProgramsControllerTest extends TestCase
             ];
         }
 
+        AutomaticNotificationTypesModel::factory()->create(
+            [
+               'code' => 'CHANGE_STATUS_EDUCATIONAL_PROGRAM',
+            ]
+        );
+
         // Sincronizar roles y actuar como administrador
         $admin->roles()->sync($roles_to_sync);
         $this->actingAs($admin);
@@ -1581,7 +1594,7 @@ class EducationalProgramsControllerTest extends TestCase
         $this->assertEquals('Alice', $response->json('data.0.first_name'));
         $this->assertEquals('Bob', $response->json('data.1.first_name'));
 
-        $response = $this->getJson('/learning_objects/educational_programs/get_educational_program_students/' . $uidProgram . '?sort[0][field]=acceptance_status&sort[0][dir]=asc&size=10');
+        $this->getJson('/learning_objects/educational_programs/get_educational_program_students/' . $uidProgram . '?sort[0][field]=acceptance_status&sort[0][dir]=asc&size=10');
     }
 
     /** @test Obtiene Programas educativos */
@@ -1710,6 +1723,11 @@ class EducationalProgramsControllerTest extends TestCase
             ->withEducationalProgramType()
             ->create();
 
+        AutomaticNotificationTypesModel::factory()->create(
+            [
+                'code' => 'EDUCATIONAL_PROGRAMS_ENROLLMENT_COMMUNICATIONS'
+            ]
+        );
         // Crear inscripciones de estudiantes en el programa educativo
         $students = UsersModel::factory()->count(2)->create();
         $studentUids = [];
@@ -2280,7 +2298,7 @@ class EducationalProgramsControllerTest extends TestCase
             unlink($targetFilePath);
         }
     }
-    
+
     /** @test Puede registrar e inscribir un nuevo usuario desde csv */
     public function testCanSignUpAndEnrollNewUserFromCsv()
     {

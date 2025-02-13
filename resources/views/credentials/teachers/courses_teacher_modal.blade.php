@@ -22,6 +22,9 @@
                 @include('partials.table-search', ['table' => 'courses-teacher-table'])
 
                 <div class="flex gap-1">
+                    <button id="generate-credentials-btn" type="button" class="btn-icon" title="Generar credenciales"
+                        data-course-uid="">{{ eHeroicon('document-arrow-up', 'outline') }}</button>
+
                     <button id="emit-credentials-btn" type="button" class="btn-icon" title="Emitir credenciales"
                         data-course-uid="">{{ eHeroicon('academic-cap', 'outline') }}</button>
 

@@ -911,7 +911,7 @@ class ManagerTest extends TestCase
 
         // Verificar el método checkAccessCalls
         $methodAccess = $reflection->getMethod('checkAccessCalls');
-        $methodAccess->setAccessible(true); // Hacer el método accesible
+        
         $accessResult = $methodAccess->invoke($controller); // Invocar el método
 
         // Verificar el resultado del método checkAccessCalls
@@ -919,7 +919,7 @@ class ManagerTest extends TestCase
 
         // Verificar el método checkManagersAccessCalls
         $methodManager = $reflection->getMethod('checkManagersAccessCalls');
-        $methodManager->setAccessible(true); // Hacer el método accesible
+
         $managerResult = $methodManager->invoke($controller); // Invocar el método
 
         // Verificar el resultado del método checkManagersAccessCalls

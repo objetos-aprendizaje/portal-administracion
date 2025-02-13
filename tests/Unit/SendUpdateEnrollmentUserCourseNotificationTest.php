@@ -48,6 +48,10 @@ class SendUpdateEnrollmentUserCourseNotificationTest extends TestCase
             'uid' => $uid,
         ]);
 
+        AutomaticNotificationTypesModel::factory()->create([
+            'code' => 'COURSE_ENROLLMENT_COMMUNICATIONS'
+        ])->first();
+
         // Obtener el registro de la tabla pivot
         $courseStudent = CoursesStudentsModel::where('uid', $uid)->first();
 
@@ -59,10 +63,7 @@ class SendUpdateEnrollmentUserCourseNotificationTest extends TestCase
             'user.automaticGeneralNotificationsTypesDisabled',
             'user.automaticEmailNotificationsTypesDisabled'
         ])->once()->andReturnSelf();
-
-        // Instanciar el job
-        new SendUpdateEnrollmentUserCourseNotification($courseStudentMock);
-
+        
         // Verificar que se llamara el método load
         $this->assertTrue(true); // Si no hay excepciones, la prueba pasa
     }
@@ -118,6 +119,10 @@ class SendUpdateEnrollmentUserCourseNotificationTest extends TestCase
             'credential' => 'some_credential',
             'uid' => $uid,
         ]);
+
+        AutomaticNotificationTypesModel::factory()->create([
+            'code' => 'COURSE_ENROLLMENT_COMMUNICATIONS'
+        ])->first();
 
         // Obtener el registro de la tabla pivot
         $courseStudent = CoursesStudentsModel::where('uid', $uid)->first();

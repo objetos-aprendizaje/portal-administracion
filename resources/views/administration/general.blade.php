@@ -25,8 +25,8 @@
                                                 <img src="{{ asset($general_options['poa_logo_1']) }}" alt="logo menú" />
                                             @else
                                                 <div class="bg-[#F5F6F4] flex items-center justify-center h-full">
-                                                    <img
-                                                        src="{{ asset('data/images/default_images/no_logo_attached.svg') }}" alt="logo menú"/>
+                                                    <img src="{{ asset('data/images/default_images/no_logo_attached.svg') }}"
+                                                        alt="logo menú" />
                                                 </div>
                                             @endif
 
@@ -69,8 +69,8 @@
                                                 <img src="{{ asset($general_options['poa_logo_2']) }}" alt="logo menú" />
                                             @else
                                                 <div class="bg-[#F5F6F4] flex items-center justify-center h-full">
-                                                    <img
-                                                        src="{{ asset('data/images/default_images/no_logo_attached.svg') }}" alt="no_logo_attached" />
+                                                    <img src="{{ asset('data/images/default_images/no_logo_attached.svg') }}"
+                                                        alt="no_logo_attached" />
                                                 </div>
                                             @endif
                                         </div>
@@ -111,8 +111,8 @@
                                                 <img src="{{ asset($general_options['poa_logo_3']) }}" alt="logo menú" />
                                             @else
                                                 <div class="bg-[#F5F6F4] flex items-center justify-center h-full">
-                                                    <img
-                                                        src="{{ asset('data/images/default_images/no_logo_attached.svg') }}" alt="no_logo_attached" />
+                                                    <img src="{{ asset('data/images/default_images/no_logo_attached.svg') }}"
+                                                        alt="no_logo_attached" />
                                                 </div>
                                             @endif
                                         </div>
@@ -522,7 +522,8 @@
                     <div class="content-container little">
                         <div class="poa-input-image">
                             <img id="carrousel_image_path"
-                                src="{{ $general_options['carrousel_image_path'] ? asset($general_options['carrousel_image_path']) : env('NO_IMAGE_SELECTED_PATH') }}" alt="imagen por defecto carrousel" />
+                                src="{{ $general_options['carrousel_image_path'] ? asset($general_options['carrousel_image_path']) : env('NO_IMAGE_SELECTED_PATH') }}"
+                                alt="imagen por defecto carrousel" />
 
 
                             <div class="select-file-container">
@@ -1278,14 +1279,20 @@
     <div class="poa-container mb-8">
         <h2>Configuración del módulo de recomendación</h2>
 
-        <p class="mt-2 mb-4">
+        <p class="mt-2">
             Se usará la API de OpenAI para la generación de etiquetas.
         </p>
 
-        <p class="mt-2 mb-4">
+        <p class="mt-2">
             Si hay cursos o recursos educativos que no tienen embeddings, puedes regenerarlos todos pulsando el botón de
             abajo.
         </p>
+
+        @if ($general_options['last_regeneration_embeddings'])
+            <p>
+                Última regeneración: {{ formatDateTime($general_options['last_regeneration_embeddings']) }}
+            </p>
+        @endif
 
         <form id="openai-form">
             @csrf
@@ -1326,7 +1333,8 @@
                     {{ eHeroicon('paper-airplane', 'outline') }}</button>
 
                 @if ($isPendingJobRegenerateEmbeddingsRunning)
-                    <button type="button" class="btn btn-secondary" id="regenerate-embeddings-btn">Embeddings regenerándose
+                    <button type="button" class="btn btn-secondary" id="regenerate-embeddings-btn">Embeddings
+                        regenerándose
                         {{ eHeroicon('exclamation-circle', 'outline') }}</button>
                 @else
                     <button type="button" class="btn btn-secondary" id="regenerate-embeddings-btn">Regenerar embeddings
@@ -1354,7 +1362,7 @@
                         <label for="footer_text_1">Texto 1</label>
                     </div>
                     <div class="content-container little">
-                        <textarea class="poa-input" type="text" id="footer_text_1" name="footer_text_1">{{ $general_options['footer_text_1'] }}</textarea>
+                        <textarea maxlength="1000" id="footer-text-1-content">{{ $general_options['footer_text_1'] }}</textarea>
                     </div>
                 </div>
 
@@ -1363,7 +1371,7 @@
                         <label for="footer_text_2">Texto 2</label>
                     </div>
                     <div class="content-container little">
-                        <textarea class="poa-input" type="text" id="footer_text_2" name="footer_text_2">{{ $general_options['footer_text_2'] }}</textarea>
+                        <textarea maxlength="1000" id="footer-text-2-content">{{ $general_options['footer_text_2'] }}</textarea>
                     </div>
                 </div>
 

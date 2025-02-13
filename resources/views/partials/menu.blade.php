@@ -7,7 +7,7 @@
 
         @if (Auth::user()->hasAnyRole(['ADMINISTRATOR']))
             <div class="container-menu">
-                <li class="{{ $current_module === 'administration' ? 'menu-element-selected' : '' }}">
+                <li class="main-element {{ $current_module === 'administration' ? 'menu-element-selected' : '' }}">
                     {{ eHeroicon('pencil', 'outline') }}
                     <span>Administración</span>
                     {{ eHeroicon('chevron-down', 'outline', 'close-sub-menu') }}
@@ -15,44 +15,61 @@
                 </li>
                 <div class="sub-menu hidden-opacity transition-all sub-menu-administracion">
                     <ul>
-                        <li>
-                            <a class="{{ isset($submenuselected) && $submenuselected == 'administracion-general' ? 'submenu-selected' : '' }}"
-                                href="{{ route('administracion-general') }}">General</a>
-                        </li>
-                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'administration-payments' ? 'submenu-selected' : '' }}"
-                                href="{{ route('administration-payments') }}">Pagos</a></li>
-                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'management-permissions' ? 'submenu-selected' : '' }}"
-                                href="{{ route('management-permissions') }}">Permisos a gestores</a></li>
-                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'header-pages' ? 'submenu-selected' : '' }}"
-                                href="{{ route('header-pages') }}">Páginas header</a></li>
-                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'footer-pages' ? 'submenu-selected' : '' }}"
-                                href="{{ route('footer-pages') }}">Páginas footer</a></li>
-                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'suggestions-improvements' ? 'submenu-selected' : '' }}"
-                                href="{{ route('suggestions-improvements') }}">Sugerencias y mejoras</a></li>
-                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'redirection-queries-educational-program-types' ? 'submenu-selected' : '' }}"
-                                href="{{ route('redirection-queries-educational-program-types') }}">Redirección de
-                                consultas
-                                de tipos de cursos/programas formativos</a></li>
-                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'lanes-show' ? 'submenu-selected' : '' }}"
-                                href="{{ route('lanes-show') }}">Carriles a mostrar</a></li>
-                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'login-systems' ? 'submenu-selected' : '' }}"
-                                href="{{ route('login-systems') }}">Sistemas de inicio de sesión</a></li>
-                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'lms-systems' ? 'submenu-selected' : '' }}"
-                                href="{{ route('lms-systems') }}">Sistemas LMS</a></li>
-                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'api-keys' ? 'submenu-selected' : '' }}"
-                                href="{{ route('api-keys') }}">Claves de API</a></li>
-                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'centres' ? 'submenu-selected' : '' }}"
-                                href="{{ route('centres') }}">Centros</a></li>
-                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'carrousels' ? 'submenu-selected' : '' }}"
-                                href="{{ route('carrousels') }}">Slider y carrousel principal</a></li>
-                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'certidigital' ? 'submenu-selected' : '' }}"
-                                href="{{ route('certidigital-configuration') }}">API Certidigital</a></li>
-                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'licenses' ? 'submenu-selected' : '' }}"
-                                href="{{ route('licenses') }}">Licencias</a></li>
-                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'administracion-tooltip-texts' ? 'submenu-selected' : '' }}"
-                                href="{{ route('tooltip-texts') }}">Textos para tooltips</a></li>
-                        <li><a class="{{ isset($submenuselected) && $submenuselected == 'departments' ? 'submenu-selected' : '' }}"
-                                href="{{ route('departments') }}">Departamentos</a></li>
+                        <li class="sub-menu-separator">Configuración general</li>
+                        <div class="subgroup">
+                            <li>
+                                <a class="{{ isset($submenuselected) && $submenuselected == 'administracion-general' ? 'submenu-selected' : '' }}"
+                                    href="{{ route('administracion-general') }}">General</a>
+                            </li>
+                            <li><a class="{{ isset($submenuselected) && $submenuselected == 'administration-payments' ? 'submenu-selected' : '' }}"
+                                    href="{{ route('administration-payments') }}">Pagos</a></li>
+                            <li><a class="{{ isset($submenuselected) && $submenuselected == 'management-permissions' ? 'submenu-selected' : '' }}"
+                                    href="{{ route('management-permissions') }}">Permisos a gestores</a></li>
+                            <li><a class="{{ isset($submenuselected) && $submenuselected == 'suggestions-improvements' ? 'submenu-selected' : '' }}"
+                                    href="{{ route('suggestions-improvements') }}">Sugerencias y mejoras</a></li>
+                            <li><a class="{{ isset($submenuselected) && $submenuselected == 'redirection-queries-educational-program-types' ? 'submenu-selected' : '' }}"
+                                    href="{{ route('redirection-queries-educational-program-types') }}">Redirección de
+                                    consultas
+                                    de tipos de cursos/programas formativos</a></li>
+                            <li><a class="{{ isset($submenuselected) && $submenuselected == 'administracion-tooltip-texts' ? 'submenu-selected' : '' }}"
+                                    href="{{ route('tooltip-texts') }}">Textos para tooltips</a></li>
+                        </div>
+
+                        <li class="sub-menu-separator">Sistemas externos</li>
+                        <div class="subgroup">
+                            <li><a class="{{ isset($submenuselected) && $submenuselected == 'lms-systems' ? 'submenu-selected' : '' }}"
+                                    href="{{ route('lms-systems') }}">Sistemas LMS</a></li>
+                            <li><a class="{{ isset($submenuselected) && $submenuselected == 'api-keys' ? 'submenu-selected' : '' }}"
+                                    href="{{ route('api-keys') }}">Claves de API</a></li>
+                            <li><a class="{{ isset($submenuselected) && $submenuselected == 'certidigital' ? 'submenu-selected' : '' }}"
+                                    href="{{ route('certidigital-configuration') }}">API Certidigital</a></li>
+                        </div>
+
+                        <li class="sub-menu-separator">Configuración Portal Web</li>
+                        <div class="subgroup">
+                            <li><a class="{{ isset($submenuselected) && $submenuselected == 'header-pages' ? 'submenu-selected' : '' }}"
+                                    href="{{ route('header-pages') }}">Páginas header</a></li>
+                            <li><a class="{{ isset($submenuselected) && $submenuselected == 'footer-pages' ? 'submenu-selected' : '' }}"
+                                    href="{{ route('footer-pages') }}">Páginas footer</a></li>
+                            <li><a class="{{ isset($submenuselected) && $submenuselected == 'lanes-show' ? 'submenu-selected' : '' }}"
+                                    href="{{ route('lanes-show') }}">Carriles a mostrar</a></li>
+                            <li><a class="{{ isset($submenuselected) && $submenuselected == 'login-systems' ? 'submenu-selected' : '' }}"
+                                    href="{{ route('login-systems') }}">Sistemas de inicio de sesión</a></li>
+                            <li><a class="{{ isset($submenuselected) && $submenuselected == 'carrousels' ? 'submenu-selected' : '' }}"
+                                    href="{{ route('carrousels') }}">Slider y carrousel principal</a></li>
+                        </div>
+
+                        <li class="sub-menu-separator">Maestros</li>
+                        <div class="subgroup">
+                            <li><a class="{{ isset($submenuselected) && $submenuselected == 'centres' ? 'submenu-selected' : '' }}"
+                                    href="{{ route('centres') }}">Centros</a></li>
+
+
+                            <li><a class="{{ isset($submenuselected) && $submenuselected == 'licenses' ? 'submenu-selected' : '' }}"
+                                    href="{{ route('licenses') }}">Licencias</a></li>
+                            <li><a class="{{ isset($submenuselected) && $submenuselected == 'departments' ? 'submenu-selected' : '' }}"
+                                    href="{{ route('departments') }}">Departamentos</a></li>
+                        </div>
                     </ul>
                 </div>
             </div>
@@ -60,7 +77,7 @@
 
         @if (Auth::user()->hasAnyRole(['MANAGEMENT']))
             <div class="container-menu">
-                <li class="{{ $current_module === 'management' ? 'menu-element-selected' : '' }}">
+                <li class="main-element {{ $current_module === 'management' ? 'menu-element-selected' : '' }}">
                     {{ eHeroicon('cog-6-tooth', 'outline') }}
                     <span>Gestión</span>
                     {{ eHeroicon('chevron-down', 'outline', 'close-sub-menu') }}
@@ -79,7 +96,7 @@
 
         @if (Auth::user()->hasAnyRole(['ADMINISTRATOR', 'MANAGEMENT']))
             <div class="container-menu">
-                <li class="{{ $current_module === 'cataloging' ? 'menu-element-selected' : '' }}">
+                <li class="main-element {{ $current_module === 'cataloging' ? 'menu-element-selected' : '' }}">
 
                     {{ eHeroicon('adjustments-vertical', 'outline') }}
                     <span>Catalogación</span>
@@ -120,7 +137,7 @@
 
         @if (Auth::user()->hasAnyRole(['MANAGEMENT', 'TEACHER']))
             <div class="container-menu">
-                <li class="{{ $current_module === 'notifications' ? 'menu-element-selected' : '' }}">
+                <li class="main-element {{ $current_module === 'notifications' ? 'menu-element-selected' : '' }}">
                     {{ eHeroicon('bell-alert', 'outline') }}
                     <span>Notificaciones</span>
                     {{ eHeroicon('chevron-down', 'outline', 'close-sub-menu') }}
@@ -143,7 +160,7 @@
 
         @if (Auth::user()->hasAnyRole(['MANAGEMENT', 'TEACHER']))
             <div class="container-menu">
-                <li class="{{ $current_module === 'learning_objects' ? 'menu-element-selected' : '' }}">
+                <li class="main-element {{ $current_module === 'learning_objects' ? 'menu-element-selected' : '' }}">
                     {{ eHeroicon('academic-cap', 'outline') }}
                     <span>Objetos de aprendizaje</span>
                     {{ eHeroicon('chevron-down', 'outline', 'close-sub-menu') }}
@@ -181,7 +198,7 @@
 
         @if (Auth::user()->hasAnyRole(['MANAGEMENT', 'TEACHER']))
             <div class="container-menu">
-                <li class="{{ $current_module === 'credentials' ? 'menu-element-selected' : '' }}">
+                <li class="main-element {{ $current_module === 'credentials' ? 'menu-element-selected' : '' }}">
                     {{ eHeroicon('check-badge', 'outline') }}
                     <span>Credenciales</span>
                     {{ eHeroicon('chevron-down', 'outline', 'close-sub-menu') }}
@@ -202,7 +219,7 @@
 
         @if (Auth::user()->hasAnyRole(['MANAGEMENT']))
             <div class="container-menu">
-                <li class="{{ $current_module === 'analytics' ? 'menu-element-selected' : '' }}">
+                <li class="main-element {{ $current_module === 'analytics' ? 'menu-element-selected' : '' }}">
                     {{ eHeroicon('chart-bar', 'outline') }}
                     <span>Analítica</span>
                     {{ eHeroicon('chevron-down', 'outline', 'close-sub-menu') }}

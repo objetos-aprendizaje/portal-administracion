@@ -16,7 +16,7 @@ class EducationalResourcesEmbeddingsModelFactory extends Factory
      */
     public function definition(): array
     {
-        $embeddingVector = array_fill(0, 1536, 0.1);
+        $embeddingVector = array_fill(0, 150, 0.1);
         return [
             'embeddings'=> $embeddingVector,
         ];

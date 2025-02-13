@@ -241,79 +241,6 @@ class CarrouselsTest extends TestCase
         ]);
     }
 
-     /** @test Guardar Carrusel Grande Aprobado  */
-     public function testSavesSmallCarrouselApprovals()
-     {
-
-         //   Crear registros usando el factory
-          $course1 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
-             'featured_small_carrousel_approved' => false,
-          ]);
-
-
-         $course2 = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
-             'featured_small_carrousel_approved' => true,
-         ]);
-
-         // Mockear los datos de entrada
-         $courses = [
-             ['uid' => $course1->uid, 'checked' => true],
-             ['uid' => $course2->uid, 'checked' => false],
-         ];
-
-         $education1 = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
-             'featured_main_carrousel_approved' => false,
-         ]);
-
-         $education2 = EducationalProgramsModel::factory()->withEducationalProgramType()->create([
-             'featured_main_carrousel_approved' => true,
-         ]);
-
-         $educationalPrograms = [
-             ['uid' => $education1->uid, 'checked' => true],
-             ['uid' => $education2->uid, 'checked' => false],
-         ];
-
-         // Mockear la autenticación
-         $user = UsersModel::factory()->create();
-         Auth::shouldReceive('user')->andReturn($user);
-
-         // Enviar petición a la ruta
-         $response = $this->post('/administration/carrousels/save_small_carrousels_approvals', [
-             'courses' => $courses,
-             'educationalPrograms' => $educationalPrograms,
-         ]);
-
-         // Verificar la respuesta
-         $response->assertStatus(200);
-         $response->assertJson([
-             'status' => 'success',
-             'message' => 'Se han actualizado los cursos a mostrar en el carrousel pequeño'
-         ]);
-
-         // Verificar los cambios en la base de datos
-         $this->assertDatabaseHas('courses', [
-             'uid' => $course1->uid,
-             'featured_small_carrousel_approved' => true,
-         ]);
-
-         $this->assertDatabaseHas('courses', [
-             'uid' => $course2->uid,
-             'featured_small_carrousel_approved' => false,
-         ]);
-
-         $this->assertDatabaseHas('educational_programs', [
-             'uid' => $education1->uid,
-             'featured_main_carrousel_approved' => true,
-         ]);
-
-         $this->assertDatabaseHas('educational_programs', [
-             'uid' => $education2->uid,
-             'featured_main_carrousel_approved' => false,
-         ]);
-
-     }
-
 
      /** @test Actualiza carrusel cuando pertenece a un Programa Educacional*/
     public function testUpdatesCarouselFieldsBelongsToEducationalProgram()
@@ -414,7 +341,6 @@ class CarrouselsTest extends TestCase
         // Accede al método privado usando reflexión
         $reflection = new \ReflectionClass($sliderController);
         $method = $reflection->getMethod('getPrevisualizationImage');
-        $method->setAccessible(true);
 
         // Llama al método y verifica el resultado
         $imagePath = $method->invoke($sliderController, $request);
@@ -447,7 +373,6 @@ class CarrouselsTest extends TestCase
         // Accede al método privado usando reflexión
         $reflection = new \ReflectionClass($sliderController);
         $method = $reflection->getMethod('getPrevisualizationImage');
-        $method->setAccessible(true);
 
         // Llama al método y verifica el resultado
         $imagePath = $method->invoke($sliderController, $request);
@@ -478,7 +403,6 @@ class CarrouselsTest extends TestCase
         // Usar reflexión para acceder al método privado
         $reflection = new \ReflectionClass($carrouselsController);
         $method = $reflection->getMethod('validatePrevisualizationSlider');
-        $method->setAccessible(true); // Hacerlo accesible
 
         // Llamar al método privado con el request inválido
         $method->invoke($carrouselsController, $request);

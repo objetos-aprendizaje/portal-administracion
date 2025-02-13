@@ -1,4 +1,4 @@
-<div id="confirmation-modal" data-action="" class="modal">
+<div id="confirmation-modal" data-action="" class="modal modal-confirmation">
     <div class="modal-body w-full md:w-[600px]">
         <div class="text-center">
             <h2 class="mb-[22px]" id="modal-title">Confirmación</h2>

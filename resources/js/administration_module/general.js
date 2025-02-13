@@ -5,8 +5,12 @@ import {
     apiFetch,
     showFormErrors,
     resetFormErrors,
+    instanceTinymce,
 } from "../app.js";
 import tag from "html5-tag";
+
+let tinymceContentFooterText1;
+let tinymceContentFooterText2;
 
 document.addEventListener("DOMContentLoaded", function () {
     initHandlers();
@@ -74,6 +78,9 @@ function initHandlers() {
     document
         .getElementById("footer-texts-form")
         .addEventListener("submit", submitFooterTextsForm);
+
+    tinymceContentFooterText1 = instanceTinymce("#footer-text-1-content");
+    tinymceContentFooterText2 = instanceTinymce("#footer-text-2-content");
 }
 
 function saveScripts() {
@@ -348,6 +355,12 @@ function regenerateEmbeddings() {
 
 function submitFooterTextsForm() {
     const formData = new FormData(this);
+
+    const contentFooterText1 = tinymceContentFooterText1.getContent();
+    formData.append("footer_text_1", contentFooterText1);
+
+    const contentFooterText2 = tinymceContentFooterText2.getContent();
+    formData.append("footer_text_2", contentFooterText2);
 
     const params = {
         url: "/administration/save_footer_texts",

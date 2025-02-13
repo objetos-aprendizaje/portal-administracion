@@ -13,7 +13,7 @@ use App\Models\CoursesStudentsModel;
 use App\Models\CoursesTeachersModel;
 use App\Models\EducationalProgramsModel;
 use App\Models\EducationalProgramsStudentsModel;
-use Exception;
+use App\Exceptions\OperationFailedException;
 use Illuminate\Support\Facades\Http;
 
 class CertidigitalService
@@ -1167,7 +1167,7 @@ class CertidigitalService
         $response = $this->request($endpoint, $data, $token, $method);
 
         if (!in_array($response->status(), [200, 201, 204, 404])) {
-            throw new Exception('Error in the request to Certidigital ' . $response->status());
+            throw new OperationFailedException('Error en la comunicación con Certidigital');
         }
 
         return $response;

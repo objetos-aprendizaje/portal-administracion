@@ -40,7 +40,7 @@ class LogsTest extends TestCase
     public function testIndexReturnsViewWithProperData()
     {
         // Crear algunos registros de prueba en la base de datos
-        $log1 = LogsModel::factory()->create(['entity' => 'Entity1']);
+        LogsModel::factory()->create(['entity' => 'Entity1']);
 
         // Crear un usuario de prueba
         $user = UsersModel::factory()->create();
@@ -418,7 +418,7 @@ class LogsTest extends TestCase
     {
         $reflection = new ReflectionClass($this->logsController = new LogsController());
         $method = $reflection->getMethod($methodName);
-        $method->setAccessible(true);
+        
         return $method->invokeArgs($this->logsController = new LogsController(), $parameters);
     }
 }

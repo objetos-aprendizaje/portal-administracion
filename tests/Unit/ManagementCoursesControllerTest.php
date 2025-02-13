@@ -40,6 +40,7 @@ use App\Models\CompetenceFrameworksModel;
 use App\Exceptions\OperationFailedException;
 use App\Models\CertidigitalCredentialsModel;
 use App\Models\EducationalProgramTypesModel;
+use App\Models\AutomaticNotificationTypesModel;
 use App\Models\CompetenceFrameworksLevelsModel;
 use App\Models\EducationalProgramStatusesModel;
 use App\Jobs\SendChangeStatusCourseNotification;
@@ -127,7 +128,7 @@ class ManagementCoursesControllerTest extends TestCase
 
         // Crear un mock del servicio de embeddings
         $mockEmbeddingsService = Mockery::mock(EmbeddingsService::class);
-        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 1536, 0.1));
+        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 150, 0.1));
 
         // Reemplazar el servicio real por el mock en el contenedor de servicios de Laravel
         $this->app->instance(EmbeddingsService::class, $mockEmbeddingsService);
@@ -319,7 +320,7 @@ class ManagementCoursesControllerTest extends TestCase
 
         // Crear un mock del servicio de embeddings
         $mockEmbeddingsService = Mockery::mock(EmbeddingsService::class);
-        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 1536, 0.1));
+        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 150, 0.1));
 
         // Reemplazar el servicio real por el mock en el contenedor de servicios de Laravel
         $this->app->instance(EmbeddingsService::class, $mockEmbeddingsService);
@@ -521,7 +522,7 @@ class ManagementCoursesControllerTest extends TestCase
 
         // Crear un mock del servicio de embeddings
         $mockEmbeddingsService = Mockery::mock(EmbeddingsService::class);
-        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 1536, 0.1));
+        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 150, 0.1));
 
         // Reemplazar el servicio real por el mock en el contenedor de servicios de Laravel
         $this->app->instance(EmbeddingsService::class, $mockEmbeddingsService);
@@ -615,7 +616,7 @@ class ManagementCoursesControllerTest extends TestCase
 
         // Crear un mock del servicio de embeddings
         $mockEmbeddingsService = Mockery::mock(EmbeddingsService::class);
-        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 1536, 0.1));
+        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 150, 0.1));
 
         // Reemplazar el servicio real por el mock en el contenedor de servicios de Laravel
         $this->app->instance(EmbeddingsService::class, $mockEmbeddingsService);
@@ -721,7 +722,7 @@ class ManagementCoursesControllerTest extends TestCase
 
         // Crear un mock del servicio de embeddings
         $mockEmbeddingsService = Mockery::mock(EmbeddingsService::class);
-        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 1536, 0.1));
+        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 150, 0.1));
 
         // Reemplazar el servicio real por el mock en el contenedor de servicios de Laravel
         $this->app->instance(EmbeddingsService::class, $mockEmbeddingsService);
@@ -874,7 +875,7 @@ class ManagementCoursesControllerTest extends TestCase
 
         // Crear un mock del servicio de embeddings
         $mockEmbeddingsService = Mockery::mock(EmbeddingsService::class);
-        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 1536, 0.1));
+        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 150, 0.1));
 
         // Reemplazar el servicio real por el mock en el contenedor de servicios de Laravel
         $this->app->instance(EmbeddingsService::class, $mockEmbeddingsService);
@@ -1009,7 +1010,7 @@ class ManagementCoursesControllerTest extends TestCase
 
         // Crear un mock del servicio de embeddings
         $mockEmbeddingsService = Mockery::mock(EmbeddingsService::class);
-        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 1536, 0.1));
+        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 150, 0.1));
 
         // Reemplazar el servicio real por el mock en el contenedor de servicios de Laravel
         $this->app->instance(EmbeddingsService::class, $mockEmbeddingsService);
@@ -1139,7 +1140,7 @@ class ManagementCoursesControllerTest extends TestCase
 
         // Crear un mock del servicio de embeddings
         $mockEmbeddingsService = Mockery::mock(EmbeddingsService::class);
-        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 1536, 0.1));
+        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 150, 0.1));
 
         // Reemplazar el servicio real por el mock en el contenedor de servicios de Laravel
         $this->app->instance(EmbeddingsService::class, $mockEmbeddingsService);
@@ -1252,7 +1253,11 @@ class ManagementCoursesControllerTest extends TestCase
 
         // Crear un mock del servicio de embeddings
         $mockEmbeddingsService = Mockery::mock(EmbeddingsService::class);
-        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 1536, 0.1));
+        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 150, 0.1));
+
+        AutomaticNotificationTypesModel::factory()->create([
+            'code'=> 'NEW_COURSES_NOTIFICATIONS_MANAGEMENTS',
+        ]);
 
         // Reemplazar el servicio real por el mock en el contenedor de servicios de Laravel
         $this->app->instance(EmbeddingsService::class, $mockEmbeddingsService);
@@ -1481,7 +1486,7 @@ class ManagementCoursesControllerTest extends TestCase
 
         // Crear un mock del servicio de embeddings
         $mockEmbeddingsService = Mockery::mock(EmbeddingsService::class);
-        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 1536, 0.1));
+        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 150, 0.1));
         // Reemplazar el servicio real por el mock en el contenedor de servicios de Laravel
         $this->app->instance(EmbeddingsService::class, $mockEmbeddingsService);
 
@@ -1593,7 +1598,7 @@ class ManagementCoursesControllerTest extends TestCase
 
         // Crear un mock del servicio de embeddings
         $mockEmbeddingsService = Mockery::mock(EmbeddingsService::class);
-        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 1536, 0.1));
+        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 150, 0.1));
         // Reemplazar el servicio real por el mock en el contenedor de servicios de Laravel
         $this->app->instance(EmbeddingsService::class, $mockEmbeddingsService);
 
@@ -1846,7 +1851,7 @@ class ManagementCoursesControllerTest extends TestCase
             // Usar Reflection para acceder a la propiedad protegida 'course'
             $reflection = new \ReflectionClass($job);
             $courseProperty = $reflection->getProperty('course');
-            $courseProperty->setAccessible(true);
+            
             $courseInJob = $courseProperty->getValue($job);
 
             return $courseInJob->uid === $course->uid;
@@ -2020,7 +2025,7 @@ class ManagementCoursesControllerTest extends TestCase
         $this->assertDatabaseMissing('courses', [
             'title' => $course->title . " (copia)",
         ]);
-    }    
+    }
 
 
     // Cierra Mockery después de las pruebas
@@ -2054,7 +2059,7 @@ class ManagementCoursesControllerTest extends TestCase
             'title' => 'Curso 1',
             'description' => 'Description',
             'course_status_uid' => $coursestatuses1->uid,
-            'course_type_uid' => $course_type1->uid,      
+            'course_type_uid' => $course_type1->uid,
             'inscription_start_date' => Carbon::now()->format('Y-m-d\TH:i'),
             'inscription_finish_date' => Carbon::now()->addDays(29)->format('Y-m-d\TH:i'),
             'realization_start_date' => Carbon::now()->addDays(61)->format('Y-m-d\TH:i'),
@@ -2144,7 +2149,6 @@ class ManagementCoursesControllerTest extends TestCase
         // Use Reflection to access the private method applyFilters
         $reflectionClass = new \ReflectionClass($controller);
         $method = $reflectionClass->getMethod('applyFilters');
-        $method->setAccessible(true);
 
         // Prepare any parameters needed for applyFilters
 
@@ -2542,7 +2546,7 @@ class ManagementCoursesControllerTest extends TestCase
 
         // Simular la llamada a getEmbedding para que devuelva un embedding predefinido
         $mockEmbeddingsService->shouldReceive('getEmbedding')
-            ->andReturn(array_fill(0, 1536, 0.1));
+            ->andReturn(array_fill(0, 150, 0.1));
 
         // Simular la llamada a generateEmbeddingForCourse con cualquier instancia de CoursesModel
         $mockEmbeddingsService->shouldReceive('generateEmbeddingForCourse')

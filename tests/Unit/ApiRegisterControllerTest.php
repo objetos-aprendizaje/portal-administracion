@@ -227,7 +227,7 @@ class ApiRegisterControllerTest extends TestCase
     /**
      * @test
      * Prueba que un usuario se actualiza correctamente a través de la API.
-     */    
+     */
     public function testUpdateUserSuccessfully()
     {
         // Crear un usuario existente en la base de datos

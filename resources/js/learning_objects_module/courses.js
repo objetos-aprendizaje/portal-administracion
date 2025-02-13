@@ -465,6 +465,26 @@ const columnsCoursesTable = [
         widthGrow: 2,
         visible: false,
     },
+];
+
+if (window.enabledRecommendationModule) {
+    columnsCoursesTable.push({
+        title: "Embeddings",
+        field: "embeddings_status",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            if (data == 0) {
+                return "No";
+            } else {
+                return "Si";
+            }
+        },
+        widthGrow: 2,
+        visible: false,
+    });
+}
+
+columnsCoursesTable.push(
     {
         title: `<span class='cursor-pointer columns-selector' title='Seleccionar columnas'>${heroicon(
             "view-columns"
@@ -517,22 +537,6 @@ const columnsCoursesTable = [
             const cellData = cell.getRow().getData();
             if (!cellData.belongs_to_educational_program) {
                 btnArray.push(
-                    {
-                        icon: "document-arrow-up",
-                        type: "outline",
-                        tooltip: "Emisión de todas las credenciales",
-                        action: (course) => {
-                            showModalConfirmation(
-                                "Emisión de todas las credenciales",
-                                "¿Deseas emitir todas las credenciales a todos los estudiantes que hayan finalizado?",
-                                "emitAllCredentials",
-                                [{ key: "course_uid", value: course.uid }]
-                            ).then((result) => {
-                                if (result)
-                                    emitAllCredentialsCourse(course.uid);
-                            });
-                        },
-                    },
                     {
                         icon: "user-group",
                         type: "outline",
@@ -605,6 +609,23 @@ const columnsCoursesTable = [
                                     emitAllCredentialsCourse(course.uid);
                             });
                         },
+                    },
+                    {
+                        icon: "document-arrow-up",
+                        type: "outline",
+                        tooltip: "Emisión de todas las credenciales",
+                        disabled: !cellData.certidigital_credential_uid,
+                        action: (course) => {
+                            showModalConfirmation(
+                                "Emisión de todas las credenciales",
+                                "¿Deseas emitir todas las credenciales a todos los estudiantes que hayan finalizado?",
+                                "emitAllCredentials",
+                                [{ key: "course_uid", value: course.uid }]
+                            ).then((result) => {
+                                if (result)
+                                    emitAllCredentialsCourse(course.uid);
+                            });
+                        },
                     }
                 );
             }
@@ -617,25 +638,8 @@ const columnsCoursesTable = [
         headerSort: false,
         width: 30,
         resizable: false,
-    },
-];
-
-if (window.enabledRecommendationModule) {
-    columnsCoursesTable.push({
-        title: "¿Tiene embeddings?",
-        field: "embeddings_status",
-        formatter: function (cell, formatterParams, onRendered) {
-            const data = cell.getValue();
-            if (data == 0) {
-                return "No";
-            } else {
-                return "Si";
-            }
-        },
-        widthGrow: 2,
-        visible: false,
-    });
-}
+    }
+);
 class Trees {
     constructor(order, tree, selectedNodes = []) {
         this.order = order;
@@ -911,7 +915,8 @@ async function instanceTreeCompetences(order, selectedNodes = []) {
             .getAttribute("data-disabled");
 
         for (const checkbox of checkboxes) {
-            checkbox.indeterminate = checkbox.hasAttribute("data-indeterminate");
+            checkbox.indeterminate =
+                checkbox.hasAttribute("data-indeterminate");
 
             if (treeDisabled === "1") {
                 checkbox.disabled = true;
@@ -2209,22 +2214,6 @@ function initializeCoursesTable() {
             },
         },
         {
-            label: `${heroicon("document-arrow-up")} Emisión de credenciales`,
-            action: function (e, column) {
-                showModalConfirmation(
-                    "Emisión de todas las credenciales",
-                    "¿Estás seguro de que quieres emitir todas las credenciales a los estudiantes del curso seleccionado?"
-                ).then((result) => {
-                    const courseClicked = column.getData();
-                    if (result) emitAllCredentialsCourse(courseClicked.uid);
-                });
-            },
-            disabled: function (column) {
-                const dataColumn = column.getData();
-                return dataColumn.belongs_to_educational_program;
-            },
-        },
-        {
             label: `${heroicon(
                 "document-arrow-up"
             )} Regenerar credencial de estudiante`,
@@ -2258,6 +2247,22 @@ function initializeCoursesTable() {
             disabled: function (column) {
                 const dataColumn = column.getData();
                 return dataColumn.belongs_to_educational_program;
+            },
+        },
+        {
+            label: `${heroicon("document-arrow-up")} Emisión de credenciales`,
+            action: function (e, column) {
+                showModalConfirmation(
+                    "Emisión de todas las credenciales",
+                    "¿Estás seguro de que quieres emitir todas las credenciales a los estudiantes del curso seleccionado?"
+                ).then((result) => {
+                    const courseClicked = column.getData();
+                    if (result) emitAllCredentialsCourse(courseClicked.uid);
+                });
+            },
+            disabled: function (column) {
+                const dataColumn = column.getData();
+                return dataColumn.certidigital_credential_uid == null;
             },
         },
     ];
@@ -2323,7 +2328,9 @@ function regenerateCredentialStudents(courseUid) {
         loader: true,
     };
 
-    apiFetch(params);
+    apiFetch(params).then(() => {
+        reloadTableCourses();
+    });
 }
 
 function regenerateCredentialTeachers(courseUid) {
@@ -2338,7 +2345,9 @@ function regenerateCredentialTeachers(courseUid) {
         loader: true,
     };
 
-    apiFetch(params);
+    apiFetch(params).then(() => {
+        reloadTableCourses();
+    });
 }
 
 function loadCalificationsCourse(courseUid) {
@@ -2792,10 +2801,9 @@ function fillFormCourseModal(course) {
     loadDocuments(course.course_documents);
 
     document.getElementById("validate_student_registrations").value =
-        validateStudentsRegistrations;
-
+        course.validate_student_registrations;
     document.getElementById("validate_student_registrations").checked =
-        validateStudentsRegistrations;
+        course.validate_student_registrations;
 
     document.getElementById("featured_big_carrousel").checked =
         course.featured_big_carrousel;

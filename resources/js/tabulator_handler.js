@@ -343,6 +343,12 @@ export function moreOptionsBtn(cell, buttonArray) {
     // Rellenar el menú con botones basados en el array proporcionado.
     buttonArray.forEach((buttonConfig) => {
         const buttonElement = document.createElement("button");
+
+        if(buttonConfig.disabled) {
+            buttonElement.classList.add("options-button-disabled");
+            buttonElement.disabled = true;
+        }
+
         buttonElement.innerHTML = heroicon(
             buttonConfig.icon,
             buttonConfig.type

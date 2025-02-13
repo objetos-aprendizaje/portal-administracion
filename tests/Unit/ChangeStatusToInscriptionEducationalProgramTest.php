@@ -40,6 +40,10 @@ class ChangeStatusToInscriptionEducationalProgramTest extends TestCase
 
         $statusInscription = EducationalProgramStatusesModel::where('code', 'INSCRIPTION')->first();
 
+        AutomaticNotificationTypesModel::factory()->create([
+            'code'=> 'NEW_EDUCATIONAL_PROGRAMS'
+        ]);
+
         $user = UsersModel::factory()->create()->latest()->first();
         $roles = UserRolesModel::firstOrCreate(['code' => 'STUDENT'], ['uid' => generateUuid()]);
         $user->roles()->attach($roles->uid, ['uid' => generateUuid()]);

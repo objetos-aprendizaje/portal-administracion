@@ -123,13 +123,13 @@ class CoursesModel extends Model
             if ($document['uid']) {
                 CourseDocumentsModel::where('uid', $document['uid'])
                     ->update([
-                        'document_name' => $document['document_name'],
+                        'document_name' => $document['documentName'],
                     ]);
             } else {
                 $this->courseDocuments()->create([
                     'uid' => generateUuid(),
                     'course_uid' => $this->uid,
-                    'document_name' => $document['document_name'],
+                    'document_name' => $document['documentName'],
                 ]);
             }
         }

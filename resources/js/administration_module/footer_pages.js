@@ -1,4 +1,4 @@
-import { getCsrfToken, showFormErrors, resetFormErrors, apiFetch } from "../app.js";
+import { getCsrfToken, showFormErrors, resetFormErrors, apiFetch, instanceTinymce } from "../app.js";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
 import {
     controlsPagination,
@@ -29,17 +29,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function initHandlers() {
-    tinymce.init({
-        base_url: "/dist/tinymce",
-        selector: "#footer-page-content",
-        promotion: false,
-        branding: false,
-        language: "es",
-        language_url: "../langs/tinymce_lang_spanish.js",
-        setup: function (editor) {
-            tinymceContent = editor;
-        },
-    });
+    tinymceContent = instanceTinymce("#footer-page-content");
 
     document
         .getElementById("new-footer-page-btn")

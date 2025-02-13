@@ -27,6 +27,7 @@ class GeneralAdministrationController extends BaseController
             'administration.general',
             [
                 "coloris" => true,
+                "tinymce" => true,
                 "page_name" => "Configuración general",
                 "page_title" => "Configuración general",
                 "resources" => [
@@ -342,7 +343,7 @@ class GeneralAdministrationController extends BaseController
     public function isPendingJobRegenerateEmbeddingsRunning() {
         return  DB::table('jobs')->where('payload', 'like', '%RegenerateAllEmbeddingsJob%')->exists();
     }
-    
+
     public function saveFooterTexts(Request $request) {
 
         $footerText1 = $request->input('footer_text_1');

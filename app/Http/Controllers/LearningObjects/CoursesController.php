@@ -455,22 +455,22 @@ class CoursesController extends BaseController
             } elseif ($filter['database_field'] == 'inscription_date') {
                 if (count($filter['value']) == 2) {
                     // Si recibimos un rango de fechas
-                    $query->where('inscription_start_date', '<=', $filter['value'][1])
-                        ->where('inscription_finish_date', '>=', $filter['value'][0]);
+                    $query->where('courses.inscription_start_date', '<=', $filter['value'][1])
+                        ->where('courses.inscription_finish_date', '>=', $filter['value'][0]);
                 } else {
                     // Si recibimos solo una fecha
-                    $query->whereDate('inscription_start_date', '<=', $filter['value'])
-                        ->whereDate('inscription_finish_date', '>=', $filter['value']);
+                    $query->whereDate('courses.inscription_start_date', '<=', $filter['value'])
+                        ->whereDate('courses.inscription_finish_date', '>=', $filter['value']);
                 }
             } elseif ($filter['database_field'] == 'realization_date') {
                 if (count($filter['value']) == 2) {
                     // Si recibimos un rango de fechas
-                    $query->where('realization_start_date', '<=', $filter['value'][1])
-                        ->where('realization_finish_date', '>=', $filter['value'][0]);
+                    $query->where('courses.realization_start_date', '<=', $filter['value'][1])
+                        ->where('courses.realization_finish_date', '>=', $filter['value'][0]);
                 } else {
                     // Si recibimos solo una fecha
-                    $query->whereDate('realization_start_date', '<=', $filter['value'])
-                        ->whereDate('realization_finish_date', '>=', $filter['value']);
+                    $query->whereDate('courses.realization_start_date', '<=', $filter['value'])
+                        ->whereDate('courses.realization_finish_date', '>=', $filter['value']);
                 }
             } elseif ($filter['database_field'] == "coordinators_teachers") {
                 $teachersUids = $filter['value'];
@@ -485,10 +485,8 @@ class CoursesController extends BaseController
                         ->where('type', 'NO_COORDINATOR');
                 });
             } elseif ($filter['database_field'] == 'creator_user_uid') {
-
-                $query->whereIn('creator_user_uid', $filter['value']);
+                $query->whereIn('courses.creator_user_uid', $filter['value']);
             } elseif ($filter['database_field'] == 'categories') {
-
                 $categoriesUids = $filter['value'];
                 $query->whereHas('categories', function ($query) use ($categoriesUids) {
                     $query->whereIn('categories.uid', $categoriesUids);
@@ -504,13 +502,13 @@ class CoursesController extends BaseController
             } elseif ($filter['database_field'] == 'max_ects_workload') {
                 $query->where('ects_workload', '<=', $filter['value']);
             } elseif ($filter['database_field'] == 'min_cost') {
-                $query->where('cost', '>=', $filter['value']);
+                $query->where('courses.cost', '>=', $filter['value']);
             } elseif ($filter['database_field'] == 'max_cost') {
-                $query->where('cost', '<=', $filter['value']);
+                $query->where('courses.cost', '<=', $filter['value']);
             } elseif ($filter['database_field'] == 'min_required_students') {
-                $query->where('min_required_students', '>=', $filter['value']);
+                $query->where('courses.min_required_students', '>=', $filter['value']);
             } elseif ($filter['database_field'] == 'max_required_students') {
-                $query->where('min_required_students', '<=', $filter['value']);
+                $query->where('courses.min_required_students', '<=', $filter['value']);
             } elseif ($filter['database_field'] == 'validate_student_registrations') {
                 $query->where('courses.validate_student_registrations', $filter['value']);
             } elseif ($filter['database_field'] == 'learning_results') {
@@ -705,7 +703,7 @@ class CoursesController extends BaseController
 
     private function handleCoursePublication($request, $newCourseStatus, $courseBd)
     {
-        if ($newCourseStatus && $newCourseStatus->code == "ACCEPTED_PUBLICATION" && !$courseBd->lms_url) {
+        if ($courseBd->lms_system_uid && $newCourseStatus && $newCourseStatus->code == "ACCEPTED_PUBLICATION" && !$courseBd->lms_url) {
             $lmsSystem = LmsSystemsModel::where('uid', $request->input('lms_system_uid'))->first();
             $this->sendNotificationCourseAcceptedPublicationToKafka($courseBd, $lmsSystem->identifier);
         }
@@ -1003,7 +1001,7 @@ class CoursesController extends BaseController
             'ects_workload' => 'required|numeric',
             'validate_student_registrations' => 'required|boolean',
             'lms_url' => 'nullable|url',
-            'lms_system_uid' => 'required_if:lms_url,!=,null',
+            'lms_system_uid' => 'nullable|required_with:lms_url',
             'cost' => 'nullable|numeric',
             'featured_big_carrousel_title' => 'required_if:featured_big_carrousel,1',
             'featured_big_carrousel_description' => 'required_if:featured_big_carrousel,1',
@@ -1157,7 +1155,7 @@ class CoursesController extends BaseController
             'ects_workload.numeric' => 'La carga de trabajo ECTS debe ser un número.',
             'validate_student_registrations.required' => 'Indica si se validarán las inscripciones de los estudiantes.',
             'lms_url.url' => 'Introduce una URL válida para el LMS.',
-            'lms_system_uid.required_if' => 'Debes seleccionar un LMS si no especificas una URL',
+            'lms_system_uid.required_with' => 'El LMS es obligatorio cuando se proporciona la URL del LMS.',
             'call_uid.required' => 'Selecciona la convocatoria del curso.',
             'featured_big_carrousel_title.required_if' => 'Debes especificar un título',
             'featured_big_carrousel_description.required_if' => 'Debes especificar una descripción',

@@ -206,7 +206,7 @@ class EducationalResourcesControllerTest extends TestCase
         $response = $this->getJson('/learning_objects/educational_resources/get_resources?' . http_build_query($filters));
 
         $response->assertStatus(200);
-        // $response->assertJsonFragment(['uid' => $resource->uid]);
+        
     }
 
     /** @test Obtener recursos con ordenamiento */
@@ -352,6 +352,12 @@ class EducationalResourcesControllerTest extends TestCase
 
         $this->actingAs($user);
 
+        AutomaticNotificationTypesModel::factory()->create(
+            [
+                'code'=> 'NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS_MANAGEMENTS'
+            ]
+        );
+
         // Simula un archivo de imagen y un archivo de recurso
         $resourceImage = UploadedFile::fake()->image('resource.jpg');
         $resourceFile = UploadedFile::fake()->create('resource.pdf', 100);
@@ -376,7 +382,7 @@ class EducationalResourcesControllerTest extends TestCase
 
         // Crear un mock del servicio de embeddings
         $mockEmbeddingsService = Mockery::mock(EmbeddingsService::class);
-        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 1536, 0.1));
+        $mockEmbeddingsService->shouldReceive('getEmbedding')->andReturn(array_fill(0, 150, 0.1));
 
         // Reemplazar el servicio real por el mock en el contenedor de servicios de Laravel
         $this->app->instance(EmbeddingsService::class, $mockEmbeddingsService);
@@ -806,7 +812,10 @@ class EducationalResourcesControllerTest extends TestCase
             'uid' => generateUuid(),
         ]);
 
-        $automaticNotificationType = AutomaticNotificationTypesModel::where('code', 'NEW_EDUCATIONAL_PROGRAMS')->first();
+        $automaticNotificationType = AutomaticNotificationTypesModel::factory()->create([
+            'code' => 'NEW_EDUCATIONAL_RESOURCES_NOTIFICATIONS_MANAGEMENTS',
+        ]);
+
 
         $user->automaticGeneralNotificationsTypesDisabled()->attach($automaticNotificationType->uid, [
             'uid' => generateUuid(),
