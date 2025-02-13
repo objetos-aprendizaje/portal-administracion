@@ -6,6 +6,7 @@ use App\Jobs\SendEmailJob;
 use App\Models\UsersModel;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Notification;
+use App\Models\AutomaticNotificationTypesModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Jobs\SendChangeStatusEducationalProgramNotification;
 
@@ -36,6 +37,13 @@ class JobsSendChangeStatusEducationalProgramNotificationTest extends TestCase
             ],
             'creator_user_uid' => $user->uid,
         ];
+
+        AutomaticNotificationTypesModel::factory()->create(
+            [
+                'code' => 'CHANGE_STATUS_EDUCATIONAL_PROGRAM',
+            ]
+        );
+
 
         // Act: Fake the Queue
         Queue::fake(); // Asegúrate de llamar a Queue::fake() antes de ejecutar el trabajo

@@ -233,9 +233,6 @@ class ListUsersController extends BaseController
 
         if ($userUid) {
             $rules['email'] = 'required|email|unique:users,email,' . $userUid . ',uid';
-            $rules['nif'] = 'unique:users,nif,' . $userUid . ',uid';
-        } else {
-            $rules['email'] = 'required|email|unique:users,email';
         }
 
         $validator = Validator::make($request->all(), $rules, $messages);

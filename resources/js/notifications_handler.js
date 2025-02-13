@@ -1,5 +1,5 @@
 import { showModal } from "./modal_handler";
-import { apiFetch, formatDateTime } from "./app";
+import { apiFetch } from "./app";
 
 document.addEventListener("DOMContentLoaded", function () {
     controlNotification();
@@ -161,5 +161,5 @@ function checkUnreadNotifications() {
 
     const notReadDiv = notificationBox.querySelector(".not-read");
 
-    return notReadDiv ? true : false;
+    return notReadDiv;
 }

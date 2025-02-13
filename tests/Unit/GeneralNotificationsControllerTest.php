@@ -20,16 +20,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 class GeneralNotificationsControllerTest extends TestCase
 {
     use RefreshDatabase;
-
-    // public function setUp(): void
-    // {
-    //     parent::setUp();
-
-    //     $this->withoutMiddleware();
-    //     $user = UsersModel::factory()->create();
-    //     $this->actingAs($user);
-    //     $this->assertTrue(Schema::hasTable('users'), 'La tabla users no existe.');
-    // }
+    
 
     public function testIndexGeneralNotifications()
     {
@@ -576,7 +567,7 @@ class GeneralNotificationsControllerTest extends TestCase
             'description' => 'Descripción de la notificación con roles.',
         ]);
 
-        // Crea un payload para crear la notificación, asegurándote de incluir roles. Sin notification_general_uid 
+        // Crea un payload para crear la notificación, asegurándote de incluir roles. Sin notification_general_uid
         $payload = [
             'title' => 'Notificación con Roles',
             'description' => 'Descripción de la notificación con roles.',

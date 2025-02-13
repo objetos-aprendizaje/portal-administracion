@@ -143,15 +143,31 @@ class ApiCoursesController extends BaseController
 
     private function updateTeachers($teachersData, $course)
     {
-        // Validar que no se haya proporcionado un profesor como coordinador y no coordinador
+        $this->validateTeachersData($teachersData);
+
+        $uidsTeachers = $this->extractTeacherUids($teachersData);
+
+        $teachers = $this->validateTeachersExistence($uidsTeachers);
+
+        $this->validateTeachersRoles($teachers);
+
+        $teachersToSync = $this->prepareTeachersToSync($uidsTeachers, $teachersData, $course);
+
+        $course->teachers()->sync($teachersToSync);
+    }
+
+    private function validateTeachersData($teachersData)
+    {
         if ($teachersData['coordinator'] && $teachersData['no_coordinator']) {
             $intersect = array_intersect($teachersData['coordinator'], $teachersData['no_coordinator']);
             if ($intersect) {
                 throw new OperationFailedException("Un profesor no puede ser coordinador y no coordinador a la vez", 406);
             }
         }
+    }
 
-        // Sacar los uids de los profesores
+    private function extractTeacherUids($teachersData)
+    {
         $uidsTeachers = [];
         if ($teachersData['coordinator']) {
             foreach ($teachersData['coordinator'] as $teacher) {
@@ -165,31 +181,42 @@ class ApiCoursesController extends BaseController
             }
         }
 
-        // Validar que los profesores existan en la base de datos y que tengan el rol de profesor
-        $teachers = UsersModel::with('roles')->whereIn('uid', $uidsTeachers)
-            ->get();
+        return $uidsTeachers;
+    }
+
+    private function validateTeachersExistence($uidsTeachers)
+    {
+        $teachers = UsersModel::with('roles')->whereIn('uid', $uidsTeachers)->get();
 
         if ($teachers->count() != count($uidsTeachers)) {
             throw new OperationFailedException("Uno o varios de los profesores proporcionados no existen o no tienen el rol de profesor", 404);
         }
 
+        return $teachers;
+    }
+
+    private function validateTeachersRoles($teachers)
+    {
         foreach ($teachers as $teacher) {
             if (!$teacher->roles->contains('code', 'TEACHER')) {
                 throw new OperationFailedException("Uno o varios de los profesores proporcionados no tienen el rol de profesor", 404);
             }
         }
+    }
 
+    private function prepareTeachersToSync($uidsTeachers, $teachersData, $course)
+    {
         $teachersToSync = [];
         foreach ($uidsTeachers as $teacherUid) {
             $teachersToSync[$teacherUid] = [
                 'uid' => generateUuid(),
                 'course_uid' => $course->uid,
                 'user_uid' => $teacherUid,
-                'type' =>  $teachersData['coordinator'] && in_array($teacherUid, $teachersData['coordinator']) ? 'COORDINATOR' : 'NO_COORDINATOR'
+                'type' => $teachersData['coordinator'] && in_array($teacherUid, $teachersData['coordinator']) ? 'COORDINATOR' : 'NO_COORDINATOR'
             ];
         }
 
-        $course->teachers()->sync($teachersToSync);
+        return $teachersToSync;
     }
 
     private function updateCourseDb($updateData, $course)

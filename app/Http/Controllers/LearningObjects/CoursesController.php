@@ -269,7 +269,8 @@ class CoursesController extends BaseController
         return response()->json(['message' => 'Credenciales selladas correctamente'], 200);
     }
 
-    public function regenerateStudentCredentials(Request $request) {
+    public function regenerateStudentCredentials(Request $request)
+    {
         $courseUid = $request->input('course_uid');
 
         $this->certidigitalService->createUpdateCourseCredential($courseUid);
@@ -277,7 +278,8 @@ class CoursesController extends BaseController
         return response()->json(['message' => 'Credencial de estudiante regenerada correctamente'], 200);
     }
 
-    public function regenerateTeacherCredentials(Request $request) {
+    public function regenerateTeacherCredentials(Request $request)
+    {
         $courseUid = $request->input('course_uid');
 
         $this->certidigitalService->createUpdateCourseTeacherCredential($courseUid);
@@ -374,11 +376,9 @@ class CoursesController extends BaseController
             foreach ($sort as $order) {
                 if ($order['field'] == 'certidigital_credential_uid') {
                     $query->orderByRaw('CASE WHEN courses.certidigital_credential_uid IS NULL THEN 0 ELSE 1 END, courses.certidigital_credential_uid ' . $order['dir']);
-                }
-                elseif ($order['field'] == 'certidigital_teacher_credential_uid') {
+                } elseif ($order['field'] == 'certidigital_teacher_credential_uid') {
                     $query->orderByRaw('CASE WHEN courses.certidigital_teacher_credential_uid IS NULL THEN 0 ELSE 1 END, courses.certidigital_teacher_credential_uid ' . $order['dir']);
-                }
-                else {
+                } else {
                     $query->orderBy($order['field'], $order['dir']);
                 }
             }
@@ -445,7 +445,6 @@ class CoursesController extends BaseController
                     $query->where('user_uid', '=', $userUid);
                 });
         });
-
     }
 
     private function applyFilters($filters, &$query)
@@ -456,22 +455,22 @@ class CoursesController extends BaseController
             } elseif ($filter['database_field'] == 'inscription_date') {
                 if (count($filter['value']) == 2) {
                     // Si recibimos un rango de fechas
-                    $query->where('inscription_start_date', '<=', $filter['value'][1])
-                        ->where('inscription_finish_date', '>=', $filter['value'][0]);
+                    $query->where('courses.inscription_start_date', '<=', $filter['value'][1])
+                        ->where('courses.inscription_finish_date', '>=', $filter['value'][0]);
                 } else {
                     // Si recibimos solo una fecha
-                    $query->whereDate('inscription_start_date', '<=', $filter['value'])
-                        ->whereDate('inscription_finish_date', '>=', $filter['value']);
+                    $query->whereDate('courses.inscription_start_date', '<=', $filter['value'])
+                        ->whereDate('courses.inscription_finish_date', '>=', $filter['value']);
                 }
             } elseif ($filter['database_field'] == 'realization_date') {
                 if (count($filter['value']) == 2) {
                     // Si recibimos un rango de fechas
-                    $query->where('realization_start_date', '<=', $filter['value'][1])
-                        ->where('realization_finish_date', '>=', $filter['value'][0]);
+                    $query->where('courses.realization_start_date', '<=', $filter['value'][1])
+                        ->where('courses.realization_finish_date', '>=', $filter['value'][0]);
                 } else {
                     // Si recibimos solo una fecha
-                    $query->whereDate('realization_start_date', '<=', $filter['value'])
-                        ->whereDate('realization_finish_date', '>=', $filter['value']);
+                    $query->whereDate('courses.realization_start_date', '<=', $filter['value'])
+                        ->whereDate('courses.realization_finish_date', '>=', $filter['value']);
                 }
             } elseif ($filter['database_field'] == "coordinators_teachers") {
                 $teachersUids = $filter['value'];
@@ -486,10 +485,8 @@ class CoursesController extends BaseController
                         ->where('type', 'NO_COORDINATOR');
                 });
             } elseif ($filter['database_field'] == 'creator_user_uid') {
-
-                $query->whereIn('creator_user_uid', $filter['value']);
+                $query->whereIn('courses.creator_user_uid', $filter['value']);
             } elseif ($filter['database_field'] == 'categories') {
-
                 $categoriesUids = $filter['value'];
                 $query->whereHas('categories', function ($query) use ($categoriesUids) {
                     $query->whereIn('categories.uid', $categoriesUids);
@@ -505,13 +502,13 @@ class CoursesController extends BaseController
             } elseif ($filter['database_field'] == 'max_ects_workload') {
                 $query->where('ects_workload', '<=', $filter['value']);
             } elseif ($filter['database_field'] == 'min_cost') {
-                $query->where('cost', '>=', $filter['value']);
+                $query->where('courses.cost', '>=', $filter['value']);
             } elseif ($filter['database_field'] == 'max_cost') {
-                $query->where('cost', '<=', $filter['value']);
+                $query->where('courses.cost', '<=', $filter['value']);
             } elseif ($filter['database_field'] == 'min_required_students') {
-                $query->where('min_required_students', '>=', $filter['value']);
+                $query->where('courses.min_required_students', '>=', $filter['value']);
             } elseif ($filter['database_field'] == 'max_required_students') {
-                $query->where('min_required_students', '<=', $filter['value']);
+                $query->where('courses.min_required_students', '<=', $filter['value']);
             } elseif ($filter['database_field'] == 'validate_student_registrations') {
                 $query->where('courses.validate_student_registrations', $filter['value']);
             } elseif ($filter['database_field'] == 'learning_results') {
@@ -589,9 +586,31 @@ class CoursesController extends BaseController
         adaptRequestDatesToUTC($request);
 
         $courseUid = $request->input('course_uid');
+        $courseBd = $this->getCourseBd($courseUid);
 
+        $errors = $this->validateCourseFields($request);
+        if (!$errors->isEmpty()) {
+            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $errors], 422);
+        }
+
+        $structure = json_decode($request->input('structure'), true);
+        $this->validateCourseStructure($structure);
+
+        $action = $request->input('action');
+        $belongsEducationalProgram = $request->input('belongs_to_educational_program');
+        $newCourseStatus = $this->determineCourseStatus($action, $courseBd, $belongsEducationalProgram);
+
+        DB::transaction(function () use ($request, $courseBd, $belongsEducationalProgram, $newCourseStatus) {
+            $this->processCourseTransaction($request, $courseBd, $belongsEducationalProgram, $newCourseStatus);
+        }, 5);
+
+        $isNew = !$courseUid;
+        return response()->json(['message' => $isNew ? 'Se ha añadido el curso correctamente' : 'Se ha actualizado el curso correctamente'], 200);
+    }
+
+    private function getCourseBd($courseUid)
+    {
         if ($courseUid) {
-            $isNew = false;
             $courseBd = CoursesModel::where('uid', $courseUid)->with([
                 "educational_program",
                 "embeddings",
@@ -599,120 +618,110 @@ class CoursesController extends BaseController
             ])->first();
             $this->checkStatusCourse($courseBd);
 
-            // Si el curso está ya añadido a un programa educativo, validamos las fechas de realización
             if ($courseBd->status->code == "ADDED_EDUCATIONAL_PROGRAM") {
-                $this->checkRealizationDatesCourseAddEducationalProgram($request, $courseBd);
+                $this->checkRealizationDatesCourseAddEducationalProgram(request(), $courseBd);
             }
         } else {
-            $isNew = true;
             $courseBd = new CoursesModel();
             $courseBd->uid = generateUuid();
-
-            // Número de cursos existentes
             $courseBd->identifier = $this->generateCourseIdentifier();
             $courseBd->creator_user_uid = Auth::user()['uid'];
         }
 
-        $errors = $this->validateCourseFields($request);
+        return $courseBd;
+    }
 
-        if (!$errors->isEmpty()) {
-            return response()->json(['message' => 'Algunos campos son incorrectos', 'errors' => $errors], 422);
-        }
-
-        // Validamos la estructura
-        $structure = $request->input('structure');
-        $structure = json_decode($structure, true);
-        $this->validateCourseStructure($structure);
-
-        $action = $request->input('action');
-        $belongsEducationalProgram = $request->input('belongs_to_educational_program');
-
-        // En función de si el curso pertenece o no a un programa formativo, le corresponderá un estado u otro
+    private function determineCourseStatus($action, $courseBd, $belongsEducationalProgram)
+    {
         if ($belongsEducationalProgram) {
-            $newCourseStatus = $this->statusCourseBelongsEducationalProgram($action, $courseBd);
+            return $this->statusCourseBelongsEducationalProgram($action, $courseBd);
         } else {
-            $newCourseStatus = $this->statusCourseNotBelongsEducationalProgram($action, $courseBd);
+            return $this->statusCourseNotBelongsEducationalProgram($action, $courseBd);
+        }
+    }
+
+    private function processCourseTransaction($request, $courseBd, $belongsEducationalProgram, $newCourseStatus)
+    {
+        $courseBdCopy = clone $courseBd;
+        $isManagement = Auth::user()->hasAnyRole(['MANAGEMENT']);
+        $embeddings = $this->generateCourseEmbeddings($request, $courseBd);
+
+        if ($newCourseStatus) {
+            $courseBd->course_status_uid = $newCourseStatus->uid;
         }
 
-        DB::transaction(function () use ($request, $courseBd, $belongsEducationalProgram, $isNew, $newCourseStatus) {
-            // Copia del curso antes de cambios
-            $courseBdCopy = clone $courseBd;
-
-            $isManagement = Auth::user()->hasAnyRole(['MANAGEMENT']);
-
-            // Antes de actualizar el título y descripción del curso, se comprueba si hay cambios y se generan embeddings
-            $embeddings = $this->generateCourseEmbeddings($request, $courseBd);
-
-            if ($newCourseStatus) {
-                $courseBd->course_status_uid = $newCourseStatus->uid;
-            }
-
-            // En función de si el curso pertenece a una nueva edición o no y no es gestor, se actualizarán o no ciertos campos
-            if ($courseBd->course_origin_uid && !$isManagement) {
-                $this->updateCourseFieldsNewEdition($request, $courseBd);
-                $courseBd->save();
-                // Documentos
-                $validateStudentRegistrations = $request->input('validate_student_registrations');
-                if ($validateStudentRegistrations) {
-                    $this->updateDocumentsCourse($request, $courseBd);
-                }
-                else {
-                    $courseBd->courseDocuments()->delete();
-                }
-            } else {
-                $this->updateCourseFields($request, $courseBd, $belongsEducationalProgram);
-                $courseBd->save();
-                // Campos de tablas auxiliares
-                $this->updateAuxiliarDataCourse($courseBd, $request);
-            }
-
-            // Notificación a los gestores si el curso está pendiente de aprobación para que lo revisen
-            if ($newCourseStatus && $newCourseStatus->code == "PENDING_APPROVAL") {
-                dispatch(new SendCourseNotificationToManagements($courseBd->toArray()));
-            }
-
-            $imageFile = $request->file('image_input_file');
-            if ($imageFile) {
-                $this->updateImageField($imageFile, $courseBd);
-            }
-
-            $this->saveLogMessageSaveCourse($isNew, $courseBd->title);
+        if ($courseBd->course_origin_uid && !$isManagement) {
+            $this->updateCourseFieldsNewEdition($request, $courseBd);
             $courseBd->save();
+            $this->handleCourseDocuments($request, $courseBd);
+        } else {
+            $this->updateCourseFields($request, $courseBd, $belongsEducationalProgram);
+            $courseBd->save();
+            $this->updateAuxiliarDataCourse($courseBd, $request);
+        }
 
-            if ($embeddings) {
-                CoursesEmbeddingsModel::updateOrCreate(
-                    ['course_uid' => $courseBd->uid],
-                    ['embeddings' => $embeddings]
-                );
+        $this->notifyManagementIfPendingApproval($newCourseStatus, $courseBd);
+        $this->updateCourseImage($request, $courseBd);
+        $this->saveLogMessageSaveCourse(!$courseBd->exists, $courseBd->title);
+        $courseBd->save();
+
+        if ($embeddings) {
+            CoursesEmbeddingsModel::updateOrCreate(
+                ['course_uid' => $courseBd->uid],
+                ['embeddings' => $embeddings]
+            );
+        }
+
+        $this->handleCoursePublication($request, $newCourseStatus, $courseBd);
+        $this->updateCertidigitalCredentials($courseBdCopy, $courseBd);
+    }
+
+    private function handleCourseDocuments($request, $courseBd)
+    {
+        $validateStudentRegistrations = $request->input('validate_student_registrations');
+        if ($validateStudentRegistrations) {
+            $this->updateDocumentsCourse($request, $courseBd);
+        } else {
+            $courseBd->courseDocuments()->delete();
+        }
+    }
+
+    private function notifyManagementIfPendingApproval($newCourseStatus, $courseBd)
+    {
+        if ($newCourseStatus && $newCourseStatus->code == "PENDING_APPROVAL") {
+            dispatch(new SendCourseNotificationToManagements($courseBd->toArray()));
+        }
+    }
+
+    private function updateCourseImage($request, $courseBd)
+    {
+        $imageFile = $request->file('image_input_file');
+        if ($imageFile) {
+            $this->updateImageField($imageFile, $courseBd);
+        }
+    }
+
+    private function handleCoursePublication($request, $newCourseStatus, $courseBd)
+    {
+        if ($courseBd->lms_system_uid && $newCourseStatus && $newCourseStatus->code == "ACCEPTED_PUBLICATION" && !$courseBd->lms_url) {
+            $lmsSystem = LmsSystemsModel::where('uid', $request->input('lms_system_uid'))->first();
+            $this->sendNotificationCourseAcceptedPublicationToKafka($courseBd, $lmsSystem->identifier);
+        }
+    }
+
+    private function updateCertidigitalCredentials($courseBdCopy, $courseBd)
+    {
+        $changesCourse = $this->detectChangesCredential($courseBdCopy, $courseBd);
+
+        if (!$courseBd->certidigitalCredential || $changesCourse) {
+            $this->certidigitalService->createUpdateCourseTeacherCredential($courseBd->uid);
+
+            if (!$courseBd->belongs_to_educational_program) {
+                $this->certidigitalService->createUpdateCourseCredential($courseBd->uid);
+            } elseif ($courseBd->belongs_to_educational_program && $courseBd->educational_program && $courseBd->educational_program->certidigitalCredential) {
+                $this->certidigitalService->createUpdateEducationalProgramCredential($courseBd->educational_program->uid);
             }
-
-            if ($newCourseStatus && $newCourseStatus->code == "ACCEPTED_PUBLICATION" && !$courseBd->lms_url) {
-                $lmsSystem = $request->input('lms_system_uid');
-                $lmsSystem = LmsSystemsModel::where('uid', $lmsSystem)->first();
-                $this->sendNotificationCourseAcceptedPublicationToKafka($courseBd, $lmsSystem->identifier);
-            }
-
-            // Se comprueba si ha habido cambios en el curso relativos a certidigital para actualizar o no la credencial
-            $changesCourse = $this->detectChangesCredential($courseBdCopy, $courseBd);
-
-            if (!$courseBd->certidigitalCredential || $changesCourse) {
-                // Credencial para los docentes
-                $this->certidigitalService->createUpdateCourseTeacherCredential($courseBd->uid);
-
-                /*
-                    Si el curso no pertenece a un programa formativo, se crea la credencial.
-                    Si va a pertenecer a un programa formativo, ya lo tiene vinculado y éste tiene credencial, se actualiza la credencial del
-                    programa educativo
-                */
-                if (!$courseBd->belongs_to_educational_program) {
-                    $this->certidigitalService->createUpdateCourseCredential($courseBd->uid);
-                } elseif ($courseBd->belongs_to_educational_program && $courseBd->educational_program && $courseBd->educational_program->certidigitalCredential) {
-                    $this->certidigitalService->createUpdateEducationalProgramCredential($courseBd->educational_program->uid);
-                }
-            }
-        }, 5);
-
-        return response()->json(['message' => ($isNew) ? 'Se ha añadido el curso correctamente' : 'Se ha actualizado el curso correctamente'], 200);
+        }
     }
 
     private function detectChangesCredential($courseBeforeChanges, $courseAfterChanges)
@@ -720,11 +729,9 @@ class CoursesController extends BaseController
         $courseBeforeChanges->load('blocks.learningResults');
         if ($courseBeforeChanges->title != $courseAfterChanges->title) {
             return true;
-        }
-        elseif (json_encode($courseAfterChanges->blocks) != json_encode($courseBeforeChanges->blocks)) {
+        } elseif (json_encode($courseAfterChanges->blocks) != json_encode($courseBeforeChanges->blocks)) {
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }
@@ -994,7 +1001,7 @@ class CoursesController extends BaseController
             'ects_workload' => 'required|numeric',
             'validate_student_registrations' => 'required|boolean',
             'lms_url' => 'nullable|url',
-            'lms_system_uid' => 'required_if:lms_url,!=,null',
+            'lms_system_uid' => 'nullable|required_with:lms_url',
             'cost' => 'nullable|numeric',
             'featured_big_carrousel_title' => 'required_if:featured_big_carrousel,1',
             'featured_big_carrousel_description' => 'required_if:featured_big_carrousel,1',
@@ -1148,7 +1155,7 @@ class CoursesController extends BaseController
             'ects_workload.numeric' => 'La carga de trabajo ECTS debe ser un número.',
             'validate_student_registrations.required' => 'Indica si se validarán las inscripciones de los estudiantes.',
             'lms_url.url' => 'Introduce una URL válida para el LMS.',
-            'lms_system_uid.required_if' => 'Debes seleccionar un LMS si no especificas una URL',
+            'lms_system_uid.required_with' => 'El LMS es obligatorio cuando se proporciona la URL del LMS.',
             'call_uid.required' => 'Selecciona la convocatoria del curso.',
             'featured_big_carrousel_title.required_if' => 'Debes especificar un título',
             'featured_big_carrousel_description.required_if' => 'Debes especificar una descripción',
@@ -1922,87 +1929,99 @@ class CoursesController extends BaseController
 
     private function syncStructure($structure, $courseUid)
     {
-
         $this->syncDeletedCompositionCourseStructure($courseUid, $structure);
 
-        // Iterar a través de los bloques
         foreach ($structure as $blockData) {
+            $this->syncBlock($blockData, $courseUid);
+        }
+    }
 
-            // Crear o actualizar el bloque
-            $blockUid = $blockData['uid'] ?: generateUuid();
-            BlocksModel::updateOrCreate(
-                ['uid' => $blockUid],
-                [
-                    'course_uid' => $courseUid,
-                    'type' => $blockData['type'],
-                    'name' => $blockData['name'],
-                    'description' => $blockData['description'],
-                    'order' => $blockData['order']
-                ]
-            );
+    private function syncBlock($blockData, $courseUid)
+    {
+        $blockUid = $blockData['uid'] ?: generateUuid();
+        BlocksModel::updateOrCreate(
+            ['uid' => $blockUid],
+            [
+                'course_uid' => $courseUid,
+                'type' => $blockData['type'],
+                'name' => $blockData['name'],
+                'description' => $blockData['description'],
+                'order' => $blockData['order']
+            ]
+        );
 
-            $blockModel = BlocksModel::where('uid', $blockUid)->first();
+        $blockModel = BlocksModel::where('uid', $blockUid)->first();
+        $this->syncLearningResults($blockModel, $blockData['learningResults']);
 
-
-
-            $learningResultsToSync = [];
-            foreach ($blockData['learningResults'] as $learningResultUid) {
-                $learningResultsToSync[$learningResultUid] = [
-                    'uid' => generateUuid(),
-                    'course_block_uid' => $blockUid,
-                    'learning_result_uid' => $learningResultUid
-                ];
-            }
-            $blockModel->learningResults()->sync($learningResultsToSync);
-
-            if (isset($blockData['subBlocks'])) {
-                // Iterar a través de los subbloques
-                foreach ($blockData['subBlocks'] as $subBlockData) {
-                    // Crear o actualizar el subbloque
-                    $subBlock = SubBlocksModel::updateOrCreate(
-                        ['uid' => $subBlockData['uid'] ?: generateUuid()],
-                        [
-                            'block_uid' => $blockModel['uid'],
-                            'name' => $subBlockData['name'],
-                            'description' => $subBlockData['description'],
-                            'order' => $subBlockData['order']
-                        ]
-                    );
-
-                    if (isset($subBlockData['elements'])) {
-                        // Iterar a través de los elementos
-                        foreach ($subBlockData['elements'] as $elementData) {
-                            // Crear o actualizar el elemento
-                            $element = ElementsModel::updateOrCreate(
-                                ['uid' => $elementData['uid'] ?: generateUuid()],
-                                [
-                                    'subblock_uid' => $subBlock->uid,
-                                    'name' => $elementData['name'],
-                                    'description' => $elementData['description'],
-                                    'order' => $elementData['order']
-                                ]
-                            );
-
-                            if (isset($elementData['subElements'])) {
-                                // Iterar a través de los subelementos
-                                foreach ($elementData['subElements'] as $subElementData) {
-                                    // Crear o actualizar el subelemento
-                                    SubElementsModel::updateOrCreate(
-                                        ['uid' => $subElementData['uid'] ?: generateUuid()],
-                                        [
-                                            'element_uid' => $element->uid,
-                                            'name' => $subElementData['name'],
-                                            'description' => $subElementData['description'],
-                                            'order' => $subElementData['order']
-                                        ]
-                                    );
-                                }
-                            }
-                        }
-                    }
-                }
+        if (isset($blockData['subBlocks'])) {
+            foreach ($blockData['subBlocks'] as $subBlockData) {
+                $this->syncSubBlock($subBlockData, $blockModel['uid']);
             }
         }
+    }
+
+    private function syncLearningResults($blockModel, $learningResults)
+    {
+        $learningResultsToSync = [];
+        foreach ($learningResults as $learningResultUid) {
+            $learningResultsToSync[$learningResultUid] = [
+                'uid' => generateUuid(),
+                'course_block_uid' => $blockModel->uid,
+                'learning_result_uid' => $learningResultUid
+            ];
+        }
+        $blockModel->learningResults()->sync($learningResultsToSync);
+    }
+
+    private function syncSubBlock($subBlockData, $blockUid)
+    {
+        $subBlock = SubBlocksModel::updateOrCreate(
+            ['uid' => $subBlockData['uid'] ?: generateUuid()],
+            [
+                'block_uid' => $blockUid,
+                'name' => $subBlockData['name'],
+                'description' => $subBlockData['description'],
+                'order' => $subBlockData['order']
+            ]
+        );
+
+        if (isset($subBlockData['elements'])) {
+            foreach ($subBlockData['elements'] as $elementData) {
+                $this->syncElement($elementData, $subBlock->uid);
+            }
+        }
+    }
+
+    private function syncElement($elementData, $subBlockUid)
+    {
+        $element = ElementsModel::updateOrCreate(
+            ['uid' => $elementData['uid'] ?: generateUuid()],
+            [
+                'subblock_uid' => $subBlockUid,
+                'name' => $elementData['name'],
+                'description' => $elementData['description'],
+                'order' => $elementData['order']
+            ]
+        );
+
+        if (isset($elementData['subElements'])) {
+            foreach ($elementData['subElements'] as $subElementData) {
+                $this->syncSubElement($subElementData, $element->uid);
+            }
+        }
+    }
+
+    private function syncSubElement($subElementData, $elementUid)
+    {
+        SubElementsModel::updateOrCreate(
+            ['uid' => $subElementData['uid'] ?: generateUuid()],
+            [
+                'element_uid' => $elementUid,
+                'name' => $subElementData['name'],
+                'description' => $subElementData['description'],
+                'order' => $subElementData['order']
+            ]
+        );
     }
 
     private function syncDeletedCompositionCourseStructure($courseUid, $structure)
@@ -2045,7 +2064,6 @@ class CoursesController extends BaseController
             'allSubcompetences.allSubcompetences',
             'allSubcompetences.allSubcompetences.learningResults'
         ])->get();
-
     }
     public function enrollStudents(Request $request)
     {

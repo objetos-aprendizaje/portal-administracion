@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Artisan;
 use App\Models\EducationalProgramsModel;
+use App\Models\AutomaticNotificationTypesModel;
 use App\Models\EducationalProgramStatusesModel;
 use App\Models\EducationalProgramsStudentsModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -76,6 +77,10 @@ class ChangeStatusToDevelopmentEducationalProgramCommandTest extends TestCase
         EducationalProgramStatusesModel::where('code', 'DEVELOPMENT')->first();
 
         $statusEnrolling = EducationalProgramStatusesModel::where('code', 'ENROLLING')->first();
+
+        AutomaticNotificationTypesModel::factory()->create([
+            'code'=> 'EDUCATIONAL_PROGRAMS_ENROLLMENT_COMMUNICATIONS'
+        ]);
 
 
         $educationalProgram = EducationalProgramsModel::factory()->withEducationalProgramType()->create([

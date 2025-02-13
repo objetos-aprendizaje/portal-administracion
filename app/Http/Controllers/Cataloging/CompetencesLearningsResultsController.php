@@ -500,23 +500,27 @@ class CompetencesLearningsResultsController extends BaseController
                 continue;
             }
 
-            if ($row) {
-                $includeRow = true;
-
-                foreach ($filter as $position => $value) {
-                    if (!isset($row[$position]) || $row[$position] != $value) {
-                        $includeRow = false;
-                        break;
-                    }
-                }
-
-                if ($includeRow) {
-                    $data[] = $row;
-                }
+            if ($this->shouldIncludeRow($row, $filter)) {
+                $data[] = $row;
             }
         }
 
         return $data;
+    }
+
+    private function shouldIncludeRow($row, $filter)
+    {
+        if (!$row) {
+            return false;
+        }
+
+        foreach ($filter as $position => $value) {
+            if (!isset($row[$position]) || $row[$position] != $value) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function buildHierarchyCompetences($broaderRelation, $skill)
@@ -683,6 +687,5 @@ class CompetencesLearningsResultsController extends BaseController
         ]);
 
         return $competence_framework_uid;
-
     }
 }

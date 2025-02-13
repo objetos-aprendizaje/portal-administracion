@@ -74,12 +74,6 @@ RUN composer install
 RUN npm install
 RUN npm run build
 
-# Copiar la configuración de Apache SSL
-COPY docker_files/000-default-ssl.conf /etc/apache2/sites-available/000-default-ssl.conf
-# Habilitar el sitio SSL
-RUN a2enmod ssl
-RUN a2ensite 000-default-ssl
-
 # Habilitar htaccess
 RUN a2enmod rewrite headers
 

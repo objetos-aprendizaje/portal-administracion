@@ -41,8 +41,9 @@
                             </div>
                         </div>
 
-                        <a id="attachment-download" class=" text-[14px]" target="new_blank"
-                            href="javascript:void(0)"></a>
+                        <a id="attachment-download" class="text-[14px]" target="_blank" href="javascript:void(0)">
+                            Descargar adjunto
+                        </a>
 
                     </div>
 
@@ -57,8 +58,7 @@
         </div>
 
         <div class="btn-block">
-            <button data-modal-id="export_import-modal" type="button"
-                class="btn btn-secondary close-modal-btn">
+            <button data-modal-id="export_import-modal" type="button" class="btn btn-secondary close-modal-btn">
                 Cerrar {{ eHeroicon('x-mark', 'outline') }}</button>
         </div>
 

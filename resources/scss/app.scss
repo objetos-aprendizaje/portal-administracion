@@ -707,8 +707,13 @@ button.element-disabled {
         @apply text-primary
     }
     li {
-        @apply flex items-center gap-4 cursor-pointer relative flex-wrap
+        @apply flex items-center gap-4 relative flex-wrap
     }
+
+    .main-element {
+        @apply cursor-pointer;
+    }
+
     li:hover svg {
         @apply text-primary
     }
@@ -739,8 +744,13 @@ button.element-disabled {
     .sub-menu ul {
         @apply pt-[15px]
     }
+
     .sub-menu ul li {
-        @apply hover:text-primary hover:font-roboto-bold pl-[44px] pt-[10px] pr-[44px] pb-[10px]
+        @apply pl-[44px] pt-[10px] pr-[44px] pb-[10px];
+    }
+
+    .sub-menu ul li:not(.sub-menu-separator) {
+        @apply  hover:text-primary hover:font-roboto-bold;
     }
 
     .sub-menu ul li.disabled {
@@ -753,6 +763,10 @@ button.element-disabled {
 
     .sub-menu a {
         @apply text-[#8A8A8A] block w-full hover:text-primary
+    }
+
+    .sub-menu .subgroup li {
+        @apply ml-[10px]
     }
 
     .transition-all {
@@ -798,6 +812,10 @@ button.element-disabled {
     button {
         @apply w-[18px] h-[18px]
 
+    }
+
+    button.options-button-disabled {
+        @apply cursor-not-allowed
     }
     svg {
         @apply w-[18px] h-[18px] text-white
@@ -850,6 +868,10 @@ button.element-disabled {
 
 .modal {
     @apply hidden fixed inset-0 z-50 p-[40px] overflow-auto  opacity-0 transition-opacity duration-300 ease-in-out bg-[#00000051];
+}
+
+.modal.modal-confirmation {
+    @apply z-[100]
 }
 
 .modal-header {
@@ -937,7 +959,11 @@ body.modal-open {
         @apply border-b;
     }
 
-    @apply m-2 space-y-2 w-full shadow-md rounded-md;
+    .accordion-element.accordion-element-error {
+        @apply border-red-500 border;
+    }
+
+    @apply space-y-2 w-full shadow-md rounded-md;
 }
 
 /******************************* COMPOSICIÓN CURSO ********************/

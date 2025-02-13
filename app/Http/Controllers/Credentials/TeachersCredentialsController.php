@@ -42,8 +42,6 @@ class TeachersCredentialsController extends BaseController
         $size = $request->get('size', 1);
         $search = $request->get('search');
         $sort = $request->get('sort');
-               
-
         $query = UsersModel::query()->whereHas('roles', function ($query) {
             $query->where('code', 'TEACHER');
         });
@@ -88,6 +86,17 @@ class TeachersCredentialsController extends BaseController
         $data = $query->paginate($size);
 
         return response()->json($data, 200);
+    }
+
+    public function generateCredentials(Request $request)
+    {
+        $coursesUids = $request->get('courses');
+
+        foreach ($coursesUids as $courseUid) {
+            $this->certidigitalService->createUpdateCourseTeacherCredential($courseUid);
+        }
+
+        return response()->json(['message' => 'Credenciales generadas correctamente'], 200);
     }
 
     public function emitCredentials(Request $request)

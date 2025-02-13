@@ -766,8 +766,8 @@ class NotificationsGeneralTest extends TestCase
         $notificactiontype1 = NotificationsTypesModel::factory()->create()->first();
         $notificactiontype2 = NotificationsTypesModel::factory()->create()->first();
         // Crea algunos registros de ejemplo en la base de datos
-        $emailNotification1 = EmailNotificationsModel::factory()->create(['status' => 'SENT', "notification_type_uid" => $notificactiontype1->uid]);
-        $emailNotification2 = EmailNotificationsModel::factory()->create(['status' => 'SENT', "notification_type_uid" => $notificactiontype2->uid]);
+        EmailNotificationsModel::factory()->create(['status' => 'SENT', "notification_type_uid" => $notificactiontype1->uid]);
+        EmailNotificationsModel::factory()->create(['status' => 'SENT', "notification_type_uid" => $notificactiontype2->uid]);
 
         $filters = [
             ['database_field' => 'status', 'value' => 'SENT'],
@@ -793,7 +793,6 @@ class NotificationsGeneralTest extends TestCase
         // Llama al método applyFilters usando reflexión
         $reflection = new \ReflectionClass(EmailNotificationsController::class);
         $method = $reflection->getMethod('applyFilters');
-        $method->setAccessible(true);
 
         // Invocar el método en la instancia correcta, pasando $query por referencia
         $method->invokeArgs($controllerInstance, [$filters, &$query]);
@@ -843,8 +842,7 @@ class NotificationsGeneralTest extends TestCase
         // Llama al método applyFilters usando reflexión para roles
         $reflection = new \ReflectionClass(EmailNotificationsController::class);
         $method = $reflection->getMethod('applyFilters');
-        $method->setAccessible(true);
-
+  
 
         $method->invokeArgs($controllerInstance, [$filtersRoles, &$queryRoles]);
 
@@ -926,7 +924,7 @@ class NotificationsGeneralTest extends TestCase
         // Llama al método applyFilters usando reflexión para roles
         $reflection = new \ReflectionClass(EmailNotificationsController::class);
         $method = $reflection->getMethod('getEmailNotificationTypes');
-        $method->setAccessible(true);
+        
 
         // Llama al método y captura la respuesta
         $response = $method->invoke($controllerInstance);

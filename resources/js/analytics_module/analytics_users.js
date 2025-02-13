@@ -10,7 +10,6 @@ import {
     apiFetch,
     getFlatpickrDateRangeSql,
     instanceFlatpickrNoHour,
-    getMultipleTomSelectInstance,
     getFlatpickrDateRange,
     getMultipleFreeTomSelectInstance,
     getOptionsSelectedTomSelectInstance,

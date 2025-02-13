@@ -79,6 +79,11 @@ class ChangeStatusToFinishedTest extends TestCase
         // Buscar code =  DEVELOPMENT '
         $statusDevelopment = CourseStatusesModel::where('code', 'DEVELOPMENT')->first();
 
+        AutomaticNotificationTypesModel::factory()->create([
+            'code' => 'COURSE_ENROLLMENT_COMMUNICATIONS',
+        ]);
+    
+
         // Crear un curso en estado 'DEVELOPMENT' que ha finalizado sin estudiantes
         $course = CoursesModel::factory()->withCourseStatus()->withCourseType()->create([
             'realization_finish_date' => now()->subDay(),

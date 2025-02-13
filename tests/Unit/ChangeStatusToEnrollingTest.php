@@ -12,6 +12,7 @@ use App\Models\UserRolesModel;
 use App\Models\CourseStatusesModel;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Artisan;
+use App\Models\AutomaticNotificationTypesModel;
 use App\Console\Commands\ChangeStatusToEnrolling;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -33,6 +34,10 @@ class ChangeStatusToEnrollingTest extends TestCase
             'enrolling_start_date' => now()->subDays(1),
             'enrolling_finish_date' => now()->addDays(1),
             'course_status_uid' => $statusInscription->uid,
+        ]);
+        
+        AutomaticNotificationTypesModel::factory()->create([
+            'code' => 'COURSE_ENROLLMENT_COMMUNICATIONS',
         ]);
 
         UsersModel::factory()->count(2)->create();

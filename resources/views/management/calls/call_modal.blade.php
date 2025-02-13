@@ -25,8 +25,8 @@
                         <label for="name">Nombre <span class="text-red-500">*</span></label>
                     </div>
                     <div class="content-container">
-                        <input maxlength="255" class="required poa-input" placeholder="Convocatoria 2023" type="text" id="name"
-                            name="name" />
+                        <input maxlength="255" class="required poa-input" placeholder="Convocatoria 2023" type="text"
+                            id="name" name="name" />
                     </div>
                 </div>
 
@@ -35,8 +35,8 @@
                         <label for="description">Descripción</label>
                     </div>
                     <div class="content-container">
-                        <textarea maxlength="1000" class="w-full poa-input" placeholder="La convocatoria de este año tratará de..." rows="5"
-                            id="description" name="description"></textarea>
+                        <textarea maxlength="1000" class="w-full poa-input" placeholder="La convocatoria de este año tratará de..."
+                            rows="5" id="description" name="description"></textarea>
                     </div>
                 </div>
 
@@ -59,8 +59,9 @@
                             </div>
                         </div>
 
-                        <a id="attachment-download" class=" text-[14px]" target="new_blank"
-                            href="javascript:void(0)"></a>
+                        <a id="attachment-download" class=" text-[14px]" target="new_blank" href="javascript:void(0)">
+                            Descargar adjunto
+                        </a>
 
                     </div>
                 </div>
@@ -107,8 +108,8 @@
                     <button type="submit" class="btn btn-primary">
                         Guardar {{ eHeroicon('paper-airplane', 'outline') }}</button>
 
-                    <button data-modal-id="call-modal" type="button"
-                        class="btn btn-secondary close-modal-btn">Cancelar {{ eHeroicon('x-mark', 'outline') }}</button>
+                    <button data-modal-id="call-modal" type="button" class="btn btn-secondary close-modal-btn">Cancelar
+                        {{ eHeroicon('x-mark', 'outline') }}</button>
                 </div>
             </div>
 

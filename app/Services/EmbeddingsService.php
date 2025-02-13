@@ -23,7 +23,7 @@ class EmbeddingsService
 
     public function getEmbedding($text)
     {
-        if(!app('general_options')['enabled_recommendation_module']) {
+        if (!app('general_options')['enabled_recommendation_module']) {
             return null;
         }
 
@@ -51,7 +51,7 @@ class EmbeddingsService
         $text = $course->title . ' ' . $course->description;
 
         $embeddings = $this->getEmbedding($text);
-        Log::info('Embedding generated for course ' . $course->uid. ': ' . json_encode($embeddings));
+        Log::info('Embedding generated for course ' . $course->uid . ': ' . json_encode($embeddings));
 
         if ($embeddings) {
             CoursesEmbeddingsModel::updateOrCreate(
@@ -121,7 +121,6 @@ class EmbeddingsService
             ->orderByDesc('similarity')
             ->limit($limit)
             ->get();
-
     }
 
     // Regenerate all embeddings
@@ -137,5 +136,9 @@ class EmbeddingsService
         foreach ($educationalResources as $educationalResource) {
             $this->generateEmbeddingForEducationalResource($educationalResource);
         }
+
+        // Actualizar fecha de última regeneración de embeddings
+        GeneralOptionsModel::where('option_name', 'last_regeneration_embeddings')
+            ->update(['option_value' => now()]);
     }
 }

@@ -68,6 +68,12 @@ class ChangeStatusToDevelopmentCommandTest extends TestCase
         $lmsystem = LmsSystemsModel::factory()->create([
             'identifier' => 'identifier'
         ]);
+
+
+        AutomaticNotificationTypesModel::factory()->create([
+            'code' => 'COURSE_ENROLLMENT_COMMUNICATIONS',
+        ]);
+
         $statuscourse = CourseStatusesModel::where('code','ENROLLING')->first();
 
         CoursesModel::factory()->withCourseType()->create([
@@ -141,7 +147,7 @@ class ChangeStatusToDevelopmentCommandTest extends TestCase
 
          $reflection = new \ReflectionClass($command);
          $method = $reflection->getMethod('sendEmailsNotificationsUsersEnrolled');
-         $method->setAccessible(true); // Make the method accessible
+        //  $method->setAccessible(true); // Make the method accessible
 
          // Call the private method with the course instance
          $method->invoke($command, $course);
@@ -197,7 +203,6 @@ class ChangeStatusToDevelopmentCommandTest extends TestCase
 
         // Call the private method saveGeneralNotificationsUsers using reflection
         $methodSave = $reflection->getMethod('saveGeneralNotificationsUsers');
-        $methodSave->setAccessible(true);
 
         // Call the method with the course instance
         $methodSave->invoke($command, $course);
@@ -234,7 +239,6 @@ class ChangeStatusToDevelopmentCommandTest extends TestCase
 
         $reflection = new \ReflectionClass($command);
         $methodFilter = $reflection->getMethod('filterUsersNotification');
-        $methodFilter->setAccessible(true);
 
         // Call the method with the users collection and "email" type
         $filteredUsers = $methodFilter->invoke($command, $users, 'email');
@@ -266,7 +270,6 @@ class ChangeStatusToDevelopmentCommandTest extends TestCase
 
          $reflection = new \ReflectionClass($command);
          $methodFilter = $reflection->getMethod('filterUsersNotification');
-         $methodFilter->setAccessible(true);
 
          // Call the method with the users collection and "general" type
          $filteredUsers = $methodFilter->invoke($command, $users, 'general');

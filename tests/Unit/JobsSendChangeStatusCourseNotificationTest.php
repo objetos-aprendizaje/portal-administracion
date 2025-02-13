@@ -57,7 +57,9 @@ class JobsSendChangeStatusCourseNotificationTest extends TestCase
         ])->first();
 
         // Crear el tipo de notificación automática
-        $automaticNotificationType = AutomaticNotificationTypesModel::where('code', 'CHANGE_STATUS_COURSE')->first();
+        $automaticNotificationType = AutomaticNotificationTypesModel::factory()->create([
+            'code'=>'CHANGE_STATUS_COURSE',
+        ]);
 
 
         // Generar un UID único para la relación

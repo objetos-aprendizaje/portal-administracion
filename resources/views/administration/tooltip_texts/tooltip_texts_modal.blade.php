@@ -54,7 +54,7 @@
                     <button type="submit" class="btn btn-primary">
                         Guardar {{ eHeroicon('paper-airplane', 'outline') }}</button>
 
-                    <button data-modal-id="center-modal" type="button"
+                    <button data-modal-id="tooltip-texts-modal" type="button"
                         class="btn btn-secondary close-modal-btn">Cancelar {{ eHeroicon('x-mark', 'outline') }}</button>
                 </div>
             </div>

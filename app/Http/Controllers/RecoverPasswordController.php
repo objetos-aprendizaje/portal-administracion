@@ -14,8 +14,6 @@ use Illuminate\Support\Carbon;
 class RecoverPasswordController extends BaseController
 {
 
-    public function __construct() {}
-
     public function index()
     {
         return view('non_authenticated.recover_password', [

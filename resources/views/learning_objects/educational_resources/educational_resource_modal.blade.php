@@ -51,7 +51,8 @@
                         <label for="description">Descripción</label>
                     </div>
                     <div class="content-container">
-                        <textarea maxlength="1000" placeholder="El recurso contiene..." rows="5" class="poa-input" id="description" name="description"></textarea>
+                        <textarea maxlength="1000" placeholder="El recurso contiene..." rows="5" class="poa-input" id="description"
+                            name="description"></textarea>
                     </div>
                 </div>
 
@@ -62,7 +63,8 @@
                     <div class="content-container">
 
                         <div class="poa-input-image">
-                            <img id="image_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}" alt="preview imagen" />
+                            <img id="image_path_preview" src="{{ env('NO_IMAGE_SELECTED_PATH') }}"
+                                alt="preview imagen" />
 
                             <span class="dimensions">*Dimensiones: Alto: 50px x Ancho: 300px. Formato: PNG, JPG. Tam.
                                 Máx.: 1MB</span>
@@ -122,7 +124,9 @@
                                 </div>
                             </div>
                             <a id="url-resource" class="hidden text-[14px]" target="new_blank"
-                                href="javascript:void(0)"></a>
+                                href="javascript:void(0)">
+                                Recurso educativo
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -186,7 +190,7 @@
 
                 <div class="field">
                     <div class="label-container">
-                        <label>Metadatos</label>
+                        <label for="matadata-container">Metadatos</label>
                     </div>
 
                     <div class="content-container">

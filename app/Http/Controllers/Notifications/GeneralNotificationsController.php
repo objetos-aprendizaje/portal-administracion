@@ -52,13 +52,7 @@ class GeneralNotificationsController extends BaseController
         $sort = $request->get('sort');
         $filters = $request->get('filters');
 
-        $query = GeneralNotificationsModel::query()
-            ->with('roles')
-            ->with('users')
-            ->with('generalNotificationType')
-            ->join('notifications_types', 'general_notifications.notification_type_uid', '=', 'notifications_types.uid', 'left')
-            ->select('general_notifications.*', 'notifications_types.name as notification_type_name');
-
+        $query = $this->getQueryGeneralNotifications();
 
         // Se agregó el nombre de la tabla para que pasara en las pruebas unitarias
         if ($search) {
@@ -102,6 +96,15 @@ class GeneralNotificationsController extends BaseController
         adaptDatesModel($data, ['start_date', 'end_date'], true);
 
         return response()->json($data, 200);
+    }
+
+    private function getQueryGeneralNotifications() {
+        return GeneralNotificationsModel::query()
+            ->with('roles')
+            ->with('users')
+            ->with('generalNotificationType')
+            ->join('notifications_types', 'general_notifications.notification_type_uid', '=', 'notifications_types.uid', 'left')
+            ->select('general_notifications.*', 'notifications_types.name as notification_type_name');
     }
 
     public function getGeneralNotification($notificationGeneralUid)
@@ -381,5 +384,6 @@ class GeneralNotificationsController extends BaseController
 
         return response()->json(['message' => 'Notificaciones eliminadas correctamente', 'general_notifications' => $generalNotifications], 200);
     }
-    
+
+
 }

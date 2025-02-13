@@ -58,7 +58,9 @@ class ChangestatustoinscriptionTest extends TestCase
         $student1 = UsersModel::factory()->create()->latest()->first();
         $student2 = UsersModel::factory()->create()->latest()->first();
 
-        $generalautomatictype = AutomaticNotificationTypesModel::where('code', 'NEW_COURSES_NOTIFICATIONS')->first();
+        $generalautomatictype = AutomaticNotificationTypesModel::factory()->create([
+            'code'=> 'NEW_COURSES_NOTIFICATIONS'
+        ]);
 
         $generalautomatic = GeneralNotificationsAutomaticModel::factory()->create([
             'uid' => generateUuid(),

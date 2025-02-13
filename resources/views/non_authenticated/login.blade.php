@@ -88,7 +88,8 @@
                                         class="inline-flex border rounded-full hover:border-primary items-center justify-center pl-[6px] pr-[14px] py-[6px] gap-2">
                                         <div>
                                             <img src="{{ asset('/data/images/logo_min_boton_login.png') }}"
-                                                class="w-[40px] h-[40px] mx-auto rounded-full  block" alt="Logo botón login universidad" />
+                                                class="w-[40px] h-[40px] mx-auto rounded-full  block"
+                                                alt="Logo botón login universidad" />
                                         </div>
 
                                         <div class="border-l h-10"></div>
@@ -108,7 +109,8 @@
                                     <button type="button"
                                         class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
                                         <a href="/auth/facebook">
-                                            <img class="w-[45px] h-[45px]" src="data/images/login_icons/facebook.png" alt="logo facebook"/>
+                                            <img class="w-[45px] h-[45px]" src="data/images/login_icons/facebook.png"
+                                                alt="logo facebook" />
                                         </a>
                                     </button>
                                 @endif
@@ -148,8 +150,9 @@
                                 @if (env('URL_LOGIN_CERT'))
                                     <button type="button"
                                         class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
-                                        <a href='{{ env('URL_LOGIN_CERT') }}?origin="portal_admin"'><img class="w-[32px] h-[32px]"
-                                                src="data/images/login_icons/certificate_icon.svg" alt="logo certificado" /></a>
+                                        <a href='{{ env('URL_LOGIN_CERT') }}?origin="portal_admin"'><img
+                                                class="w-[32px] h-[32px]" src="data/images/login_icons/certificate_icon.svg"
+                                                alt="logo certificado" /></a>
                                     </button>
                                 @endif
                             @endif
@@ -171,7 +174,8 @@
 
     <section class="md:hidden p-[20px]">
         @if ($general_options['poa_logo_1'])
-            <img class="mx-auto block max-w-[146px] h-[51px] mb-[15px]" src="{{ $general_options['poa_logo_1'] }}" />
+            <img alt="Logo" class="mx-auto block max-w-[146px] h-[51px] mb-[15px]"
+                src="{{ $general_options['poa_logo_1'] }}" />
         @endif
 
         <div class="text-[28px] font-bold text-center mb-[15px]">Inicia sesión</div>
@@ -271,7 +275,8 @@
                     <button type="button"
                         class="border hover:border-primary flex items-center justify-center rounded-full w-[64px] h-[64px]">
                         <a href="/auth/facebook">
-                            <img class="max-w-[45px] max-h-[45px]" src="data/images/login_icons/facebook.png" alt="logo facebook" />
+                            <img class="max-w-[45px] max-h-[45px]" src="data/images/login_icons/facebook.png"
+                                alt="logo facebook" />
                         </a>
                     </button>
                 @endif

@@ -10,6 +10,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Artisan;
 use App\Models\EducationalProgramsModel;
+use App\Models\AutomaticNotificationTypesModel;
 use App\Models\EducationalProgramStatusesModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -46,6 +47,10 @@ class ChangeStatusToEnrollingEducationalProgramTest extends TestCase
             'enrolling_start_date' => Carbon::now()->format('Y-m-d\TH:i'),
             'enrolling_finish_date' => Carbon::now()->addDays(60)->format('Y-m-d\TH:i'),
             'educational_program_status_uid' => $statusInscription->uid,
+        ]);
+
+        AutomaticNotificationTypesModel:: factory()->create([
+            'code' => 'EDUCATIONAL_PROGRAMS_ENROLLMENT_COMMUNICATIONS'
         ]);
 
 

@@ -1,5 +1,5 @@
 import { heroicon } from "../heroicons.js";
-import { hideModal, showModal, showModalConfirmation } from "../modal_handler";
+import { showModal } from "../modal_handler";
 import {
     controlsPagination,
     tabulatorBaseConfig,
@@ -15,13 +15,12 @@ let notificationsPerUserTable;
 
 document.addEventListener("DOMContentLoaded", function () {
     initializeNotificationPerUsersTable();
-
 });
 
 function initializeNotificationPerUsersTable() {
     const columns = [
-        { title: "Nombre", field: "first_name"},
-        { title: "Apellidos", field: "last_name"},
+        { title: "Nombre", field: "first_name" },
+        { title: "Apellidos", field: "last_name" },
         {
             title: "",
             field: "actions",
@@ -36,7 +35,11 @@ function initializeNotificationPerUsersTable() {
             cellClick: function (e, cell) {
                 e.preventDefault();
                 const notificationPerUsersClicked = cell.getRow().getData();
-                fillFormNotificationsPerUsersModal(notificationPerUsersClicked.uid,notificationPerUsersClicked.first_name,notificationPerUsersClicked.last_name);
+                fillFormNotificationsPerUsersModal(
+                    notificationPerUsersClicked.uid,
+                    notificationPerUsersClicked.first_name,
+                    notificationPerUsersClicked.last_name
+                );
             },
             cssClass: "text-center",
             headerSort: false,
@@ -49,7 +52,7 @@ function initializeNotificationPerUsersTable() {
         ajaxURL: endPointTable,
         ...tabulatorBaseConfig,
         ajaxResponse: function (url, params, response) {
-             updatePaginationInfo(
+            updatePaginationInfo(
                 notificationPerUsersTable,
                 response,
                 "notification-per-users-table"
@@ -63,26 +66,35 @@ function initializeNotificationPerUsersTable() {
         columns: columns,
     });
 
-    controlsSearch(notificationPerUsersTable, endPointTable, "notification-per-users-table");
-    controlsPagination(notificationPerUsersTable, "notification-per-users-table");
+    controlsSearch(
+        notificationPerUsersTable,
+        endPointTable,
+        "notification-per-users-table"
+    );
+    controlsPagination(
+        notificationPerUsersTable,
+        "notification-per-users-table"
+    );
 }
 
-async function fillFormNotificationsPerUsersModal(uid,last_name,first_name) {
-
-    if (first_name == null){
-        first_name  = "";
+async function fillFormNotificationsPerUsersModal(uid, last_name, first_name) {
+    if (first_name == null) {
+        first_name = "";
     }
-    if (last_name == null){
-        last_name  = "";
+    if (last_name == null) {
+        last_name = "";
     }
 
-    showModal("notifications-per-user-modal", `Notificaciones vistas por ${first_name} ${last_name}`);
+    showModal(
+        "notifications-per-user-modal",
+        `Notificaciones vistas por ${first_name} ${last_name}`
+    );
 
     const columns = [
         {
             title: "Fecha visto",
             field: "pivot.view_date",
-            widthGrow:1,
+            widthGrow: 1,
             formatter: function (cell, formatterParams, onRendered) {
                 const isoDate = cell.getValue();
                 if (!isoDate) return "";
@@ -90,16 +102,17 @@ async function fillFormNotificationsPerUsersModal(uid,last_name,first_name) {
             },
         },
         { title: "Título", field: "title", withGrow: 3 },
-        { title: "Descripción", field: "description", withGrow: 3}
+        { title: "Descripción", field: "description", withGrow: 3 },
     ];
 
-    const endPointTable = "/notifications/notifications_per_users/get_notifications/"+uid;
+    const endPointTable =
+        "/notifications/notifications_per_users/get_notifications/" + uid;
 
     notificationsPerUserTable = new Tabulator("#notifications-per-user-table", {
         ajaxURL: endPointTable,
         ...tabulatorBaseConfig,
         ajaxResponse: function (url, params, response) {
-             updatePaginationInfo(
+            updatePaginationInfo(
                 notificationsPerUserTable,
                 response,
                 "notifications-per-user-table"
@@ -112,18 +125,26 @@ async function fillFormNotificationsPerUsersModal(uid,last_name,first_name) {
         },
         columns: columns,
     });
-    controlsPagination(notificationsPerUserTable, "notifications-per-user-table");
-    controlsSearch(notificationsPerUserTable, endPointTable, "notifications-per-user-table");
+    controlsPagination(
+        notificationsPerUserTable,
+        "notifications-per-user-table"
+    );
+    controlsSearch(
+        notificationsPerUserTable,
+        endPointTable,
+        "notifications-per-user-table"
+    );
 
     // Luego, puedes llamar a esta función cuando sea necesario, por ejemplo, en el evento click de un botón.
     const buttons = document.getElementsByClassName("search-table-btn");
-    for (let i = 0; i < buttons.length; i++) {
-        buttons[i].addEventListener("click", limpiarBusqueda);
+    for (const button of buttons) {
+        button.addEventListener("click", wipeSearch);
     }
 }
-function limpiarBusqueda() {
+
+function wipeSearch() {
     const buttons = document.getElementsByClassName("search-table");
-    for (let i = 0; i < buttons.length; i++) {
-        buttons[i].value = "";
+    for (const button of buttons) {
+        button.value = "";
     }
 }

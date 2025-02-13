@@ -1,6 +1,6 @@
 <div id="educational-program-modal" class="modal">
 
-    <div class="modal-body w-full md:max-w-[1200px]">
+    <div class="modal-body w-full md:max-w-[1300px]">
 
         <div class="modal-header">
             <div>
@@ -161,7 +161,7 @@
                 <section id="criteria-area">
                     <div class="field mt-2">
                         <div class="label-container">
-                            <label for="evaluation_criteria">Criterio de validación <span
+                            <label for="evaluation_criteria">Descripción de la documentación requerida <span
                                     class="text-danger">*</span></label>
                         </div>
 
@@ -175,7 +175,7 @@
                 <section id="documents-container">
                     <div class="field mt-2">
                         <div class="label-container">
-                            <label>Documentos necesarios para el programa formativo</label>
+                            <label for="document-list">Documentos necesarios para el programa formativo</label>
                         </div>
 
                         <div class="content-container" id="document-container">

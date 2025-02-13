@@ -9,8 +9,9 @@ import {
     dropdownMenu,
 } from "../tabulator_handler";
 import { showModal, hideModal, showModalConfirmation } from "../modal_handler";
-import { apiFetch, showElement } from "../app";
 import {
+    apiFetch,
+    showElement,
     showFormErrors,
     resetFormErrors,
     getLiveSearchTomSelectInstance,
@@ -407,7 +408,7 @@ function initializeEducationalProgramsTable() {
             title: "",
             field: "actions",
             formatter: function (cell, formatterParams, onRendered) {
-                return `<button type="button" class='btn action-btn'>${heroicon(
+                return `<button type="button" title="Editar" class='btn action-btn'>${heroicon(
                     "pencil-square",
                     "outline"
                 )}</button>`;
@@ -427,7 +428,7 @@ function initializeEducationalProgramsTable() {
             field: "actions",
             formatter: function (cell, formatterParams, onRendered) {
                 return `
-                    <button type="button" class='btn action-btn'>${heroicon(
+                    <button type="button" title="Más opciones" class='btn action-btn'>${heroicon(
                         "ellipsis-horizontal",
                         "outline"
                     )}</button>

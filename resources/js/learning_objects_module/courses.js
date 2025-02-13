@@ -42,7 +42,7 @@ import {
     debounce,
     setConfig,
     getConfig,
-    instanceAccordion
+    instanceAccordion,
 } from "../app.js";
 import { heroicon } from "../heroicons.js";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
@@ -465,6 +465,26 @@ const columnsCoursesTable = [
         widthGrow: 2,
         visible: false,
     },
+];
+
+if (window.enabledRecommendationModule) {
+    columnsCoursesTable.push({
+        title: "Embeddings",
+        field: "embeddings_status",
+        formatter: function (cell, formatterParams, onRendered) {
+            const data = cell.getValue();
+            if (data == 0) {
+                return "No";
+            } else {
+                return "Si";
+            }
+        },
+        widthGrow: 2,
+        visible: false,
+    });
+}
+
+columnsCoursesTable.push(
     {
         title: `<span class='cursor-pointer columns-selector' title='Seleccionar columnas'>${heroicon(
             "view-columns"
@@ -517,22 +537,6 @@ const columnsCoursesTable = [
             const cellData = cell.getRow().getData();
             if (!cellData.belongs_to_educational_program) {
                 btnArray.push(
-                    {
-                        icon: "document-arrow-up",
-                        type: "outline",
-                        tooltip: "Emisión de todas las credenciales",
-                        action: (course) => {
-                            showModalConfirmation(
-                                "Emisión de todas las credenciales",
-                                "¿Deseas emitir todas las credenciales a todos los estudiantes que hayan finalizado?",
-                                "emitAllCredentials",
-                                [{ key: "course_uid", value: course.uid }]
-                            ).then((result) => {
-                                if (result)
-                                    emitAllCredentialsCourse(course.uid);
-                            });
-                        },
-                    },
                     {
                         icon: "user-group",
                         type: "outline",
@@ -605,6 +609,23 @@ const columnsCoursesTable = [
                                     emitAllCredentialsCourse(course.uid);
                             });
                         },
+                    },
+                    {
+                        icon: "document-arrow-up",
+                        type: "outline",
+                        tooltip: "Emisión de todas las credenciales",
+                        disabled: !cellData.certidigital_credential_uid,
+                        action: (course) => {
+                            showModalConfirmation(
+                                "Emisión de todas las credenciales",
+                                "¿Deseas emitir todas las credenciales a todos los estudiantes que hayan finalizado?",
+                                "emitAllCredentials",
+                                [{ key: "course_uid", value: course.uid }]
+                            ).then((result) => {
+                                if (result)
+                                    emitAllCredentialsCourse(course.uid);
+                            });
+                        },
                     }
                 );
             }
@@ -617,25 +638,8 @@ const columnsCoursesTable = [
         headerSort: false,
         width: 30,
         resizable: false,
-    },
-];
-
-if (window.enabledRecommendationModule) {
-    columnsCoursesTable.push({
-        title: "¿Tiene embeddings?",
-        field: "embeddings_status",
-        formatter: function (cell, formatterParams, onRendered) {
-            const data = cell.getValue();
-            if (data == 0) {
-                return "No";
-            } else {
-                return "Si";
-            }
-        },
-        widthGrow: 2,
-        visible: false,
-    });
-}
+    }
+);
 class Trees {
     constructor(order, tree, selectedNodes = []) {
         this.order = order;
@@ -764,7 +768,6 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     await loadCompetencesLearningResults();
 });
-
 
 // Carga las preferencias de visualización de columnas de la tabla de cursos
 function loadColumnsCoursesTable() {
@@ -911,15 +914,13 @@ async function instanceTreeCompetences(order, selectedNodes = []) {
             .getElementById("course-composition-block")
             .getAttribute("data-disabled");
 
-        for (let i = 0; i < checkboxes.length; ++i) {
-            const checkbox = checkboxes[i];
-            if (checkbox.hasAttribute("data-indeterminate")) {
-                checkbox.indeterminate = true;
-            } else {
-                checkbox.indeterminate = false;
-            }
+        for (const checkbox of checkboxes) {
+            checkbox.indeterminate =
+                checkbox.hasAttribute("data-indeterminate");
 
-            if (treeDisabled === "1") checkbox.disabled = true;
+            if (treeDisabled === "1") {
+                checkbox.disabled = true;
+            }
         }
     };
 
@@ -1155,9 +1156,7 @@ function initHandlers() {
         .getElementById("belongs_to_educational_program")
         .addEventListener("change", function (e) {
             const isChecked = e.target.checked;
-            setVisibilityCourseFieldsBasedOnProgramMembership(
-                isChecked ? true : false
-            );
+            setVisibilityCourseFieldsBasedOnProgramMembership(isChecked);
         });
 
     document
@@ -1188,7 +1187,6 @@ function initHandlers() {
             saveCalificationsCourse();
         });
 
-    // TODO
     document
         .getElementById("emit-credentials-students-btn")
         .addEventListener("click", function () {
@@ -1477,55 +1475,25 @@ function getStructureCourseJSON() {
 
     blocks.forEach((block) => {
         const blockOrder = parseInt(block.dataset.order);
-        const blockObj = {
-            uid: block.dataset.uid != "" ? block.dataset.uid : null,
-            type: block.querySelector(".block-type").value,
-            name: block.querySelector(".block-name").value,
-            description: block.querySelector(".block-description").value,
-            order: blockOrder,
-            learningResults: Trees.getSelectedNodesByOrder(blockOrder),
-        };
+        const blockObj = createBlockObject(block, blockOrder);
 
         const subBlocks = block.querySelectorAll(".sub-block");
-
         if (subBlocks.length) blockObj.subBlocks = [];
 
         subBlocks.forEach((subBlock) => {
-            const subBlockObj = {
-                uid: subBlock.dataset.uid ? subBlock.dataset.uid : null,
-                name: subBlock.querySelector(".sub-block-name").value,
-                description: subBlock.querySelector(".sub-block-description")
-                    .value,
-                order: subBlock.dataset.order,
-            };
+            const subBlockObj = createSubBlockObject(subBlock);
 
             const elements = subBlock.querySelectorAll(".element");
-
             if (elements.length) subBlockObj.elements = [];
+
             elements.forEach((element) => {
-                const elementObj = {
-                    uid: element.dataset.uid != "" ? element.dataset.uid : null,
-                    name: element.querySelector(".element-name").value,
-                    description: element.querySelector(".element-description")
-                        .value,
-                    order: element.dataset.order,
-                };
+                const elementObj = createElementObject(element);
 
                 const subElements = element.querySelectorAll(".sub-element");
                 if (subElements.length) elementObj.subElements = [];
+
                 subElements.forEach((subElement) => {
-                    const subElementObj = {
-                        uid:
-                            subElement.dataset.uid != ""
-                                ? subElement.dataset.uid
-                                : null,
-                        name: subElement.querySelector(".sub-element-name")
-                            .value,
-                        description: subElement.querySelector(
-                            ".sub-element-description"
-                        ).value,
-                        order: subElement.dataset.order,
-                    };
+                    const subElementObj = createSubElementObject(subElement);
                     elementObj.subElements.push(subElementObj);
                 });
 
@@ -1539,6 +1507,44 @@ function getStructureCourseJSON() {
     });
 
     return JSON.stringify(course, null);
+}
+
+function createBlockObject(block, blockOrder) {
+    return {
+        uid: block.dataset.uid != "" ? block.dataset.uid : null,
+        type: block.querySelector(".block-type").value,
+        name: block.querySelector(".block-name").value,
+        description: block.querySelector(".block-description").value,
+        order: blockOrder,
+        learningResults: Trees.getSelectedNodesByOrder(blockOrder),
+    };
+}
+
+function createSubBlockObject(subBlock) {
+    return {
+        uid: subBlock.dataset.uid ? subBlock.dataset.uid : null,
+        name: subBlock.querySelector(".sub-block-name").value,
+        description: subBlock.querySelector(".sub-block-description").value,
+        order: subBlock.dataset.order,
+    };
+}
+
+function createElementObject(element) {
+    return {
+        uid: element.dataset.uid != "" ? element.dataset.uid : null,
+        name: element.querySelector(".element-name").value,
+        description: element.querySelector(".element-description").value,
+        order: element.dataset.order,
+    };
+}
+
+function createSubElementObject(subElement) {
+    return {
+        uid: subElement.dataset.uid != "" ? subElement.dataset.uid : null,
+        name: subElement.querySelector(".sub-element-name").value,
+        description: subElement.querySelector(".sub-element-description").value,
+        order: subElement.dataset.order,
+    };
 }
 
 /**
@@ -2208,22 +2214,6 @@ function initializeCoursesTable() {
             },
         },
         {
-            label: `${heroicon("document-arrow-up")} Emisión de credenciales`,
-            action: function (e, column) {
-                showModalConfirmation(
-                    "Emisión de todas las credenciales",
-                    "¿Estás seguro de que quieres emitir todas las credenciales a los estudiantes del curso seleccionado?"
-                ).then((result) => {
-                    const courseClicked = column.getData();
-                    if (result) emitAllCredentialsCourse(courseClicked.uid);
-                });
-            },
-            disabled: function (column) {
-                const dataColumn = column.getData();
-                return dataColumn.belongs_to_educational_program;
-            },
-        },
-        {
             label: `${heroicon(
                 "document-arrow-up"
             )} Regenerar credencial de estudiante`,
@@ -2257,6 +2247,22 @@ function initializeCoursesTable() {
             disabled: function (column) {
                 const dataColumn = column.getData();
                 return dataColumn.belongs_to_educational_program;
+            },
+        },
+        {
+            label: `${heroicon("document-arrow-up")} Emisión de credenciales`,
+            action: function (e, column) {
+                showModalConfirmation(
+                    "Emisión de todas las credenciales",
+                    "¿Estás seguro de que quieres emitir todas las credenciales a los estudiantes del curso seleccionado?"
+                ).then((result) => {
+                    const courseClicked = column.getData();
+                    if (result) emitAllCredentialsCourse(courseClicked.uid);
+                });
+            },
+            disabled: function (column) {
+                const dataColumn = column.getData();
+                return dataColumn.certidigital_credential_uid == null;
             },
         },
     ];
@@ -2322,7 +2328,9 @@ function regenerateCredentialStudents(courseUid) {
         loader: true,
     };
 
-    apiFetch(params);
+    apiFetch(params).then(() => {
+        reloadTableCourses();
+    });
 }
 
 function regenerateCredentialTeachers(courseUid) {
@@ -2337,7 +2345,9 @@ function regenerateCredentialTeachers(courseUid) {
         loader: true,
     };
 
-    apiFetch(params);
+    apiFetch(params).then(() => {
+        reloadTableCourses();
+    });
 }
 
 function loadCalificationsCourse(courseUid) {
@@ -2367,157 +2377,11 @@ function initializeCalificationsCourseTable(courseUid) {
             },
         },
         ajaxResponse: function (url, params, response) {
-            updatePaginationInfo(
-                calificationsCourseTable,
-                response.coursesStudents,
-                calificationsCourseTableId
-            );
-
-            function findCalification(
-                studentUid,
-                courseBlockUid,
-                learningResultUid
-            ) {
-                return response.coursesStudents.data.reduce((acc, r) => {
-                    if (r.uid === studentUid) {
-                        const nested =
-                            r.course_blocks_learning_results_califications.find(
-                                (nested) => {
-                                    return (
-                                        nested.course_block_uid ===
-                                            courseBlockUid &&
-                                        nested.learning_result_uid ===
-                                            learningResultUid
-                                    );
-                                }
-                            );
-                        if (nested) {
-                            acc = nested;
-                        }
-                    }
-                    return acc;
-                }, null);
-            }
-
-            function findCalificationLearningResult(
-                studentUid,
-                learningResultUid
-            ) {
-                return response.coursesStudents.data.reduce((acc, r) => {
-                    if (r.uid === studentUid) {
-                        const nested =
-                            r.course_learning_result_califications.find(
-                                (nested) => {
-                                    return (
-                                        nested.learning_result_uid ===
-                                        learningResultUid
-                                    );
-                                }
-                            );
-                        if (nested) {
-                            acc = nested;
-                        }
-                    }
-                    return acc;
-                }, null);
-            }
-
-            const studentsMapped = response.coursesStudents.data.map((r) => {
-                return {
-                    uid: r.uid,
-                    first_name: r.first_name,
-                    last_name: r.last_name,
-                    block: null,
-                    learning_result: null,
-                    calification: r.calification_info,
-                    _children: [
-                        ...response.courseBlocks.map((block) => {
-                            return {
-                                uid: block.uid,
-                                block: block.name,
-                                _children: block.learning_results.map(
-                                    (learningResult) => {
-                                        const calification = findCalification(
-                                            r.uid,
-                                            block.uid,
-                                            learningResult.uid
-                                        );
-                                        return {
-                                            uid: learningResult.uid,
-                                            competence_framework_levels:
-                                                learningResult.competence
-                                                    .competence_framework
-                                                    .has_levels
-                                                    ? learningResult.competence.competence_framework.levels.map(
-                                                          (level) => {
-                                                              return {
-                                                                  label: level.name,
-                                                                  value: level.uid,
-                                                              };
-                                                          }
-                                                      )
-                                                    : null,
-                                            learning_result:
-                                                learningResult.name,
-                                            calification:
-                                                calification?.calification_info ||
-                                                null,
-                                            level:
-                                                calification?.competence_framework_level_uid ||
-                                                null,
-                                        };
-                                    }
-                                ),
-                            };
-                        }),
-                        {
-                            last_name: "Total Resultados Aprendizaje",
-                            _children: response.learningResults.map(
-                                (learningResult) => {
-                                    const calification =
-                                        findCalificationLearningResult(
-                                            r.uid,
-                                            learningResult.uid
-                                        );
-
-                                    return {
-                                        uid: learningResult.uid,
-                                        learning_result: learningResult.name,
-                                        calification:
-                                            calification?.calification_info ||
-                                            null,
-                                        competence_framework_levels:
-                                            learningResult.competence
-                                                .competence_framework.has_levels
-                                                ? learningResult.competence.competence_framework.levels.map(
-                                                      (level) => {
-                                                          return {
-                                                              label: level.name,
-                                                              value: level.uid,
-                                                          };
-                                                      }
-                                                  )
-                                                : null,
-                                        level:
-                                            calification?.competence_framework_level_uid ||
-                                            null,
-                                    };
-                                }
-                            ),
-                        },
-                    ],
-                };
-            });
-
-            return {
-                last_page: response.coursesStudents.last_page,
-                data: studentsMapped,
-            };
+            return handleAjaxResponse(response);
         },
         columns: [
             { title: "Nombre", field: "first_name", responsive: 0 },
             { title: "Apellidos", field: "last_name", responsive: 0 },
-
             {
                 title: "Bloque",
                 field: "block",
@@ -2535,31 +2399,12 @@ function initializeCalificationsCourseTable(courseUid) {
                 headerSort: false,
                 editorParams: {
                     valuesLookup: function (cell, filterTerm) {
-                        //cell - the cell component for the current cell
-                        //filterTerm - the current value of the input element
                         const t = cell.getRow().getData();
-
                         return t.competence_framework_levels;
                     },
                 },
                 formatter: function (cell) {
-                    // Obtener el valor actual de la celda
-                    const value = cell.getValue();
-                    // Obtener las opciones del editor
-                    const options = cell
-                        .getRow()
-                        .getData().competence_framework_levels;
-
-                    // Si no hay opciones, bloqueamos la celda y la ponemos de otro color
-                    if (!options) {
-                        cell.getElement().style.pointerEvents = "none";
-                        return;
-                    }
-
-                    // Buscar la opción que coincide con el valor
-                    const option = options.find((opt) => opt.value === value);
-                    // Devolver el label correspondiente
-                    return option ? option.label : value;
+                    return formatLevelCell(cell);
                 },
             },
             {
@@ -2568,13 +2413,7 @@ function initializeCalificationsCourseTable(courseUid) {
                 editor: "textarea",
                 headerSort: false,
                 formatter: function (cell) {
-                    const value = cell.getValue();
-                    if (value === undefined) {
-                        cell.getElement().style.pointerEvents = "none";
-                        return;
-                    }
-
-                    return value;
+                    return formatCalificationCell(cell);
                 },
             },
         ],
@@ -2585,6 +2424,161 @@ function initializeCalificationsCourseTable(courseUid) {
         `${endpointCalificationsCourse}/${courseUid}`,
         calificationsCourseTableId
     );
+}
+
+function handleAjaxResponse(response) {
+    updatePaginationInfo(
+        calificationsCourseTable,
+        response.coursesStudents,
+        calificationsCourseTableId
+    );
+
+    const studentsMapped = response.coursesStudents.data.map((r) => {
+        return {
+            uid: r.uid,
+            first_name: r.first_name,
+            last_name: r.last_name,
+            block: null,
+            learning_result: null,
+            calification: r.calification_info,
+            _children: [
+                ...mapBlocks(response.courseBlocks, r, response),
+                mapTotalLearningResults(response.learningResults, r),
+            ],
+        };
+    });
+
+    return {
+        last_page: response.coursesStudents.last_page,
+        data: studentsMapped,
+    };
+}
+
+function mapBlocks(courseBlocks, student, response) {
+    return courseBlocks.map((block) => {
+        return {
+            uid: block.uid,
+            block: block.name,
+            _children: block.learning_results.map((learningResult) => {
+                const calification = findCalification(
+                    student.uid,
+                    block.uid,
+                    learningResult.uid,
+                    response
+                );
+                return {
+                    uid: learningResult.uid,
+                    competence_framework_levels: learningResult.competence
+                        .competence_framework.has_levels
+                        ? learningResult.competence.competence_framework.levels.map(
+                              (level) => {
+                                  return {
+                                      label: level.name,
+                                      value: level.uid,
+                                  };
+                              }
+                          )
+                        : null,
+                    learning_result: learningResult.name,
+                    calification: calification?.calification_info || null,
+                    level: calification?.competence_framework_level_uid || null,
+                };
+            }),
+        };
+    });
+}
+
+function mapTotalLearningResults(learningResults, student) {
+    return {
+        last_name: "Total Resultados Aprendizaje",
+        _children: learningResults.map((learningResult) => {
+            const calification = findCalificationLearningResult(
+                student.uid,
+                learningResult.uid
+            );
+
+            return {
+                uid: learningResult.uid,
+                learning_result: learningResult.name,
+                calification: calification?.calification_info || null,
+                competence_framework_levels: learningResult.competence
+                    .competence_framework.has_levels
+                    ? learningResult.competence.competence_framework.levels.map(
+                          (level) => {
+                              return {
+                                  label: level.name,
+                                  value: level.uid,
+                              };
+                          }
+                      )
+                    : null,
+                level: calification?.competence_framework_level_uid || null,
+            };
+        }),
+    };
+}
+
+function findCalification(
+    studentUid,
+    courseBlockUid,
+    learningResultUid,
+    response
+) {
+    return response.coursesStudents.data.reduce((acc, r) => {
+        if (r.uid === studentUid) {
+            const nested = r.course_blocks_learning_results_califications.find(
+                (nested) => {
+                    return (
+                        nested.course_block_uid === courseBlockUid &&
+                        nested.learning_result_uid === learningResultUid
+                    );
+                }
+            );
+            if (nested) {
+                acc = nested;
+            }
+        }
+        return acc;
+    }, null);
+}
+
+function findCalificationLearningResult(studentUid, learningResultUid) {
+    return response.coursesStudents.data.reduce((acc, r) => {
+        if (r.uid === studentUid) {
+            const nested = r.course_learning_result_califications.find(
+                (nested) => {
+                    return nested.learning_result_uid === learningResultUid;
+                }
+            );
+            if (nested) {
+                acc = nested;
+            }
+        }
+        return acc;
+    }, null);
+}
+
+function formatLevelCell(cell) {
+    const value = cell.getValue();
+    const options = cell.getRow().getData().competence_framework_levels;
+
+    if (!options) {
+        cell.getElement().style.pointerEvents = "none";
+        return;
+    }
+
+    const option = options.find((opt) => opt.value === value);
+    return option ? option.label : value;
+}
+
+function formatCalificationCell(cell) {
+    const value = cell.getValue();
+    if (value === undefined) {
+        cell.getElement().style.pointerEvents = "none";
+        return;
+    }
+
+    return value;
 }
 
 function saveCalificationsCourse() {
@@ -2799,22 +2793,17 @@ function fillFormCourseModal(course) {
     document.getElementById("belongs_to_educational_program").checked =
         course.belongs_to_educational_program ? true : false;
 
-    const validateStudentsRegistrations = course.validate_student_registrations
-        ? true
-        : false;
-
     const criteriaArea = document.getElementById("criteria-area");
-    showArea(criteriaArea, validateStudentsRegistrations);
+    showArea(criteriaArea, course.validate_student_registrations);
 
     const documentsContainer = document.getElementById("documents-container");
-    showArea(documentsContainer, validateStudentsRegistrations);
+    showArea(documentsContainer, course.validate_student_registrations);
     loadDocuments(course.course_documents);
 
     document.getElementById("validate_student_registrations").value =
-        validateStudentsRegistrations;
-
+        course.validate_student_registrations;
     document.getElementById("validate_student_registrations").checked =
-        validateStudentsRegistrations;
+        course.validate_student_registrations;
 
     document.getElementById("featured_big_carrousel").checked =
         course.featured_big_carrousel;
@@ -3762,115 +3751,52 @@ function controlEnrollingDates() {
 }
 
 function loadStructureCourse(blocks) {
-    // Obtiene las plantillas de los bloques y elementos del DOM
     const blockTemplate = document.getElementById("block-template");
     const subBlockTemplate = document.getElementById("sub-block-template");
     const elementTemplate = document.getElementById("element-template");
     const subElementTemplate = document.getElementById("sub-element-template");
 
-    // Recorre cada bloque en la estructura del curso
     blocks.forEach(async (block) => {
-        // Clona la plantilla del bloque
-        const blockHtml = blockTemplate.content.cloneNode(true);
+        const blockHtml = createBlockHtml(block, blockTemplate);
 
-        // Asigna los valores del bloque a los campos correspondientes en el HTML
-        blockHtml.querySelector(".block-type").value = block.type;
-        blockHtml.querySelector(".block-name").value = block.name;
-        blockHtml.querySelector(".block-description").value = block.description;
-        blockHtml.querySelector(".search-tree").dataset.order = block.order;
-        let blockHtmlElement = blockHtml.querySelector(".block");
-        blockHtmlElement.dataset.uid = block.uid;
-        blockHtmlElement.dataset.order = block.order;
-
-        // Añade competencias
-        blockHtmlElement.querySelector(".competences-section").dataset.order =
-            block.order;
-
-        blockHtmlElement.querySelector(".block-competences").dataset.order =
-            block.order;
-
-        // Recorre cada sub-bloque en el bloque
         if (block.sub_blocks) {
             block.sub_blocks.forEach((subBlock) => {
-                // Clona la plantilla del sub-bloque
-                const subBlockHtml = subBlockTemplate.content.cloneNode(true);
-                let subBlockHtmlElement =
-                    subBlockHtml.querySelector(".sub-block");
+                const subBlockHtml = createSubBlockHtml(
+                    subBlock,
+                    subBlockTemplate
+                );
 
-                // Asigna los valores del sub-bloque a los campos correspondientes en el HTML
-                subBlockHtml.querySelector(".sub-block-name").value =
-                    subBlock.name;
-                subBlockHtml.querySelector(".sub-block-description").value =
-                    subBlock.description;
-                subBlockHtmlElement.dataset.uid = subBlock.uid;
-                subBlockHtmlElement.dataset.order = subBlock.order;
-
-                // Recorre cada elemento en el sub-bloque
                 if (subBlock.elements) {
                     subBlock.elements.forEach((element) => {
-                        // Clona la plantilla del elemento
-                        const elementHtml =
-                            elementTemplate.content.cloneNode(true);
+                        const elementHtml = createElementHtml(
+                            element,
+                            elementTemplate
+                        );
 
-                        // Asigna los valores del elemento a los campos correspondientes en el HTML
-                        elementHtml.querySelector(".element-name").value =
-                            element.name;
-                        elementHtml.querySelector(
-                            ".element-description"
-                        ).value = element.description;
-
-                        let elementHtmlElement =
-                            elementHtml.querySelector(".element");
-                        elementHtmlElement.dataset.order = element.order;
-                        elementHtmlElement.dataset.uid = element.uid;
-
-                        // Recorre cada sub-elemento en el elemento
                         if (element.sub_elements) {
                             element.sub_elements.forEach((subElement) => {
-                                // Clona la plantilla del sub-elemento
-                                const subElementHtml =
-                                    subElementTemplate.content.cloneNode(true);
-
-                                // Asigna los valores del sub-elemento a los campos correspondientes en el HTML
-                                subElementHtml.querySelector(
-                                    ".sub-element-name"
-                                ).value = subElement.name;
-                                subElementHtml.querySelector(
-                                    ".sub-element-description"
-                                ).value = subElement.description;
-
-                                let subElementHtmlElement =
-                                    subElementHtml.querySelector(
-                                        ".sub-element"
-                                    );
-                                subElementHtmlElement.dataset.order =
-                                    subElement.order;
-
-                                subElementHtmlElement.dataset.uid =
-                                    subElement.uid;
-
-                                // Añade el sub-elemento al elemento en el HTML
+                                const subElementHtml = createSubElementHtml(
+                                    subElement,
+                                    subElementTemplate
+                                );
                                 elementHtml
                                     .querySelector(".sub-elements")
                                     .appendChild(subElementHtml);
                             });
                         }
 
-                        // Añade el elemento al sub-bloque en el HTML
                         subBlockHtml
                             .querySelector(".elements")
                             .appendChild(elementHtml);
                     });
                 }
 
-                // Añade el sub-bloque al bloque en el HTML
                 blockHtml
                     .querySelector(".sub-blocks")
                     .appendChild(subBlockHtml);
             });
         }
 
-        // Añade el bloque al curso en el HTML
         document.getElementById("course-composition").appendChild(blockHtml);
 
         const uidsLearningResults = block.learning_results.map(
@@ -3884,6 +3810,55 @@ function loadStructureCourse(blocks) {
 
         Trees.storeInstance(block.order, tree, uidsLearningResults);
     });
+}
+
+function createBlockHtml(block, blockTemplate) {
+    const blockHtml = blockTemplate.content.cloneNode(true);
+    blockHtml.querySelector(".block-type").value = block.type;
+    blockHtml.querySelector(".block-name").value = block.name;
+    blockHtml.querySelector(".block-description").value = block.description;
+    blockHtml.querySelector(".search-tree").dataset.order = block.order;
+    let blockHtmlElement = blockHtml.querySelector(".block");
+    blockHtmlElement.dataset.uid = block.uid;
+    blockHtmlElement.dataset.order = block.order;
+    blockHtmlElement.querySelector(".competences-section").dataset.order =
+        block.order;
+    blockHtmlElement.querySelector(".block-competences").dataset.order =
+        block.order;
+    return blockHtml;
+}
+
+function createSubBlockHtml(subBlock, subBlockTemplate) {
+    const subBlockHtml = subBlockTemplate.content.cloneNode(true);
+    let subBlockHtmlElement = subBlockHtml.querySelector(".sub-block");
+    subBlockHtml.querySelector(".sub-block-name").value = subBlock.name;
+    subBlockHtml.querySelector(".sub-block-description").value =
+        subBlock.description;
+    subBlockHtmlElement.dataset.uid = subBlock.uid;
+    subBlockHtmlElement.dataset.order = subBlock.order;
+    return subBlockHtml;
+}
+
+function createElementHtml(element, elementTemplate) {
+    const elementHtml = elementTemplate.content.cloneNode(true);
+    elementHtml.querySelector(".element-name").value = element.name;
+    elementHtml.querySelector(".element-description").value =
+        element.description;
+    let elementHtmlElement = elementHtml.querySelector(".element");
+    elementHtmlElement.dataset.order = element.order;
+    elementHtmlElement.dataset.uid = element.uid;
+    return elementHtml;
+}
+
+function createSubElementHtml(subElement, subElementTemplate) {
+    const subElementHtml = subElementTemplate.content.cloneNode(true);
+    subElementHtml.querySelector(".sub-element-name").value = subElement.name;
+    subElementHtml.querySelector(".sub-element-description").value =
+        subElement.description;
+    let subElementHtmlElement = subElementHtml.querySelector(".sub-element");
+    subElementHtmlElement.dataset.order = subElement.order;
+    subElementHtmlElement.dataset.uid = subElement.uid;
+    return subElementHtml;
 }
 
 /**
@@ -4260,11 +4235,13 @@ function setVisibilityCourseFieldsBasedOnProgramMembership(isPartOfProgram) {
 
     const elements = [
         "element-accordion-inscription-enrollment",
-        "element-accordion-configuration-portal-web"
+        "element-accordion-configuration-portal-web",
     ];
 
-    elements.forEach(elementId => {
-        document.getElementById(elementId).classList.toggle("hidden", isPartOfProgram);
+    elements.forEach((elementId) => {
+        document
+            .getElementById(elementId)
+            .classList.toggle("hidden", isPartOfProgram);
     });
 }
 

@@ -244,7 +244,6 @@ class EducationalProgramsSeeder extends Seeder
             'belongs_to_educational_program' => true,
             'educational_program_uid' => $educationalProgramUid,
             'image_path' => $this->demoImages[array_rand($this->demoImages)],
-            'educational_program_type_uid' => $this->educationalProgramTypes->random()->uid,
             'course_status_uid' => $this->courseStatuses['ADDED_EDUCATIONAL_PROGRAM']->uid,
             'course_type_uid' => $this->courseTypes->random()->uid,
             'cost' => null,
@@ -307,6 +306,6 @@ class EducationalProgramsSeeder extends Seeder
 
         // Filtrar los cursos que se encuentran entre las posiciones start y end
         return array_slice($csv, $start, $end);
-       
+
     }
 }

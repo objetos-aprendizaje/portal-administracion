@@ -887,7 +887,7 @@ function drawGraphCourse(datas) {
         .call(d3.axisBottom(x).tickSize(0));
 
     // Añadir líneas punteadas horizontales
-    const yAxis = svg.append("g").call(d3.axisLeft(y));
+    svg.append("g").call(d3.axisLeft(y));
 
     // Dibujar líneas punteadas horizontales
     svg

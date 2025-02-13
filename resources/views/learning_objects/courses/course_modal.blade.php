@@ -1,5 +1,5 @@
 <div id="course-modal" class="modal">
-    <div class="modal-body w-full md:max-w-[1200px]">
+    <div class="modal-body w-full md:max-w-[1300px]">
         <div class="modal-header">
             <div>
                 <h2 class="modal-title">Añade un nuevo curso</h2>
@@ -372,7 +372,7 @@
                     </div>
 
                     <!-- Segundo elemento del acordeón -->
-                    <div class="border-b" id="element-accordion-inscription-enrollment">
+                    <div class="accordion-element" id="element-accordion-inscription-enrollment">
                         <button type="button"
                             class="accordion-header w-full text-left px-4 py-2 flex justify-between items-center focus:outline-none hover:bg-gray-50">
                             <span class="font-semibold">Inscripción/Matriculación</span>
@@ -427,7 +427,7 @@
                             <section class="hidden" id="criteria-area">
                                 <div class="field mt-2">
                                     <div class="label-container">
-                                        <label for="evaluation_criteria">Criterio de validación <span
+                                        <label for="evaluation_criteria">Descripción de la documentación requerida <span
                                                 class="text-danger">*</span></label>
                                     </div>
 
@@ -452,7 +452,7 @@
                             <section class="hidden" id="documents-container">
                                 <div class="field">
                                     <div class="label-container">
-                                        <label>Documentos necesarios para la inscripción</label>
+                                        <label for="document-list">Documentos necesarios para la inscripción</label>
                                     </div>
 
                                     <div class="content-container" id="document-container">
@@ -534,7 +534,7 @@
                     </div>
 
                     <!-- Tercer elemento del acordeón -->
-                    <div class="border-b" id="element-accordion-configuration-portal-web">
+                    <div class="accordion-element" id="element-accordion-configuration-portal-web">
                         <button type="button"
                             class="accordion-header w-full text-left px-4 py-2 flex justify-between items-center focus:outline-none hover:bg-gray-50">
                             <span class="font-semibold">Configuración en el portal web</span>
@@ -662,7 +662,7 @@
                     </div>
 
                     <!-- Cuarto elemento del acordeón -->
-                    <div>
+                    <div class="accordion-element">
                         <button type="button"
                             class="accordion-header w-full text-left px-4 py-2 flex justify-between items-center focus:outline-none hover:bg-gray-50">
                             <span class="font-semibold">Bloques y elementos</span>

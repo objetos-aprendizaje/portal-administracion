@@ -208,7 +208,6 @@ class CoursesSeeder extends Seeder
             'uid' => generateUuid(),
             'course_lms_uid' => generateUuid(),
             'course_status_uid' => $this->courseStatuses[$status]->uid,
-            'educational_program_type_uid' => $this->educationalProgramTypes->random(),
             'call_uid' => $this->calls->random(),
             'course_type_uid' => $this->courseTypes->random(),
             'validate_student_registrations' => 1,
@@ -256,7 +255,7 @@ class CoursesSeeder extends Seeder
 
         // Filtrar los cursos que se encuentran entre las posiciones start y end
         return array_slice($csv, $start, $end);
-        
+
     }
 
     private function addCategories($courseUid)

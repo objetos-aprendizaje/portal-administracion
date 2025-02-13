@@ -50,7 +50,6 @@ class LearningObjectEducationalResourceTest extends TestCase
         // Usa la reflexión para acceder al método privado
         $reflection = new ReflectionClass(CoursesController::class);
         $method = $reflection->getMethod('checkStatusCourse');
-        $method->setAccessible(true);
 
         // Asegura que se lanza la excepción
         $this->expectException(OperationFailedException::class);
@@ -86,7 +85,6 @@ class LearningObjectEducationalResourceTest extends TestCase
         // Usa la reflexión para acceder al método privado
         $reflection = new ReflectionClass(CoursesController::class);
         $method = $reflection->getMethod('checkStatusCourse');
-        $method->setAccessible(true);
 
         // Asegura que se lanza la excepción
         $this->expectException(OperationFailedException::class);
