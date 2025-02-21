@@ -283,7 +283,9 @@ Route::middleware(['combined.auth'])->group(function () {
         Route::post('/learning_objects/courses/regenerate_embeddings', [CoursesController::class, 'regenerateEmbeddings']);
 
         Route::post('/learning_objects/courses/emit_credentials', [CoursesController::class, 'emitCredentials']);
-        Route::post('/learning_objects/courses/emit_all_credentials', [CoursesController::class, 'emitAllCredentials']);
+        Route::post('/learning_objects/courses/emit_all_credentials_students', [CoursesController::class, 'emitAllCredentialsStudents']);
+        Route::post('/learning_objects/courses/emit_all_credentials_teachers', [CoursesController::class, 'emitAllCredentialsTeachers']);
+
         Route::post('/learning_objects/courses/send_credentials', [CoursesController::class, 'sendCredential']);
         Route::post('/learning_objects/courses/seal_credentials', [CoursesController::class, 'sealCredential']);
 

@@ -215,7 +215,7 @@ class CoursesController extends BaseController
         return response()->json(['message' => 'Se han actualizado los estados de los cursos correctamente'], 200);
     }
 
-    public function emitAllCredentials(Request $request)
+    public function emitAllCredentialsStudents(Request $request)
     {
         $courseUid = $request->input('course_uid');
 
@@ -224,7 +224,15 @@ class CoursesController extends BaseController
         $studentsUids = $course->students->pluck('uid')->toArray();
         $this->certidigitalService->emissionCredentialsCourse($courseUid, $studentsUids);
 
-        return response()->json(['message' => 'Credenciales emitidas correctamente'], 200);
+        return response()->json(['message' => 'Credenciales de estudiantes emitidas correctamente'], 200);
+    }
+
+    public function emitAllCredentialsTeachers(Request $request){
+        $courseUid = $request->input('course_uid');
+
+        $this->certidigitalService->createUpdateCourseTeacherCredential($courseUid);
+
+        return response()->json(['message' => 'Credenciales de docentes emitidas correctamente'], 200);
     }
 
     public function emitCredentials(Request $request)

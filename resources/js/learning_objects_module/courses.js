@@ -590,7 +590,7 @@ columnsCoursesTable.push(
                                 [{ key: "course_uid", value: course.uid }]
                             ).then((result) => {
                                 if (result)
-                                    emitAllCredentialsCourse(course.uid);
+                                    emitAllCredentialsStudentsCourse(course.uid);
                             });
                         },
                     },
@@ -606,24 +606,41 @@ columnsCoursesTable.push(
                                 [{ key: "course_uid", value: course.uid }]
                             ).then((result) => {
                                 if (result)
-                                    emitAllCredentialsCourse(course.uid);
+                                    emitAllCredentialsTeachersCourse(course.uid);
                             });
                         },
                     },
                     {
                         icon: "document-arrow-up",
                         type: "outline",
-                        tooltip: "Emisión de todas las credenciales",
+                        tooltip: "Emisión de todas las credenciales de estudiantes",
                         disabled: !cellData.certidigital_credential_uid,
                         action: (course) => {
                             showModalConfirmation(
-                                "Emisión de todas las credenciales",
+                                "Emisión de todas las credenciales de estudiantes",
                                 "¿Deseas emitir todas las credenciales a todos los estudiantes que hayan finalizado?",
                                 "emitAllCredentials",
                                 [{ key: "course_uid", value: course.uid }]
                             ).then((result) => {
                                 if (result)
-                                    emitAllCredentialsCourse(course.uid);
+                                    emitAllCredentialsStudentsCourse(course.uid);
+                            });
+                        },
+                    },
+                    {
+                        icon: "document-arrow-up",
+                        type: "outline",
+                        tooltip: "Emisión de todas las credenciales de docentes",
+                        disabled: false,
+                        action: (course) => {
+                            showModalConfirmation(
+                                "Emisión de todas las credenciales de docentes",
+                                "¿Deseas emitir todas las credenciales a todos los docentes que hayan finalizado?",
+                                "emitAllCredentials",
+                                [{ key: "course_uid", value: course.uid }]
+                            ).then((result) => {
+                                if (result)
+                                    emitAllCredentialsTeachersCourse(course.uid);
                             });
                         },
                     }
@@ -1191,7 +1208,7 @@ function initHandlers() {
         .getElementById("emit-credentials-students-btn")
         .addEventListener("click", function () {
             showModalConfirmation(
-                "Emisión de credenciales",
+                "Emisión de credenciales de estudiantes",
                 "¿Estás seguro de que quieres emitir las credenciales a los estudiantes seleccionados?"
             ).then((result) => {
                 if (!result) return;
@@ -2250,19 +2267,35 @@ function initializeCoursesTable() {
             },
         },
         {
-            label: `${heroicon("document-arrow-up")} Emisión de credenciales`,
+            label: `${heroicon("document-arrow-up")} Emisión de credenciales de estudiantes`,
             action: function (e, column) {
                 showModalConfirmation(
                     "Emisión de todas las credenciales",
                     "¿Estás seguro de que quieres emitir todas las credenciales a los estudiantes del curso seleccionado?"
                 ).then((result) => {
                     const courseClicked = column.getData();
-                    if (result) emitAllCredentialsCourse(courseClicked.uid);
+                    if (result) emitAllCredentialsStudentsCourse(courseClicked.uid);
                 });
             },
             disabled: function (column) {
                 const dataColumn = column.getData();
                 return dataColumn.certidigital_credential_uid == null;
+            },
+        },
+        {
+            label: `${heroicon("document-arrow-up")} Emisión de credenciales de docentes`,
+            action: function (e, column) {
+                showModalConfirmation(
+                    "Emisión de todas las credenciales de docentes",
+                    "¿Estás seguro de que quieres emitir todas las credenciales a los docentes del curso seleccionado?"
+                ).then((result) => {
+                    const courseClicked = column.getData();
+                    if (result) emitAllCredentialsTeachersCourse(courseClicked.uid);
+                });
+            },
+            disabled: function (column) {
+                const dataColumn = column.getData();
+                return dataColumn.certidigital_teacher_credential_uid == null;
             },
         },
     ];
@@ -2301,9 +2334,24 @@ function initializeCoursesTable() {
     controlsSearch(coursesTable, endPointTable, "courses-table");
 }
 
-function emitAllCredentialsCourse(courseUid) {
+function emitAllCredentialsStudentsCourse(courseUid) {
     const params = {
-        url: `/learning_objects/courses/emit_all_credentials`,
+        url: `/learning_objects/courses/emit_all_credentials_students`,
+        method: "POST",
+        stringify: true,
+        body: {
+            course_uid: courseUid,
+        },
+        toast: true,
+        loader: true,
+    };
+
+    apiFetch(params);
+}
+
+function emitAllCredentialsTeachersCourse(courseUid) {
+    const params = {
+        url: `/learning_objects/courses/emit_all_credentials_teachers`,
         method: "POST",
         stringify: true,
         body: {
