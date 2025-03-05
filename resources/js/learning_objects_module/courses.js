@@ -49,6 +49,7 @@ import { TabulatorFull as Tabulator } from "tabulator-tables";
 import { showToast } from "../toast.js";
 import InfiniteTree from "infinite-tree";
 import renderer from "../renderer_infinite_tree.js";
+import tag from "html5-tag";
 
 let selectedCourses = [];
 let selectedCourseStudents = [];
@@ -590,7 +591,9 @@ columnsCoursesTable.push(
                                 [{ key: "course_uid", value: course.uid }]
                             ).then((result) => {
                                 if (result)
-                                    emitAllCredentialsStudentsCourse(course.uid);
+                                    emitAllCredentialsStudentsCourse(
+                                        course.uid
+                                    );
                             });
                         },
                     },
@@ -606,14 +609,17 @@ columnsCoursesTable.push(
                                 [{ key: "course_uid", value: course.uid }]
                             ).then((result) => {
                                 if (result)
-                                    emitAllCredentialsTeachersCourse(course.uid);
+                                    emitAllCredentialsTeachersCourse(
+                                        course.uid
+                                    );
                             });
                         },
                     },
                     {
                         icon: "document-arrow-up",
                         type: "outline",
-                        tooltip: "Emisión de todas las credenciales de estudiantes",
+                        tooltip:
+                            "Emisión de todas las credenciales de estudiantes",
                         disabled: !cellData.certidigital_credential_uid,
                         action: (course) => {
                             showModalConfirmation(
@@ -623,14 +629,17 @@ columnsCoursesTable.push(
                                 [{ key: "course_uid", value: course.uid }]
                             ).then((result) => {
                                 if (result)
-                                    emitAllCredentialsStudentsCourse(course.uid);
+                                    emitAllCredentialsStudentsCourse(
+                                        course.uid
+                                    );
                             });
                         },
                     },
                     {
                         icon: "document-arrow-up",
                         type: "outline",
-                        tooltip: "Emisión de todas las credenciales de docentes",
+                        tooltip:
+                            "Emisión de todas las credenciales de docentes",
                         disabled: false,
                         action: (course) => {
                             showModalConfirmation(
@@ -640,7 +649,9 @@ columnsCoursesTable.push(
                                 [{ key: "course_uid", value: course.uid }]
                             ).then((result) => {
                                 if (result)
-                                    emitAllCredentialsTeachersCourse(course.uid);
+                                    emitAllCredentialsTeachersCourse(
+                                        course.uid
+                                    );
                             });
                         },
                     }
@@ -2267,14 +2278,17 @@ function initializeCoursesTable() {
             },
         },
         {
-            label: `${heroicon("document-arrow-up")} Emisión de credenciales de estudiantes`,
+            label: `${heroicon(
+                "document-arrow-up"
+            )} Emisión de credenciales de estudiantes`,
             action: function (e, column) {
                 showModalConfirmation(
                     "Emisión de todas las credenciales",
                     "¿Estás seguro de que quieres emitir todas las credenciales a los estudiantes del curso seleccionado?"
                 ).then((result) => {
                     const courseClicked = column.getData();
-                    if (result) emitAllCredentialsStudentsCourse(courseClicked.uid);
+                    if (result)
+                        emitAllCredentialsStudentsCourse(courseClicked.uid);
                 });
             },
             disabled: function (column) {
@@ -2283,14 +2297,17 @@ function initializeCoursesTable() {
             },
         },
         {
-            label: `${heroicon("document-arrow-up")} Emisión de credenciales de docentes`,
+            label: `${heroicon(
+                "document-arrow-up"
+            )} Emisión de credenciales de docentes`,
             action: function (e, column) {
                 showModalConfirmation(
                     "Emisión de todas las credenciales de docentes",
                     "¿Estás seguro de que quieres emitir todas las credenciales a los docentes del curso seleccionado?"
                 ).then((result) => {
                     const courseClicked = column.getData();
-                    if (result) emitAllCredentialsTeachersCourse(courseClicked.uid);
+                    if (result)
+                        emitAllCredentialsTeachersCourse(courseClicked.uid);
                 });
             },
             disabled: function (column) {
@@ -3596,6 +3613,59 @@ function initializeCourseStudentsTable(
             }
         );
     }
+
+    columns.push({
+        title: ``,
+        field: "actions",
+        formatter: function (cell, formatterParams, onRendered) {
+            const emissionsBlockUuid = cell.getRow().getData()
+                .course_student_info.emissions_block_uuid;
+
+            const isDisabled = !emissionsBlockUuid;
+
+            let classesButton = "btn action-btn";
+            const button = tag(
+                "button",
+                {
+                    type: "button",
+                    class: isDisabled
+                        ? classesButton + " btn-not-allowed"
+                        : classesButton,
+                    title: isDisabled
+                        ? "No se puede ver la credencial porque no está emitida"
+                        : "Ver credencial",
+                    disabled: isDisabled ? "disabled" : undefined,
+                },
+                heroicon("eye", "outline")
+            );
+
+            return button;
+        },
+        cellClick: function (e, cell) {
+            e.preventDefault();
+            const emissionsBlockUuid = cell.getRow().getData()
+                .course_student_info.emissions_block_uuid;
+
+            const params = {
+                url: `/learning_objects/get_url_emission_credential/${emissionsBlockUuid}`,
+                method: "GET",
+                loader: true,
+            };
+
+            apiFetch(params).then((data) => {
+                if (data.url) {
+                    window.open(data.url, "_blank");
+                }
+            });
+        },
+        headerClick: function (e, column) {
+            controlColumnsSecectorModal();
+        },
+        cssClass: "text-center",
+        headerSort: false,
+        width: 30,
+        resizable: false,
+    });
 
     courseStudensTable = new Tabulator("#course-students-table", {
         ajaxURL: `${endPointStudentTable}/${courseUid}`,

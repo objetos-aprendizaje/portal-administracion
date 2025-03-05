@@ -236,7 +236,7 @@ class CertidigitalService
 
         $fields[] = [
             'fieldPathIdentifier' => "{#{$educationalProgram->certidigitalCredential->uid}}.ASM{{$assesmentGlobal->uid}}.grade.noteLiteral(es)",
-            'value' => $studentCourseGlobalCalifications->calification_info,
+            'value' => $studentCourseGlobalCalifications->calification_info ?? null,
         ];
 
         return $fields;
@@ -567,6 +567,13 @@ class CertidigitalService
             $teacher->pivot->credential_sealed = true;
             $teacher->pivot->save();
         }
+    }
+
+    public function getEmissionCredential($uuidCredential) {
+        $generalOptions = app('general_options');
+        $endpoint = "{$generalOptions['certidigital_url']}/certi-admin/api/v1/emissions/viewer/{$uuidCredential}";
+
+        return $this->sendRequest($endpoint, [], false, "GET")->body();
     }
 
     private function getCourseWithTeachers($courseUid, $teacherUids)

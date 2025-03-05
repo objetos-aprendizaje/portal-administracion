@@ -128,7 +128,11 @@ class EducationalProgramsController extends BaseController
     {
         $educationalProgramUid = $request->input('educational_program_uid');
 
-        $educationalProgram = EducationalProgramsModel::where('uid', $educationalProgramUid)->with(["educationalProgramType", "students"])->first();
+        $educationalProgram = EducationalProgramsModel::where('uid', $educationalProgramUid)->with(["educationalProgramType", "certidigitalCredential", "students"])->first();
+
+        if(!$educationalProgram->certidigitalCredential) {
+            throw new OperationFailedException('No se pueden emitir credenciales porque el programa formativo no tiene credenciales asociadas', 422);
+        }
 
         // Comprobación de si el usuario tiene permiso para emitir credenciales para este curso
         $this->checkPermissionsEmitCredentials($educationalProgram->educationalProgramType);
@@ -146,6 +150,10 @@ class EducationalProgramsController extends BaseController
         $studentsUids = $request->input('students_uids');
 
         $educationalProgram = EducationalProgramsModel::where('uid', $educationalProgramUid)->with("educationalProgramType")->first();
+
+        if(!$educationalProgram->certidigitalCredential) {
+            throw new OperationFailedException('No se pueden emitir credenciales porque el programa formativo no tiene credenciales asociadas', 422);
+        }
 
         // Comprobación de si el usuario tiene permiso para emitir credenciales para este curso
         $this->checkPermissionsEmitCredentials($educationalProgram->educationalProgramType);

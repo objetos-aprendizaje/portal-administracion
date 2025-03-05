@@ -69,6 +69,10 @@ a {
     @apply px-4 py-2 rounded-full cursor-pointer inline-flex items-center space-x-2 justify-center font-roboto-regular gap-[10px] select-none
 }
 
+.btn.btn-not-allowed {
+    @apply cursor-not-allowed
+}
+
 .btn-icon {
     svg {
         @apply text-white

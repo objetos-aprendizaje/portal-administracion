@@ -130,8 +130,8 @@ class GeneralAdministrationController extends BaseController
             ];
 
             foreach ($updateData as $color) {
-                if (!validateHexadecimalColor($color)) {
-                    return response()->json(['success' => false, 'message' => 'Hay algún color que no es válido'], 400);
+                if ($color && !validateHexadecimalColor($color)) {
+                    throw new OperationFailedException('Hay algún color que no es válido');
                 }
             }
 
