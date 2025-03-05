@@ -29,6 +29,7 @@ import {
 } from "../app";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
 import { showToast } from "../toast.js";
+import tag from "html5-tag";
 
 let educationalProgramsTable;
 let selectedEducationalPrograms = [];
@@ -534,6 +535,12 @@ function initializeEducationalProgramsTable() {
                 label: `${heroicon(
                     "document-arrow-up"
                 )} Emisión de todas las credenciales`,
+                disabled: function (column) {
+                    const dataColumn = column.getData();
+                    return dataColumn.certidigital_credential_uid
+                        ? false
+                        : true;
+                },
                 action: function (e, column) {
                     showModalConfirmation(
                         "Emisión de todas las credenciales",
@@ -1541,6 +1548,59 @@ function initializeEducationalProgramStudentsTable(
         );
     }
 
+    columns.push({
+        title: ``,
+        field: "actions",
+        formatter: function (cell, formatterParams, onRendered) {
+            const emissionsBlockUuid = cell.getRow().getData()
+                .educational_program_student_info.emissions_block_uuid;
+
+            const isDisabled = !emissionsBlockUuid;
+
+            let classesButton = "btn action-btn";
+            const button = tag(
+                "button",
+                {
+                    type: "button",
+                    class: isDisabled
+                        ? classesButton + " btn-not-allowed"
+                        : classesButton,
+                    title: isDisabled
+                        ? "No se puede ver la credencial porque no está emitida"
+                        : "Ver credencial",
+                    disabled: isDisabled ? "disabled" : undefined,
+                },
+                heroicon("eye", "outline")
+            );
+
+            return button;
+        },
+        cellClick: function (e, cell) {
+            e.preventDefault();
+            const emissionsBlockUuid = cell.getRow().getData()
+                .educational_program_student_info.emissions_block_uuid;
+
+            const params = {
+                url: `/learning_objects/get_url_emission_credential/${emissionsBlockUuid}`,
+                method: "GET",
+                loader: true,
+            };
+
+            apiFetch(params).then((data) => {
+                if (data.url) {
+                    window.open(data.url, "_blank");
+                }
+            });
+        },
+        headerClick: function (e, column) {
+            controlColumnsSecectorModal();
+        },
+        cssClass: "text-center",
+        headerSort: false,
+        width: 30,
+        resizable: false,
+    });
+
     educationalProgramStudentsTable = new Tabulator(
         "#educational-program-students-table",
         {
@@ -1728,7 +1788,7 @@ function editionOrDuplicationEducationalProgram(educationalProgramUid, action) {
         },
         toast: true,
         stringify: true,
-        loader: true
+        loader: true,
     };
 
     apiFetch(params).then((response) => {

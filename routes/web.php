@@ -300,6 +300,7 @@ Route::middleware(['combined.auth'])->group(function () {
 
         Route::post('/learning_objects/generate_tags', [LearningObjetsController::class, 'generateTags']);
         Route::post('/learning_objects/generate_metadata', [LearningObjetsController::class, 'generateMetadata']);
+        Route::get('/learning_objects/get_url_emission_credential/{emissionsBlockUuid}', [LearningObjetsController::class, 'getUrlEmissionCredential']);
 
         Route::get('/learning_objects/educational_programs', [EducationalProgramsController::class, 'index'])->name('learning-objects-educational-programs');
         Route::get('/learning_objects/courses', [CoursesController::class, 'index'])->name('courses');

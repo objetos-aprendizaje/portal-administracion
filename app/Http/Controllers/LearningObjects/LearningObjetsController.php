@@ -1,6 +1,9 @@
 <?php
 
 namespace App\Http\Controllers\LearningObjects;
+
+use App\Exceptions\OperationFailedException;
+use App\Services\CertidigitalService;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -9,6 +12,13 @@ use Illuminate\Http\Request;
 class LearningObjetsController extends BaseController
 {
     use AuthorizesRequests, ValidatesRequests;
+
+    protected $certidigitalService;
+
+    public function __construct(CertidigitalService $certidigitalService)
+    {
+        $this->certidigitalService = $certidigitalService;
+    }
 
     public function generateTags(Request $request)
     {
@@ -69,6 +79,15 @@ class LearningObjetsController extends BaseController
         $text = $request->input("text");
         $text = str_replace("\u{200B}", "", $text);
         return $text;
+    }
+
+    public function getUrlEmissionCredential($emissionsBlockUuid) {
+        if(!$emissionsBlockUuid) {
+            throw new OperationFailedException('No se ha enviado el uuid del bloque de emisiones', 406);
+        }
+
+        $url = $this->certidigitalService->getEmissionCredential($emissionsBlockUuid);
+        return response()->json(['url' => $url], 200);
     }
 
     private function callOpenAI($data)

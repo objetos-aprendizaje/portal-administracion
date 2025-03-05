@@ -2391,7 +2391,7 @@ class EducationalProgramsControllerTest extends TestCase
 
         $response->assertStatus(422);
 
-        $response->assertJson(['message' => 'No tienes permisos para emitir credenciales en este curso']);
+        $response->assertJson(['message' => 'No se pueden emitir credenciales porque el programa formativo no tiene credenciales asociadas']);
     }
 
 
