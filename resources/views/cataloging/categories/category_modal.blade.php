@@ -86,9 +86,7 @@
                     <div class="content-container">
                         <select id="parent_category_uid" name="parent_category_uid" class="poa-select w-full">
                             <option value="" selected>Ninguna</option>
-                            @foreach ($categories as $category)
-                                <option value="{{ $category['uid'] }}">{{ $category['name'] }}</option>
-                            @endforeach
+
                         </select>
                     </div>
                 </div>

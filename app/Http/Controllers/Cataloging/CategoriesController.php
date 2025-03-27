@@ -41,15 +41,8 @@ class CategoriesController extends BaseController
             ]);
         }
 
-        $categoriesAnidated = CategoriesModel::whereNull('parent_category_uid')->with([
-            'subcategories' => function ($query) {
-                $query->withCount('courses');
-            },
-        ])
-            ->withCount('courses')
-            ->get()->toArray();
-
-            $categories = CategoriesModel::get()->toArray();
+        // Cargar las categorías principales
+        $categoriesAnidated = $this->getCategoriesAnidatedWithCoursesCount();
 
         return view(
             'cataloging.categories.index',
@@ -59,26 +52,11 @@ class CategoriesController extends BaseController
                 "resources" => [
                     "resources/js/cataloging_module/categories.js"
                 ],
-                "categories" => $categories,
                 "categories_anidated" => $categoriesAnidated,
                 "coloris" => true,
                 "submenuselected" => "cataloging-categories",
             ]
         );
-    }
-
-    public function getAllCategories()
-    {
-
-
-        $categories = CategoriesModel::whereNull('parent_category_uid')->with('subcategories')->get()->toArray();
-
-        return response()->json($categories, 200);
-
-        // Se comenta esta linea ya que esta parte es inalcanzable
-        // $categories = CategoriesModel::with('parentCategory')->get()->toArray();
-        // return response()->json($categories, 200);
-        
     }
 
     public function getCategory($categoryUid)
@@ -197,28 +175,47 @@ class CategoriesController extends BaseController
     {
         $search = $request->input("search");
 
-        // Comenzamos la consulta sin ejecutarla
-        $query = CategoriesModel::query();
-
-        // Si se proporcionó un término de búsqueda, lo aplicamos
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'ILIKE', '%' . $search . '%')
-                    ->orWhere('description', 'ILIKE', '%' . $search . '%');
-            });
-        } else {
-            $query->whereNull('parent_category_uid')->with(['subcategories' => function ($query) {
-                $query->withCount('courses');
-            }]);
-        }
-
-        // Ahora ejecutamos la consulta y obtenemos los resultados
-        $categories = $query->withCount('courses')->get()->toArray();
+        $categories = $this->getCategoriesAnidatedWithCoursesCount($search);
 
         // Asumiendo que 'renderCategories' es una función que ya tienes para generar el HTML
         $html = renderCategories($categories);
 
         return response()->json(['html' => $html]);
+    }
+
+    private function getCategoriesAnidatedWithCoursesCount($search = null) {
+        $query = CategoriesModel::query()->whereNull('parent_category_uid');
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'ILIKE', '%' . $search . '%')
+                    ->orWhere('description', 'ILIKE', '%' . $search . '%');
+            });
+        }
+
+        $categories = $query->get();
+
+        $categories = $this->loadCategoriesWithCourses($categories);
+
+        return $categories;
+    }
+
+        /**
+     * Función recursiva para cargar las categorías con los cursos que contienen.
+     */
+    function loadCategoriesWithCourses($categories)
+    {
+        return $categories->map(function ($category) {
+            // Contar los cursos en la categoría actual
+            $category->courses_count = $category->courses()->count();
+
+            // Cargar las subcategorías de forma recursiva
+            if ($category->subcategories()->exists()) {
+                $category->subcategories = $this->loadCategoriesWithCourses($category->subcategories);
+            }
+
+            return $category;
+        });
     }
 
     public function deleteCategories(Request $request)
